@@ -563,7 +563,11 @@ void ColorItem::_regenPreview(EekPreview * preview)
 	
 	//if(desktop)
 	//	this_layer = desktop->namedview->document->getObjectById("layer1");
-	
+
+	GtkAllocation allocation;
+    gtk_widget_get_allocation (GTK_WIDGET(preview), &allocation);
+	int width = allocation.width;
+	int height = allocation.height;
 	
     if ( def.getType() != ege::PaintDef::RGB ) {
         using Inkscape::IO::Resource::get_path;
@@ -595,7 +599,7 @@ void ColorItem::_regenPreview(EekPreview * preview)
 		int w = 128;
         int h = 16;
 
-        cairo_surface_t *s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+        cairo_surface_t *s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
         cairo_t *ct = cairo_create(s);
         //cairo_set_source(ct, _pattern);
 		
@@ -605,19 +609,19 @@ void ColorItem::_regenPreview(EekPreview * preview)
 		else
 			cairo_set_source_rgb(ct, .8,.8,.8);
 		
-		cairo_rectangle(ct, 0, 0, 150.0, 100.0);
+		cairo_rectangle(ct, 0, 0, width, height);
         cairo_fill(ct);
-		
-		 //KRASCHAR!!
-		 
+				 
 		if(!is_empty)
 		{
 			//if(layer->getRepr()->childCount() > 0)
 			//{
 				cairo_set_source_rgb(ct,0,0,0);
-				cairo_rectangle(ct, 0, 0, 50.0, 50.0);
+				//cairo_rectangle(ct, 0, 0, 50.0, 50.0);
+				//cairo_arc(ct, 20, 20, 10, 0, 6.28);
+				cairo_arc(ct, width/2, height/2, width/4, 0, 6.283);
 				cairo_fill(ct);
-				cairo_paint(ct);
+				//cairo_paint(ct);
 			//}
 		}
 		
