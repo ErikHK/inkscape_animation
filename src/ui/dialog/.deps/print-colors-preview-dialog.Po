@@ -1,0 +1,2 @@
+ui/dialog/print-colors-preview-dialog.o: \
+ ui/dialog/print-colors-preview-dialog.cpp

@@ -1,0 +1,14 @@
+prefix=/mingw64
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+bindir=${exec_prefix}/bin
+includedir=${prefix}/include
+
+Cflags: -I${includedir}/libinkdbus-0.1
+Requires: gobject-2.0 dbus-glib-1
+Libs: -L${libdir} -linkdbus
+
+Name: inkdbus
+Description: Inkscape DBus Interface Wrapper
+Version: 0.92.1
+
