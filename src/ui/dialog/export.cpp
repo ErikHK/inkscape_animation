@@ -1127,7 +1127,7 @@ void Export::onExport ()
 		gint num = 0;
 		SPObject * lay = doc->getObjectById("layer1");
 		if(!lay)
-			return
+			return;
 		
 		//determine number of layers
 		while(lay->getRepr()->childCount() > 0)
