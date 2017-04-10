@@ -193,6 +193,7 @@ public:
     bool showing_dialogs;
 	
 	bool fade_previous_layers;
+	bool show_all_keyframes;
 	bool is_playing; //is the animation playing?
 	
 	guint fps; //animation frames per second

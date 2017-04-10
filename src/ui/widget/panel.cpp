@@ -99,7 +99,7 @@ void Panel::_init()
     _anchor = SP_ANCHOR_CENTER;
 
     guint panel_size = 0, panel_mode = 0, panel_ratio = 100, panel_border = 0;
-    bool panel_fade = 0;
+    bool panel_fade = 1;
     if (!_prefs_path.empty()) {
         Inkscape::Preferences *prefs = Inkscape::Preferences::get();
         panel_fade = prefs->getBool(_prefs_path + "/panel_wrap");
@@ -254,14 +254,25 @@ void Panel::_init()
 	
 	{
 		
-		//TRANSLATORS: "Fade previous layers" indicates if the previous layers should be shown
-        Glib::ustring fade_label(C_("Swatches","Fade previous layers"));
+		//TRANSLATORS: "Onion skinning" indicates if the previous layers should be shown
+        Glib::ustring fade_label(C_("Swatches","Onion skinning"));
         Gtk::CheckMenuItem *check = Gtk::manage(new Gtk::CheckMenuItem(fade_label));
         check->set_active(panel_fade);
         _menu->append(*check);
         _non_vertical.push_back(check);
 
         check->signal_toggled().connect(sigc::bind<Gtk::CheckMenuItem*>(sigc::mem_fun(*this, &Panel::_fadeToggled), check));
+	}
+	
+	{
+		//TRANSLATORS: "Show all keyframes" indicates if all keyframes should be shown
+        Glib::ustring show_all_keyframes(C_("Swatches","Show all keyframes"));
+        Gtk::CheckMenuItem *check = Gtk::manage(new Gtk::CheckMenuItem(show_all_keyframes));
+        check->set_active(false);
+        _menu->append(*check);
+        _non_vertical.push_back(check);
+
+        check->signal_toggled().connect(sigc::bind<Gtk::CheckMenuItem*>(sigc::mem_fun(*this, &Panel::_showKeyframes), check));
 		
 	}
 	
@@ -387,7 +398,7 @@ void Panel::present()
 void Panel::restorePanelPrefs()
 {
     guint panel_size = 0, panel_mode = 0, panel_ratio = 100, panel_border = 0;
-    bool panel_fade = 0;
+    bool panel_fade = 1;
     if (!_prefs_path.empty()) {
         Inkscape::Preferences *prefs = Inkscape::Preferences::get();
         panel_fade = prefs->getBool(_prefs_path + "/panel_wrap");
@@ -554,6 +565,20 @@ void Panel::_fadeToggled(Gtk::CheckMenuItem* toggler)
 	//_desktop FINNS INTE HÄR!
 	if(toggler && desktop)
 		desktop->fade_previous_layers = toggler->get_active() ? 1 : 0;
+	/*
+    if (toggler) {
+        _bounceCall(PANEL_SETTING_WRAP, toggler->get_active() ? 1 : 0);
+    }
+	*/
+}
+
+
+void Panel::_showKeyframes(Gtk::CheckMenuItem* toggler)
+{
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	//_desktop FINNS INTE HÄR!
+	if(toggler && desktop)
+		desktop->show_all_keyframes = toggler->get_active() ? 1 : 0;
 	/*
     if (toggler) {
         _bounceCall(PANEL_SETTING_WRAP, toggler->get_active() ? 1 : 0);

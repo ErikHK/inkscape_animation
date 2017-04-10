@@ -123,6 +123,7 @@ SPDesktop::SPDesktop() :
     waiting_cursor( false ),
     showing_dialogs ( false ),
 	fade_previous_layers(true),
+	show_all_keyframes(true),
 	is_playing(false),
 	fps(10),
     guides_active( false ),

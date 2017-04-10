@@ -157,6 +157,7 @@ private:
 
     void _popper(GdkEventButton *btn);
     void _fadeToggled(Gtk::CheckMenuItem *toggler);
+	void _showKeyframes(Gtk::CheckMenuItem *toggler);
 
     SPDesktop       *_desktop;
 
