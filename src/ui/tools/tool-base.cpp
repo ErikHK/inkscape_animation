@@ -363,6 +363,10 @@ static gint playLoop(ToolBase * tb)
 			return false;
 		
 		SPObject *next=Inkscape::next_layer(desktop->currentRoot(), desktop->currentLayer());
+		
+		
+		if(!next)
+			return false;
 		desktop->layer_manager->setCurrentLayer(next);
 		desktop->toggleLayerSolo(next);
 		

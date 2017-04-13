@@ -125,6 +125,8 @@ SPDesktop::SPDesktop() :
 	fade_previous_layers(true),
 	show_all_keyframes(true),
 	is_playing(false),
+	start_loop_keyframe(1),
+	end_loop_keyframe(90),
 	fps(10),
     guides_active( false ),
     gr_item( NULL ),

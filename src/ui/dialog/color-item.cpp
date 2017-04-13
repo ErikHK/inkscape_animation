@@ -125,10 +125,11 @@ static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
 	
 }
 
-static void handleSecondaryClick( GtkWidget* /*widget*/, gint /*arg1*/, gpointer callback_data ) {
+//static void handleSecondaryClick( GtkWidget* /*widget*/, gint /*arg1*/, gpointer callback_data ) {
+	static void handleSecondaryClick( GtkWidget* /*widget*/, GdkEventButton * event, gpointer callback_data ) {
     ColorItem* item = reinterpret_cast<ColorItem*>(callback_data);
     if ( item ) {
-        item->buttonClicked(true);
+        item->createPopupMenu(event);
     }
 }
 
@@ -302,7 +303,9 @@ ColorItem::ColorItem(ege::PaintDef::ColorType type) :
     _linkGray(0),
     _linkSrc(0),
     _grad(0),
-    _pattern(0)
+    _pattern(0),
+	isStartLoop(false),
+	isEndLoop(false)
 {
 }
 
@@ -616,7 +619,12 @@ void ColorItem::_regenPreview(EekPreview * preview)
 		{
 			//if(layer->getRepr()->childCount() > 0)
 			//{
-				cairo_set_source_rgb(ct,0,0,0);
+				if(isStartLoop)
+					cairo_set_source_rgb(ct,0,1.0,0);
+				else if(isEndLoop)
+					cairo_set_source_rgb(ct,1.0,0,0);
+				else
+					cairo_set_source_rgb(ct,0,0,0);
 				//cairo_rectangle(ct, 0, 0, 50.0, 50.0);
 				//cairo_arc(ct, 20, 20, 10, 0, 6.28);
 				cairo_arc(ct, width/2, height/2, width/4, 0, 6.283);
@@ -749,7 +757,7 @@ Gtk::Widget* ColorItem::getPreview(PreviewStyle style, ViewType view, ::PreviewS
                           this );
 		*/
 		
-		/*
+		
         g_signal_connect( G_OBJECT(newBlot->gobj()),
                           "enter-notify-event",
                           G_CALLBACK(handleEnterNotify),
@@ -759,7 +767,7 @@ Gtk::Widget* ColorItem::getPreview(PreviewStyle style, ViewType view, ::PreviewS
                           "leave-notify-event",
                           G_CALLBACK(handleLeaveNotify),
                           this);
-		*/
+		
         g_signal_connect( G_OBJECT(newBlot->gobj()),
                           "destroy",
                           G_CALLBACK(dieDieDie),
@@ -775,6 +783,41 @@ Gtk::Widget* ColorItem::getPreview(PreviewStyle style, ViewType view, ::PreviewS
 }
 
 
+void ColorItem::createPopupMenu(GdkEventButton * event)
+{
+	/*
+	//create a new popup menu
+	GtkWidget * popupMenu = gtk_menu_new();
+	GtkWidget* child = 0;
+
+    //TRANSLATORS: An item in context menu on a colour in the swatches
+    child = gtk_menu_item_new_with_label(_("Set start loop"));
+            
+	g_signal_connect( G_OBJECT(child),
+                              "activate",
+                              G_CALLBACK(redirClick),
+                              user_data);
+							  
+    gtk_menu_shell_append(GTK_MENU_SHELL(popupMenu), child);
+	gtk_widget_show_all(popupMenu);
+	
+	gtk_menu_popup(GTK_MENU(popupMenu), NULL, NULL, NULL, NULL, event->button, event->time);
+
+	*/
+	return;
+	
+}
+
+void ColorItem::setStartLoop()
+{
+	isStartLoop = !isStartLoop;
+}
+
+void ColorItem::setEndLoop()
+{
+	isEndLoop = !isEndLoop;
+}
+
 
 void ColorItem::buttonClicked(bool secondary)
 {
@@ -782,6 +825,9 @@ void ColorItem::buttonClicked(bool secondary)
     SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
 	LayerManager * lm = desktop->layer_manager;
+	
+	
+	
 	
 	Glib::ustring strr = Glib::ustring::format(id);
 	Glib::ustring ids("layer" + strr);

@@ -63,6 +63,9 @@ public:
                                     guint ratio,
                                     guint border);
     void buttonClicked(bool secondary = false);
+	void createPopupMenu(GdkEventButton * event);
+	void setStartLoop();
+	void setEndLoop();
 	
     void setGradient(SPGradient *grad);
     SPGradient * getGradient() const { return _grad; }
@@ -72,6 +75,8 @@ public:
     void setState( bool fill, bool stroke );
     bool isFill() { return _isFill; }
     bool isStroke() { return _isStroke; }
+	bool isStartLoop;
+	bool isEndLoop;
 
     ege::PaintDef def;
 	int id;

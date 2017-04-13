@@ -87,14 +87,15 @@ public:
 static void handleClick( GtkWidget* /*widget*/, gpointer callback_data ) {
     ColorItem* item = reinterpret_cast<ColorItem*>(callback_data);
     if ( item ) {
-        item->buttonClicked(false);
+        //item->buttonClicked(false);
+		item->setStartLoop();
     }
 }
 
 static void handleSecondaryClick( GtkWidget* /*widget*/, gint /*arg1*/, gpointer callback_data ) {
     ColorItem* item = reinterpret_cast<ColorItem*>(callback_data);
     if ( item ) {
-        item->buttonClicked(true);
+        item->setEndLoop();
     }
 }
 
@@ -118,6 +119,58 @@ static void redirSecondaryClick( GtkMenuItem *menuitem, gpointer /*user_data*/ )
     if ( bounceTarget ) {
         handleSecondaryClick( GTK_WIDGET(menuitem), 0, bounceTarget );
     }
+}
+
+static void createTween(GtkMenuItem *menuitem, gpointer)
+{
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	
+	if(bounceTarget && desktop)
+	{
+		//SPObject * layer = desktop->getDocument()->getObjectById(Glib::ustring::format("layer" + bounceTarget->id));
+		SPObject * layer = desktop->getDocument()->getObjectById("layer1");
+		SPObject * startLayer = layer;
+		SPObject * endLayer;
+		SPObject * nextLayer;
+		
+		
+		//while(layer)
+		for(int i=0; i<10; i++)
+		{
+			layer = Inkscape::next_layer(desktop->currentRoot(), layer);
+			//as soon as a layer has a child, break and set endLayer to this!
+			if (layer->getRepr()->childCount() > 0)
+				break;
+		}
+		endLayer = layer;
+		
+		//now we have start and end, loop again, and copy children etcetc
+		layer = startLayer;
+		while(layer != endLayer)
+		//for(int i=0; i< 10; i++)
+		{
+			nextLayer = Inkscape::next_layer(desktop->currentRoot(), layer);
+			
+			
+			if(nextLayer && layer)
+			{
+				//Inkscape::XML::Node * child = layer->getRepr()->firstChild();
+				Inkscape::XML::Node *child = desktop->getDocument()->getReprDoc()->createElement("svg:path");
+				//child->setAttribute("style", style);
+				//copy layer child to nextLayer
+				if(child)
+				{
+					nextLayer->getRepr()->addChild(child, NULL);
+					Inkscape::GC::release(child);
+				}
+			}
+			
+			layer = nextLayer;
+		}
+		
+		
+	}
+	
 }
 
 static void editGradientImpl( SPDesktop* desktop, SPGradient* gr )
@@ -252,12 +305,14 @@ gboolean colorItemHandleButtonPress( GtkWidget* widget, GdkEventButton* event, g
     if ( event && (event->button == 3) && (event->type == GDK_BUTTON_PRESS) ) {
         SwatchesPanel* swp = findContainingPanel( widget );
 
+		
+		
         if ( !popupMenu ) {
             popupMenu = gtk_menu_new();
             GtkWidget* child = 0;
 
             //TRANSLATORS: An item in context menu on a colour in the swatches
-            child = gtk_menu_item_new_with_label(_("Set fill"));
+            child = gtk_menu_item_new_with_label(_("Set start loop"));
             g_signal_connect( G_OBJECT(child),
                               "activate",
                               G_CALLBACK(redirClick),
@@ -265,7 +320,7 @@ gboolean colorItemHandleButtonPress( GtkWidget* widget, GdkEventButton* event, g
             gtk_menu_shell_append(GTK_MENU_SHELL(popupMenu), child);
 
             //TRANSLATORS: An item in context menu on a colour in the swatches
-            child = gtk_menu_item_new_with_label(_("Set stroke"));
+            child = gtk_menu_item_new_with_label(_("Set end loop"));
 
             g_signal_connect( G_OBJECT(child),
                               "activate",
@@ -276,7 +331,26 @@ gboolean colorItemHandleButtonPress( GtkWidget* widget, GdkEventButton* event, g
             child = gtk_separator_menu_item_new();
             gtk_menu_shell_append(GTK_MENU_SHELL(popupMenu), child);
             popupExtras.push_back(child);
+			
+			
+			
+			//Tweening
+			child = gtk_menu_item_new_with_label(_("Create tween"));
 
+            g_signal_connect( G_OBJECT(child),
+                              "activate",
+                              G_CALLBACK(createTween),
+                              user_data);
+            gtk_menu_shell_append(GTK_MENU_SHELL(popupMenu), child);
+
+			
+			
+			child = gtk_separator_menu_item_new();
+            gtk_menu_shell_append(GTK_MENU_SHELL(popupMenu), child);
+            popupExtras.push_back(child);
+			
+			
+			/*
             child = gtk_menu_item_new_with_label(_("Delete"));
             g_signal_connect( G_OBJECT(child),
                               "activate",
@@ -307,9 +381,11 @@ gboolean colorItemHandleButtonPress( GtkWidget* widget, GdkEventButton* event, g
                 popupSub = gtk_menu_new();
                 gtk_menu_item_set_submenu( GTK_MENU_ITEM(child), popupSub );
             }
+			*/
 
             gtk_widget_show_all(popupMenu);
         }
+		
 
         if ( user_data ) {
             ColorItem* item = reinterpret_cast<ColorItem*>(user_data);
