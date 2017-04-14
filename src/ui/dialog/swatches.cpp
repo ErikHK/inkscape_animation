@@ -231,10 +231,25 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 		
 		PathManipulator &pm = n->nodeList().subpathList().pm();
 		
-		float inc = 1.0/num_layers;
-		
-		for(int i=0;i<num_layers;i++)
-			pm.insertNode(this_iter, inc, false);
+		//float inc = 1.0/num_layers;
+		float inc = 1 - 1/10.0;
+		float mult = inc;
+
+		//for(int i=0; i < 10; i++)
+		//{
+		pm.insertNode(this_iter, .9, false);
+		pm.insertNode(this_iter, .888, false);
+		pm.insertNode(this_iter, .875, false);
+		pm.insertNode(this_iter, .857, false);
+		pm.insertNode(this_iter, .833, false);
+		pm.insertNode(this_iter, .8, false);
+		pm.insertNode(this_iter, .75, false);
+		pm.insertNode(this_iter, .667, false);
+		pm.insertNode(this_iter, .5, false);
+			//mult -= (1-inc);
+		//inc = (mult/inc);
+			
+		//}
 
 	}
 		
