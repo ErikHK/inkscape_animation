@@ -54,6 +54,7 @@ public:
     void insertNodesAtExtrema(ExtremumType extremum);
     void insertNodes();
     void insertNode(Geom::Point pt);
+	void insertNode(NodeList::iterator first, double t, bool take_selection);
     void alertLPE();
     void duplicateNodes();
     void joinNodes();

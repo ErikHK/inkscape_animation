@@ -60,6 +60,13 @@
 #include "helper/action-context.h"
 
 #include "layer-fns.h" //LPOS_BELOW
+#include "ui/tool/path-manipulator.h"
+#include "ui/tool/multi-path-manipulator.h"
+#include "ui/tools/node-tool.h"
+#include "ui/tool/control-point-selection.h"
+
+
+using Inkscape::UI::Tools::NodeTool;
 
 namespace Inkscape {
 namespace UI {
@@ -124,6 +131,36 @@ static void redirSecondaryClick( GtkMenuItem *menuitem, gpointer /*user_data*/ )
 static void createTween(GtkMenuItem *menuitem, gpointer)
 {
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	
+	
+	NodeTool *tool = 0;
+    if (SP_ACTIVE_DESKTOP ) {
+        Inkscape::UI::Tools::ToolBase *ec = SP_ACTIVE_DESKTOP->event_context;
+        if (INK_IS_NODE_TOOL(ec)) {
+            tool = static_cast<NodeTool*>(ec);
+        }
+    }
+	
+	if(tool)
+	{
+		Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
+		Node *n = dynamic_cast<Node *>(*cps->begin());
+				if (!n) return;
+		
+		NodeList::iterator this_iter = NodeList::get_iterator(n);
+		
+		PathManipulator &pm = n->nodeList().subpathList().pm();
+		
+		pm.insertNode(this_iter, .1, true);
+	
+	}
+	
+	//Geom::Point * pt = new Geom::Point(0,0);
+	//if(tool)
+		//tool->_multipath->insertNodes();
+		//tool->_multipath->insertNode(*pt);
+		//tool->_multipath->insertNode(this_iter, .1, true);
+	
 	
 	if(bounceTarget && desktop)
 	{

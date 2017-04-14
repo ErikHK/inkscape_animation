@@ -347,6 +347,20 @@ void MultiPathManipulator::insertNode(Geom::Point pt)
     _done(_("Add nodes"));
 }
 
+void MultiPathManipulator::insertNode(NodeList::iterator first, double t, bool take_selection)
+{
+    
+    //invokeForAll(&PathManipulator::insertNode, first, t, take_selection);
+    //_done(_("Add nodes"));
+	//PathManipulator::insertNode(first, t, take_selection);
+	Node *n = dynamic_cast<Node *>(*_selection.begin());
+            if (!n) return;
+
+    PathManipulator &pm = n->nodeList().subpathList().pm();
+	pm.insertNode(first, t, take_selection);
+}
+
+
 void MultiPathManipulator::duplicateNodes()
 {
     if (_selection.empty()) return;
