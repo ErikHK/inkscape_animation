@@ -132,40 +132,67 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 		SPObject * startLayer = layer;
 		SPObject * endLayer;
 		SPObject * nextLayer;
+		float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0;
 		
-		
-		//while(layer)
-		for(int i=0; i<10; i++)
+		int num_layers = 1;
+		while(layer)
+		//for(int i=0; i<10; i++)
 		{
 			layer = Inkscape::next_layer(desktop->currentRoot(), layer);
 			//as soon as a layer has a child, break and set endLayer to this!
 			if (layer->getRepr()->childCount() > 0)
 				break;
+			
+			num_layers++;
 		}
 		endLayer = layer;
 		
+		//Glib::ustring xstr = endLayer->getRepr()->attribute("x");
+		if(endLayer)
+		{
+			end_x = std::stof(endLayer->getRepr()->firstChild()->attribute("x"));
+			end_y = std::stof(endLayer->getRepr()->firstChild()->attribute("y"));
+		}
+		if(startLayer)
+		{
+			start_x = std::stof(startLayer->getRepr()->firstChild()->attribute("x"));
+			start_y = std::stof(startLayer->getRepr()->firstChild()->attribute("y"));
+		}
+		
+		inc_x = (end_x - start_x)/num_layers;
+		inc_y = (end_y - start_y)/num_layers;
+		
 		//now we have start and end, loop again, and copy children etcetc
 		layer = startLayer;
+		int i = 1;
 		while(layer != endLayer)
 		//for(int i=0; i< 10; i++)
 		{
 			nextLayer = Inkscape::next_layer(desktop->currentRoot(), layer);
 			
-			
 			if(nextLayer && layer)
 			{
-				//Inkscape::XML::Node * child = layer->getRepr()->firstChild();
-				Inkscape::XML::Node *child = desktop->getDocument()->getReprDoc()->createElement("svg:path");
+				Inkscape::XML::Node * child = layer->getRepr()->firstChild();
+				Inkscape::XML::Node * child_copy = child->duplicate(desktop->getDocument()->getReprDoc());
+				
+				//child_copy->setAttribute("x", Glib::ustring::format(i));
+				
+				child_copy->setAttribute("x", Glib::ustring::format(start_x + i*inc_x));
+				child_copy->setAttribute("y", Glib::ustring::format(start_y + i*inc_y));
+				
+				//Inkscape::XML::Node *child = desktop->getDocument()->getReprDoc()->createElement("svg:path");
 				//child->setAttribute("style", style);
 				//copy layer child to nextLayer
 				if(child)
 				{
-					nextLayer->getRepr()->addChild(child, NULL);
-					Inkscape::GC::release(child);
+					nextLayer->getRepr()->appendChild(child_copy);
+					//Inkscape::GC::release(child);
 				}
 			}
 			
 			layer = nextLayer;
+			
+			i++;
 		}
 		
 		
