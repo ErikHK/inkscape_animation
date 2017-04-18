@@ -67,6 +67,7 @@
 
 
 using Inkscape::UI::Tools::NodeTool;
+using Inkscape::Util::Quantity;
 
 namespace Inkscape {
 namespace UI {
@@ -132,7 +133,6 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 {
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	
-	
 	//Geom::Point * pt = new Geom::Point(0,0);
 	//if(tool)
 		//tool->_multipath->insertNodes();
@@ -142,8 +142,8 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 	
 	if(bounceTarget && desktop)
 	{
-		//SPObject * layer = desktop->getDocument()->getObjectById(Glib::ustring::format("layer" + bounceTarget->id));
-		SPObject * layer = desktop->getDocument()->getObjectById("layer1");
+		SPObject * layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", bounceTarget->id)));
+		//SPObject * layer = desktop->getDocument()->getObjectById("layer1");
 		SPObject * startLayer = layer;
 		SPObject * endLayer;
 		SPObject * nextLayer;
@@ -168,6 +168,7 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 			end_x = std::stof(endLayer->getRepr()->firstChild()->attribute("x"));
 			end_y = std::stof(endLayer->getRepr()->firstChild()->attribute("y"));
 		}
+		
 		if(startLayer)
 		{
 			start_x = std::stof(startLayer->getRepr()->firstChild()->attribute("x"));
@@ -211,8 +212,6 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 		}
 		
 		
-		
-		
 		NodeTool *tool = 0;
     if (SP_ACTIVE_DESKTOP ) {
         Inkscape::UI::Tools::ToolBase *ec = SP_ACTIVE_DESKTOP->event_context;
@@ -231,15 +230,17 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 		
 		PathManipulator &pm = n->nodeList().subpathList().pm();
 		
+		
 		//float inc = 1.0/num_layers;
 		float inc = 1 - 1/num_layers;
 		float mult = inc;
 
-		for(int i=0; i < num_layers-2; i++)
+		
+		for(int i=0; i < num_layers-1; i++)
 		{
 			mult -= 1.0/num_layers;
 			pm.insertNode(this_iter, mult/(mult + 1.0/num_layers), false);
-			
+			//pm.insertNode(this_iter, .1, false);
 			
 			//pm.insertNode(this_iter, .888, false);
 			//pm.insertNode(this_iter, .875, false);
@@ -251,16 +252,87 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 			//pm.insertNode(this_iter, .5, false);
 			//mult -= (1-inc);
 		//inc = (mult/inc);
+			//this_iter++;
+		}
+		//pm.insertNode(this_iter, .5, false);
+		
+		
+		/*
+		for(int l=0; l < num_layers-1; l++){
+		for (SubpathList::iterator i = n->nodeList().subpathList().begin(); i != n->nodeList().subpathList().end(); ++i) {
+        for (NodeList::iterator j = (*i)->begin(); j != (*i)->end(); ++j) {
+            NodeList::iterator k = j.next();
+            if (k && j->selected() && k->selected()) {
+				mult -= 1.0/num_layers;
+                j = pm.subdivideSegment(j, mult/(mult + 1.0/num_layers));
+				pm._selection.clear();
+                pm._selection.insert(j.ptr());
+				pm._selection.insert(k.ptr());
+            }
+		}
+		}
+		}
+		*/
+		
+		
+		//clear selection
+		//pm._selection.clear();
+		//select all...?
+		//pm._selection.selectAll();
+		//pm.selectSubpaths();
+		//pm._selection.insert(this_iter.ptr());
+		
+		//tool->_multipath->_selection.insert(this_iter.ptr());
+		//for(int i=0;i<20;i++)
+		//	tool->_multipath->selectAllinOrder();
+	
+		//tool->_multipath->_selection.clear();
+		//tool->_multipath->_selection.selectAll();
+		
+		//int ii=bounceTarget->id;
+		int ii = 1;
+		SPObject * lay;
+
+		//for (ControlPointSelection::iterator i = tool->_multipath->_selection.begin(); i != tool->_multipath->_selection.end(); ++i) {
+		//for (ControlPointSelection::iterator i = pm._selection.begin(); i != pm._selection.end(); ++i) {
+		//for (ControlPointSelection::iterator i = cps->begin(); i != cps->end(); ++i) {
+		//for(NodeList::iterator i = sp->begin(); i != sp->end(); ++i) {
+		for(NodeList::iterator i = n->nodeList().begin(); i != n->nodeList().end(); ++i) {
+		//for(SubpathList::iterator i = n->nodeList().subpathList()->begin(); i != n->nodeList().subpathList()->end(); ++i) {
+			//Node *node = dynamic_cast<Node*>(*i);
+			Node *node = dynamic_cast<Node*>(&*i);
+			if (node) {
+				//std::string id = node->nodeList().subpathList().pm().item()->getId(); 
+				double x = Quantity::convert(node->position()[0], "px", "mm");
+				double y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(node->position()[1], "px", "mm");
+				
+				//ii = std::distance(tool->_multipath->_selection.begin(), i);
+				ii = std::distance(n->nodeList().begin(), i);
+				//ii = (int)i - (int)tool->_multipath->_selection.begin();
+				
+				lay = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", ii)));
+				
+				//start_x = std::stof(startLayer->getRepr()->firstChild()->attribute("x"));
+				//Geom::Coord oldx = Quantity::convert(gtk_adjustment_get_value(xadj), unit, "px");
+				if(lay)
+				{
+					if(lay->getRepr()->childCount() == 0)
+						return;
+					lay->getRepr()->firstChild()->setAttribute("x", Glib::ustring::format(x));
+					lay->getRepr()->firstChild()->setAttribute("y", Glib::ustring::format(y));
+					//ii++;
+				}
+			}
 			
 		}
-		pm.insertNode(this_iter, .5, false);
 
-	}
 		
 		
 		
 	}
 	
+}
+
 }
 
 static void editGradientImpl( SPDesktop* desktop, SPGradient* gr )

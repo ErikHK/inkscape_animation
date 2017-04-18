@@ -46,6 +46,7 @@ public:
 
     void selectSubpaths();
     void shiftSelection(int dir);
+	void selectAllinOrder();
     void invertSelectionInSubpaths();
 
     void setNodeType(NodeType t);

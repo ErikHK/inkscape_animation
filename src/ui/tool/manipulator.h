@@ -62,7 +62,7 @@ public:
         EXTR_MIN_Y,
         EXTR_MAX_Y
     };
-protected:
+//protected:
     ControlPointSelection &_selection;
 };
 
