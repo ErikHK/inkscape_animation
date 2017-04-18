@@ -235,8 +235,7 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 		float inc = 1 - 1/num_layers;
 		float mult = inc;
 
-		
-		for(int i=0; i < num_layers-1; i++)
+		for(int k=0; k < num_layers-1; k++)
 		{
 			mult -= 1.0/num_layers;
 			pm.insertNode(this_iter, mult/(mult + 1.0/num_layers), false);
@@ -254,6 +253,33 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 		//inc = (mult/inc);
 			//this_iter++;
 		}
+		
+		inc = 1 - 1/num_layers;
+		mult = inc;
+		this_iter = n->nodeList().end();
+		this_iter--;
+		this_iter--;
+		
+		for(int k=0; k < num_layers-1; k++)
+		{
+			mult -= 1.0/num_layers;
+			pm.insertNode(this_iter, mult/(mult + 1.0/num_layers), false);
+			//pm.insertNode(this_iter, .1, false);
+			
+			//pm.insertNode(this_iter, .888, false);
+			//pm.insertNode(this_iter, .875, false);
+			//pm.insertNode(this_iter, .857, false);
+			//pm.insertNode(this_iter, .833, false);
+			//pm.insertNode(this_iter, .8, false);
+			//pm.insertNode(this_iter, .75, false);
+			//pm.insertNode(this_iter, .667, false);
+			//pm.insertNode(this_iter, .5, false);
+			//mult -= (1-inc);
+		//inc = (mult/inc);
+			//this_iter++;
+		}
+		
+
 		//pm.insertNode(this_iter, .5, false);
 		
 		
@@ -297,38 +323,37 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 		//for (ControlPointSelection::iterator i = pm._selection.begin(); i != pm._selection.end(); ++i) {
 		//for (ControlPointSelection::iterator i = cps->begin(); i != cps->end(); ++i) {
 		//for(NodeList::iterator i = sp->begin(); i != sp->end(); ++i) {
-		for(NodeList::iterator i = n->nodeList().begin(); i != n->nodeList().end(); ++i) {
-		//for(SubpathList::iterator i = n->nodeList().subpathList()->begin(); i != n->nodeList().subpathList()->end(); ++i) {
-			//Node *node = dynamic_cast<Node*>(*i);
-			Node *node = dynamic_cast<Node*>(&*i);
-			if (node) {
-				//std::string id = node->nodeList().subpathList().pm().item()->getId(); 
-				double x = Quantity::convert(node->position()[0], "px", "mm");
-				double y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(node->position()[1], "px", "mm");
-				
-				//ii = std::distance(tool->_multipath->_selection.begin(), i);
-				ii = std::distance(n->nodeList().begin(), i);
-				//ii = (int)i - (int)tool->_multipath->_selection.begin();
-				
-				lay = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", ii)));
-				
-				//start_x = std::stof(startLayer->getRepr()->firstChild()->attribute("x"));
-				//Geom::Coord oldx = Quantity::convert(gtk_adjustment_get_value(xadj), unit, "px");
-				if(lay)
-				{
-					if(lay->getRepr()->childCount() == 0)
-						return;
-					lay->getRepr()->firstChild()->setAttribute("x", Glib::ustring::format(x));
-					lay->getRepr()->firstChild()->setAttribute("y", Glib::ustring::format(y));
-					//ii++;
+		//for (SubpathList::iterator i = n->nodeList().subpathList().begin(); i != n->nodeList().subpathList().end(); ++i) {
+			for(NodeList::iterator j = n->nodeList().begin(); j != n->nodeList().end(); ++j) {
+			//for(SubpathList::iterator i = n->nodeList().subpathList()->begin(); i != n->nodeList().subpathList()->end(); ++i) {
+				//Node *node = dynamic_cast<Node*>(*i);
+				Node *node = dynamic_cast<Node*>(&*j);
+				if (node) {
+					//std::string id = node->nodeList().subpathList().pm().item()->getId(); 
+					double x = Quantity::convert(node->position()[0], "px", "mm");
+					double y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(node->position()[1], "px", "mm");
+					
+					//ii = std::distance(tool->_multipath->_selection.begin(), i);
+					ii = std::distance(n->nodeList().begin(), j);
+					//ii = (int)i - (int)tool->_multipath->_selection.begin();
+					
+					lay = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", ii)));
+					
+					//start_x = std::stof(startLayer->getRepr()->firstChild()->attribute("x"));
+					//Geom::Coord oldx = Quantity::convert(gtk_adjustment_get_value(xadj), unit, "px");
+					if(lay)
+					{
+						if(lay->getRepr()->childCount() == 0)
+							return;
+						lay->getRepr()->firstChild()->setAttribute("x", Glib::ustring::format(x));
+						lay->getRepr()->firstChild()->setAttribute("y", Glib::ustring::format(y));
+						//ii++;
+					}
 				}
+				
 			}
-			
-		}
+		//}
 
-		
-		
-		
 	}
 	
 }
