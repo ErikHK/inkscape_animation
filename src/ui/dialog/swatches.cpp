@@ -133,14 +133,10 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 {
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	
-	//Geom::Point * pt = new Geom::Point(0,0);
-	//if(tool)
-		//tool->_multipath->insertNodes();
-		//tool->_multipath->insertNode(*pt);
-		//tool->_multipath->insertNode(this_iter, .1, true);
+	if(!desktop)
+		return;
 	
-	
-	if(bounceTarget && desktop)
+	if(bounceTarget)
 	{
 		SPObject * layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", bounceTarget->id)));
 		//SPObject * layer = desktop->getDocument()->getObjectById("layer1");
@@ -228,6 +224,11 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 		
 		NodeList::iterator this_iter = NodeList::get_iterator(n);
 		
+		int sizeee = n->nodeList().size();
+		
+		//if(n->nodeList().begin() == n->nodeList().end())
+		//	return;
+		
 		PathManipulator &pm = n->nodeList().subpathList().pm();
 		
 		
@@ -235,48 +236,34 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 		float inc = 1 - 1/num_layers;
 		float mult = inc;
 
+		/*
 		for(int k=0; k < num_layers-1; k++)
 		{
 			mult -= 1.0/num_layers;
 			pm.insertNode(this_iter, mult/(mult + 1.0/num_layers), false);
-			//pm.insertNode(this_iter, .1, false);
-			
-			//pm.insertNode(this_iter, .888, false);
-			//pm.insertNode(this_iter, .875, false);
-			//pm.insertNode(this_iter, .857, false);
-			//pm.insertNode(this_iter, .833, false);
-			//pm.insertNode(this_iter, .8, false);
-			//pm.insertNode(this_iter, .75, false);
-			//pm.insertNode(this_iter, .667, false);
-			//pm.insertNode(this_iter, .5, false);
-			//mult -= (1-inc);
-		//inc = (mult/inc);
-			//this_iter++;
 		}
+		*/
 		
-		inc = 1 - 1/num_layers;
-		mult = inc;
-		this_iter = n->nodeList().end();
-		this_iter--;
-		this_iter--;
-		
-		for(int k=0; k < num_layers-1; k++)
+		for(int iii = 0; iii < sizeee-1; iii++)
 		{
-			mult -= 1.0/num_layers;
-			pm.insertNode(this_iter, mult/(mult + 1.0/num_layers), false);
-			//pm.insertNode(this_iter, .1, false);
+			inc = 1 - 1/num_layers;
+			mult = inc;
 			
-			//pm.insertNode(this_iter, .888, false);
-			//pm.insertNode(this_iter, .875, false);
-			//pm.insertNode(this_iter, .857, false);
-			//pm.insertNode(this_iter, .833, false);
-			//pm.insertNode(this_iter, .8, false);
-			//pm.insertNode(this_iter, .75, false);
-			//pm.insertNode(this_iter, .667, false);
-			//pm.insertNode(this_iter, .5, false);
-			//mult -= (1-inc);
-		//inc = (mult/inc);
-			//this_iter++;
+			for(int k=0; k < num_layers-1; k++)
+			{
+				mult -= 1.0/num_layers;
+				pm.insertNode(this_iter, mult/(mult + 1.0/num_layers), false);
+			}
+			
+			pm._selection.clear();
+			
+			//go to next point and add more there etc
+			for(int iiii=0; iiii < num_layers; iiii++)
+				this_iter++;
+			
+			if(!this_iter)
+				break;
+			
 		}
 		
 
