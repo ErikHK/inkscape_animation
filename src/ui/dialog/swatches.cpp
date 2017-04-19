@@ -131,84 +131,95 @@ static void redirSecondaryClick( GtkMenuItem *menuitem, gpointer /*user_data*/ )
 
 static void createTween(GtkMenuItem *menuitem, gpointer)
 {
+	
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	
 	if(!desktop)
 		return;
 	
-	if(bounceTarget)
+	if(!bounceTarget)
+		return;
+	
+	SPObject * layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", bounceTarget->id)));
+	//SPObject * layer = desktop->getDocument()->getObjectById("layer1");
+	SPObject * startLayer = layer;
+	SPObject * endLayer;
+	SPObject * nextLayer;
+	float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0;
+	
+	int num_layers = 1;
+	while(layer)
 	{
-		SPObject * layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", bounceTarget->id)));
-		//SPObject * layer = desktop->getDocument()->getObjectById("layer1");
-		SPObject * startLayer = layer;
-		SPObject * endLayer;
-		SPObject * nextLayer;
-		float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0;
+		layer = Inkscape::next_layer(desktop->currentRoot(), layer);
+		//as soon as a layer has a child, break and set endLayer to this!
+		if (layer->getRepr()->childCount() > 0)
+			break;
 		
-		int num_layers = 1;
-		while(layer)
-		//for(int i=0; i<10; i++)
+		num_layers++;
+	}
+	endLayer = layer;
+	
+	if(endLayer)
+	{
+		Inkscape::XML::Node * child = endLayer->getRepr()->firstChild();
+		
+		if(!child)
+			return;
+		
+		//if a rect, use x and y
+		if(strcmp(child->name(), "svg:rect"))
 		{
-			layer = Inkscape::next_layer(desktop->currentRoot(), layer);
-			//as soon as a layer has a child, break and set endLayer to this!
-			if (layer->getRepr()->childCount() > 0)
-				break;
+			return;
+		}
+		
+		end_x = std::stof(child->attribute("x"));
+		end_y = std::stof(child->attribute("y"));
+	}
+	
+	if(startLayer)
+	{
+		Inkscape::XML::Node * child = startLayer->getRepr()->firstChild();
+		if(!child)
+			return;
+
+		start_x = std::stof(child->attribute("x"));
+		start_y = std::stof(child->attribute("y"));
+	}
+	
+	inc_x = (end_x - start_x)/num_layers;
+	inc_y = (end_y - start_y)/num_layers;
+	
+	//now we have start and end, loop again, and copy children etcetc
+	layer = startLayer;
+	int i = 1;
+	while(layer != endLayer)
+	{
+		nextLayer = Inkscape::next_layer(desktop->currentRoot(), layer);
+		
+		if(nextLayer && layer)
+		{
+			Inkscape::XML::Node * child = layer->getRepr()->firstChild();
+			Inkscape::XML::Node * child_copy = child->duplicate(desktop->getDocument()->getReprDoc());
 			
-			num_layers++;
-		}
-		endLayer = layer;
-		
-		//Glib::ustring xstr = endLayer->getRepr()->attribute("x");
-		if(endLayer)
-		{
-			end_x = std::stof(endLayer->getRepr()->firstChild()->attribute("x"));
-			end_y = std::stof(endLayer->getRepr()->firstChild()->attribute("y"));
-		}
-		
-		if(startLayer)
-		{
-			start_x = std::stof(startLayer->getRepr()->firstChild()->attribute("x"));
-			start_y = std::stof(startLayer->getRepr()->firstChild()->attribute("y"));
-		}
-		
-		inc_x = (end_x - start_x)/num_layers;
-		inc_y = (end_y - start_y)/num_layers;
-		
-		//now we have start and end, loop again, and copy children etcetc
-		layer = startLayer;
-		int i = 1;
-		while(layer != endLayer)
-		//for(int i=0; i< 10; i++)
-		{
-			nextLayer = Inkscape::next_layer(desktop->currentRoot(), layer);
 			
-			if(nextLayer && layer)
+			child_copy->setAttribute("x", Glib::ustring::format(start_x + i*inc_x));
+			child_copy->setAttribute("y", Glib::ustring::format(start_y + i*inc_y));
+			
+			//Inkscape::XML::Node *child = desktop->getDocument()->getReprDoc()->createElement("svg:path");
+			//child->setAttribute("style", style);
+			//copy layer child to nextLayer
+			if(child)
 			{
-				Inkscape::XML::Node * child = layer->getRepr()->firstChild();
-				Inkscape::XML::Node * child_copy = child->duplicate(desktop->getDocument()->getReprDoc());
-				
-				//child_copy->setAttribute("x", Glib::ustring::format(i));
-				
-				child_copy->setAttribute("x", Glib::ustring::format(start_x + i*inc_x));
-				child_copy->setAttribute("y", Glib::ustring::format(start_y + i*inc_y));
-				
-				//Inkscape::XML::Node *child = desktop->getDocument()->getReprDoc()->createElement("svg:path");
-				//child->setAttribute("style", style);
-				//copy layer child to nextLayer
-				if(child)
-				{
-					nextLayer->getRepr()->appendChild(child_copy);
-					//Inkscape::GC::release(child);
-				}
+				nextLayer->getRepr()->appendChild(child_copy);
+				//Inkscape::GC::release(child);
 			}
-			
-			layer = nextLayer;
-			
-			i++;
 		}
+		layer = nextLayer;
+		i++;
+	}
 		
 		
-		NodeTool *tool = 0;
+	NodeTool *tool = 0;
     if (SP_ACTIVE_DESKTOP ) {
         Inkscape::UI::Tools::ToolBase *ec = SP_ACTIVE_DESKTOP->event_context;
         if (INK_IS_NODE_TOOL(ec)) {
@@ -216,161 +227,116 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
         }
     }
 	
-	if(tool)
-	{
-		Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
-		Node *n = dynamic_cast<Node *>(*cps->begin());
-				if (!n) return;
-		
-		NodeList::iterator this_iter = NodeList::get_iterator(n);
-		
-		int sizeee = n->nodeList().size();
-		
-		//if(n->nodeList().begin() == n->nodeList().end())
-		//	return;
-		
-		PathManipulator &pm = n->nodeList().subpathList().pm();
-		
-		
-		//float inc = 1.0/num_layers;
-		float inc = 1 - 1/num_layers;
-		float mult = inc;
-		
-		
-
-		if(!n->nodeList().closed())
-		{
-		
-			for(int iii = 0; iii < sizeee-1; iii++)
-			{
-				inc = 1 - 1/num_layers;
-				//mult = inc;
-				mult = 1;
-				
-				for(int k=0; k < num_layers/(sizeee - 1); k++)
-				{
-					mult -= (sizeee-1)*1.0/num_layers;
-					pm.insertNode(this_iter, mult/(mult + (sizeee-1)*1.0/num_layers), false);
-				}
-				
-				pm._selection.clear();
-				
-				//go to next point and add more there etc
-				for(int iiii=0; iiii < num_layers/(sizeee - 1) + 1; iiii++)
-					this_iter++;
-				
-				if(!this_iter)
-					break;
-				
-			}
-		
-		}
-		//else it's closed!
-		else
-		{
-			for(int iii = 0; iii < sizeee; iii++)
-			{
-				inc = 1 - 1/num_layers;
-				//mult = inc;
-				mult = 1;
-				
-				for(int k=0; k < num_layers/(sizeee ); k++)
-				{
-					mult -= (sizeee)*1.0/num_layers;
-					pm.insertNode(this_iter, mult/(mult + (sizeee)*1.0/num_layers), false);
-				}
-				
-				pm._selection.clear();
-				
-				//go to next point and add more there etc
-				for(int iiii=0; iiii < num_layers/(sizeee ) + 1; iiii++)
-					this_iter++;
-				
-				if(!this_iter)
-					break;
-				
-			}
-		}
-		
-
-		//pm.insertNode(this_iter, .5, false);
-		
-		
-		/*
-		for(int l=0; l < num_layers-1; l++){
-		for (SubpathList::iterator i = n->nodeList().subpathList().begin(); i != n->nodeList().subpathList().end(); ++i) {
-        for (NodeList::iterator j = (*i)->begin(); j != (*i)->end(); ++j) {
-            NodeList::iterator k = j.next();
-            if (k && j->selected() && k->selected()) {
-				mult -= 1.0/num_layers;
-                j = pm.subdivideSegment(j, mult/(mult + 1.0/num_layers));
-				pm._selection.clear();
-                pm._selection.insert(j.ptr());
-				pm._selection.insert(k.ptr());
-            }
-		}
-		}
-		}
-		*/
-		
-		
-		//clear selection
-		//pm._selection.clear();
-		//select all...?
-		//pm._selection.selectAll();
-		//pm.selectSubpaths();
-		//pm._selection.insert(this_iter.ptr());
-		
-		//tool->_multipath->_selection.insert(this_iter.ptr());
-		//for(int i=0;i<20;i++)
-		//	tool->_multipath->selectAllinOrder();
+	if(!tool)
+		return;
 	
-		//tool->_multipath->_selection.clear();
-		//tool->_multipath->_selection.selectAll();
-		
-		//int ii=bounceTarget->id;
-		int ii = 1;
-		SPObject * lay;
+	Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
+	Node *n = dynamic_cast<Node *>(*cps->begin());
+			if (!n) return;
+	
+	NodeList::iterator this_iter = NodeList::get_iterator(n);
+	
+	int sizeee = n->nodeList().size();
+	
+	//if(n->nodeList().begin() == n->nodeList().end())
+	//	return;
+	
+	PathManipulator &pm = n->nodeList().subpathList().pm();
+	
+	
+	//float inc = 1.0/num_layers;
+	float inc = 1 - 1/num_layers;
+	float mult = inc;
+	
+	
 
-		//for (ControlPointSelection::iterator i = tool->_multipath->_selection.begin(); i != tool->_multipath->_selection.end(); ++i) {
-		//for (ControlPointSelection::iterator i = pm._selection.begin(); i != pm._selection.end(); ++i) {
-		//for (ControlPointSelection::iterator i = cps->begin(); i != cps->end(); ++i) {
-		//for(NodeList::iterator i = sp->begin(); i != sp->end(); ++i) {
-		//for (SubpathList::iterator i = n->nodeList().subpathList().begin(); i != n->nodeList().subpathList().end(); ++i) {
-			for(NodeList::iterator j = n->nodeList().begin(); j != n->nodeList().end(); ++j) {
-			//for(SubpathList::iterator i = n->nodeList().subpathList()->begin(); i != n->nodeList().subpathList()->end(); ++i) {
-				//Node *node = dynamic_cast<Node*>(*i);
-				Node *node = dynamic_cast<Node*>(&*j);
-				if (node) {
-					//std::string id = node->nodeList().subpathList().pm().item()->getId(); 
-					double x = Quantity::convert(node->position()[0], "px", "mm");
-					double y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(node->position()[1], "px", "mm");
-					
-					//ii = std::distance(tool->_multipath->_selection.begin(), i);
-					ii = std::distance(n->nodeList().begin(), j);
-					//ii = (int)i - (int)tool->_multipath->_selection.begin();
-					
-					lay = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", ii)));
-					
-					//start_x = std::stof(startLayer->getRepr()->firstChild()->attribute("x"));
-					//Geom::Coord oldx = Quantity::convert(gtk_adjustment_get_value(xadj), unit, "px");
-					if(lay)
-					{
-						if(lay->getRepr()->childCount() == 0)
-							return;
-						lay->getRepr()->firstChild()->setAttribute("x", Glib::ustring::format(x));
-						lay->getRepr()->firstChild()->setAttribute("y", Glib::ustring::format(y));
-						//ii++;
-					}
-				}
-				
+	if(!n->nodeList().closed())
+	{
+	
+		for(int iii = 0; iii < sizeee-1; iii++)
+		{
+			inc = 1 - 1/num_layers;
+			//mult = inc;
+			mult = 1;
+			
+			for(int k=0; k < num_layers/(sizeee - 1); k++)
+			{
+				mult -= (sizeee-1)*1.0/num_layers;
+				pm.insertNode(this_iter, mult/(mult + (sizeee-1)*1.0/num_layers), false);
 			}
-		//}
-
+			
+			pm._selection.clear();
+			
+			//go to next point and add more there etc
+			for(int iiii=0; iiii < num_layers/(sizeee - 1) + 1; iiii++)
+				this_iter++;
+			
+			if(!this_iter)
+				break;
+			
+		}
+	
+	}
+	//else it's closed!
+	else
+	{
+		for(int iii = 0; iii < sizeee; iii++)
+		{
+			inc = 1 - 1/num_layers;
+			//mult = inc;
+			mult = 1;
+			
+			for(int k=0; k < num_layers/(sizeee ); k++)
+			{
+				mult -= (sizeee)*1.0/num_layers;
+				pm.insertNode(this_iter, mult/(mult + (sizeee)*1.0/num_layers), false);
+			}
+			
+			pm._selection.clear();
+			
+			//go to next point and add more there etc
+			for(int iiii=0; iiii < num_layers/(sizeee ) + 1; iiii++)
+				this_iter++;
+			
+			if(!this_iter)
+				break;
+			
+		}
 	}
 	
-}
+	int ii = 1;
+	SPObject * lay;
 
+	for(NodeList::iterator j = n->nodeList().begin(); j != n->nodeList().end(); ++j) {
+		Node *node = dynamic_cast<Node*>(&*j);
+		if (node) {
+			//std::string id = node->nodeList().subpathList().pm().item()->getId(); 
+			double x = Quantity::convert(node->position()[0], "px", "mm");
+			double y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(node->position()[1], "px", "mm");
+				
+			//ii = std::distance(tool->_multipath->_selection.begin(), i);
+			ii = std::distance(n->nodeList().begin(), j);
+			//ii = (int)i - (int)tool->_multipath->_selection.begin();
+			
+			lay = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", ii)));
+			
+			//start_x = std::stof(startLayer->getRepr()->firstChild()->attribute("x"));
+			//Geom::Coord oldx = Quantity::convert(gtk_adjustment_get_value(xadj), unit, "px");
+			if(lay)
+			{
+				if(lay->getRepr()->childCount() == 0)
+					return;
+				
+				Inkscape::XML::Node * child = lay->getRepr()->firstChild();
+				if(!child)
+					return;
+				
+				child->setAttribute("x", Glib::ustring::format(x));
+				child->setAttribute("y", Glib::ustring::format(y));
+				//ii++;
+			}
+		}		
+	}
 }
 
 static void editGradientImpl( SPDesktop* desktop, SPGradient* gr )
