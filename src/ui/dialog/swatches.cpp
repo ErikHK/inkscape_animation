@@ -235,30 +235,22 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 		//float inc = 1.0/num_layers;
 		float inc = 1 - 1/num_layers;
 		float mult = inc;
-
-		/*
-		for(int k=0; k < num_layers-1; k++)
-		{
-			mult -= 1.0/num_layers;
-			pm.insertNode(this_iter, mult/(mult + 1.0/num_layers), false);
-		}
-		*/
 		
 		for(int iii = 0; iii < sizeee-1; iii++)
 		{
 			inc = 1 - 1/num_layers;
 			mult = inc;
 			
-			for(int k=0; k < num_layers-1; k++)
+			for(int k=0; k < num_layers/(sizeee - 1); k++)
 			{
-				mult -= 1.0/num_layers;
-				pm.insertNode(this_iter, mult/(mult + 1.0/num_layers), false);
+				mult -= (sizeee-1)*1.0/num_layers;
+				pm.insertNode(this_iter, mult/(mult + (sizeee-1)*1.0/num_layers), false);
 			}
 			
 			pm._selection.clear();
 			
 			//go to next point and add more there etc
-			for(int iiii=0; iiii < num_layers; iiii++)
+			for(int iiii=0; iiii < num_layers/(sizeee - 1) + 1; iiii++)
 				this_iter++;
 			
 			if(!this_iter)
