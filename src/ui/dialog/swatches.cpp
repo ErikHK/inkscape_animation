@@ -146,6 +146,9 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 	SPObject * endLayer;
 	SPObject * nextLayer;
 	float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0;
+	std::string xs = "x";
+	std::string ys = "y";
+	bool is_group = false;
 	
 	int num_layers = 1;
 	while(layer)
@@ -166,14 +169,25 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 		if(!child)
 			return;
 		
-		//if a rect, use x and y
-		if(strcmp(child->name(), "svg:rect"))
+		//if a circle or an ellipse, use cx and cy
+		if(!strcmp(child->name(), "svg:circle") || !strcmp(child->name(), "svg:ellipse"))
 		{
-			return;
+			xs = "cx";
+			ys = "cy";
 		}
 		
-		end_x = std::stof(child->attribute("x"));
-		end_y = std::stof(child->attribute("y"));
+		//else if a group, take special care!
+		if(!strcmp(child->name(), "svg:g"))
+		{
+			is_group = true;
+			
+		}
+		
+		if(!is_group)
+		{
+			end_x = std::stof(child->attribute(xs.c_str()));
+			end_y = std::stof(child->attribute(ys.c_str()));
+		}
 	}
 	
 	if(startLayer)
@@ -182,8 +196,11 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 		if(!child)
 			return;
 
-		start_x = std::stof(child->attribute("x"));
-		start_y = std::stof(child->attribute("y"));
+		if(!is_group)
+		{
+			start_x = std::stof(child->attribute(xs.c_str()));
+			start_y = std::stof(child->attribute(ys.c_str()));
+		}
 	}
 	
 	inc_x = (end_x - start_x)/num_layers;
@@ -201,9 +218,11 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 			Inkscape::XML::Node * child = layer->getRepr()->firstChild();
 			Inkscape::XML::Node * child_copy = child->duplicate(desktop->getDocument()->getReprDoc());
 			
-			
-			child_copy->setAttribute("x", Glib::ustring::format(start_x + i*inc_x));
-			child_copy->setAttribute("y", Glib::ustring::format(start_y + i*inc_y));
+			if(!is_group)
+			{
+				child_copy->setAttribute(xs.c_str(), Glib::ustring::format(start_x + i*inc_x));
+				child_copy->setAttribute(ys.c_str(), Glib::ustring::format(start_y + i*inc_y));
+			}
 			
 			//Inkscape::XML::Node *child = desktop->getDocument()->getReprDoc()->createElement("svg:path");
 			//child->setAttribute("style", style);
@@ -331,9 +350,16 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 				if(!child)
 					return;
 				
-				child->setAttribute("x", Glib::ustring::format(x));
-				child->setAttribute("y", Glib::ustring::format(y));
-				//ii++;
+				if(!is_group)
+				{
+					child->setAttribute(xs, Glib::ustring::format(x));
+					child->setAttribute(ys, Glib::ustring::format(y));
+				}
+				
+				else //is group!
+				{
+					child->setAttribute("transform", Glib::ustring::format("translate(", x, ",", y, ")" ));
+				}
 			}
 		}		
 	}
