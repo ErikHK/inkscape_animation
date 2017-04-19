@@ -1450,14 +1450,17 @@ void SwatchesPanel::_rebuild()
 	Glib::ustring whitec("white");
 	ColorItem * white = new ColorItem( 255,255,255, whitec);
 	int ind = 1;
-	
+
+
+	//Gtk::Label * lbl = new Gtk::Label("hejsan");
+	//_holder->_scroller->add(lbl);
+	//_holder->pack_start(*lbl, true, true);
 
 	//SPObject * lay;
 	
     //for ( boost::ptr_vector<ColorItem>::iterator it = curr->_colors.begin(); it != curr->_colors.end(); ++it) {
 	for(int i=0;i<100;i++)
 	{
-		
         //_holder->addPreview(&*it);
 		
 		//_holder->add(*white->ti);

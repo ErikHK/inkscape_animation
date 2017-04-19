@@ -19,6 +19,7 @@
 #include <gtkmm/sizegroup.h>
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/adjustment.h>
+#include <gtkmm/label.h>
 
 #if WITH_GTKMM_3_0
 # include <gtkmm/grid.h>
@@ -466,10 +467,10 @@ void PreviewHolder::rebuildUI()
                     //_insides->attach( *label, 1, 2, i, i+1, Gtk::FILL|Gtk::EXPAND, Gtk::SHRINK );
 					//_insides->attach( *timeline_items[0], 1, 2, i, i+1, Gtk::FILL|Gtk::EXPAND, Gtk::SHRINK );
                     //_insides->attach( *timeline_items[0], 0, 1, i, i+1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND );
-
 #endif
                 }
 
+				
                 _scroller->add( *_insides );
             }
             break;
@@ -481,12 +482,13 @@ void PreviewHolder::rebuildUI()
                 int row = 0;
                 int width = 2;
                 int height = 1;
+				Gtk::Widget * thing;
 
                 for ( unsigned int i = 0; i < items.size(); i++ ) {
 
                     // If this is the last row, flag so the previews can draw a bottom
                     ::BorderStyle border = ((row == height -1) && (_border == BORDER_SOLID)) ? BORDER_SOLID_LAST_ROW : _border;
-                    Gtk::Widget* thing = Gtk::manage(items[i]->getPreview(PREVIEW_STYLE_PREVIEW, _view, _baseSize, _ratio, border));
+                    thing = Gtk::manage(items[i]->getPreview(PREVIEW_STYLE_PREVIEW, _view, _baseSize, _ratio, border));
 
                     if ( !_insides ) {
                         calcGridSize( thing, items.size(), width, height );
@@ -536,6 +538,14 @@ void PreviewHolder::rebuildUI()
 #endif
                 }
 
+				
+				Gtk::Label * lbl = new Gtk::Label("hejsansvejsansss");
+				//_scroller->add(*lbl);
+				
+				_insides->attach(*lbl, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+				_insides->attach(*lbl, 0,3,0,2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+				//_insides->attach_next_to(*lbl, *thing, Gtk::POS_RIGHT, 2, 1);
+				
                 _scroller->add( *_insides );
             }
 			

@@ -377,7 +377,14 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
 	
 		//gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(ti->gobj()), FALSE, TRUE, 0 );
 		
+		//Gtk::Label * lbl = new Gtk::Label("hej");
+		
+		//gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(lbl->gobj()), FALSE, TRUE, 0 );
+		
         gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(dtw->panels->gobj()), FALSE, TRUE, 0 );
+		
+		
+		
     }
 	
 	
