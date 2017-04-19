@@ -236,26 +236,60 @@ static void createTween(GtkMenuItem *menuitem, gpointer)
 		float inc = 1 - 1/num_layers;
 		float mult = inc;
 		
-		for(int iii = 0; iii < sizeee-1; iii++)
+		
+
+		if(!n->nodeList().closed())
 		{
-			inc = 1 - 1/num_layers;
-			mult = inc;
-			
-			for(int k=0; k < num_layers/(sizeee - 1); k++)
+		
+			for(int iii = 0; iii < sizeee-1; iii++)
 			{
-				mult -= (sizeee-1)*1.0/num_layers;
-				pm.insertNode(this_iter, mult/(mult + (sizeee-1)*1.0/num_layers), false);
+				inc = 1 - 1/num_layers;
+				//mult = inc;
+				mult = 1;
+				
+				for(int k=0; k < num_layers/(sizeee - 1); k++)
+				{
+					mult -= (sizeee-1)*1.0/num_layers;
+					pm.insertNode(this_iter, mult/(mult + (sizeee-1)*1.0/num_layers), false);
+				}
+				
+				pm._selection.clear();
+				
+				//go to next point and add more there etc
+				for(int iiii=0; iiii < num_layers/(sizeee - 1) + 1; iiii++)
+					this_iter++;
+				
+				if(!this_iter)
+					break;
+				
 			}
-			
-			pm._selection.clear();
-			
-			//go to next point and add more there etc
-			for(int iiii=0; iiii < num_layers/(sizeee - 1) + 1; iiii++)
-				this_iter++;
-			
-			if(!this_iter)
-				break;
-			
+		
+		}
+		//else it's closed!
+		else
+		{
+			for(int iii = 0; iii < sizeee; iii++)
+			{
+				inc = 1 - 1/num_layers;
+				//mult = inc;
+				mult = 1;
+				
+				for(int k=0; k < num_layers/(sizeee ); k++)
+				{
+					mult -= (sizeee)*1.0/num_layers;
+					pm.insertNode(this_iter, mult/(mult + (sizeee)*1.0/num_layers), false);
+				}
+				
+				pm._selection.clear();
+				
+				//go to next point and add more there etc
+				for(int iiii=0; iiii < num_layers/(sizeee ) + 1; iiii++)
+					this_iter++;
+				
+				if(!this_iter)
+					break;
+				
+			}
 		}
 		
 
