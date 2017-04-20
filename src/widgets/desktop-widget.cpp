@@ -82,6 +82,9 @@
 
 #include <gtk/gtk.h>
 
+#include "keyframe-widget.h"
+
+
 #if defined (SOLARIS) && (SOLARIS == 8)
 #include "round.h"
 using Inkscape::round;
@@ -391,6 +394,11 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
 		
 		Gtk::Table * tbl = new Gtk::Table(1, 10, true);
 		Gtk::Button * btn = new Gtk::Button("hejsan");
+		
+		//Gtk::DrawingArea * da = new Gtk::DrawingArea();
+		
+		KeyframeWidget* kw = new KeyframeWidget();
+		
 		
 		tbl->attach(*lbl, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 		
