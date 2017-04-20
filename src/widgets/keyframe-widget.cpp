@@ -24,7 +24,9 @@ KeyframeWidget::KeyframeWidget(int _id)
 		*/				  
 	
 	id = _id;
-	this->set_size_request(40, 40);
+	this->set_size_request(35, 35);
+	this->set_can_focus(true);
+	//Gtk::Widget::set_focus_on_click ();
 	is_empty = false;
 }
 
