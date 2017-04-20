@@ -82,7 +82,7 @@
 
 #include <gtk/gtk.h>
 
-#include "keyframe-widget.h"
+#include "widgets/keyframe-widget.h"
 
 
 #if defined (SOLARIS) && (SOLARIS == 8)

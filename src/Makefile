@@ -2399,7 +2399,7 @@ am__inkscape_SOURCES_DIST = main.cpp util/find-last-if.h \
 	widgets/icon.cpp widgets/icon.h widgets/ink-action.cpp \
 	widgets/ink-action.h widgets/ink-comboboxentry-action.cpp \
 	widgets/ink-comboboxentry-action.h widgets/lpe-toolbar.cpp \
-	widgets/lpe-toolbar.h widgets/measure-toolbar.cpp \
+	widgets/lpe-toolbar.h widgets/keyframe-widget.cpp widgets/keyframe-widget.h widgets/measure-toolbar.cpp \
 	widgets/measure-toolbar.h widgets/mesh-toolbar.cpp \
 	widgets/mesh-toolbar.h widgets/node-toolbar.cpp \
 	widgets/node-toolbar.h widgets/paint-selector.cpp \
@@ -3184,7 +3184,7 @@ am__inkview_SOURCES_DIST = inkview.cpp util/find-last-if.h \
 	widgets/icon.cpp widgets/icon.h widgets/ink-action.cpp \
 	widgets/ink-action.h widgets/ink-comboboxentry-action.cpp \
 	widgets/ink-comboboxentry-action.h widgets/lpe-toolbar.cpp \
-	widgets/lpe-toolbar.h widgets/measure-toolbar.cpp \
+	widgets/lpe-toolbar.h widgets/keyframe-widget.cpp widgets/keyframe-widget.h widgets/measure-toolbar.cpp \
 	widgets/measure-toolbar.h widgets/mesh-toolbar.cpp \
 	widgets/mesh-toolbar.h widgets/node-toolbar.cpp \
 	widgets/node-toolbar.h widgets/paint-selector.cpp \
@@ -4467,7 +4467,7 @@ ink_common_sources = util/find-last-if.h util/longest-common-suffix.h \
 	widgets/icon.cpp widgets/icon.h widgets/ink-action.cpp \
 	widgets/ink-action.h widgets/ink-comboboxentry-action.cpp \
 	widgets/ink-comboboxentry-action.h widgets/lpe-toolbar.cpp \
-	widgets/lpe-toolbar.h widgets/measure-toolbar.cpp \
+	widgets/lpe-toolbar.h widgets/keyframe-widget.cpp widgets/keyframe-widget.h widgets/measure-toolbar.cpp \
 	widgets/measure-toolbar.h widgets/mesh-toolbar.cpp \
 	widgets/mesh-toolbar.h widgets/node-toolbar.cpp \
 	widgets/node-toolbar.h widgets/paint-selector.cpp \
