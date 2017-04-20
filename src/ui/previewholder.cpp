@@ -20,6 +20,7 @@
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/adjustment.h>
 #include <gtkmm/label.h>
+#include <gtkmm/button.h>
 
 #if WITH_GTKMM_3_0
 # include <gtkmm/grid.h>
@@ -542,9 +543,15 @@ void PreviewHolder::rebuildUI()
 				Gtk::Label * lbl = new Gtk::Label("hejsansvejsansss");
 				//_scroller->add(*lbl);
 				
+				Gtk::Button * btn = new Gtk::Button("hej");
+				
 				_insides->attach(*lbl, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 				_insides->attach(*lbl, 0,3,0,2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-				//_insides->attach_next_to(*lbl, *thing, Gtk::POS_RIGHT, 2, 1);
+				_insides->attach(*lbl, 1,3,1,2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+				_insides->attach(*lbl, 1,1,1,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+				
+				_insides->attach(*btn, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+				_insides->add(*btn);
 				
                 _scroller->add( *_insides );
             }

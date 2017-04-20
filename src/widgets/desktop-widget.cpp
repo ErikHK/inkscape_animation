@@ -78,6 +78,8 @@
 #include <gtkmm/paned.h>
 #include <gtkmm/messagedialog.h>
 
+#include <gtkmm/scrolledwindow.h>
+
 #include <gtk/gtk.h>
 
 #if defined (SOLARIS) && (SOLARIS == 8)
@@ -377,13 +379,30 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
 	
 		//gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(ti->gobj()), FALSE, TRUE, 0 );
 		
-		//Gtk::Label * lbl = new Gtk::Label("hej");
+		Gtk::Label * lbl = new Gtk::Label("hej");
 		
 		//gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(lbl->gobj()), FALSE, TRUE, 0 );
 		
         gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(dtw->panels->gobj()), FALSE, TRUE, 0 );
 		
+		Gtk::Bin * scroller = Gtk::manage(new Gtk::ScrolledWindow());
+		((Gtk::ScrolledWindow *)scroller)->set_policy(Gtk::POLICY_AUTOMATIC,
+                                                   Gtk::POLICY_AUTOMATIC);
 		
+		Gtk::Table * tbl = new Gtk::Table(1, 10, true);
+		Gtk::Button * btn = new Gtk::Button("hejsan");
+		
+		tbl->attach(*lbl, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+		
+		for(int i=1;i < 200;i++)
+		{
+			btn = new Gtk::Button("hej");
+			tbl->attach(*btn, i, i+1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+		}
+		
+		scroller->add(*tbl);
+		
+		gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(scroller->gobj()), FALSE, TRUE, 0 );
 		
     }
 	
