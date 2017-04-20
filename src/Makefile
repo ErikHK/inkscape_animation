@@ -1685,6 +1685,7 @@ am__objects_12 = attributes.$(OBJEXT) attribute-rel-svg.$(OBJEXT) \
 	widgets/gradient-vector.$(OBJEXT) widgets/icon.$(OBJEXT) \
 	widgets/ink-action.$(OBJEXT) \
 	widgets/ink-comboboxentry-action.$(OBJEXT) \
+	widgets/keyframe-widget.$(OBJEXT) \
 	widgets/lpe-toolbar.$(OBJEXT) \
 	widgets/measure-toolbar.$(OBJEXT) \
 	widgets/mesh-toolbar.$(OBJEXT) widgets/node-toolbar.$(OBJEXT) \
@@ -8111,8 +8112,8 @@ include widgets/$(DEPDIR)/icon.Po
 include widgets/$(DEPDIR)/image-menu-item.Po
 include widgets/$(DEPDIR)/ink-action.Po
 include widgets/$(DEPDIR)/ink-comboboxentry-action.Po
-include widgets/$(DEPDIR)/lpe-toolbar.Po
 include widgets/$(DEPDIR)/keyframe-widget.Po
+include widgets/$(DEPDIR)/lpe-toolbar.Po
 include widgets/$(DEPDIR)/measure-toolbar.Po
 include widgets/$(DEPDIR)/mesh-toolbar.Po
 include widgets/$(DEPDIR)/node-toolbar.Po

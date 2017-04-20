@@ -399,7 +399,6 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
 		
 		KeyframeWidget* kw = new KeyframeWidget();
 		
-		
 		tbl->attach(*lbl, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 		
 		for(int i=1;i < 200;i++)
