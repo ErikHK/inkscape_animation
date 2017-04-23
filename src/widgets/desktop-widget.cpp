@@ -62,6 +62,7 @@
 #include "sp-root.h"
 
 #include "layer-fns.h"
+//#include "layer-manager.h"
 
 //#include "timeline-item.h"
 
@@ -72,7 +73,7 @@
 #include "spw-utilities.h"
 #include "toolbox.h"
 #include "widget-sizes.h"
-#include "keyframe-widget.h"
+#include "keyframe-bar.h"
 
 #include "verbs.h"
 #if GTK_CHECK_VERSION(3,0,0)
@@ -142,7 +143,8 @@ static void sp_dtw_zoom_drawing (GtkMenuItem *item, gpointer data);
 static void sp_dtw_zoom_selection (GtkMenuItem *item, gpointer data);
 static void sp_dtw_sticky_zoom_toggled (GtkMenuItem *item, gpointer data);
 
-static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data);
+static void gotFocus(GtkWidget* , GdkEventKey *event);
+static void gotClicked(GtkWidget*);
 
 SPViewWidgetClass *dtw_parent_class;
 
@@ -402,25 +404,15 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
 		
 		//Gtk::DrawingArea * da = new Gtk::DrawingArea();
 		
-		KeyframeWidget* kw = new KeyframeWidget(1);
-		//kw->set_size_request(200, 200);
-		kw->set_can_focus(true);
+		KeyframeBar * kb = new KeyframeBar(1);
 		
-		tbl->attach(*kw, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+		scroller->add(*kb);
+		kb = new KeyframeBar(2);
+		scroller->add(*kb);
 		
-		for(int i=1;i < 200;i++)
-		{
-			kw = new KeyframeWidget(i+1);
-			tbl->attach(*kw, i, i+1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-			g_signal_connect( G_OBJECT(kw->gobj()),
-                          "focus-in-event",
-                          G_CALLBACK(gotFocus),
-                          NULL);
-		}
 		
-		scroller->add(*tbl);
-		
-		gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(scroller->gobj()), FALSE, TRUE, 0 );
+		//gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(scroller->gobj()), FALSE, TRUE, 0 );
+		gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(kb->gobj()), FALSE, TRUE, 0 );
 		
     }
 	
@@ -923,8 +915,7 @@ static void sp_desktop_widget_dispose(GObject *object)
     }
 }
 
-
-static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
+static void gotClicked(GtkWidget*)
 {
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
@@ -937,7 +928,26 @@ static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
 	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
 	{
 		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
-		//lm->setCurrentLayer(lay);
+		//desktop->layer_manager->setCurrentLayer(lay);
+	}
+	
+}
+
+
+static void gotFocus(GtkWidget* , GdkEventKey *event)
+{
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
+	//LayerManager * lm = desktop->layer_manager;
+	
+	//Glib::ustring strr = Glib::ustring::format(id);
+	//Glib::ustring ids("layer" + strr);
+	//ids = lm->getNextLayerName(NULL, desktop->currentLayer()->label());
+	
+	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
+	{
+		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
+		//desktop->layer_manager->setCurrentLayer(lay);
 	}
 	
 }

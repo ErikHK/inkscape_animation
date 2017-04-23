@@ -1,15 +1,14 @@
-#include <gtkmm/drawingarea.h>
+#include <gtkmm/table.h>
+#include "keyframe-widget.h"
 
 
-class KeyframeWidget : public Gtk::DrawingArea
+class KeyframeBar : public Gtk::Table
 {
 public:
-    KeyframeWidget(int _id);
-    virtual ~KeyframeWidget();
+    KeyframeBar(int _id);
+    virtual ~KeyframeBar();
 	int id;
-	bool is_empty;
-	//void gotFocus();
-	
+	//KeyframeWidget * widgets[100];
 	
 
 protected:
@@ -17,6 +16,4 @@ protected:
 	bool on_my_focus_in_event(GdkEventFocus* event);
 	bool on_my_button_press_event(GdkEventButton* event);
 	
-    bool on_timeout();
-
 };

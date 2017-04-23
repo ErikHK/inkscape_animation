@@ -1094,7 +1094,7 @@ am__cxxtests_SOURCES_DIST = cxxtests.cpp $(srcdir)/MultiPrinter.h \
 	widgets/icon.cpp widgets/icon.h widgets/ink-action.cpp \
 	widgets/ink-action.h widgets/ink-comboboxentry-action.cpp \
 	widgets/ink-comboboxentry-action.h widgets/lpe-toolbar.cpp \
-	widgets/lpe-toolbar.h widgets/keyframe-widget.cpp widgets/keyframe-widget.h widgets/measure-toolbar.cpp \
+	widgets/lpe-toolbar.h widgets/keyframe-bar.cpp widgets/keyframe-bar.h widgets/keyframe-widget.cpp widgets/keyframe-widget.h widgets/measure-toolbar.cpp \
 	widgets/measure-toolbar.h widgets/mesh-toolbar.cpp \
 	widgets/mesh-toolbar.h widgets/node-toolbar.cpp \
 	widgets/node-toolbar.h widgets/paint-selector.cpp \
@@ -1685,6 +1685,7 @@ am__objects_12 = attributes.$(OBJEXT) attribute-rel-svg.$(OBJEXT) \
 	widgets/gradient-vector.$(OBJEXT) widgets/icon.$(OBJEXT) \
 	widgets/ink-action.$(OBJEXT) \
 	widgets/ink-comboboxentry-action.$(OBJEXT) \
+	widgets/keyframe-bar.$(OBJEXT) \
 	widgets/keyframe-widget.$(OBJEXT) \
 	widgets/lpe-toolbar.$(OBJEXT) \
 	widgets/measure-toolbar.$(OBJEXT) \
@@ -2400,7 +2401,7 @@ am__inkscape_SOURCES_DIST = main.cpp util/find-last-if.h \
 	widgets/icon.cpp widgets/icon.h widgets/ink-action.cpp \
 	widgets/ink-action.h widgets/ink-comboboxentry-action.cpp \
 	widgets/ink-comboboxentry-action.h widgets/lpe-toolbar.cpp \
-	widgets/lpe-toolbar.h widgets/keyframe-widget.cpp widgets/keyframe-widget.h widgets/measure-toolbar.cpp \
+	widgets/lpe-toolbar.h widgets/keyframe-bar.cpp widgets/keyframe-bar.h widgets/keyframe-widget.cpp widgets/keyframe-widget.h widgets/measure-toolbar.cpp \
 	widgets/measure-toolbar.h widgets/mesh-toolbar.cpp \
 	widgets/mesh-toolbar.h widgets/node-toolbar.cpp \
 	widgets/node-toolbar.h widgets/paint-selector.cpp \
@@ -3185,7 +3186,7 @@ am__inkview_SOURCES_DIST = inkview.cpp util/find-last-if.h \
 	widgets/icon.cpp widgets/icon.h widgets/ink-action.cpp \
 	widgets/ink-action.h widgets/ink-comboboxentry-action.cpp \
 	widgets/ink-comboboxentry-action.h widgets/lpe-toolbar.cpp \
-	widgets/lpe-toolbar.h widgets/keyframe-widget.cpp widgets/keyframe-widget.h widgets/measure-toolbar.cpp \
+	widgets/lpe-toolbar.h widgets/keyframe-bar.cpp widgets/keyframe-bar.h widgets/keyframe-widget.cpp widgets/keyframe-widget.h widgets/measure-toolbar.cpp \
 	widgets/measure-toolbar.h widgets/mesh-toolbar.cpp \
 	widgets/mesh-toolbar.h widgets/node-toolbar.cpp \
 	widgets/node-toolbar.h widgets/paint-selector.cpp \
@@ -4468,7 +4469,7 @@ ink_common_sources = util/find-last-if.h util/longest-common-suffix.h \
 	widgets/icon.cpp widgets/icon.h widgets/ink-action.cpp \
 	widgets/ink-action.h widgets/ink-comboboxentry-action.cpp \
 	widgets/ink-comboboxentry-action.h widgets/lpe-toolbar.cpp \
-	widgets/lpe-toolbar.h widgets/keyframe-widget.cpp widgets/keyframe-widget.h widgets/measure-toolbar.cpp \
+	widgets/lpe-toolbar.h widgets/keyframe-bar.cpp widgets/keyframe-bar.h widgets/keyframe-widget.cpp widgets/keyframe-widget.h widgets/measure-toolbar.cpp \
 	widgets/measure-toolbar.h widgets/mesh-toolbar.cpp \
 	widgets/mesh-toolbar.h widgets/node-toolbar.cpp \
 	widgets/node-toolbar.h widgets/paint-selector.cpp \
@@ -6716,6 +6717,8 @@ widgets/ink-comboboxentry-action.$(OBJEXT): widgets/$(am__dirstamp) \
 	widgets/$(DEPDIR)/$(am__dirstamp)
 widgets/keyframe-widget.$(OBJEXT): widgets/$(am__dirstamp) \
 	widgets/$(DEPDIR)/$(am__dirstamp)
+	widgets/keyframe-bar.$(OBJEXT): widgets/$(am__dirstamp) \
+	widgets/$(DEPDIR)/$(am__dirstamp)
 widgets/lpe-toolbar.$(OBJEXT): widgets/$(am__dirstamp) \
 	widgets/$(DEPDIR)/$(am__dirstamp)
 widgets/measure-toolbar.$(OBJEXT): widgets/$(am__dirstamp) \
@@ -8112,6 +8115,7 @@ include widgets/$(DEPDIR)/icon.Po
 include widgets/$(DEPDIR)/image-menu-item.Po
 include widgets/$(DEPDIR)/ink-action.Po
 include widgets/$(DEPDIR)/ink-comboboxentry-action.Po
+include widgets/$(DEPDIR)/keyframe-bar.Po
 include widgets/$(DEPDIR)/keyframe-widget.Po
 include widgets/$(DEPDIR)/lpe-toolbar.Po
 include widgets/$(DEPDIR)/measure-toolbar.Po

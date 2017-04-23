@@ -12,21 +12,77 @@
 //#include "ui/previewable.h"
 //#include "sp-namedview.h"
 
-//void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data);
+#include <gdkmm/general.h>
+
+//static void gotFocus(GtkWidget*, void * data);
+
+static void gotFocus(GtkWidget* w, GdkEventKey *event, gpointer callback_data)
+{
+	gtk_widget_grab_focus (w);
+	
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
+	//LayerManager * lm = desktop->layer_manager;
+	
+	//Glib::ustring strr = Glib::ustring::format(id);
+	//Glib::ustring ids("layer" + strr);
+	//ids = lm->getNextLayerName(NULL, desktop->currentLayer()->label());
+	
+	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
+	{
+		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
+		//lm->setCurrentLayer(lay);
+	}
+	
+}
+
+
+bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
+{
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
+	//LayerManager * lm = desktop->layer_manager;
+	
+	//Glib::ustring strr = Glib::ustring::format(id);
+	//Glib::ustring ids("layer" + strr);
+	//ids = lm->getNextLayerName(NULL, desktop->currentLayer()->label());
+	
+	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
+	{
+		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
+		//lm->setCurrentLayer(lay);
+	}
+	
+}
+
+
+bool KeyframeWidget::on_my_button_press_event(GdkEventButton*)
+{
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
+	//LayerManager * lm = desktop->layer_manager;
+	
+	//Glib::ustring strr = Glib::ustring::format(id);
+	//Glib::ustring ids("layer" + strr);
+	//ids = lm->getNextLayerName(NULL, desktop->currentLayer()->label());
+	
+	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
+	{
+		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
+		//lm->setCurrentLayer(lay);
+	}
+	
+}
+
+
 
 KeyframeWidget::KeyframeWidget(int _id)
-{
-	/*
-	g_signal_connect( G_OBJECT(this->gobj()),
-                          "focus-in-event",
-                          G_CALLBACK(gotFocus),
-                          this);
-		*/				  
+{	
 	
 	id = _id;
-	this->set_size_request(35, 35);
-	this->set_can_focus(true);
-	//Gtk::Widget::set_focus_on_click ();
+	this->set_size_request(25, 30);
+	
+	//set_focus_on_click ();
 	is_empty = false;
 }
 
@@ -67,6 +123,28 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		//cr->paint();
 		//cr->destroy();
   }
+
+	set_can_focus(true);
+
+  
+	add_events(Gdk::POINTER_MOTION_MASK|Gdk::KEY_PRESS_MASK|Gdk::KEY_RELEASE_MASK |Gdk::PROXIMITY_IN_MASK|Gdk::PROXIMITY_OUT_MASK|Gdk::SCROLL_MASK|Gdk::FOCUS_CHANGE_MASK);
+	
+	/*
+	g_signal_connect( G_OBJECT(this->gobj()),
+                          "focus-in-event",
+                          G_CALLBACK(gotFocus),
+                          this);
+	*/
+	//this->signal_realize().connect(sigc::ptr_fun(&gotFocus));
+	//Gtk::DrawingArea::signal_clicked().connect(sigc::mem_fun(*this, &KeyframeWidget::gotFocus));
+	//signal_realize().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
+	//signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
+	
+	//Glib::wrap(gobj())->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
+	//Glib::wrap(gobj())->signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
+	
+
+  
   return true;
 }
 
@@ -74,22 +152,3 @@ bool KeyframeWidget::on_timeout()
 {
 	
 }
-/*
-static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
-{
-	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
-	//LayerManager * lm = desktop->layer_manager;
-	
-	//Glib::ustring strr = Glib::ustring::format(id);
-	//Glib::ustring ids("layer" + strr);
-	//ids = lm->getNextLayerName(NULL, desktop->currentLayer()->label());
-	
-	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
-	{
-		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
-		//lm->setCurrentLayer(lay);
-	}
-	
-}
-*/

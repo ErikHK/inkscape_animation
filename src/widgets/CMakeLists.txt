@@ -7,6 +7,7 @@ set(widgets_SRC
 	  connector-toolbar.cpp
 	  dropper-toolbar.cpp
 	  eraser-toolbar.cpp
+	  keyframe-bar.cpp
 	  keyframe-widget.cpp
 	  lpe-toolbar.cpp
 	  measure-toolbar.cpp
@@ -62,6 +63,7 @@ set(widgets_SRC
 	  connector-toolbar.h
 	  dropper-toolbar.h
 	  eraser-toolbar.h
+	  keyframe-bar.h
 	  keyframe-widget.h
 	  lpe-toolbar.h
 	  measure-toolbar.h
