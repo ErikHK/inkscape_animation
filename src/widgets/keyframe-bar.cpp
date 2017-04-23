@@ -11,7 +11,6 @@
 //#include "ui/previewable.h"
 //#include "sp-namedview.h"
 #include "keyframe-bar.h"
-
 #include <gdkmm/general.h>
 
 //static void gotFocus(GtkWidget*, void * data);
@@ -36,13 +35,16 @@ static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
 
 
 KeyframeBar::KeyframeBar(int _id)
+: btn("hehe")
 {
 	id = _id;
 	
-	
 	KeyframeWidget* kw = new KeyframeWidget(1);
 	
-	attach(*kw, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+	//attach(*kw, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+	attach(btn, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+	
+	//btn.signal_clicked().connect( sigc::mem_fun(*this, &KeyframeBar::on_button_));
 	
 	/*
 	g_signal_connect( G_OBJECT(tbl->gobj()),
@@ -62,53 +64,54 @@ KeyframeBar::KeyframeBar(int _id)
 					  G_CALLBACK(gotFocus),
 					  this);
 			*/
-			
-		
+
 		attach(*kw, i, i+1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 		
-		kw->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_focus_in_event));
+		kw->add_events(Gdk::POINTER_MOTION_MASK|Gdk::KEY_PRESS_MASK|Gdk::KEY_RELEASE_MASK |Gdk::PROXIMITY_IN_MASK|Gdk::PROXIMITY_OUT_MASK|Gdk::SCROLL_MASK|Gdk::FOCUS_CHANGE_MASK|Gdk::BUTTON_PRESS_MASK);
+		
+		//kw->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_focus_in_event));
 		kw->signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_button_press_event));
+		//kw->signal_motion_notify_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_mouse_));
+		kw->set_can_focus(true);
 	}
 	
-	show_all_children();
 	set_can_focus(true);
+	show_all_children();
 }
 
 KeyframeBar::~KeyframeBar()
 {
 }
 
-bool KeyframeBar::on_expose_event(GdkEventExpose* event)
+bool KeyframeBar::on_expose_event(GtkWidget * widget, GdkEventExpose* event)
 {
+	gtk_widget_grab_focus(widget);
 	
+	/*
 	g_signal_connect( G_OBJECT(this->gobj()),
 					  "focus-in-event",
 					  G_CALLBACK(gotFocus),
 					  NULL);
-	
+	*/
 }
 
 bool KeyframeBar::on_my_button_press_event(GdkEventButton*)
+//bool KeyframeBar::on_my_button_press_event()
+//void KeyframeBar::on_button_()
 {
-	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
-	//LayerManager * lm = desktop->layer_manager;
-	
-	//Glib::ustring strr = Glib::ustring::format(id);
-	//Glib::ustring ids("layer" + strr);
-	//ids = lm->getNextLayerName(NULL, desktop->currentLayer()->label());
-	
-	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
-	{
-		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
-		//lm->setCurrentLayer(lay);
-	}
+	//gtk_widget_grab_focus(this->gobj());
+	addLayers();
+	return false;
+}
+
+bool KeyframeBar::on_mouse_(GdkEventMotion* event)
+{
+	addLayers();
+	return true;
 	
 }
 
-
-
-bool KeyframeBar::on_my_focus_in_event(GdkEventFocus*)
+void KeyframeBar::addLayers()
 {
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
@@ -123,7 +126,12 @@ bool KeyframeBar::on_my_focus_in_event(GdkEventFocus*)
 		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
 		//lm->setCurrentLayer(lay);
 	}
-	
+}
+
+bool KeyframeBar::on_my_focus_in_event(GdkEventFocus*)
+{
+	addLayers();
+	return false;
 }
 
 

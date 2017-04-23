@@ -58,6 +58,9 @@ bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
 
 bool KeyframeWidget::on_my_button_press_event(GdkEventButton*)
 {
+	
+	gtk_widget_grab_focus(GTK_WIDGET(this->gobj()));
+	
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
 	//LayerManager * lm = desktop->layer_manager;
@@ -127,7 +130,7 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 	set_can_focus(true);
 
   
-	add_events(Gdk::POINTER_MOTION_MASK|Gdk::KEY_PRESS_MASK|Gdk::KEY_RELEASE_MASK |Gdk::PROXIMITY_IN_MASK|Gdk::PROXIMITY_OUT_MASK|Gdk::SCROLL_MASK|Gdk::FOCUS_CHANGE_MASK);
+	add_events(Gdk::POINTER_MOTION_MASK|Gdk::KEY_PRESS_MASK|Gdk::KEY_RELEASE_MASK |Gdk::PROXIMITY_IN_MASK|Gdk::PROXIMITY_OUT_MASK|Gdk::SCROLL_MASK|Gdk::FOCUS_CHANGE_MASK|Gdk::BUTTON_PRESS_MASK);
 	
 	/*
 	g_signal_connect( G_OBJECT(this->gobj()),
@@ -140,12 +143,12 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 	//signal_realize().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
 	//signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
 	
-	//Glib::wrap(gobj())->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
-	//Glib::wrap(gobj())->signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
 	
-
+	
+	//Glib::wrap(gobj())->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
+	signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
   
-  return true;
+	return true;
 }
 
 bool KeyframeWidget::on_timeout()
