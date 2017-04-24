@@ -35,15 +35,20 @@ static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
 
 
 KeyframeBar::KeyframeBar(int _id)
-: btn("hehe")
+: btn("hehe"), btn2("hehe2")
 {
+	std::vector<Gtk::Widget*> wlist;
+	
 	id = _id;
-	set_can_focus(true);
-	grab_focus();
 	KeyframeWidget* kw = new KeyframeWidget(1);
 	
 	//attach(*kw, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 	attach(btn, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+	attach(btn2, 1,2,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+	
+	wlist.push_back(&btn);
+	wlist.push_back(&btn2);
+	
 	
 	//btn.signal_clicked().connect( sigc::mem_fun(*this, &KeyframeBar::on_button_));
 	
@@ -54,11 +59,10 @@ KeyframeBar::KeyframeBar(int _id)
 					  NULL);
 	*/
 	
-	
-	for(int i=1;i < 100;i++)
+	for(int i=2;i < 100;i++)
 	{
 		kw = new KeyframeWidget(i+1);
-		
+
 		/*
 		g_signal_connect( G_OBJECT(kw->gobj()),
 					  "focus-in-event",
@@ -67,6 +71,8 @@ KeyframeBar::KeyframeBar(int _id)
 			*/
 
 		attach(*kw, i, i+1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+		
+		wlist.push_back(kw);
 		
 		//kw->add_events(Gdk::POINTER_MOTION_MASK|Gdk::KEY_PRESS_MASK|Gdk::KEY_RELEASE_MASK |Gdk::PROXIMITY_IN_MASK|Gdk::PROXIMITY_OUT_MASK|Gdk::SCROLL_MASK|Gdk::FOCUS_CHANGE_MASK|Gdk::BUTTON_PRESS_MASK);
 		
@@ -79,8 +85,9 @@ KeyframeBar::KeyframeBar(int _id)
 		kw->set_can_focus(true);
 	}
 	
-	set_can_focus(true);
+	set_focus_chain(wlist);
 	show_all_children();
+	set_focus_chain(wlist);
 }
 
 KeyframeBar::~KeyframeBar()

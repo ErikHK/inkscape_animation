@@ -18,6 +18,7 @@ protected:
 	bool on_my_button_press_event(GdkEventButton* event);
 	//bool on_my_button_press_event();
 	Gtk::Button btn;
+	Gtk::Button btn2;
 	//void on_button_();
 	bool on_mouse_(GdkEventMotion* event);
 	

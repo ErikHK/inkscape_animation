@@ -20,7 +20,6 @@
 
 static void gotFocus(GtkWidget* w, GdkEventKey *event, gpointer callback_data)
 {
-	gtk_widget_grab_focus (w);
 	
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
@@ -101,7 +100,6 @@ KeyframeWidget::KeyframeWidget(int _id)
 	this->set_size_request(25, 30);
 	
 	set_can_focus(true);
-	grab_focus();
 	
 	//set_focus_on_click ();
 	is_empty = false;
@@ -169,18 +167,11 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 	//signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
 	
 	
-	
 	//Glib::wrap(gobj())->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
 	signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
 	set_can_focus(true);
-	gtk_widget_set_can_focus(GTK_WIDGET(this), TRUE);
-	set_can_default(true);
-    //set_relief(Gtk::RELIEF_NORMAL);
-	//set_update_policy(Gtk::UPDATE_ALWAYS);
-	
-	gtk_widget_set_receives_default(GTK_WIDGET(this), TRUE );
-
-    gtk_widget_set_sensitive( GTK_WIDGET(this), TRUE );
+	set_receives_default();
+    set_sensitive();
 	
 	return true;
 }
