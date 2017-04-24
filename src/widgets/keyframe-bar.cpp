@@ -38,7 +38,8 @@ KeyframeBar::KeyframeBar(int _id)
 : btn("hehe")
 {
 	id = _id;
-	
+	set_can_focus(true);
+	grab_focus();
 	KeyframeWidget* kw = new KeyframeWidget(1);
 	
 	//attach(*kw, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
@@ -54,7 +55,7 @@ KeyframeBar::KeyframeBar(int _id)
 	*/
 	
 	
-	for(int i=1;i < 200;i++)
+	for(int i=1;i < 100;i++)
 	{
 		kw = new KeyframeWidget(i+1);
 		
@@ -67,7 +68,10 @@ KeyframeBar::KeyframeBar(int _id)
 
 		attach(*kw, i, i+1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 		
-		kw->add_events(Gdk::POINTER_MOTION_MASK|Gdk::KEY_PRESS_MASK|Gdk::KEY_RELEASE_MASK |Gdk::PROXIMITY_IN_MASK|Gdk::PROXIMITY_OUT_MASK|Gdk::SCROLL_MASK|Gdk::FOCUS_CHANGE_MASK|Gdk::BUTTON_PRESS_MASK);
+		//kw->add_events(Gdk::POINTER_MOTION_MASK|Gdk::KEY_PRESS_MASK|Gdk::KEY_RELEASE_MASK |Gdk::PROXIMITY_IN_MASK|Gdk::PROXIMITY_OUT_MASK|Gdk::SCROLL_MASK|Gdk::FOCUS_CHANGE_MASK|Gdk::BUTTON_PRESS_MASK);
+		
+		add_events(Gdk::ALL_EVENTS_MASK);
+		kw->add_events(Gdk::ALL_EVENTS_MASK);
 		
 		//kw->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_focus_in_event));
 		kw->signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_button_press_event));
@@ -100,7 +104,8 @@ bool KeyframeBar::on_my_button_press_event(GdkEventButton*)
 //void KeyframeBar::on_button_()
 {
 	//gtk_widget_grab_focus(this->gobj());
-	addLayers();
+	grab_focus();
+	//addLayers();
 	return false;
 }
 

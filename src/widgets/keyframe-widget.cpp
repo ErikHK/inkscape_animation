@@ -13,6 +13,8 @@
 //#include "sp-namedview.h"
 
 #include <gdkmm/general.h>
+#include <gtkmm/menu.h>
+
 
 //static void gotFocus(GtkWidget*, void * data);
 
@@ -56,10 +58,10 @@ bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
 }
 
 
-bool KeyframeWidget::on_my_button_press_event(GdkEventButton*)
+bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 {
-	
-	gtk_widget_grab_focus(GTK_WIDGET(this->gobj()));
+	gtk_widget_grab_focus(GTK_WIDGET(this));
+	gtk_widget_set_state( GTK_WIDGET(this), GTK_STATE_ACTIVE );
 	
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
@@ -75,6 +77,19 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton*)
 		//lm->setCurrentLayer(lay);
 	}
 	
+	
+	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
+	{
+		Gtk::Menu *pMenu = new Gtk::Menu();
+		Gtk::MenuItem *pItem = new Gtk::MenuItem("Create tween");
+		Gtk::MenuItem *pItem2 = new Gtk::MenuItem("Something other");
+		pMenu->add(*pItem);
+		pMenu->add(*pItem2);
+		pMenu->show_all();
+		pMenu->popup(event->button, event->time);	
+	}
+	
+	grab_focus();
 }
 
 
@@ -84,6 +99,9 @@ KeyframeWidget::KeyframeWidget(int _id)
 	
 	id = _id;
 	this->set_size_request(25, 30);
+	
+	set_can_focus(true);
+	grab_focus();
 	
 	//set_focus_on_click ();
 	is_empty = false;
@@ -95,6 +113,7 @@ KeyframeWidget::~KeyframeWidget()
 
 bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 {
+	
 	Glib::RefPtr<Gdk::Window> window = get_window();
 	if(window)
 	{
@@ -114,6 +133,10 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 			cr->set_source_rgba(1, 1, 1, 1);
 		else
 			cr->set_source_rgba(.8, .8, .8, 1);
+		
+		if(has_focus())
+			cr->set_source_rgba(.8, 0, 0, 1);
+		
 		cr->paint();
 		
 		if(!is_empty)
@@ -127,10 +150,12 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		//cr->destroy();
   }
 
-	set_can_focus(true);
+	
 
   
-	add_events(Gdk::POINTER_MOTION_MASK|Gdk::KEY_PRESS_MASK|Gdk::KEY_RELEASE_MASK |Gdk::PROXIMITY_IN_MASK|Gdk::PROXIMITY_OUT_MASK|Gdk::SCROLL_MASK|Gdk::FOCUS_CHANGE_MASK|Gdk::BUTTON_PRESS_MASK);
+	//add_events(Gdk::POINTER_MOTION_MASK|Gdk::KEY_PRESS_MASK|Gdk::KEY_RELEASE_MASK |Gdk::PROXIMITY_IN_MASK|Gdk::PROXIMITY_OUT_MASK|Gdk::SCROLL_MASK|Gdk::FOCUS_CHANGE_MASK|Gdk::BUTTON_PRESS_MASK);
+	
+	add_events(Gdk::ALL_EVENTS_MASK);
 	
 	/*
 	g_signal_connect( G_OBJECT(this->gobj()),
@@ -147,11 +172,15 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 	
 	//Glib::wrap(gobj())->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
 	signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
-  
-	return true;
-}
-
-bool KeyframeWidget::on_timeout()
-{
+	set_can_focus(true);
+	gtk_widget_set_can_focus(GTK_WIDGET(this), TRUE);
+	set_can_default(true);
+    //set_relief(Gtk::RELIEF_NORMAL);
+	//set_update_policy(Gtk::UPDATE_ALWAYS);
 	
+	gtk_widget_set_receives_default(GTK_WIDGET(this), TRUE );
+
+    gtk_widget_set_sensitive( GTK_WIDGET(this), TRUE );
+	
+	return true;
 }

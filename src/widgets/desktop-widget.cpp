@@ -406,10 +406,7 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
 		
 		KeyframeBar * kb = new KeyframeBar(1);
 		
-		scroller->add(*kb);
-		kb = new KeyframeBar(2);
-		scroller->add(*kb);
-		
+		//scroller->add(*kb);
 		
 		//gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(scroller->gobj()), FALSE, TRUE, 0 );
 		gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(kb->gobj()), FALSE, TRUE, 0 );

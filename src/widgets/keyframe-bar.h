@@ -12,7 +12,6 @@ public:
 	//KeyframeWidget * widgets[100];
 	void addLayers();
 	
-
 protected:
     virtual bool on_expose_event(GtkWidget * widget, GdkEventExpose* event);
 	bool on_my_focus_in_event(GdkEventFocus* event);
