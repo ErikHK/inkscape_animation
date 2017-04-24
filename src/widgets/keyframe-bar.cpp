@@ -13,8 +13,6 @@
 #include "keyframe-bar.h"
 #include <gdkmm/general.h>
 
-#include "ui/widget/highlight-picker.h"
-
 //static void gotFocus(GtkWidget*, void * data);
 
 class KeyframeBar::ModelColumns : public Gtk::TreeModel::ColumnRecord
@@ -114,32 +112,34 @@ KeyframeBar::KeyframeBar(int _id)
     _model = zoop;
 
     _store = Gtk::TreeStore::create( *zoop );
-	_store->append();
-	_store->append();
 	
+	Gtk::Button * btn3 = new Gtk::Button("heheheheheheh");
 	
 	Gtk::TreeModel::iterator iter = _store->prepend();
     Gtk::TreeModel::Row row = *iter;
 	row[_model->m_col_id] = 1;
 	row[_model->m_col_name] = "Billy Bob";
+	kw->show();
 		
 	Glib::RefPtr<Gtk::ListStore> m_refTreeModel;
 	
 	m_refTreeModel = Gtk::ListStore::create(*_model);
 	m_TreeView.set_model(m_refTreeModel);
 
+	iter = _store->prepend();
+	row = *iter;
 	//Fill the TreeView's model
-	//Gtk::TreeModel::Row row = *(m_refTreeModel->append());
-	//row[_model->m_col_id] = 1;
-	//row[_model->m_col_name] = "Billy Bob";
-	
-	_store->append(row.children());
-	
-	row = *(m_refTreeModel->append());
 	row[_model->m_col_id] = 2;
-	row[_model->m_col_name] = "Joey Jojo";
+	row[_model->m_col_name] = "Billy Bob2";
 	
-	_store->append(row.children());
+	//_store->append(row.children());
+	
+	//row = *(m_refTreeModel->append());
+	//row[_model->m_col_id] = 2;
+	//row[_model->m_col_name] = "Joey Jojo";
+	//row[_model->m_col_name] = *btn2;
+	
+	//_store->append(row.children());
 	
 	
 	
@@ -155,20 +155,10 @@ KeyframeBar::KeyframeBar(int _id)
 	int visibleColNum;// = _tree.append_column("vis", *eyeRenderer) - 1;
     Gtk::TreeViewColumn* col;
 	Gtk::TreeView::Column *_name_column;
-	
-	//keyframes
-    Inkscape::UI::Widget::HighlightPicker * highlightRenderer = Gtk::manage( new Inkscape::UI::Widget::HighlightPicker());
-    int highlightColNum = _tree.append_column("highlight", *highlightRenderer) - 1;
-    col = _tree.get_column(highlightColNum);
-    if ( col ) {
-        col->add_attribute( highlightRenderer->property_active(), _model->m_col_id );
-        //lbl.set_tooltip_text(_("Highlight color of outline in Node tool. Click to set. If alpha is zero, use inherited color."));
-        lbl->show();
-        col->set_widget( *lbl );
-    }
 
     //Label
     _text_renderer = Gtk::manage(new Gtk::CellRendererText());
+	//_text_renderer = Gtk::manage(new Gtk::Table());
     int nameColNum = _tree.append_column("Name", *_text_renderer) - 1;
     _name_column = _tree.get_column(nameColNum);
     if( _name_column ) {
@@ -176,6 +166,16 @@ KeyframeBar::KeyframeBar(int _id)
         //lbl2.set_tooltip_text(_("Layer/Group/Object label (inkscape:label). Double-click to set. Default value is object 'id'."));
         lbl2->show();
         _name_column->set_widget( *lbl2 );
+    }
+	
+	//Animation layer ID
+    int idColNum = _tree.append_column("highlight", *_text_renderer) - 1;
+    col = _tree.get_column(idColNum);
+    if ( col ) {
+        col->add_attribute( _text_renderer->property_text(), _model->m_col_id );
+        //lbl.set_tooltip_text(_("Highlight color of outline in Node tool. Click to set. If alpha is zero, use inherited color."));
+        lbl->show();
+        col->set_widget( *lbl );
     }
 
 	
