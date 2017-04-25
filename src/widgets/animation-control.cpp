@@ -7,6 +7,7 @@
 #include "animation-control.h"
 #include "keyframe-bar.h"
 #include <gdkmm/general.h>
+#include <gtkmm/treeselection.h>
 
 static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
 {

@@ -144,8 +144,13 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		}
 		
 		cr->fill();
-		//cr->paint();
-		//cr->destroy();
+	
+		//add line to the bottom
+		cr->set_source_rgba(.3,.3,.3,1);
+		cr->set_line_width(1.0);
+		cr->move_to(0, height-.5);
+		cr->line_to(width, height-.5);
+		cr->stroke();
   }
 
 	
