@@ -14,6 +14,9 @@ class AnimationControl : public Gtk::Table
 public:
     AnimationControl();
     virtual ~AnimationControl();
+	void addLayer();
+	void rebuildUi();
+	int num_layers;
 	
 protected:
     virtual bool on_expose_event(GtkWidget * widget, GdkEventExpose* event);

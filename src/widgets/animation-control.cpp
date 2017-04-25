@@ -4,6 +4,8 @@
 #include <glibmm/main.h>
 #include "desktop.h"
 #include "document.h"
+#include "inkscape.h" // for SP_ACTIVE_DESKTOP
+#include "layer-fns.h" //LPOS_ABOVE
 #include "animation-control.h"
 #include "keyframe-bar.h"
 #include <gdkmm/general.h>
@@ -27,14 +29,11 @@ class AnimationControl::ModelColumns : public Gtk::TreeModel::ColumnRecord
 
 AnimationControl::AnimationControl() : 
 _panes(), _keyframe_table(), _scroller(), _tree_scroller(),
-_new_layer_button("New Layer")
+_new_layer_button("New Layer"), num_layers(1)
 {
-	//std::vector<Gtk::Widget*> wlist;
-	KeyframeBar* kb = new KeyframeBar(1);
-	KeyframeBar* kb2 = new KeyframeBar(2);
-	KeyframeBar* kb3 = new KeyframeBar(3);
-	KeyframeBar* kb4 = new KeyframeBar(4);
-
+	
+	_new_layer_button.signal_clicked().connect(sigc::mem_fun(*this, &AnimationControl::addLayer));
+	
 	
 	//Create the tree model and store
 	Gtk::Label * lbl = new Gtk::Label("ID");
@@ -46,34 +45,14 @@ _new_layer_button("New Layer")
     _model = zoop;
 
     _store = Gtk::TreeStore::create( *zoop );
-	
-	Gtk::TreeModel::iterator iter = _store->prepend();
-    Gtk::TreeModel::Row row = *iter;
-	row[_model->m_col_id] = 1;
-	row[_model->m_col_name] = "Billy Bob";
 		
 	Glib::RefPtr<Gtk::ListStore> m_refTreeModel;
 	
 	m_refTreeModel = Gtk::ListStore::create(*_model);
 	m_TreeView.set_model(m_refTreeModel);
 
-	iter = _store->prepend();
-	row = *iter;
-	//Fill the TreeView's model
-	row[_model->m_col_id] = 2;
-	row[_model->m_col_name] = "Billy Bob2";
 	
-	iter = _store->prepend();
-	row = *iter;
-	//Fill the TreeView's model
-	row[_model->m_col_id] = 3;
-	row[_model->m_col_name] = "Billy Bob3";
 	
-	iter = _store->prepend();
-	row = *iter;
-	//Fill the TreeView's model
-	row[_model->m_col_id] = 4;
-	row[_model->m_col_name] = "Billy Bob4";
 	
 	//_store->append(row.children());
 	
@@ -89,10 +68,9 @@ _new_layer_button("New Layer")
     _tree.set_headers_visible(true);
     _tree.set_reorderable(true);
     _tree.enable_model_drag_dest (Gdk::ACTION_MOVE);
-	
+	_tree.get_selection()->set_mode(Gtk::SELECTION_MULTIPLE);
     Gtk::TreeViewColumn* col;
 	Gtk::TreeView::Column *_name_column;
-	
 	
 	//Animation layer ID
 	_text_renderer = Gtk::manage(new Gtk::CellRendererText());
@@ -105,21 +83,6 @@ _new_layer_button("New Layer")
         col->set_widget( *lbl );
     }
 	
-	/*
-	Inkscape::UI::Widget::ImageToggler *eyeRenderer = Gtk::manage( new Inkscape::UI::Widget::ImageToggler(
-        INKSCAPE_ICON("object-visible"), INKSCAPE_ICON("object-hidden")) );
-    int visibleColNum = _tree.append_column("vis", *eyeRenderer) - 1;
-    eyeRenderer->property_activatable() = true;
-    col = _tree.get_column(visibleColNum);
-    if ( col ) {
-        col->add_attribute( eyeRenderer->property_active(), _model->m_col_id );
-        // In order to get tooltips on header, we must create our own label.
-        //_visibleHeader.set_tooltip_text(_("Toggle visibility of Layer, Group, or Object."));
-        lbl->show();
-        col->set_widget( *lbl );
-    }
-	*/
-	
     //Label
 	//_text_renderer = Gtk::manage(new Gtk::Table());
     int nameColNum = _tree.append_column("Name", *_text_renderer) - 1;
@@ -131,14 +94,36 @@ _new_layer_button("New Layer")
         _name_column->set_widget( *lbl2 );
     }
 	
-	//_new_layer_button.set_hexpand(false);
+	
+	rebuildUi();
+}
 
+
+
+AnimationControl::~AnimationControl()
+{
+}
+
+
+void AnimationControl::rebuildUi()
+{
+	//clear tree thingy
+	_store->clear();
+
+	//add a label that says keyframes, otherwise it won't line up...
 	Gtk::Label * lbl3 = new Gtk::Label("Keyframes");
 	_keyframe_table.attach(*lbl3, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-	_keyframe_table.attach(*kb, 0, 1, 1, 2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-	_keyframe_table.attach(*kb2, 0, 1, 2, 3, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-	_keyframe_table.attach(*kb3, 0, 1, 3, 4, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-	_keyframe_table.attach(*kb4, 0, 1, 4, 5, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+	
+	for(int i = 0; i < num_layers; i++)
+	{
+		Gtk::TreeModel::iterator iter = _store->prepend();
+		Gtk::TreeModel::Row row = *iter;
+		row[_model->m_col_id] = i;
+		row[_model->m_col_name] = "Billy Bob";
+		
+		KeyframeBar* kb = new KeyframeBar(i);
+		_keyframe_table.attach(*kb, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+	}
 	
 	_scroller.add(_keyframe_table);
 	_scroller.set_policy(Gtk::POLICY_ALWAYS, Gtk::POLICY_NEVER);
@@ -150,13 +135,30 @@ _new_layer_button("New Layer")
 	_panes.add2(_scroller);
 	//add(_panes);
 	attach(_panes, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-	attach(_new_layer_button, 0, 1, 1, 2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+	attach(_new_layer_button, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
 	
 	show_all_children();
+	
 }
 
-AnimationControl::~AnimationControl()
+void AnimationControl::addLayer()
 {
+	
+	Glib::RefPtr<Gtk::TreeSelection> selection = _tree.get_selection();
+	
+	//Gtk::TreeModel::iterator iter = selection->get_selected();
+	//iter++;
+    //Gtk::TreeModel::Row row = *iter;
+	num_layers++;
+	/*
+	Gtk::TreeModel::iterator iter = _store->prepend();
+    Gtk::TreeModel::Row row = *iter;
+	row[_model->m_col_id] = 1;
+	row[_model->m_col_name] = "Billy Bob";
+	
+	selection->select(row);
+	*/
+	rebuildUi();
 }
 
 bool AnimationControl::on_expose_event(GtkWidget * widget, GdkEventExpose* event)
