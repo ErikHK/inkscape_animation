@@ -73,7 +73,7 @@
 #include "spw-utilities.h"
 #include "toolbox.h"
 #include "widget-sizes.h"
-#include "keyframe-bar.h"
+#include "animation-control.h"
 
 #include "verbs.h"
 #if GTK_CHECK_VERSION(3,0,0)
@@ -399,17 +399,11 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
 		((Gtk::ScrolledWindow *)scroller)->set_policy(Gtk::POLICY_AUTOMATIC,
                                                    Gtk::POLICY_AUTOMATIC);
 		
-		Gtk::Table * tbl = new Gtk::Table(1, 10, true);
-		Gtk::Button * btn = new Gtk::Button("hejsan");
 		
-		//Gtk::DrawingArea * da = new Gtk::DrawingArea();
-		
-		KeyframeBar * kb = new KeyframeBar(1);
-		
-		//scroller->add(*kb);
+		AnimationControl * ac = new AnimationControl();
 		
 		//gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(scroller->gobj()), FALSE, TRUE, 0 );
-		gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(kb->gobj()), FALSE, TRUE, 0 );
+		gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(ac->gobj()), FALSE, TRUE, 0 );
 		
     }
 	

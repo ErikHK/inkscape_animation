@@ -12,6 +12,14 @@
 //#include "sp-namedview.h"
 #include "keyframe-bar.h"
 #include <gdkmm/general.h>
+#include "inkscape.h"
+#include "ui/icon-names.h"
+#include "widgets/icon.h"
+#include <gtkmm/icontheme.h>
+#include "ui/widget/layertypeicon.h"
+#include "ui/widget/insertordericon.h"
+#include "ui/widget/clipmaskicon.h"
+#include "ui/widget/imagetoggler.h"
 
 //static void gotFocus(GtkWidget*, void * data);
 
@@ -22,7 +30,7 @@ class KeyframeBar::ModelColumns : public Gtk::TreeModel::ColumnRecord
     ModelColumns()
     { add(m_col_id); add(m_col_name);}
 
-    Gtk::TreeModelColumn<unsigned int> m_col_id;
+    Gtk::TreeModelColumn<int> m_col_id;
     Gtk::TreeModelColumn<Glib::ustring> m_col_name;
   };
 
@@ -103,8 +111,8 @@ KeyframeBar::KeyframeBar(int _id)
 	
 	
 	//Create the tree model and store
-	Gtk::Label * lbl = new Gtk::Label("hehehe");
-	Gtk::Label * lbl2 = new Gtk::Label("hehehe2");
+	Gtk::Label * lbl = new Gtk::Label("ID");
+	Gtk::Label * lbl2 = new Gtk::Label("Animation Layer");
 	Gtk::CellRendererText *_text_renderer;
 	Gtk::TreeView m_TreeView;
 	
@@ -113,13 +121,10 @@ KeyframeBar::KeyframeBar(int _id)
 
     _store = Gtk::TreeStore::create( *zoop );
 	
-	Gtk::Button * btn3 = new Gtk::Button("heheheheheheh");
-	
 	Gtk::TreeModel::iterator iter = _store->prepend();
     Gtk::TreeModel::Row row = *iter;
 	row[_model->m_col_id] = 1;
 	row[_model->m_col_name] = "Billy Bob";
-	kw->show();
 		
 	Glib::RefPtr<Gtk::ListStore> m_refTreeModel;
 	
@@ -141,23 +146,45 @@ KeyframeBar::KeyframeBar(int _id)
 	
 	//_store->append(row.children());
 	
-	
-	
     //Set up the tree
     _tree.set_model( _store );
     _tree.set_headers_visible(true);
     _tree.set_reorderable(true);
     _tree.enable_model_drag_dest (Gdk::ACTION_MOVE);
 	
-	
-	
-	
-	int visibleColNum;// = _tree.append_column("vis", *eyeRenderer) - 1;
     Gtk::TreeViewColumn* col;
 	Gtk::TreeView::Column *_name_column;
+	
+	
+	//Animation layer ID
+	_text_renderer = Gtk::manage(new Gtk::CellRendererText());
+    int idColNum = _tree.append_column("highlight", *_text_renderer) - 1;
+    col = _tree.get_column(idColNum);
+    if ( col ) {
+        col->add_attribute( _text_renderer->property_text(), _model->m_col_id );
+        //lbl.set_tooltip_text(_("Highlight color of outline in Node tool. Click to set. If alpha is zero, use inherited color."));
+        lbl->show();
+        col->set_widget( *lbl );
+    }
+	
+	
+	/*
+	Inkscape::UI::Widget::ImageToggler *eyeRenderer = Gtk::manage( new Inkscape::UI::Widget::ImageToggler(
+        INKSCAPE_ICON("object-visible"), INKSCAPE_ICON("object-hidden")) );
+    int visibleColNum = _tree.append_column("vis", *eyeRenderer) - 1;
+    eyeRenderer->property_activatable() = true;
+    col = _tree.get_column(visibleColNum);
+    if ( col ) {
+        col->add_attribute( eyeRenderer->property_active(), _model->m_col_id );
+        // In order to get tooltips on header, we must create our own label.
+        //_visibleHeader.set_tooltip_text(_("Toggle visibility of Layer, Group, or Object."));
+        lbl->show();
+        col->set_widget( *lbl );
+    }
+	*/
+	
 
     //Label
-    _text_renderer = Gtk::manage(new Gtk::CellRendererText());
 	//_text_renderer = Gtk::manage(new Gtk::Table());
     int nameColNum = _tree.append_column("Name", *_text_renderer) - 1;
     _name_column = _tree.get_column(nameColNum);
@@ -168,20 +195,13 @@ KeyframeBar::KeyframeBar(int _id)
         _name_column->set_widget( *lbl2 );
     }
 	
-	//Animation layer ID
-    int idColNum = _tree.append_column("highlight", *_text_renderer) - 1;
-    col = _tree.get_column(idColNum);
-    if ( col ) {
-        col->add_attribute( _text_renderer->property_text(), _model->m_col_id );
-        //lbl.set_tooltip_text(_("Highlight color of outline in Node tool. Click to set. If alpha is zero, use inherited color."));
-        lbl->show();
-        col->set_widget( *lbl );
-    }
+	
+	Gtk::Paned * p = new Gtk::Paned();
 
-	
-	add(_tree);
+	p->add1(_tree);
+	p->add2(*kw);
+	add(*p);
 	show_all_children();
-	
 }
 
 KeyframeBar::~KeyframeBar()

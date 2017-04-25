@@ -1,6 +1,7 @@
 
 set(widgets_SRC
 	button.cpp
+	  animation-control.cpp
 	  arc-toolbar.cpp
 	  box3d-toolbar.cpp
 	  calligraphy-toolbar.cpp
@@ -57,6 +58,7 @@ set(widgets_SRC
 	# -------
 	# Headers
 	button.h
+	  animation-control.h
 	  arc-toolbar.h
 	  box3d-toolbar.h
 	  calligraphy-toolbar.h

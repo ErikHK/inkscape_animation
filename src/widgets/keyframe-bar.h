@@ -1,5 +1,6 @@
 #include <gtkmm/table.h>
 #include <gtkmm/button.h>
+#include <gtkmm/paned.h>
 #include <gtkmm/treeview.h>
 #include <gtkmm/treemodel.h>
 #include <gtkmm/treestore.h>
