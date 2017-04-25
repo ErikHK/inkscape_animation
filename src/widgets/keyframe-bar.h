@@ -1,11 +1,5 @@
 #include <gtkmm/table.h>
 #include <gtkmm/button.h>
-#include <gtkmm/paned.h>
-#include <gtkmm/treeview.h>
-#include <gtkmm/treemodel.h>
-#include <gtkmm/treestore.h>
-#include <gtkmm/treemodelcolumn.h>
-#include <gtkmm/liststore.h>
 #include "keyframe-widget.h"
 #include <gdk/gdk.h>
 
@@ -26,11 +20,4 @@ protected:
 	Gtk::Button btn2;
 	//void on_button_();
 	bool on_mouse_(GdkEventMotion* event);
-	
-private:
-	class ModelColumns;
-	Glib::RefPtr<Gtk::TreeStore> _store;
-	ModelColumns* _model;
-    Gtk::TreeView _tree;
-	
 };

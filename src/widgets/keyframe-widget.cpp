@@ -97,7 +97,7 @@ KeyframeWidget::KeyframeWidget(int _id)
 {	
 	
 	id = _id;
-	this->set_size_request(25, 30);
+	this->set_size_request(15, 21);
 	
 	set_can_focus(true);
 	

@@ -1,6 +1,13 @@
 #include <gtkmm/table.h>
 #include <gtkmm/paned.h>
 #include <gdk/gdk.h>
+#include <gtkmm/treeview.h>
+#include <gtkmm/treemodel.h>
+#include <gtkmm/treestore.h>
+#include <gtkmm/treemodelcolumn.h>
+#include <gtkmm/liststore.h>
+#include <gtkmm/scrolledwindow.h>
+
 
 class AnimationControl : public Gtk::Table
 {
@@ -16,5 +23,13 @@ protected:
 	
 private:
 	Gtk::Paned _panes;
+	class ModelColumns;
+	Glib::RefPtr<Gtk::TreeStore> _store;
+	ModelColumns* _model;
+    Gtk::TreeView _tree;
+	Gtk::Table _keyframe_table;
+	Gtk::ScrolledWindow _scroller;
+	Gtk::ScrolledWindow _tree_scroller;
+	Gtk::Button _new_layer_button;
 	
 };
