@@ -206,6 +206,77 @@ SPObject *create_layer(SPObject *root, SPObject *layer, LayerRelativePosition po
     return document->getObjectByRepr(repr);
 }
 
+
+
+SPObject *create_animation_layer(SPObject *root, SPObject *layer, LayerRelativePosition position) {
+    SPDocument *document = root->document;
+	
+    static int layer_suffix=1;
+    gchar *id=NULL;
+    do {
+        g_free(id);
+        id = g_strdup_printf("layer%d", layer_suffix++);
+    } while (document->getObjectById(id));
+    
+    Inkscape::XML::Document *xml_doc = document->getReprDoc();
+    Inkscape::XML::Node *repr = xml_doc->createElement("svg:g");
+    repr->setAttribute("inkscape:groupmode", "layer");
+	repr->setAttribute("inkscape:animationlayer", "true");
+    repr->setAttribute("id", id);
+    g_free(id);
+    
+    if ( LPOS_CHILD == position ) {
+        root = layer;
+        SPObject *child_layer = Inkscape::last_child_layer(layer);
+        if ( NULL != child_layer ) {
+            layer = child_layer;
+        }
+    }
+    
+    if ( root == layer ) {
+        root->getRepr()->appendChild(repr);
+    } else {
+        Inkscape::XML::Node *layer_repr = layer->getRepr();
+        layer_repr->parent()->addChild(repr, layer_repr);
+        
+        if ( LPOS_BELOW == position ) {
+            SP_ITEM(document->getObjectByRepr(repr))->lowerOne();
+        }
+    }
+    
+    return document->getObjectByRepr(repr);
+}
+
+
+
+SPObject *create_animation_keyframe(SPObject *root, SPObject *layer, int num)
+{
+	SPDocument *document = root->document;
+	
+	Glib::ustring strr = layer->getId();
+	Glib::ustring composed = Glib::ustring::format(strr, "keyframe", num);
+    
+    Inkscape::XML::Document *xml_doc = document->getReprDoc();
+    Inkscape::XML::Node *repr = xml_doc->createElement("svg:g");
+	repr->setAttribute("id", composed);
+	repr->setAttribute("inkscape:groupmode", "layer");
+    repr->setAttribute("inkscape:keyframe", Glib::ustring::format(num));
+    
+	/*
+    if ( root == layer ) {
+        root->getRepr()->appendChild(repr);
+    } else {
+        Inkscape::XML::Node *layer_repr = layer->getRepr();
+        layer_repr->parent()->addChild(repr, layer_repr);
+    }
+	*/
+	layer->getRepr()->appendChild(repr);
+    
+    return document->getObjectByRepr(repr);	
+}
+
+
+
 }
 
 /*

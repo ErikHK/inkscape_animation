@@ -30,13 +30,13 @@ static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
 	
 }
 
-/*
+
 KeyframeWidget * KeyframeBar::getCurrentKeyframe()
 {
-	Gtk::Widget * w = Gtk::Window::get_focus();
+	Gtk::Widget * w = SP_ACTIVE_DESKTOP->getToplevel()->get_focus();
 	return dynamic_cast<KeyframeWidget *>(w);
 }
-*/
+
 
 KeyframeBar::KeyframeBar(int _id)
 : btn("hehe"), btn2("hehe2")

@@ -23,7 +23,11 @@ enum LayerRelativePosition {
 };
     
 SPObject *create_layer(SPObject *root, SPObject *layer, LayerRelativePosition position);
-    
+
+SPObject *create_animation_layer(SPObject *root, SPObject *layer, LayerRelativePosition position);
+
+SPObject *create_animation_keyframe(SPObject *root, SPObject *layer, int num);
+
 SPObject *next_layer(SPObject *root, SPObject *layer);
 
 SPObject *previous_layer(SPObject *root, SPObject *layer);

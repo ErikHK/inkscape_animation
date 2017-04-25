@@ -11,7 +11,7 @@ public:
     virtual ~KeyframeBar();
 	int id;
 	void addLayers();
-	//KeyframeWidget *getCurrentKeyframe();
+	KeyframeWidget *getCurrentKeyframe();
 	
 protected:
     virtual bool on_expose_event(GtkWidget * widget, GdkEventExpose* event);

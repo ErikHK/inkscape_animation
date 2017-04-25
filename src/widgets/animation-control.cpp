@@ -155,7 +155,15 @@ void AnimationControl::addLayer()
 	//try to add a layer
 	if(desktop)
 	{
-		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
+		SPObject * lay = Inkscape::create_animation_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
+		if(!lay)
+			return;
+		
+		desktop->setCurrentLayer(lay);
+		//SPObject * nextLayer = desktop->namedview->document->getObjectById(ids);
+		
+		for(int i=0;i < 25;i++)
+			Inkscape::create_animation_keyframe(desktop->currentRoot(), desktop->currentLayer(), i+1);
 	}
 	
 	rebuildUi();

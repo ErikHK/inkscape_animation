@@ -329,7 +329,7 @@ void SPGroup::set(unsigned int key, gchar const* value) {
         case SP_ATTR_INKSCAPE_GROUPMODE:
             if ( value && !strcmp(value, "layer") ) {
                 this->setLayerMode(SPGroup::LAYER);
-            } else if ( value && !strcmp(value, "maskhelper") ) {
+			}else if ( value && !strcmp(value, "maskhelper") ) {
                 this->setLayerMode(SPGroup::MASK_HELPER);
             } else {
                 this->setLayerMode(SPGroup::GROUP);
@@ -688,7 +688,7 @@ SPObject *sp_item_group_get_child_by_name(SPGroup *group, SPObject *ref, const g
 
 void SPGroup::setLayerMode(LayerMode mode) {
     if ( _layer_mode != mode ) {
-        if ( mode == LAYER ) {
+        if ( mode == LAYER) {
             this->document->addResource("layer", this);
         } else if ( _layer_mode == LAYER ) {
             this->document->removeResource("layer", this);
