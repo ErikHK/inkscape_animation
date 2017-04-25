@@ -138,7 +138,6 @@ void AnimationControl::rebuildUi()
 	attach(_new_layer_button, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
 	
 	show_all_children();
-	
 }
 
 void AnimationControl::addLayer()
@@ -150,14 +149,15 @@ void AnimationControl::addLayer()
 	//iter++;
     //Gtk::TreeModel::Row row = *iter;
 	num_layers++;
-	/*
-	Gtk::TreeModel::iterator iter = _store->prepend();
-    Gtk::TreeModel::Row row = *iter;
-	row[_model->m_col_id] = 1;
-	row[_model->m_col_name] = "Billy Bob";
 	
-	selection->select(row);
-	*/
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+	
+	//try to add a layer
+	if(desktop)
+	{
+		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
+	}
+	
 	rebuildUi();
 }
 

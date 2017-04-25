@@ -1,5 +1,6 @@
 #include <gtkmm/table.h>
 #include <gtkmm/button.h>
+#include <gtkmm/window.h>
 #include "keyframe-widget.h"
 #include <gdk/gdk.h>
 
@@ -10,6 +11,7 @@ public:
     virtual ~KeyframeBar();
 	int id;
 	void addLayers();
+	//KeyframeWidget *getCurrentKeyframe();
 	
 protected:
     virtual bool on_expose_event(GtkWidget * widget, GdkEventExpose* event);

@@ -26,22 +26,17 @@
 
 static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
 {
-	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
-	//LayerManager * lm = desktop->layer_manager;
-	
-	//Glib::ustring strr = Glib::ustring::format(id);
-	//Glib::ustring ids("layer" + strr);
-	//ids = lm->getNextLayerName(NULL, desktop->currentLayer()->label());
-	
-	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
-	{
-		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
-		//lm->setCurrentLayer(lay);
-	}
+
 	
 }
 
+/*
+KeyframeWidget * KeyframeBar::getCurrentKeyframe()
+{
+	Gtk::Widget * w = Gtk::Window::get_focus();
+	return dynamic_cast<KeyframeWidget *>(w);
+}
+*/
 
 KeyframeBar::KeyframeBar(int _id)
 : btn("hehe"), btn2("hehe2")
@@ -127,7 +122,7 @@ bool KeyframeBar::on_my_button_press_event(GdkEventButton*)
 
 bool KeyframeBar::on_mouse_(GdkEventMotion* event)
 {
-	addLayers();
+	//addLayers();
 	return true;
 	
 }
@@ -151,7 +146,7 @@ void KeyframeBar::addLayers()
 
 bool KeyframeBar::on_my_focus_in_event(GdkEventFocus*)
 {
-	addLayers();
+	//addLayers();
 	return false;
 }
 

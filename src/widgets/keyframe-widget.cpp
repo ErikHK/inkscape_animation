@@ -21,38 +21,11 @@
 static void gotFocus(GtkWidget* w, GdkEventKey *event, gpointer callback_data)
 {
 	
-	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
-	//LayerManager * lm = desktop->layer_manager;
-	
-	//Glib::ustring strr = Glib::ustring::format(id);
-	//Glib::ustring ids("layer" + strr);
-	//ids = lm->getNextLayerName(NULL, desktop->currentLayer()->label());
-	
-	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
-	{
-		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
-		//lm->setCurrentLayer(lay);
-	}
-	
 }
 
 
 bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
 {
-	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
-	//LayerManager * lm = desktop->layer_manager;
-	
-	//Glib::ustring strr = Glib::ustring::format(id);
-	//Glib::ustring ids("layer" + strr);
-	//ids = lm->getNextLayerName(NULL, desktop->currentLayer()->label());
-	
-	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
-	{
-		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
-		//lm->setCurrentLayer(lay);
-	}
 	
 }
 
@@ -61,20 +34,6 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 {
 	gtk_widget_grab_focus(GTK_WIDGET(this));
 	gtk_widget_set_state( GTK_WIDGET(this), GTK_STATE_ACTIVE );
-	
-	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
-	//LayerManager * lm = desktop->layer_manager;
-	
-	//Glib::ustring strr = Glib::ustring::format(id);
-	//Glib::ustring ids("layer" + strr);
-	//ids = lm->getNextLayerName(NULL, desktop->currentLayer()->label());
-	
-	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
-	{
-		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
-		//lm->setCurrentLayer(lay);
-	}
 	
 	
 	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
@@ -101,7 +60,6 @@ KeyframeWidget::KeyframeWidget(int _id)
 	
 	set_can_focus(true);
 	
-	//set_focus_on_click ();
 	is_empty = false;
 }
 
@@ -118,11 +76,6 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		Gtk::Allocation allocation = get_allocation();
 		const int width = allocation.get_width();
 		const int height = allocation.get_height();
-	
-		//GtkAllocation allocation;// = get_allocation();
-		//gtk_widget_get_allocation (GTK_WIDGET(this), &allocation);
-		//int width = allocation.width;
-		//int height = allocation.height;
 		
 		Cairo::RefPtr<Cairo::Context> cr = window->create_cairo_context();
 		cairo_surface_t *s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
@@ -153,26 +106,8 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		cr->stroke();
   }
 
-	
-
-  
-	//add_events(Gdk::POINTER_MOTION_MASK|Gdk::KEY_PRESS_MASK|Gdk::KEY_RELEASE_MASK |Gdk::PROXIMITY_IN_MASK|Gdk::PROXIMITY_OUT_MASK|Gdk::SCROLL_MASK|Gdk::FOCUS_CHANGE_MASK|Gdk::BUTTON_PRESS_MASK);
-	
 	add_events(Gdk::ALL_EVENTS_MASK);
 	
-	/*
-	g_signal_connect( G_OBJECT(this->gobj()),
-                          "focus-in-event",
-                          G_CALLBACK(gotFocus),
-                          this);
-	*/
-	//this->signal_realize().connect(sigc::ptr_fun(&gotFocus));
-	//Gtk::DrawingArea::signal_clicked().connect(sigc::mem_fun(*this, &KeyframeWidget::gotFocus));
-	//signal_realize().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
-	//signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
-	
-	
-	//Glib::wrap(gobj())->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
 	signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
 	set_can_focus(true);
 	set_receives_default();
