@@ -4,13 +4,12 @@
 class KeyframeWidget : public Gtk::DrawingArea
 {
 public:
-    KeyframeWidget(int _id, bool _is_empty);
+    KeyframeWidget(int _id, int _parent_id, bool _is_empty);
     virtual ~KeyframeWidget();
 	int id;
+	int parent_id;
 	bool is_empty;
 	//void gotFocus();
-	
-	
 
 protected:
     virtual bool on_expose_event(GdkEventExpose* event);

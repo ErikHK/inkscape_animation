@@ -62,13 +62,10 @@ bool KeyframeBar::on_expose_event(GtkWidget * widget, GdkEventExpose* event)
 }
 
 bool KeyframeBar::on_my_button_press_event(GdkEventButton*)
-//bool KeyframeBar::on_my_button_press_event()
-//void KeyframeBar::on_button_()
 {
 	rebuildUi();
-	//gtk_widget_grab_focus(this->gobj());
 	grab_focus();
-	//addLayers();
+
 	return false;
 }
 
@@ -110,9 +107,9 @@ void KeyframeBar::rebuildUi()
 		
 		//keyframe has objects
 		if(animation_layer->getRepr()->nthChild(i-1) && animation_layer->getRepr()->nthChild(i-1)->childCount() > 0)
-			kw = new KeyframeWidget(i, false);
+			kw = new KeyframeWidget(i, id, false);
 		else
-			kw = new KeyframeWidget(i, true);
+			kw = new KeyframeWidget(i, id, true);
 
 		//attach(*kw, i, i+1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 		attach(*kw, i, i+1, 0, 1, Gtk::SHRINK, Gtk::SHRINK);

@@ -10,7 +10,7 @@
 #include "layer-manager.h"
 #include "layer-model.h"
 //#include "ui/previewable.h"
-//#include "sp-namedview.h"
+#include "sp-namedview.h"
 
 #include <gdkmm/general.h>
 #include <gtkmm/menu.h>
@@ -32,8 +32,24 @@ bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
 
 bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 {
+	grab_focus();
 	gtk_widget_grab_focus(GTK_WIDGET(this));
 	gtk_widget_set_state( GTK_WIDGET(this), GTK_STATE_ACTIVE );
+	
+	
+	//select layer that corresponds to this keyframe
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+	
+	if(!desktop)
+		return false;
+	
+	SPObject * animation_layer = desktop->namedview->document->getObjectById(
+					Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
+
+	if(!animation_layer)
+		return false;
+		
+	desktop->setCurrentLayer(animation_layer);
 	
 	
 	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
@@ -44,18 +60,19 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 		pMenu->add(*pItem);
 		pMenu->add(*pItem2);
 		pMenu->show_all();
-		pMenu->popup(event->button, event->time);	
+		pMenu->popup(event->button, event->time);
 	}
 	
-	grab_focus();
+
 }
 
 
 
-KeyframeWidget::KeyframeWidget(int _id, bool _is_empty)
+KeyframeWidget::KeyframeWidget(int _id, int _parent_id, bool _is_empty)
 {	
 	
 	id = _id;
+	parent_id = _parent_id;
 	this->set_size_request(15, 21);
 	
 	set_can_focus(true);
