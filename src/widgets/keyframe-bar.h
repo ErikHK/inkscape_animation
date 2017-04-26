@@ -1,6 +1,8 @@
 #include <gtkmm/table.h>
 #include <gtkmm/button.h>
 #include <gtkmm/window.h>
+#include "desktop.h"
+#include "selection.h"
 #include "keyframe-widget.h"
 #include <gdk/gdk.h>
 #include "sp-namedview.h"
@@ -21,6 +23,7 @@ protected:
     virtual bool on_expose_event(GdkEventExpose* event);
 	bool on_my_focus_in_event(GdkEventFocus* event);
 	bool on_my_button_press_event(GdkEventButton* event);
+	void on_selection_changed();
 	//bool on_my_button_press_event();
 	Gtk::Button btn;
 	Gtk::Button btn2;

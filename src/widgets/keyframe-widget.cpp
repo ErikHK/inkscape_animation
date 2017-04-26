@@ -44,6 +44,7 @@ void KeyframeWidget::selectLayer()
 		return;
 		
 	desktop->setCurrentLayer(animation_layer);
+	desktop->toggleLayerSolo(animation_layer);
 }
 
 

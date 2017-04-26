@@ -2,7 +2,6 @@
 #include <cmath>
 #include <cairomm/context.h>
 #include <glibmm/main.h>
-#include "desktop.h"
 #include "document.h"
 #include "inkscape.h" // for SP_ACTIVE_DESKTOP
 #include "layer-fns.h" //LPOS_ABOVE
@@ -21,6 +20,7 @@
 #include "ui/widget/clipmaskicon.h"
 #include "ui/widget/imagetoggler.h"
 
+
 //static void gotFocus(GtkWidget*, void * data);
 
 
@@ -37,12 +37,30 @@ KeyframeWidget * KeyframeBar::getCurrentKeyframe()
 	return dynamic_cast<KeyframeWidget *>(w);
 }
 
+void KeyframeBar::on_selection_changed()
+{
+	rebuildUi();
+}
 
 KeyframeBar::KeyframeBar(int _id)
 : btn("hehe"), btn2("hehe2")
 {
 	id = _id;
 	rebuildUi();
+	
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+	if(desktop)
+	{
+		Inkscape::Selection * selection = desktop->getSelection();
+		sigc::connection _sel_changed_connection;
+		//_sel_changed_connection = selection->connectChanged(
+		//	sigc::bind(
+		//		sigc::ptr_fun(&KeyframeBar::on_selection_changed),
+		//		desktop));
+		_sel_changed_connection = selection->connectChanged(
+		sigc::hide(sigc::mem_fun(*this, &KeyframeBar::on_selection_changed))
+		);
+	}
 }
 
 KeyframeBar::~KeyframeBar()
@@ -66,7 +84,7 @@ bool KeyframeBar::on_my_button_press_event(GdkEventButton*)
 bool KeyframeBar::on_mouse_(GdkEventMotion* event)
 {
 	//addLayers();
-	rebuildUi();
+	//rebuildUi();
 	return true;
 	
 }
