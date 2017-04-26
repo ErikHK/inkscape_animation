@@ -29,7 +29,7 @@ class AnimationControl::ModelColumns : public Gtk::TreeModel::ColumnRecord
 
 AnimationControl::AnimationControl() : 
 _panes(), _keyframe_table(), _scroller(), _tree_scroller(),
-_new_layer_button("New Layer"), num_layers(1)
+_new_layer_button("New Layer"), num_layers(0)
 {
 	
 	_new_layer_button.signal_clicked().connect(sigc::mem_fun(*this, &AnimationControl::addLayer));
@@ -116,12 +116,12 @@ void AnimationControl::rebuildUi()
 	
 	for(int i = 0; i < num_layers; i++)
 	{
-		Gtk::TreeModel::iterator iter = _store->prepend();
+		Gtk::TreeModel::iterator iter = _store->append();
 		Gtk::TreeModel::Row row = *iter;
-		row[_model->m_col_id] = i;
-		row[_model->m_col_name] = "Billy Bob";
+		row[_model->m_col_id] = i+1;
+		row[_model->m_col_name] = Glib::ustring::format("animationlayer", i+1);
 		
-		KeyframeBar* kb = new KeyframeBar(i);
+		KeyframeBar* kb = new KeyframeBar(i+1);
 		_keyframe_table.attach(*kb, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 	}
 	

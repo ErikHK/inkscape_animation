@@ -4,7 +4,7 @@
 class KeyframeWidget : public Gtk::DrawingArea
 {
 public:
-    KeyframeWidget(int _id);
+    KeyframeWidget(int _id, bool _is_empty);
     virtual ~KeyframeWidget();
 	int id;
 	bool is_empty;

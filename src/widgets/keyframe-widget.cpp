@@ -52,7 +52,7 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 
 
 
-KeyframeWidget::KeyframeWidget(int _id)
+KeyframeWidget::KeyframeWidget(int _id, bool _is_empty)
 {	
 	
 	id = _id;
@@ -60,7 +60,7 @@ KeyframeWidget::KeyframeWidget(int _id)
 	
 	set_can_focus(true);
 	
-	is_empty = false;
+	is_empty = _is_empty;
 }
 
 KeyframeWidget::~KeyframeWidget()

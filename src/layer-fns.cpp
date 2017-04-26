@@ -215,7 +215,7 @@ SPObject *create_animation_layer(SPObject *root, SPObject *layer, LayerRelativeP
     gchar *id=NULL;
     do {
         g_free(id);
-        id = g_strdup_printf("layer%d", layer_suffix++);
+        id = g_strdup_printf("animationlayer%d", layer_suffix++);
     } while (document->getObjectById(id));
     
     Inkscape::XML::Document *xml_doc = document->getReprDoc();

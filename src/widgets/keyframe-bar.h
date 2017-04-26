@@ -3,6 +3,7 @@
 #include <gtkmm/window.h>
 #include "keyframe-widget.h"
 #include <gdk/gdk.h>
+#include "sp-namedview.h"
 
 class KeyframeBar : public Gtk::Table
 {
@@ -12,6 +13,9 @@ public:
 	int id;
 	void addLayers();
 	KeyframeWidget *getCurrentKeyframe();
+	
+private:
+	void rebuildUi();
 	
 protected:
     virtual bool on_expose_event(GtkWidget * widget, GdkEventExpose* event);
