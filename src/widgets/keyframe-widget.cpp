@@ -54,9 +54,8 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	gtk_widget_grab_focus(GTK_WIDGET(this));
 	gtk_widget_set_state( GTK_WIDGET(this), GTK_STATE_ACTIVE );
 	
-	
 	//select layer that corresponds to this keyframe
-	selectLayer();
+	//selectLayer();
 	
 	
 	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)

@@ -26,10 +26,8 @@
 
 static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
 {
-
 	
 }
-
 
 KeyframeWidget * KeyframeBar::getCurrentKeyframe()
 {
