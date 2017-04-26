@@ -49,21 +49,15 @@ KeyframeBar::~KeyframeBar()
 {
 }
 
-bool KeyframeBar::on_expose_event(GtkWidget * widget, GdkEventExpose* event)
+bool KeyframeBar::on_expose_event(GdkEventExpose* event)
 {
-	gtk_widget_grab_focus(widget);
-	
-	/*
-	g_signal_connect( G_OBJECT(this->gobj()),
-					  "focus-in-event",
-					  G_CALLBACK(gotFocus),
-					  NULL);
-	*/
+	//rebuildUi();
+	//grab_focus();
 }
 
 bool KeyframeBar::on_my_button_press_event(GdkEventButton*)
 {
-	rebuildUi();
+	//rebuildUi();
 	grab_focus();
 
 	return false;
@@ -121,7 +115,7 @@ void KeyframeBar::rebuildUi()
 		
 		//kw->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_focus_in_event));
 		kw->signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_button_press_event));
-		//kw->signal_motion_notify_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_mouse_));
+		kw->signal_motion_notify_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_mouse_));
 		kw->set_can_focus(true);
 	}
 	

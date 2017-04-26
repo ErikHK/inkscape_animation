@@ -9,11 +9,12 @@ public:
 	int id;
 	int parent_id;
 	bool is_empty;
+	void selectLayer();
 	//void gotFocus();
 
 protected:
     virtual bool on_expose_event(GdkEventExpose* event);
-	bool on_my_focus_in_event(GdkEventFocus* event);
+	virtual bool on_my_focus_in_event(GdkEventFocus* event);
 	bool on_my_button_press_event(GdkEventButton* event);
 
 };

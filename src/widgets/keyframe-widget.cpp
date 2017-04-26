@@ -26,7 +26,24 @@ static void gotFocus(GtkWidget* w, GdkEventKey *event, gpointer callback_data)
 
 bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
 {
+	selectLayer();
+	return false;
+}
+
+void KeyframeWidget::selectLayer()
+{
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	
+	if(!desktop)
+		return;
+	
+	SPObject * animation_layer = desktop->namedview->document->getObjectById(
+					Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
+
+	if(!animation_layer)
+		return;
+		
+	desktop->setCurrentLayer(animation_layer);
 }
 
 
@@ -38,18 +55,7 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	
 	
 	//select layer that corresponds to this keyframe
-	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-	
-	if(!desktop)
-		return false;
-	
-	SPObject * animation_layer = desktop->namedview->document->getObjectById(
-					Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
-
-	if(!animation_layer)
-		return false;
-		
-	desktop->setCurrentLayer(animation_layer);
+	selectLayer();
 	
 	
 	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
@@ -126,6 +132,7 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 	add_events(Gdk::ALL_EVENTS_MASK);
 	
 	signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
+	signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
 	set_can_focus(true);
 	set_receives_default();
     set_sensitive();
