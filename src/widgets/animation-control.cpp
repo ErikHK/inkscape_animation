@@ -10,6 +10,7 @@
 #include "keyframe-bar.h"
 #include <gdkmm/general.h>
 #include <gtkmm/treeselection.h>
+#include "layer-manager.h"
 
 static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
 {
@@ -27,12 +28,37 @@ class AnimationControl::ModelColumns : public Gtk::TreeModel::ColumnRecord
 		Gtk::TreeModelColumn<Glib::ustring> m_col_name;
 };
 
+bool AnimationControl::handleKeyEvent(GdkEventKey *event)
+{
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+	if(!desktop)
+		return false;
+	
+	//if(Inkscape::UI::Tools::get_group0_keyval(event) == GDK_KEY_Page_Up)
+		if(event->keyval == GDK_KEY_Page_Up)
+	{
+		SPObject * next_lay = Inkscape::next_layer(desktop->currentRoot(), desktop->currentLayer());
+		if(next_lay)
+			desktop->layer_manager->setCurrentLayer(next_lay);
+	}
+	//else if(Inkscape::UI::Tools::get_group0_keyval(event) == GDK_KEY_Page_Down)
+	else if(event->keyval == GDK_KEY_Page_Down)
+	{
+		SPObject * next_lay = Inkscape::previous_layer(desktop->currentRoot(), desktop->currentLayer());
+		if(next_lay)
+			desktop->layer_manager->setCurrentLayer(next_lay);
+	}
+	
+	return false;
+}
+
 AnimationControl::AnimationControl() : 
 _panes(), _keyframe_table(), _scroller(), _tree_scroller(),
 _new_layer_button("New Layer"), num_layers(0)
 {
 	
 	_new_layer_button.signal_clicked().connect(sigc::mem_fun(*this, &AnimationControl::addLayer));
+	signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
 	
 	
 	//Create the tree model and store

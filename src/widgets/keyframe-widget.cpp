@@ -17,6 +17,7 @@
 
 
 //static void gotFocus(GtkWidget*, void * data);
+static Gtk::Menu * pMenu = 0;
 
 static void gotFocus(GtkWidget* w, GdkEventKey *event, gpointer callback_data)
 {
@@ -47,6 +48,10 @@ void KeyframeWidget::selectLayer()
 	desktop->toggleLayerSolo(animation_layer);
 }
 
+static void createTween()
+{
+	pMenu = 0;
+}
 
 bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 {
@@ -57,11 +62,16 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	//select layer that corresponds to this keyframe
 	//selectLayer();
 	
-	
-	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
+	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3 && !pMenu)
 	{
-		Gtk::Menu *pMenu = new Gtk::Menu();
+		pMenu = new Gtk::Menu();
 		Gtk::MenuItem *pItem = new Gtk::MenuItem("Create tween");
+		
+		g_signal_connect( pItem->gobj(),
+                              "activate",
+                              G_CALLBACK(createTween),
+                              NULL);
+		
 		Gtk::MenuItem *pItem2 = new Gtk::MenuItem("Something other");
 		pMenu->add(*pItem);
 		pMenu->add(*pItem2);
