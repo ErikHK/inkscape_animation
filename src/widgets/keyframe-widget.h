@@ -10,6 +10,7 @@ public:
 	int parent_id;
 	bool is_empty;
 	void selectLayer();
+	void createTween();
 	//void gotFocus();
 
 protected:
