@@ -129,7 +129,7 @@ static void redirSecondaryClick( GtkMenuItem *menuitem, gpointer /*user_data*/ )
     }
 }
 
-static void createTween(GtkMenuItem *menuitem, gpointer)
+static void createTween(GtkMenuItem *menuitem, gpointer user_data)
 {
 	
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;

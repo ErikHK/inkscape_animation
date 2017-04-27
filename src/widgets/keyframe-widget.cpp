@@ -19,7 +19,6 @@
 #include "ui/tools/node-tool.h"
 #include "ui/tool/control-point-selection.h"
 
-
 using Inkscape::UI::Tools::NodeTool;
 using Inkscape::Util::Quantity;
 using Inkscape::UI::Node;
@@ -58,15 +57,25 @@ void KeyframeWidget::selectLayer()
 	desktop->toggleLayerSolo(animation_layer);
 }
 
-void KeyframeWidget::createTween()
+static void createTween(KeyframeWidget * kww, gpointer user_data)
 {
+	
+	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
+	
 	pMenu = 0;
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	
+	std::cout << "RUNNING CREATE TWEEN";
+	
+	SPObject * layyy;
+	desktop->setCurrentLayer(layyy); //SHOULD CRASH RIGHT?
 	
 	if(!desktop)
 		return;
 	
-	SPObject * layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", parent_id, "keyframe", id)));
+	std::cout << "DESKTOP EXISTS";
+	
+	SPObject * layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id)));
 	SPObject * startLayer = layer;
 	SPObject * endLayer;
 	SPObject * nextLayer;
@@ -74,22 +83,22 @@ void KeyframeWidget::createTween()
 	std::string xs = "x";
 	std::string ys = "y";
 	bool is_group = false;
-	int i = id;
+	int i = kw->id+1;
 	int num_layers = 1;
 	while(layer)
 	{
-		i++;
 		std::cout << i;
 		std::cout << "\n";
-		std::cout << id;
+		std::cout << kw->id;
 		//layer = Inkscape::next_layer(desktop->currentRoot(), layer);
-		layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", parent_id, "keyframe", i)));
+		layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
 		
 		//as soon as a layer has a child, break and set endLayer to this!
 		if (layer->getRepr()->childCount() > 0)
 			break;
 		
 		num_layers++;
+		i++;
 	}
 	endLayer = layer;
 	
@@ -139,11 +148,11 @@ void KeyframeWidget::createTween()
 	
 	//now we have start and end, loop again, and copy children etcetc
 	layer = startLayer;
-	i = id+1;
+	i = kw->id+1;
 	while(layer != endLayer)
 	{
 		//nextLayer = Inkscape::next_layer(desktop->currentRoot(), layer);
-		nextLayer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", parent_id, "keyframe", i)));
+		nextLayer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
 		
 		if(nextLayer && layer)
 		{
@@ -273,7 +282,7 @@ void KeyframeWidget::createTween()
 			
 			//lay = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", ii)));
 			lay = desktop->namedview->document->getObjectById(
-					Glib::ustring::format("animationlayer", parent_id, "keyframe", ii));
+					Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", ii));
 
 			if(lay)
 			{
@@ -310,19 +319,20 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	
 	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3 && !pMenu)
 	{
+		std::cout << "RIGHT-CLICK";
 		pMenu = new Gtk::Menu();
 		Gtk::MenuItem *pItem = new Gtk::MenuItem("Create tween");
 		
 		g_signal_connect( pItem->gobj(),
                               "activate",
-                              G_CALLBACK(&KeyframeWidget::createTween),
+                              G_CALLBACK(createTween),
                               this);
 		
 		Gtk::MenuItem *pItem2 = new Gtk::MenuItem("Something other");
 		
 		g_signal_connect( pItem2->gobj(),
                               "activate",
-                              G_CALLBACK(&KeyframeWidget::createTween),
+                              G_CALLBACK(createTween),
                               this);
 		
 		pMenu->add(*pItem);
