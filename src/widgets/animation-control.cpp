@@ -181,7 +181,8 @@ void AnimationControl::addLayer()
 	//try to add a layer
 	if(desktop)
 	{
-		SPObject * lay = Inkscape::create_animation_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
+		//SPObject * lay = Inkscape::create_animation_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
+		SPObject * lay = Inkscape::create_animation_layer(desktop->currentRoot(), desktop->currentRoot(), Inkscape::LPOS_ABOVE);
 		if(!lay)
 			return;
 		

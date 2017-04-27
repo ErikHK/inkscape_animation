@@ -52,8 +52,10 @@ void KeyframeWidget::selectLayer()
 
 	if(!animation_layer)
 		return;
-		
+	
 	desktop->setCurrentLayer(animation_layer);
+	
+	
 	desktop->toggleLayerSolo(animation_layer);
 }
 
