@@ -99,7 +99,7 @@ using Inkscape::UI::UXManager;
 using Inkscape::UI::ToolboxFactory;
 using ege::AppearTimeTracker;
 using Inkscape::Util::unit_table;
-
+using Inkscape::UI::Dialogs::AnimationControl;
 enum {
     ACTIVATE,
     DEACTIVATE,

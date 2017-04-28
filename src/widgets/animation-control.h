@@ -7,7 +7,9 @@
 #include <gtkmm/treemodelcolumn.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/scrolledwindow.h>
-
+namespace Inkscape {
+namespace UI {
+namespace Dialogs {
 
 class AnimationControl : public Gtk::Table
 {
@@ -17,6 +19,7 @@ public:
 	void addLayer();
 	void rebuildUi();
 	int num_layers;
+	void toggleVisible( Glib::ustring const& str );
 	
 protected:
     virtual bool on_expose_event(GtkWidget * widget, GdkEventExpose* event);
@@ -37,3 +40,6 @@ private:
 	Gtk::Button _new_layer_button;
 	
 };
+}
+}
+}

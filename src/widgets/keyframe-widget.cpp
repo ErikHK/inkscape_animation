@@ -313,8 +313,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 {
 	grab_focus();
-	gtk_widget_grab_focus(GTK_WIDGET(this));
-	gtk_widget_set_state( GTK_WIDGET(this), GTK_STATE_ACTIVE );
+	//gtk_widget_grab_focus(GTK_WIDGET(this));
+	//gtk_widget_set_state( GTK_WIDGET(this), GTK_STATE_ACTIVE );
 	
 	//select layer that corresponds to this keyframe
 	//selectLayer();

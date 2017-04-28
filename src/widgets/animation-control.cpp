@@ -12,20 +12,22 @@
 #include <gtkmm/treeselection.h>
 #include "layer-manager.h"
 
-static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
-{
-	
-}
+#include "ui/widget/imagetoggler.h"
+#include "ui/icon-names.h"
 
+namespace Inkscape {
+namespace UI {
+namespace Dialogs {
 
 class AnimationControl::ModelColumns : public Gtk::TreeModel::ColumnRecord
 {
 	public:
 		ModelColumns()
-		{ add(m_col_id); add(m_col_name);}
+		{ add(m_col_id); add(m_col_name); add(m_col_object);}
 
-		Gtk::TreeModelColumn<int> m_col_id;
+		Gtk::TreeModelColumn<bool> m_col_id;
 		Gtk::TreeModelColumn<Glib::ustring> m_col_name;
+		Gtk::TreeModelColumn<SPObject*> m_col_object;
 };
 
 bool AnimationControl::handleKeyEvent(GdkEventKey *event)
@@ -52,6 +54,28 @@ bool AnimationControl::handleKeyEvent(GdkEventKey *event)
 	return false;
 }
 
+void AnimationControl::toggleVisible( Glib::ustring const& str )
+{
+	
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+	if(!desktop)
+		return;
+	
+	Gtk::TreeModel::Children::iterator iter = _tree.get_model()->get_iter(str);
+    Gtk::TreeModel::Row row = *iter;
+
+    SPObject* obj = row[_model->m_col_object];
+    SPItem* item = ( obj && SP_IS_ITEM(obj) ) ? SP_ITEM(obj) : 0;
+    if ( item ) {
+		bool newValue = !row[_model->m_col_id];
+		row[_model->m_col_id] = newValue;
+		item->setHidden(!newValue);
+		item->updateRepr();
+		//DocumentUndo::done( _desktop->doc() , SP_VERB_DIALOG_LAYERS,
+		//					newValue? _("Unhide layer") : _("Hide layer"));
+    }
+}
+
 AnimationControl::AnimationControl() : 
 _panes(), _keyframe_table(), _scroller(), _tree_scroller(),
 _new_layer_button("New Layer"), num_layers(0)
@@ -60,10 +84,10 @@ _new_layer_button("New Layer"), num_layers(0)
 	_new_layer_button.signal_clicked().connect(sigc::mem_fun(*this, &AnimationControl::addLayer));
 	signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
 	
-	
 	//Create the tree model and store
 	Gtk::Label * lbl = new Gtk::Label("ID");
 	Gtk::Label * lbl2 = new Gtk::Label("Animation Layer");
+	//Gtk::Label * lbl3 = new Gtk::Label("Visibility");
 	Gtk::CellRendererText *_text_renderer;
 	Gtk::TreeView m_TreeView;
 	
@@ -72,33 +96,23 @@ _new_layer_button("New Layer"), num_layers(0)
 
     _store = Gtk::TreeStore::create( *zoop );
 		
-	Glib::RefPtr<Gtk::ListStore> m_refTreeModel;
+	//Glib::RefPtr<Gtk::ListStore> m_refTreeModel;
 	
-	m_refTreeModel = Gtk::ListStore::create(*_model);
-	m_TreeView.set_model(m_refTreeModel);
-
-	
-	
-	
-	//_store->append(row.children());
-	
-	//row = *(m_refTreeModel->append());
-	//row[_model->m_col_id] = 2;
-	//row[_model->m_col_name] = "Joey Jojo";
-	//row[_model->m_col_name] = *btn2;
-	
-	//_store->append(row.children());
+	//m_refTreeModel = Gtk::ListStore::create(*_model);
+	//m_TreeView.set_model(m_refTreeModel);
 	
     //Set up the tree
     _tree.set_model( _store );
-    _tree.set_headers_visible(true);
-    _tree.set_reorderable(true);
-    _tree.enable_model_drag_dest (Gdk::ACTION_MOVE);
-	_tree.get_selection()->set_mode(Gtk::SELECTION_MULTIPLE);
+    _tree.set_headers_visible(false);
+    //_tree.set_reorderable(true);
+    //_tree.enable_model_drag_dest (Gdk::ACTION_MOVE);
+	//_tree.get_selection()->set_mode(Gtk::SELECTION_MULTIPLE);
     Gtk::TreeViewColumn* col;
 	Gtk::TreeView::Column *_name_column;
+	_text_renderer = Gtk::manage(new Gtk::CellRendererText());
 	
 	//Animation layer ID
+	/*
 	_text_renderer = Gtk::manage(new Gtk::CellRendererText());
     int idColNum = _tree.append_column("highlight", *_text_renderer) - 1;
     col = _tree.get_column(idColNum);
@@ -108,9 +122,23 @@ _new_layer_button("New Layer"), num_layers(0)
         lbl->show();
         col->set_widget( *lbl );
     }
+	*/
+	
+	Inkscape::UI::Widget::ImageToggler *eyeRenderer = Gtk::manage( new Inkscape::UI::Widget::ImageToggler(
+        INKSCAPE_ICON("object-visible"), INKSCAPE_ICON("object-hidden")) );
+		
+    int visibleColNum = _tree.append_column("vis", *eyeRenderer) - 1;
+	eyeRenderer->signal_toggled().connect( sigc::mem_fun(*this, &AnimationControl::toggleVisible) ) ;
+	//eyeRenderer->signal_toggled().connect( sigc::bind( sigc::mem_fun(*this, &LayersPanel::_toggled), (int)1) );
+    eyeRenderer->property_activatable() = true;
+    col = _tree.get_column(visibleColNum);
+    if ( col ) {
+        col->add_attribute( eyeRenderer->property_active(), _model->m_col_id );
+        lbl->show();
+        col->set_widget( *lbl );
+    }
 	
     //Label
-	//_text_renderer = Gtk::manage(new Gtk::Table());
     int nameColNum = _tree.append_column("Name", *_text_renderer) - 1;
     _name_column = _tree.get_column(nameColNum);
     if( _name_column ) {
@@ -119,7 +147,6 @@ _new_layer_button("New Layer"), num_layers(0)
         lbl2->show();
         _name_column->set_widget( *lbl2 );
     }
-	
 	
 	rebuildUi();
 }
@@ -133,19 +160,26 @@ AnimationControl::~AnimationControl()
 
 void AnimationControl::rebuildUi()
 {
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	//clear tree thingy
 	_store->clear();
 
 	//add a label that says keyframes, otherwise it won't line up...
-	Gtk::Label * lbl3 = new Gtk::Label("Keyframes");
-	_keyframe_table.attach(*lbl3, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+	//Gtk::Label * lbl3 = new Gtk::Label("Keyframes");
+	//_keyframe_table.attach(*lbl3, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 	
 	for(int i = 0; i < num_layers; i++)
 	{
+		
+		SPObject * child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
+		
 		Gtk::TreeModel::iterator iter = _store->append();
 		Gtk::TreeModel::Row row = *iter;
-		row[_model->m_col_id] = i+1;
+		//row[_model->m_col_id] = i+1;
+		//row[_model->m_col_id] = !item->isHidden();
+		row[_model->m_col_id] = false;
 		row[_model->m_col_name] = Glib::ustring::format("animationlayer", i+1);
+		row[_model->m_col_object] = child;
 		
 		KeyframeBar* kb = new KeyframeBar(i+1);
 		_keyframe_table.attach(*kb, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
@@ -189,7 +223,7 @@ void AnimationControl::addLayer()
 		desktop->setCurrentLayer(lay);
 		//SPObject * nextLayer = desktop->namedview->document->getObjectById(ids);
 		
-		for(int i=0;i < 25;i++)
+		for(int i=0;i < 50;i++)
 			Inkscape::create_animation_keyframe(desktop->currentRoot(), desktop->currentLayer(), i+1);
 	}
 	
@@ -198,8 +232,11 @@ void AnimationControl::addLayer()
 
 bool AnimationControl::on_expose_event(GtkWidget * widget, GdkEventExpose* event)
 {
+	//rebuildUi();
 	return true;
 }
+
+
 
 bool AnimationControl::on_my_button_press_event(GdkEventButton*)
 {
@@ -217,4 +254,6 @@ bool AnimationControl::on_my_focus_in_event(GdkEventFocus*)
 }
 
 
-
+}
+}
+}
