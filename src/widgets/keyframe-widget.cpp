@@ -73,7 +73,64 @@ void KeyframeWidget::selectLayer()
 	if(animation_layer->parent)
 		SP_ITEM(animation_layer->parent)->setHidden(false);
 	
-	//TODO: also check other layers
+	//also check if other layers exist, then show them as well
+	SPObject * parent_layer_sibling_keyframe;
+	SPObject * parent_layer_sibling;
+	
+	
+	parent_layer_sibling_keyframe = 
+		desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", parent_id+1, "keyframe", id)));
+		
+	parent_layer_sibling = 
+		desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", parent_id+1)));
+		
+		
+	//first loop i+1
+	int i = 1;
+	while(parent_layer_sibling_keyframe && parent_layer_sibling)
+	{
+		
+		SP_ITEM(parent_layer_sibling)->setHidden(false);
+		SP_ITEM(parent_layer_sibling_keyframe)->setHidden(false);
+		
+		i++;
+		
+		parent_layer_sibling_keyframe = 
+		desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", parent_id+i, "keyframe", id)));
+		
+		parent_layer_sibling = 
+		desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", parent_id+i)));	
+	}
+	
+	//then i-1 etc
+	parent_layer_sibling_keyframe = 
+		desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", parent_id-1, "keyframe", id)));
+		
+	parent_layer_sibling = 
+		desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", parent_id-1)));
+	i = 2;
+	while(parent_layer_sibling_keyframe && parent_layer_sibling)
+	{
+		
+		SP_ITEM(parent_layer_sibling)->setHidden(false);
+		SP_ITEM(parent_layer_sibling_keyframe)->setHidden(false);
+		
+		parent_layer_sibling_keyframe = 
+		desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", parent_id-i, "keyframe", id)));
+		
+		parent_layer_sibling = 
+		desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", parent_id-i)));	
+	}
+	
+		
 }
 
 static void createTween(KeyframeWidget * kww, gpointer user_data)
