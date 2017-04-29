@@ -55,13 +55,25 @@ void KeyframeWidget::selectLayer()
 	
 	desktop->setCurrentLayer(animation_layer);
 	
+	//only toggle if layer is not hidden
+	//if(!desktop->itemIsHidden(SP_ITEM(animation_layer)))
+	//	desktop->toggleLayerSolo(animation_layer);
 	
-	desktop->toggleLayerSolo(animation_layer);
+	//also show parent layer
+	//if(animation_layer->parent)
+	//	SP_ITEM(animation_layer->parent)->setHidden(false);
+
+	//hide all layers
+	desktop->toggleHideAllLayers(true);
+	
+	//show current and parent
+	SP_ITEM(animation_layer)->setHidden(false);
+	if(animation_layer->parent)
+		SP_ITEM(animation_layer->parent)->setHidden(false);
 }
 
 static void createTween(KeyframeWidget * kww, gpointer user_data)
 {
-	
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
 	
 	pMenu = 0;
