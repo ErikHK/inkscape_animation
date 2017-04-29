@@ -1,13 +1,15 @@
 #include <gtkmm/drawingarea.h>
 
-
+class KeyframeBar;
 class KeyframeWidget : public Gtk::DrawingArea
 {
 public:
-    KeyframeWidget(int _id, int _parent_id, bool _is_empty);
+	//class KeyframeBar;
+    KeyframeWidget(int _id, KeyframeBar * _parent, bool _is_empty);
     virtual ~KeyframeWidget();
 	int id;
 	int parent_id;
+	KeyframeBar * parent;
 	bool is_empty;
 	void selectLayer();
 	//void createTween();

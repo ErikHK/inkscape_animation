@@ -3,18 +3,21 @@
 #include <gtkmm/window.h>
 #include "desktop.h"
 #include "selection.h"
-#include "keyframe-widget.h"
+//#include "keyframe-widget.h"
 #include <gdk/gdk.h>
 #include "sp-namedview.h"
 
+class KeyframeWidget;
 class KeyframeBar : public Gtk::Table
 {
 public:
-    KeyframeBar(int _id);
+    KeyframeBar(int _id, SPObject * _layer);
     virtual ~KeyframeBar();
 	int id;
 	void addLayers();
-	KeyframeWidget *getCurrentKeyframe();
+	bool is_visible;
+	SPObject * layer;	//associated animation layer
+	//KeyframeWidget *getCurrentKeyframe();
 	
 private:
 	void rebuildUi();

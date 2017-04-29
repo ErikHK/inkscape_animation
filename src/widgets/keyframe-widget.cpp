@@ -12,6 +12,8 @@
 //#include "ui/previewable.h"
 #include "sp-namedview.h"
 
+#include "keyframe-bar.h"
+
 #include <gdkmm/general.h>
 #include <gtkmm/menu.h>
 #include "ui/tool/path-manipulator.h"
@@ -70,6 +72,8 @@ void KeyframeWidget::selectLayer()
 	SP_ITEM(animation_layer)->setHidden(false);
 	if(animation_layer->parent)
 		SP_ITEM(animation_layer->parent)->setHidden(false);
+	
+	//TODO: also check other layers
 }
 
 static void createTween(KeyframeWidget * kww, gpointer user_data)
@@ -355,16 +359,15 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 		pMenu->popup(event->button, event->time);
 	}
 	
-
 }
 
-
-
-KeyframeWidget::KeyframeWidget(int _id, int _parent_id, bool _is_empty)
-{	
-	
+KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, bool _is_empty)
+{
+	parent = _parent;
 	id = _id;
-	parent_id = _parent_id;
+	
+	parent_id = parent->id;
+	
 	this->set_size_request(15, 21);
 	
 	set_can_focus(true);
@@ -378,7 +381,6 @@ KeyframeWidget::~KeyframeWidget()
 
 bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 {
-	
 	Glib::RefPtr<Gdk::Window> window = get_window();
 	if(window)
 	{

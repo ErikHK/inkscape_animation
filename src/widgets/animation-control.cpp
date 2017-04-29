@@ -27,7 +27,7 @@ class AnimationControl::ModelColumns : public Gtk::TreeModel::ColumnRecord
 
 		Gtk::TreeModelColumn<bool> m_col_id;
 		Gtk::TreeModelColumn<Glib::ustring> m_col_name;
-		Gtk::TreeModelColumn<SPObject*> m_col_object;
+		Gtk::TreeModelColumn<KeyframeBar*> m_col_object;
 };
 
 bool AnimationControl::handleKeyEvent(GdkEventKey *event)
@@ -64,13 +64,14 @@ void AnimationControl::toggleVisible( Glib::ustring const& str )
 	Gtk::TreeModel::Children::iterator iter = _tree.get_model()->get_iter(str);
     Gtk::TreeModel::Row row = *iter;
 
-    SPObject* obj = row[_model->m_col_object];
-    SPItem* item = ( obj && SP_IS_ITEM(obj) ) ? SP_ITEM(obj) : 0;
-    if ( item ) {
+    KeyframeBar* obj = row[_model->m_col_object];
+    //SPItem* item = ( obj && SP_IS_ITEM(obj) ) ? SP_ITEM(obj) : 0;
+    if ( obj ) {
 		bool newValue = !row[_model->m_col_id];
 		row[_model->m_col_id] = newValue;
-		item->setHidden(!newValue);
-		item->updateRepr();
+		//item->setHidden(!newValue);
+		obj->is_visible = newValue;
+		//item->updateRepr();
 		//DocumentUndo::done( _desktop->doc() , SP_VERB_DIALOG_LAYERS,
 		//					newValue? _("Unhide layer") : _("Hide layer"));
     }
@@ -179,9 +180,9 @@ void AnimationControl::rebuildUi()
 		//row[_model->m_col_id] = !item->isHidden();
 		row[_model->m_col_id] = false;
 		row[_model->m_col_name] = Glib::ustring::format("animationlayer", i+1);
-		row[_model->m_col_object] = child;
 		
-		KeyframeBar* kb = new KeyframeBar(i+1);
+		KeyframeBar* kb = new KeyframeBar(i+1, child);
+		row[_model->m_col_object] = kb;
 		_keyframe_table.attach(*kb, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 	}
 	

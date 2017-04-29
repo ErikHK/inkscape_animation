@@ -10,6 +10,7 @@
 //#include "ui/previewable.h"
 //#include "sp-namedview.h"
 #include "keyframe-bar.h"
+#include "keyframe-widget.h"
 #include <gdkmm/general.h>
 #include "inkscape.h"
 #include "ui/icon-names.h"
@@ -29,21 +30,25 @@ static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
 	
 }
 
+/*
 KeyframeWidget * KeyframeBar::getCurrentKeyframe()
 {
 	Gtk::Widget * w = SP_ACTIVE_DESKTOP->getToplevel()->get_focus();
 	return dynamic_cast<KeyframeWidget *>(w);
 }
+*/
 
 void KeyframeBar::on_selection_changed()
 {
 	rebuildUi();
 }
 
-KeyframeBar::KeyframeBar(int _id)
+KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 : btn("hehe"), btn2("hehe2")
 {
 	id = _id;
+	is_visible = true;
+	layer = _layer;
 	rebuildUi();
 	
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
@@ -117,9 +122,9 @@ void KeyframeBar::rebuildUi()
 		
 		//keyframe has objects
 		if(animation_layer->getRepr()->nthChild(i-1) && animation_layer->getRepr()->nthChild(i-1)->childCount() > 0)
-			kw = new KeyframeWidget(i, id, false);
+			kw = new KeyframeWidget(i, this, false);
 		else
-			kw = new KeyframeWidget(i, id, true);
+			kw = new KeyframeWidget(i, this, true);
 
 		//attach(*kw, i, i+1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 		attach(*kw, i, i+1, 0, 1, Gtk::SHRINK, Gtk::SHRINK);
