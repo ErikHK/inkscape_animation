@@ -40,7 +40,7 @@ KeyframeWidget * KeyframeBar::getCurrentKeyframe()
 
 void KeyframeBar::on_selection_changed()
 {
-	rebuildUi();
+	//rebuildUi();
 }
 
 KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
@@ -60,9 +60,12 @@ KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 		//	sigc::bind(
 		//		sigc::ptr_fun(&KeyframeBar::on_selection_changed),
 		//		desktop));
+		//_sel_changed_connection = selection->connectChanged(
+		//sigc::bind(sigc::mem_fun(*this, &KeyframeBar::on_selection_changed), false)
+		//);
+		
 		_sel_changed_connection = selection->connectChanged(
-		sigc::hide(sigc::mem_fun(*this, &KeyframeBar::on_selection_changed))
-		);
+		sigc::hide(sigc::mem_fun(*this, &KeyframeBar::on_selection_changed)));
 	}
 }
 
@@ -95,7 +98,7 @@ bool KeyframeBar::on_mouse_(GdkEventMotion* event)
 void KeyframeBar::rebuildUi()
 {
 	
-	//remove objects
+	//remove all objects
 	std::vector<Gtk::Widget *> children = get_children();
     for (unsigned int i = 0; i < children.size(); ++i) {
         Gtk::Widget *child = children[i];
@@ -119,12 +122,13 @@ void KeyframeBar::rebuildUi()
 	
 	for(int i=1;i <= num_keyframes;i++)
 	{
-		
+		SPObject * nextLayer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
+
 		//keyframe has objects
 		if(animation_layer->getRepr()->nthChild(i-1) && animation_layer->getRepr()->nthChild(i-1)->childCount() > 0)
-			kw = new KeyframeWidget(i, this, false);
+			kw = new KeyframeWidget(i, this, nextLayer, false);
 		else
-			kw = new KeyframeWidget(i, this, true);
+			kw = new KeyframeWidget(i, this, nextLayer, true);
 
 		//attach(*kw, i, i+1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 		attach(*kw, i, i+1, 0, 1, Gtk::SHRINK, Gtk::SHRINK);

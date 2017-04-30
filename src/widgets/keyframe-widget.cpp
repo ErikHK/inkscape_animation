@@ -91,7 +91,6 @@ void KeyframeWidget::selectLayer()
 	int i = 1;
 	while(parent_layer_sibling_keyframe && parent_layer_sibling)
 	{
-		
 		SP_ITEM(parent_layer_sibling)->setHidden(false);
 		SP_ITEM(parent_layer_sibling_keyframe)->setHidden(false);
 		
@@ -114,10 +113,10 @@ void KeyframeWidget::selectLayer()
 	parent_layer_sibling = 
 		desktop->getDocument()->getObjectById(
 		std::string(Glib::ustring::format("animationlayer", parent_id-1)));
+		
 	i = 2;
 	while(parent_layer_sibling_keyframe && parent_layer_sibling)
 	{
-		
 		SP_ITEM(parent_layer_sibling)->setHidden(false);
 		SP_ITEM(parent_layer_sibling_keyframe)->setHidden(false);
 		
@@ -128,6 +127,8 @@ void KeyframeWidget::selectLayer()
 		parent_layer_sibling = 
 		desktop->getDocument()->getObjectById(
 		std::string(Glib::ustring::format("animationlayer", parent_id-i)));	
+		
+		i++;
 	}
 	
 		
@@ -418,9 +419,10 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	
 }
 
-KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, bool _is_empty)
+KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer, bool _is_empty)
 {
 	parent = _parent;
+	layer = _layer;
 	id = _id;
 	
 	parent_id = parent->id;
@@ -430,10 +432,40 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, bool _is_empty)
 	set_can_focus(true);
 	
 	is_empty = _is_empty;
+	
+	
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+	if(desktop)
+	{
+		Inkscape::Selection * selection = desktop->getSelection();
+		sigc::connection _sel_changed_connection;
+		//_sel_changed_connection = selection->connectChanged(
+		//	sigc::bind(
+		//		sigc::ptr_fun(&KeyframeWidget::on_selection_changed),
+		//		desktop));
+		
+		_sel_changed_connection = selection->connectChanged(
+		sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_selection_changed)));
+	}
+	
 }
 
 KeyframeWidget::~KeyframeWidget()
 {
+}
+
+
+void KeyframeWidget::on_selection_changed()
+{
+	if(layer)
+	{
+		if(layer->getRepr()->childCount() > 0)
+			is_empty = false;
+		else
+			is_empty = true;
+	}
+	
+	queue_draw();
 }
 
 bool KeyframeWidget::on_expose_event(GdkEventExpose* event)

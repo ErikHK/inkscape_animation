@@ -178,7 +178,7 @@ void AnimationControl::rebuildUi()
 		Gtk::TreeModel::Row row = *iter;
 		//row[_model->m_col_id] = i+1;
 		//row[_model->m_col_id] = !item->isHidden();
-		row[_model->m_col_id] = false;
+		row[_model->m_col_id] = true;
 		row[_model->m_col_name] = Glib::ustring::format("animationlayer", i+1);
 		
 		KeyframeBar* kb = new KeyframeBar(i+1, child);
