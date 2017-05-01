@@ -21,6 +21,7 @@ public:
 protected:
     virtual bool on_expose_event(GdkEventExpose* event);
 	virtual bool on_my_focus_in_event(GdkEventFocus* event);
+	virtual bool on_my_focus_out_event(GdkEventFocus* event);
 	bool on_my_button_press_event(GdkEventButton* event);
 	void on_selection_changed();
 

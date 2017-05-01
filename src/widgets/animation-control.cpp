@@ -147,8 +147,7 @@ _new_layer_button("New Layer"), num_layers(0)
         //lbl2.set_tooltip_text(_("Layer/Group/Object label (inkscape:label). Double-click to set. Default value is object 'id'."));
         lbl2->show();
         _name_column->set_widget( *lbl2 );
-    }
-	
+    }	
 	rebuildUi();
 }
 
@@ -169,6 +168,8 @@ void AnimationControl::rebuildUi()
 	//Gtk::Label * lbl3 = new Gtk::Label("Keyframes");
 	//_keyframe_table.attach(*lbl3, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 	
+	std::vector<KeyframeBar*> kb_vec;
+	
 	for(int i = 0; i < num_layers; i++)
 	{
 		
@@ -176,15 +177,43 @@ void AnimationControl::rebuildUi()
 		
 		Gtk::TreeModel::iterator iter = _store->append();
 		Gtk::TreeModel::Row row = *iter;
-		//row[_model->m_col_id] = i+1;
-		//row[_model->m_col_id] = !item->isHidden();
 		row[_model->m_col_id] = true;
 		row[_model->m_col_name] = Glib::ustring::format("animationlayer", i+1);
 		
 		KeyframeBar* kb = new KeyframeBar(i+1, child);
 		row[_model->m_col_object] = kb;
 		_keyframe_table.attach(*kb, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+		kb_vec.push_back(kb);
 	}
+	
+	//iterate over keyframebars and set pointers to siblings
+	//kb_vec[0]->prev = NULL;
+	if(kb_vec.size() > 1)
+	{
+		//for(int i=0; i < kb_vec.size()-1; i++)
+		//{
+		//	kb_vec[i]->next = kb_vec[i+1];
+		//	kb_vec[i+1]->prev = kb_vec[i];
+		//}
+		kb_vec[0]->next = kb_vec[1];
+		kb_vec[1]->prev = kb_vec[0];
+	}
+	
+	if(kb_vec.size() > 2)
+	{
+		//for(int i=0; i < kb_vec.size()-1; i++)
+		//{
+		//	kb_vec[i]->next = kb_vec[i+1];
+		//	kb_vec[i+1]->prev = kb_vec[i];
+		//}
+		kb_vec[1]->next = kb_vec[2];
+		kb_vec[2]->prev = kb_vec[1];
+		
+	}
+	
+	
+	//kb_vec[kb_vec.size()-1]->next = NULL;
+	
 	
 	_scroller.add(_keyframe_table);
 	_scroller.set_policy(Gtk::POLICY_ALWAYS, Gtk::POLICY_NEVER);

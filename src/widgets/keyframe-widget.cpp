@@ -42,21 +42,26 @@ bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
 	return false;
 }
 
+bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus*)
+{
+	//selectLayer();
+	//if(layer)
+	//	SP_ITEM(layer)->setHidden(true);
+	return false;
+}
+
 void KeyframeWidget::selectLayer()
 {
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	
 	if(!desktop)
 		return;
-	
-	SPObject * animation_layer = desktop->namedview->document->getObjectById(
-					Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
 
-	if(!animation_layer)
+	if(!layer)
 		return;
-	
-	desktop->setCurrentLayer(animation_layer);
-	
+
+	desktop->setCurrentLayer(layer);
+
 	//only toggle if layer is not hidden
 	//if(!desktop->itemIsHidden(SP_ITEM(animation_layer)))
 	//	desktop->toggleLayerSolo(animation_layer);
@@ -69,14 +74,52 @@ void KeyframeWidget::selectLayer()
 	desktop->toggleHideAllLayers(true);
 	
 	//show current and parent
-	SP_ITEM(animation_layer)->setHidden(false);
-	if(animation_layer->parent)
-		SP_ITEM(animation_layer->parent)->setHidden(false);
+	SP_ITEM(layer)->setHidden(false);
+	if(layer->parent)
+		SP_ITEM(layer->parent)->setHidden(false);
 	
-	//also check if other layers exist, then show them as well
+	//////////also check if other layers exist, then show them as well, if they are set to be shown!//////////
+	KeyframeBar * next_kb = parent->next;
+	if(!next_kb)
+		return;
+	
+	/*
+	if(next_kb->widgets.size() > 25)
+	{
+		KeyframeWidget * w = next_kb->widgets[id];
+		
+		if(!w)
+			return;
+		
+		SPObject * obj = w->layer;
+		if(!obj)
+			return;
+		
+		SPItem * test = SP_ITEM(obj);
+		if(!test)
+			return;
+		test->setHidden(false);
+	}
+	*/
+		
+	/*
+	while(next_kb)
+	{
+		if(next_kb->is_visible)
+			SP_ITEM(next_kb->layer)->setHidden(false);
+		if(next_kb->widgets.size() > id+1)
+		{
+			//if(next_kb->widgets[id] && next_kb->widgets[id]->layer)
+			//	SP_ITEM(next_kb->widgets[id]->layer)->setHidden(false);
+		}
+			
+		next_kb = next_kb->next;
+	}
+	*/
+	
+	/*
 	SPObject * parent_layer_sibling_keyframe;
 	SPObject * parent_layer_sibling;
-	
 	
 	parent_layer_sibling_keyframe = 
 		desktop->getDocument()->getObjectById(
@@ -85,8 +128,7 @@ void KeyframeWidget::selectLayer()
 	parent_layer_sibling = 
 		desktop->getDocument()->getObjectById(
 		std::string(Glib::ustring::format("animationlayer", parent_id+1)));
-		
-		
+	
 	//first loop i+1
 	int i = 1;
 	while(parent_layer_sibling_keyframe && parent_layer_sibling)
@@ -131,7 +173,7 @@ void KeyframeWidget::selectLayer()
 		i++;
 	}
 	
-		
+	*/
 }
 
 static void createTween(KeyframeWidget * kww, gpointer user_data)
@@ -141,18 +183,11 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	pMenu = 0;
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	
-	std::cout << "RUNNING CREATE TWEEN";
-	
-	SPObject * layyy;
-	desktop->setCurrentLayer(layyy); //SHOULD CRASH RIGHT?
-	
 	if(!desktop)
 		return;
 	
-	std::cout << "DESKTOP EXISTS";
-	
-	SPObject * layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id)));
-	SPObject * startLayer = layer;
+	SPObject * layer = kw->layer;// = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id)));
+	SPObject * startLayer = kw->layer;
 	SPObject * endLayer;
 	SPObject * nextLayer;
 	float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0;
@@ -163,9 +198,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	int num_layers = 1;
 	while(layer)
 	{
-		std::cout << i;
-		std::cout << "\n";
-		std::cout << kw->id;
 		//layer = Inkscape::next_layer(desktop->currentRoot(), layer);
 		layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
 		
@@ -196,7 +228,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(!strcmp(child->name(), "svg:g"))
 		{
 			is_group = true;
-			
 		}
 		
 		if(!is_group)
@@ -454,7 +485,6 @@ KeyframeWidget::~KeyframeWidget()
 {
 }
 
-
 void KeyframeWidget::on_selection_changed()
 {
 	if(layer)
@@ -510,6 +540,7 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 	
 	signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
 	signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
+	signal_focus_out_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_out_event));
 	set_can_focus(true);
 	set_receives_default();
     set_sensitive();

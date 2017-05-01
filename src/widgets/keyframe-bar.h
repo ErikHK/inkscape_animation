@@ -16,6 +16,9 @@ public:
 	int id;
 	void addLayers();
 	bool is_visible;
+	KeyframeBar *next;
+	KeyframeBar *prev;
+	std::vector<KeyframeWidget*> widgets;
 	SPObject * layer;	//associated animation layer
 	//KeyframeWidget *getCurrentKeyframe();
 	

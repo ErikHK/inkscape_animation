@@ -116,24 +116,25 @@ void KeyframeBar::rebuildUi()
 	
 	int num_keyframes = animation_layer->getRepr()->childCount();
 	
-	std::vector<Gtk::Widget*> wlist;
+	//std::vector<Gtk::Widget*> wlist;
 	
 	KeyframeWidget* kw;
 	
-	for(int i=1;i <= num_keyframes;i++)
+	for(int i=0;i < num_keyframes;i++)
 	{
-		SPObject * nextLayer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
+		SPObject * nextLayer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i+1)));
 
 		//keyframe has objects
-		if(animation_layer->getRepr()->nthChild(i-1) && animation_layer->getRepr()->nthChild(i-1)->childCount() > 0)
+		if(animation_layer->getRepr()->nthChild(i) && animation_layer->getRepr()->nthChild(i)->childCount() > 0)
 			kw = new KeyframeWidget(i, this, nextLayer, false);
 		else
 			kw = new KeyframeWidget(i, this, nextLayer, true);
-
+		
 		//attach(*kw, i, i+1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 		attach(*kw, i, i+1, 0, 1, Gtk::SHRINK, Gtk::SHRINK);
 		
-		wlist.push_back(kw);
+		//wlist.push_back(kw);
+		widgets.push_back(kw);
 		
 		add_events(Gdk::ALL_EVENTS_MASK);
 		kw->add_events(Gdk::ALL_EVENTS_MASK);
@@ -144,9 +145,9 @@ void KeyframeBar::rebuildUi()
 		kw->set_can_focus(true);
 	}
 	
-	set_focus_chain(wlist);
+	//set_focus_chain(widgets);
 	show_all_children();
-	set_focus_chain(wlist);
+	
 }
 
 void KeyframeBar::addLayers()
