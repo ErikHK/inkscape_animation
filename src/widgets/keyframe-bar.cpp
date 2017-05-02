@@ -126,9 +126,9 @@ void KeyframeBar::rebuildUi()
 
 		//keyframe has objects
 		if(animation_layer->getRepr()->nthChild(i) && animation_layer->getRepr()->nthChild(i)->childCount() > 0)
-			kw = new KeyframeWidget(i, this, nextLayer, false);
+			kw = new KeyframeWidget(i+1, this, nextLayer, false);
 		else
-			kw = new KeyframeWidget(i, this, nextLayer, true);
+			kw = new KeyframeWidget(i+1, this, nextLayer, true);
 		
 		//attach(*kw, i, i+1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 		attach(*kw, i, i+1, 0, 1, Gtk::SHRINK, Gtk::SHRINK);

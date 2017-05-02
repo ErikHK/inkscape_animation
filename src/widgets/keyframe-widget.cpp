@@ -42,8 +42,13 @@ bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
 	return false;
 }
 
-bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus*)
+bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 {
+	//KeyframeWidget* kw = dynamic_cast<KeyframeWidget*>(event->window);
+	
+	if(layer && gdk_window_get_window_type(event->window) != GDK_WINDOW_TOPLEVEL)
+		SP_ITEM(layer)->setHidden(true);
+	
 	//selectLayer();
 	//if(layer)
 	//	SP_ITEM(layer)->setHidden(true);
@@ -71,18 +76,18 @@ void KeyframeWidget::selectLayer()
 	//	SP_ITEM(animation_layer->parent)->setHidden(false);
 
 	//hide all layers
-	desktop->toggleHideAllLayers(true);
+	//desktop->toggleHideAllLayers(true);
 	
 	//show current and parent
 	SP_ITEM(layer)->setHidden(false);
 	if(layer->parent)
 		SP_ITEM(layer->parent)->setHidden(false);
-	
+	/*
 	//////////also check if other layers exist, then show them as well, if they are set to be shown!//////////
 	KeyframeBar * next_kb = parent->next;
 	if(!next_kb)
 		return;
-	
+	*/
 	/*
 	if(next_kb->widgets.size() > 25)
 	{
@@ -542,7 +547,7 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 	signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
 	signal_focus_out_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_out_event));
 	set_can_focus(true);
-	set_receives_default();
+	//set_receives_default();
     set_sensitive();
 	
 	return true;

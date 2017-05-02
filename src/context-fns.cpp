@@ -27,6 +27,17 @@ static const double midpt_goldenratio_2 = (goldenratio + 2) / 2;
 bool Inkscape::have_viable_layer(SPDesktop *desktop, MessageContext *message)
 {
     SPItem const *layer = SP_ITEM(desktop->currentLayer());
+	
+	if(!layer)
+		return false;
+	
+	//disregard if we have an animation layer
+	std::string testtt(desktop->currentLayer()->getAttribute("id"));
+	if(testtt.find("animationlayer") != std::string::npos )
+	{
+		SP_ITEM(layer)->setHidden(false);
+		return true;
+	}
 
     if ( !layer || desktop->itemIsHidden(layer) ) {
             message->flash(Inkscape::ERROR_MESSAGE,
@@ -56,6 +67,16 @@ bool Inkscape::have_viable_layer(SPDesktop *desktop, MessageContext *message)
 bool Inkscape::have_viable_layer(SPDesktop *desktop, MessageStack *message)
 {
     SPItem const *layer = SP_ITEM(desktop->currentLayer());
+	
+	if(!layer)
+		return false;
+	
+	//disregard if we have an animation layer
+	if(std::string(desktop->currentLayer()->getRepr()->name()).find("animationlayer") != std::string::npos )
+	{
+		SP_ITEM(layer)->setHidden(false);
+		return true;
+	}
 
     if ( !layer || desktop->itemIsHidden(layer) ) {
             message->flash(Inkscape::WARNING_MESSAGE,
