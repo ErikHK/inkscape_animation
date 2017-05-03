@@ -210,6 +210,17 @@ void AnimationControl::rebuildUi()
 		kb_vec[2]->prev = kb_vec[1];
 	}
 	
+	if(kb_vec.size() > 3)
+	{
+		//for(int i=0; i < kb_vec.size()-1; i++)
+		//{
+		//	kb_vec[i]->next = kb_vec[i+1];
+		//	kb_vec[i+1]->prev = kb_vec[i];
+		//}
+		kb_vec[2]->next = kb_vec[3];
+		kb_vec[3]->prev = kb_vec[4];
+	}
+	
 	
 	//kb_vec[kb_vec.size()-1]->next = NULL;
 	

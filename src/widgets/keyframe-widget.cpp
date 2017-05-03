@@ -83,17 +83,16 @@ void KeyframeWidget::selectLayer()
 	SP_ITEM(layer)->setHidden(false);
 	if(layer->parent)
 		SP_ITEM(layer->parent)->setHidden(false);
-	/*
+	
 	//////////also check if other layers exist, then show them as well, if they are set to be shown!//////////
 	KeyframeBar * next_kb = parent->next;
 	if(!next_kb)
 		return;
-	*/
-	/*
+	
 	if(next_kb->widgets.size() > 25)
 	{
 		KeyframeWidget * w = next_kb->widgets[id];
-		
+		/*
 		if(!w)
 			return;
 		
@@ -105,8 +104,9 @@ void KeyframeWidget::selectLayer()
 		if(!test)
 			return;
 		test->setHidden(false);
+		*/
 	}
-	*/
+	
 		
 	/*
 	while(next_kb)
