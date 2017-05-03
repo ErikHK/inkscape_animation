@@ -121,15 +121,15 @@ void KeyframeBar::rebuildUi()
 	
 	KeyframeWidget* kw;
 	
-	for(int i=0;i < num_keyframes;i++)
+	for(int i=1;i <= num_keyframes;i++)
 	{
-		SPObject * assoc_layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i+1)));
+		SPObject * assoc_layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
 		
 		//keyframe has objects
-		if(animation_layer->getRepr()->nthChild(i) && animation_layer->getRepr()->nthChild(i)->childCount() > 0)
-			kw = new KeyframeWidget(i+1, this, assoc_layer, false);
+		if(animation_layer->getRepr()->nthChild(i-1) && animation_layer->getRepr()->nthChild(i-1)->childCount() > 0)
+			kw = new KeyframeWidget(i, this, assoc_layer, false);
 		else
-			kw = new KeyframeWidget(i+1, this, assoc_layer, true);
+			kw = new KeyframeWidget(i, this, assoc_layer, true);
 		
 		//attach(*kw, i, i+1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 		attach(*kw, i, i+1, 0, 1, Gtk::SHRINK, Gtk::SHRINK);
@@ -146,9 +146,9 @@ void KeyframeBar::rebuildUi()
 		kw->set_can_focus(true);
 	}
 	
-	//set_focus_chain(widgets);
+	set_focus_chain(widgets);
 	show_all_children();
-	//set_focus_chain(widgets);
+	set_focus_chain(widgets);
 	
 }
 

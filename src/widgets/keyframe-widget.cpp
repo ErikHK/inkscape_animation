@@ -63,7 +63,8 @@ void KeyframeWidget::selectLayer()
 		return;
 
 	if(!layer)
-		return;
+		layer = desktop->namedview->document->getObjectById(
+	Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
 
 	desktop->setCurrentLayer(layer);
 
