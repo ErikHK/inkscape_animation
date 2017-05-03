@@ -208,7 +208,6 @@ void AnimationControl::rebuildUi()
 		//}
 		kb_vec[1]->next = kb_vec[2];
 		kb_vec[2]->prev = kb_vec[1];
-		
 	}
 	
 	

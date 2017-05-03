@@ -56,6 +56,7 @@ KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 	{
 		Inkscape::Selection * selection = desktop->getSelection();
 		sigc::connection _sel_changed_connection;
+		
 		//_sel_changed_connection = selection->connectChanged(
 		//	sigc::bind(
 		//		sigc::ptr_fun(&KeyframeBar::on_selection_changed),
@@ -122,13 +123,13 @@ void KeyframeBar::rebuildUi()
 	
 	for(int i=0;i < num_keyframes;i++)
 	{
-		SPObject * nextLayer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i+1)));
-
+		SPObject * assoc_layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i+1)));
+		
 		//keyframe has objects
 		if(animation_layer->getRepr()->nthChild(i) && animation_layer->getRepr()->nthChild(i)->childCount() > 0)
-			kw = new KeyframeWidget(i+1, this, nextLayer, false);
+			kw = new KeyframeWidget(i+1, this, assoc_layer, false);
 		else
-			kw = new KeyframeWidget(i+1, this, nextLayer, true);
+			kw = new KeyframeWidget(i+1, this, assoc_layer, true);
 		
 		//attach(*kw, i, i+1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 		attach(*kw, i, i+1, 0, 1, Gtk::SHRINK, Gtk::SHRINK);
@@ -147,6 +148,7 @@ void KeyframeBar::rebuildUi()
 	
 	//set_focus_chain(widgets);
 	show_all_children();
+	//set_focus_chain(widgets);
 	
 }
 
