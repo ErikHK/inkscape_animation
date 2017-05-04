@@ -46,8 +46,32 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 {
 	//KeyframeWidget* kw = dynamic_cast<KeyframeWidget*>(event->window);
 	
-	if(layer && gdk_window_get_window_type(event->window) != GDK_WINDOW_TOPLEVEL)
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+	
+	if(!desktop)
+		return false;
+	
+	if(layer)
 		SP_ITEM(layer)->setHidden(true);
+		//layer->getRepr()->setAttribute("style", "display:none");
+	
+	if(!parent)
+		return false;
+		
+	if(!parent->next)
+		return false;
+	
+	if(parent->next->widgets[id-1]->layer)
+	{
+		desktop->setCurrentLayer(parent->next->widgets[id-1]->layer);
+		//SP_ITEM(parent->next->widgets[id-1]->layer)->setHidden(true);
+		Inkscape::XML::Node * n = parent->next->widgets[id-1]->layer->getRepr();
+		//SP_ITEM(parent->next->widgets[id-1]->layer)->getRepr()->setAttribute("style", "display:none");
+		if(n)
+			n->setAttribute("style", "display:none");
+		//parent->next->layer->getRepr()->setAttribute("style", "display:none");
+	}
+	
 	
 	//selectLayer();
 	//if(layer)
@@ -77,8 +101,9 @@ void KeyframeWidget::selectLayer()
 	//	SP_ITEM(animation_layer->parent)->setHidden(false);
 
 	//hide all layers
+	//TAKES A LOT OF TIME
 	//desktop->toggleHideAllLayers(true);
-	
+
 	//show current and parent
 	SP_ITEM(layer)->setHidden(false);
 	if(layer->parent)
@@ -89,10 +114,13 @@ void KeyframeWidget::selectLayer()
 	if(!next_kb)
 		return;
 	
-	if(next_kb->widgets.size() > 25)
+	if(next_kb->is_visible)
+		SP_ITEM(next_kb->layer)->setHidden(false);
+	
+	if(next_kb->widgets.size() > 25 && next_kb->is_visible)
 	{
-		KeyframeWidget * w = next_kb->widgets[id];
-		/*
+		KeyframeWidget * w = next_kb->widgets[id-1];
+		
 		if(!w)
 			return;
 		
@@ -100,11 +128,15 @@ void KeyframeWidget::selectLayer()
 		if(!obj)
 			return;
 		
+		obj->getRepr()->setAttribute("style", "display:inline");
+		
+		/*
 		SPItem * test = SP_ITEM(obj);
 		if(!test)
 			return;
 		test->setHidden(false);
 		*/
+		
 	}
 	
 		
