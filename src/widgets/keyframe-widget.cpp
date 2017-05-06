@@ -64,12 +64,22 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 	
 	//if(parent->next == NULL)
 	//	return false;
+	KeyframeBar * nex = parent->next;
 	
-	if(parent && parent->next && parent->next->widgets[id-1]->layer)
-		LAYERS_TO_HIDE.push_back(parent->next->widgets[id-1]->layer);
+	while(parent && nex && nex->widgets[id-1]->layer)
+	{
+		LAYERS_TO_HIDE.push_back(nex->widgets[id-1]->layer);
+		nex = nex->next;
+	}
+
+	KeyframeBar * pre = parent->prev;
 	
-	if(parent && parent->prev && parent->prev->widgets[id-1]->layer)
-		LAYERS_TO_HIDE.push_back(parent->prev->widgets[id-1]->layer);
+	while(parent && pre && pre->widgets[id-1]->layer)
+	{
+		LAYERS_TO_HIDE.push_back(pre->widgets[id-1]->layer);
+		pre = pre->next;
+	}
+	
 	
 	//if(parent && parent->next->widgets[id-1]->layer)
 	//	parent->animationControl->layersToHide.push_back(parent->next->widgets[id-1]->layer);
@@ -105,19 +115,11 @@ void KeyframeWidget::selectLayer()
 	if(!desktop)
 		return;
 
-	if(layer == NULL)
+	if(!layer)
 		layer = desktop->namedview->document->getObjectById(
 	Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
 
 	desktop->setCurrentLayer(layer);
-
-	//only toggle if layer is not hidden
-	//if(!desktop->itemIsHidden(SP_ITEM(animation_layer)))
-	//	desktop->toggleLayerSolo(animation_layer);
-	
-	//also show parent layer
-	//if(animation_layer->parent)
-	//	SP_ITEM(animation_layer->parent)->setHidden(false);
 
 	//hide all layers
 	//TAKES A LOT OF TIME
@@ -130,124 +132,41 @@ void KeyframeWidget::selectLayer()
 	
 	//////////also check if other layers exist, then show them as well, if they are set to be shown!//////////
 	KeyframeBar * next_kb = parent->next;
-	//if(next_kb == NULL)
-	//	return;
 	
-	if(next_kb)
+	while(next_kb)
 	{
 		if(next_kb->is_visible)
-			SP_ITEM(next_kb->layer)->setHidden(false);
-		else
-			LAYERS_TO_HIDE.push_back(next_kb->layer);
-		
-		if(next_kb->widgets.size() > 25 && next_kb->is_visible)
 		{
-			KeyframeWidget * w = next_kb->widgets[id-1];
-			
-			if(!w)
-				return;
-			
-			SPObject * obj = w->layer;
-			if(!obj)
-				return;
-			
-			obj->getRepr()->setAttribute("style", "display:inline");
-			//SP_ITEM(obj)->setHidden(false);
-			
-			/*
-			SPItem * test = SP_ITEM(obj);
-			if(!test)
-				return;
-			test->setHidden(false);
-			*/
-			
+			SP_ITEM(next_kb->layer)->setHidden(false);
+			if(next_kb->widgets[id-1]->layer)
+				SP_ITEM(next_kb->widgets[id-1]->layer)->setHidden(false);
 		}
+		//else
+		//	LAYERS_TO_HIDE.push_back(next_kb->layer);
+		
+		next_kb = next_kb->next;
 	}
 	
-	//also try this:
-	//if(parent->layersToHide.size() > 0)
-	//	parent->layersToHide[0]->getRepr()->setAttribute("style", "display:none");
+	next_kb = parent->prev;
+	while(next_kb)
+	{
+		if(next_kb->is_visible)
+		{
+			SP_ITEM(next_kb->layer)->setHidden(false);
+			if(next_kb->widgets[id-1]->layer)
+				SP_ITEM(next_kb->widgets[id-1]->layer)->setHidden(false);
+		}
+		
+		next_kb = next_kb->prev;
+	}
 	
 	if(LAYERS_TO_HIDE.size() > 0)
 	{
 		for(int i = 0; i < LAYERS_TO_HIDE.size(); i++)
-			LAYERS_TO_HIDE[i]->getRepr()->setAttribute("style", "display:none");
-			//SP_ITEM(LAYERS_TO_HIDE[i])->setHidden(true);
+			//LAYERS_TO_HIDE[i]->getRepr()->setAttribute("style", "display:none");
+			SP_ITEM(LAYERS_TO_HIDE[i])->setHidden(true);
 		LAYERS_TO_HIDE.clear();
 	}
-	
-	/*
-	while(next_kb)
-	{
-		if(next_kb->is_visible)
-			SP_ITEM(next_kb->layer)->setHidden(false);
-		if(next_kb->widgets.size() > id+1)
-		{
-			//if(next_kb->widgets[id] && next_kb->widgets[id]->layer)
-			//	SP_ITEM(next_kb->widgets[id]->layer)->setHidden(false);
-		}
-			
-		next_kb = next_kb->next;
-	}
-	*/
-	
-	/*
-	SPObject * parent_layer_sibling_keyframe;
-	SPObject * parent_layer_sibling;
-	
-	parent_layer_sibling_keyframe = 
-		desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", parent_id+1, "keyframe", id)));
-		
-	parent_layer_sibling = 
-		desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", parent_id+1)));
-	
-	//first loop i+1
-	int i = 1;
-	while(parent_layer_sibling_keyframe && parent_layer_sibling)
-	{
-		SP_ITEM(parent_layer_sibling)->setHidden(false);
-		SP_ITEM(parent_layer_sibling_keyframe)->setHidden(false);
-		
-		i++;
-		
-		parent_layer_sibling_keyframe = 
-		desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", parent_id+i, "keyframe", id)));
-		
-		parent_layer_sibling = 
-		desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", parent_id+i)));	
-	}
-	
-	//then i-1 etc
-	parent_layer_sibling_keyframe = 
-		desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", parent_id-1, "keyframe", id)));
-		
-	parent_layer_sibling = 
-		desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", parent_id-1)));
-		
-	i = 2;
-	while(parent_layer_sibling_keyframe && parent_layer_sibling)
-	{
-		SP_ITEM(parent_layer_sibling)->setHidden(false);
-		SP_ITEM(parent_layer_sibling_keyframe)->setHidden(false);
-		
-		parent_layer_sibling_keyframe = 
-		desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", parent_id-i, "keyframe", id)));
-		
-		parent_layer_sibling = 
-		desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", parent_id-i)));	
-		
-		i++;
-	}
-	
-	*/
 }
 
 static void createTween(KeyframeWidget * kww, gpointer user_data)
