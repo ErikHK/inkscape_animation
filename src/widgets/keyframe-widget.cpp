@@ -39,12 +39,14 @@ static void gotFocus(GtkWidget* w, GdkEventKey *event, gpointer callback_data)
 
 bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
 {
+	pMenu = 0;
 	selectLayer();
 	return false;
 }
 
 bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 {
+	pMenu = 0;
 	//KeyframeWidget* kw = dynamic_cast<KeyframeWidget*>(event->window);
 	
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;

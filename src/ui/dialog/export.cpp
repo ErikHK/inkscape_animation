@@ -982,6 +982,33 @@ Glib::ustring Export::filename_add_extension (Glib::ustring filename, Glib::ustr
     }
 }
 
+
+Glib::ustring Export::filename_add_extension (Glib::ustring filename, Glib::ustring extension, Glib::ustring extra)
+{
+    Glib::ustring::size_type dot;
+    Glib::ustring::size_type dot_ext;
+
+    dot = filename.find_last_of(".");
+    dot_ext = filename.lowercase().rfind("." + extension.lowercase());
+    if ( dot == std::string::npos )
+    {
+        return filename = filename + extra + "." + extension;
+    }
+    else
+    {
+        if (dot == dot_ext)
+        {
+            return filename = filename.substr(0, filename.size()-4) + extra + "." + extension;
+        }
+        else
+        {
+            return filename = filename + extra + "." + extension;
+        }
+    }
+}
+
+
+
 Glib::ustring Export::absolutize_path_from_document_location (SPDocument *doc, const Glib::ustring &filename)
 {
     Glib::ustring path;
@@ -1125,7 +1152,11 @@ void Export::onExport ()
         unsigned long int const height = int(getValue(bmheight_adj) + 0.5);
 		
 		gint num = 0;
-		SPObject * lay = doc->getObjectById("layer1");
+		
+		//first hide all layers
+		desktop->toggleHideAllLayers(true);
+		
+		SPObject * lay = doc->getObjectById("animationlayer1keyframe1");
 		if(!lay)
 			return;
 		
@@ -1139,14 +1170,11 @@ void Export::onExport ()
 		}
 		
 		//hehe
-		SPObject * layer = doc->getObjectById("layer1"); //start with first layer
-		desktop->layer_manager->setCurrentLayer(layer); //set first layer
-		desktop->toggleLayerSolo(layer); //export one frame at a time
-		
-		if(!layer)
-			return;
-		
-		
+		SPObject * layer = doc->getObjectById("animationlayer1keyframe1"); //start with first layer
+		if(layer)
+			desktop->layer_manager->setCurrentLayer(layer); //set first layer
+		//desktop->toggleLayerSolo(layer); //export one frame at a time
+		SP_ITEM(layer)->setHidden(false);
 		
 		int i=0;
 		prog_dlg = create_progress_dialog(Glib::ustring::compose(_("Exporting %1 files"), num));
@@ -1154,18 +1182,36 @@ void Export::onExport ()
 		setExporting(true, Glib::ustring::compose(_("Exporting %1 files"), num));
 
 		gint export_count = 0;
-		while(layer->getRepr()->childCount() > 0) //export all layers that have objects
+		//while(layer->getRepr()->childCount() > 0) //export all layers that have objects
+		//while(layer)
+			
+		for(int j=0;j < num; j++)
 		{
-			desktop->toggleLayerSolo(layer); //export one frame at a time
+			//desktop->toggleLayerSolo(layer); //export one frame at a time
+			SP_ITEM(layer)->setHidden(false);
+			if(layer->parent)
+				SP_ITEM(layer->parent)->setHidden(false);
 			
 			// retrieve export filename hint
-			const gchar *filename = layer->getRepr()->attribute("inkscape:export-filename");
+			//const gchar *filename = layer->getRepr()->attribute("inkscape:export-filename");
+			//const gchar * filename = filename_entry.get_text();
+			Glib::ustring filename = filename_entry.get_text();
 			Glib::ustring path;
-			if (!filename) {
-				Glib::ustring tmp;
-				path = create_filepath_from_id(Glib::ustring::format(i), tmp);
+			if (filename.empty()) {
+				//Glib::ustring tmp;
+				//path = create_filepath_from_id(Glib::ustring::format(i), tmp);
+				desktop->messageStack()->flash(Inkscape::ERROR_MESSAGE, _("You have to enter a filename."));
+				sp_ui_error_dialog(_("You have to enter a filename"));
+				return;
 			} else {
-				path = absolutize_path_from_document_location(doc, filename);
+				//path = absolutize_path_from_document_location(doc, filename);
+				//path = create_filepath_from_id(Glib::ustring::format(i), filename_entry.get_text());
+				
+				Glib::ustring const filename_ext = filename_add_extension(filename, "png", Glib::ustring::format(j));
+				//filename_entry.set_text(filename_ext);
+				//filename_entry.set_position(filename_ext.length());
+				path = absolutize_path_from_document_location(doc, filename_ext);
+				
 			}
 
             prog_dlg->set_data("current", GINT_TO_POINTER(i));
@@ -1194,7 +1240,8 @@ void Export::onExport ()
 			}else{
 				++export_count;
 			}
-					  
+			
+			SP_ITEM(layer)->setHidden(true);
 			layer = Inkscape::next_layer(desktop->currentRoot(), layer);
 			if(!layer)
 				return;
