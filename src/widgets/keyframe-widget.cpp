@@ -62,11 +62,14 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 	if(parent == NULL)
 		return false;
 	
-	if(parent->next == NULL)
-		return false;
+	//if(parent->next == NULL)
+	//	return false;
 	
-	if(parent && parent->next->widgets[id-1]->layer)
+	if(parent && parent->next && parent->next->widgets[id-1]->layer)
 		LAYERS_TO_HIDE.push_back(parent->next->widgets[id-1]->layer);
+	
+	if(parent && parent->prev && parent->prev->widgets[id-1]->layer)
+		LAYERS_TO_HIDE.push_back(parent->prev->widgets[id-1]->layer);
 	
 	//if(parent && parent->next->widgets[id-1]->layer)
 	//	parent->animationControl->layersToHide.push_back(parent->next->widgets[id-1]->layer);
@@ -127,37 +130,39 @@ void KeyframeWidget::selectLayer()
 	
 	//////////also check if other layers exist, then show them as well, if they are set to be shown!//////////
 	KeyframeBar * next_kb = parent->next;
-	if(next_kb == NULL)
-		return;
+	//if(next_kb == NULL)
+	//	return;
 	
-	if(next_kb->is_visible)
-		SP_ITEM(next_kb->layer)->setHidden(false);
-	else
-		LAYERS_TO_HIDE.push_back(next_kb->layer);
-	
-	if(next_kb->widgets.size() > 25 && next_kb->is_visible)
+	if(next_kb)
 	{
-		KeyframeWidget * w = next_kb->widgets[id-1];
+		if(next_kb->is_visible)
+			SP_ITEM(next_kb->layer)->setHidden(false);
+		else
+			LAYERS_TO_HIDE.push_back(next_kb->layer);
 		
-		if(!w)
-			return;
-		
-		SPObject * obj = w->layer;
-		if(!obj)
-			return;
-		
-		obj->getRepr()->setAttribute("style", "display:inline");
-		//SP_ITEM(obj)->setHidden(false);
-		
-		/*
-		SPItem * test = SP_ITEM(obj);
-		if(!test)
-			return;
-		test->setHidden(false);
-		*/
-		
+		if(next_kb->widgets.size() > 25 && next_kb->is_visible)
+		{
+			KeyframeWidget * w = next_kb->widgets[id-1];
+			
+			if(!w)
+				return;
+			
+			SPObject * obj = w->layer;
+			if(!obj)
+				return;
+			
+			obj->getRepr()->setAttribute("style", "display:inline");
+			//SP_ITEM(obj)->setHidden(false);
+			
+			/*
+			SPItem * test = SP_ITEM(obj);
+			if(!test)
+				return;
+			test->setHidden(false);
+			*/
+			
+		}
 	}
-	
 	
 	//also try this:
 	//if(parent->layersToHide.size() > 0)
