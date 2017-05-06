@@ -132,7 +132,6 @@ void KeyframeBar::rebuildUi()
 		else
 			kw = new KeyframeWidget(i, this, assoc_layer, true);
 		
-		//attach(*kw, i, i+1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 		attach(*kw, i, i+1, 0, 1, Gtk::SHRINK, Gtk::SHRINK);
 		
 		//wlist.push_back(kw);
@@ -142,14 +141,14 @@ void KeyframeBar::rebuildUi()
 		kw->add_events(Gdk::ALL_EVENTS_MASK);
 		
 		//kw->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_focus_in_event));
-		//kw->signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_button_press_event));
-		//kw->signal_motion_notify_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_mouse_));
+		kw->signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_button_press_event));
+		kw->signal_motion_notify_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_mouse_));
 		kw->set_can_focus(true);
 	}
 
+	set_focus_chain(widgets);
 	show_all_children();
 	set_focus_chain(widgets);
-	
 }
 
 void KeyframeBar::addLayers()

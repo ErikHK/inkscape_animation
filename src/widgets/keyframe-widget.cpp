@@ -121,8 +121,8 @@ void KeyframeWidget::selectLayer()
 		layer = desktop->namedview->document->getObjectById(
 				Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
 
-	//desktop->setCurrentLayer(layer);
-	desktop->layer_manager->setCurrentLayer(layer);
+	desktop->setCurrentLayer(layer);
+	//desktop->layer_manager->setCurrentLayer(layer);
 
 	//hide all layers
 	//TAKES A LOT OF TIME
