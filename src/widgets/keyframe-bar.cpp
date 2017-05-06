@@ -87,7 +87,6 @@ bool KeyframeBar::on_my_button_press_event(GdkEventButton*)
 {
 	//rebuildUi();
 	grab_focus();
-
 	return false;
 }
 
@@ -101,7 +100,6 @@ bool KeyframeBar::on_mouse_(GdkEventMotion* event)
 
 void KeyframeBar::rebuildUi()
 {
-	
 	//remove all objects
 	std::vector<Gtk::Widget *> children = get_children();
     for (unsigned int i = 0; i < children.size(); ++i) {
@@ -144,12 +142,11 @@ void KeyframeBar::rebuildUi()
 		kw->add_events(Gdk::ALL_EVENTS_MASK);
 		
 		//kw->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_focus_in_event));
-		kw->signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_button_press_event));
-		kw->signal_motion_notify_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_mouse_));
+		//kw->signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_button_press_event));
+		//kw->signal_motion_notify_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_mouse_));
 		kw->set_can_focus(true);
 	}
-	
-	set_focus_chain(widgets);
+
 	show_all_children();
 	set_focus_chain(widgets);
 	

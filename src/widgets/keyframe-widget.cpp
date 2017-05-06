@@ -119,9 +119,10 @@ void KeyframeWidget::selectLayer()
 
 	if(!layer)
 		layer = desktop->namedview->document->getObjectById(
-	Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
+				Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
 
-	desktop->setCurrentLayer(layer);
+	//desktop->setCurrentLayer(layer);
+	desktop->layer_manager->setCurrentLayer(layer);
 
 	//hide all layers
 	//TAKES A LOT OF TIME
@@ -199,7 +200,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//as soon as a layer has a child, break and set endLayer to this!
 		if (layer->getRepr()->childCount() > 0)
 			break;
-		
+
 		num_layers++;
 		i++;
 	}
@@ -279,8 +280,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		layer = nextLayer;
 		i++;
 	}
-		
-		
+	
 	NodeTool *tool = 0;
     Inkscape::UI::Tools::ToolBase *ec = desktop->event_context;
 	if (INK_IS_NODE_TOOL(ec)) {
@@ -377,7 +377,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			//std::string id = node->nodeList().subpathList().pm().item()->getId(); 
 			double x = Quantity::convert(node->position()[0], "px", "mm");
 			double y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(node->position()[1], "px", "mm");
-				
+
 			//ii = std::distance(tool->_multipath->_selection.begin(), i);
 			ii = std::distance(n->nodeList().begin(), j);
 			//ii = (int)i - (int)tool->_multipath->_selection.begin();
@@ -474,6 +474,16 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 		sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_selection_changed)));
 	}
 	
+	
+	
+	add_events(Gdk::ALL_EVENTS_MASK);
+	
+	signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
+	signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
+	signal_focus_out_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_out_event));
+	set_can_focus(true);
+	//set_receives_default();
+    set_sensitive();
 }
 
 KeyframeWidget::~KeyframeWidget()
@@ -529,16 +539,7 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		cr->move_to(0, height-.5);
 		cr->line_to(width, height-.5);
 		cr->stroke();
-  }
-
-	add_events(Gdk::ALL_EVENTS_MASK);
-	
-	signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
-	signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
-	signal_focus_out_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_out_event));
-	set_can_focus(true);
-	//set_receives_default();
-    set_sensitive();
+	}
 	
 	return true;
 }
