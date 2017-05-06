@@ -1171,10 +1171,11 @@ void Export::onExport ()
 		
 		//hehe
 		SPObject * layer = doc->getObjectById("animationlayer1keyframe1"); //start with first layer
-		if(layer)
-			desktop->layer_manager->setCurrentLayer(layer); //set first layer
+		SPObject * layer2 = doc->getObjectById("animationlayer2keyframe1"); //start with first layer
+		SPObject * layer3 = doc->getObjectById("animationlayer3keyframe1"); //start with first layer
+		//if(layer)
+		//	desktop->layer_manager->setCurrentLayer(layer); //set first layer
 		//desktop->toggleLayerSolo(layer); //export one frame at a time
-		SP_ITEM(layer)->setHidden(false);
 		
 		int i=0;
 		prog_dlg = create_progress_dialog(Glib::ustring::compose(_("Exporting %1 files"), num));
@@ -1191,6 +1192,24 @@ void Export::onExport ()
 			SP_ITEM(layer)->setHidden(false);
 			if(layer->parent)
 				SP_ITEM(layer->parent)->setHidden(false);
+			
+			//try to show animationlayer2keyframe j+1
+			layer2 = doc->getObjectById(std::string(Glib::ustring::format("animationlayer2keyframe", j+1)));
+			if(layer2)
+			{
+				SP_ITEM(layer2)->setHidden(false);
+				if(layer2->parent)
+				SP_ITEM(layer2->parent)->setHidden(false);
+			}
+			
+			//try to show animationlayer3keyframe j+1
+			layer3 = doc->getObjectById(std::string(Glib::ustring::format("animationlayer3keyframe", j+1)));
+			if(layer3)
+			{
+				SP_ITEM(layer3)->setHidden(false);
+				if(layer3->parent)
+				SP_ITEM(layer3->parent)->setHidden(false);
+			}
 			
 			// retrieve export filename hint
 			//const gchar *filename = layer->getRepr()->attribute("inkscape:export-filename");
@@ -1242,6 +1261,10 @@ void Export::onExport ()
 			}
 			
 			SP_ITEM(layer)->setHidden(true);
+			if(layer2)
+				SP_ITEM(layer2)->setHidden(true);
+			if(layer3)
+				SP_ITEM(layer3)->setHidden(true);
 			layer = Inkscape::next_layer(desktop->currentRoot(), layer);
 			if(!layer)
 				return;
