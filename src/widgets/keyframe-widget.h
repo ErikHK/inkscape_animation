@@ -1,8 +1,10 @@
 #include <gtkmm/drawingarea.h>
 #include <sp-object.h>
 #include "inkscape.h"
+//#include "keyframe-bar.h"
 
 class KeyframeBar;
+//class AnimationControl;
 class KeyframeWidget : public Gtk::DrawingArea
 {
 public:

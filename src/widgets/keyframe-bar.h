@@ -4,10 +4,12 @@
 #include "desktop.h"
 #include "selection.h"
 //#include "keyframe-widget.h"
+//#include "animation-control.h"
 #include <gdk/gdk.h>
 #include "sp-namedview.h"
 
 class KeyframeWidget;
+//class AnimationControl;
 class KeyframeBar : public Gtk::Table
 {
 public:
@@ -19,6 +21,8 @@ public:
 	KeyframeBar *next;
 	KeyframeBar *prev;
 	std::vector<KeyframeWidget*> widgets;
+	//std::vector<SPObject*> layersToHide;
+	
 	SPObject * layer;	//associated animation layer
 	//KeyframeWidget *getCurrentKeyframe();
 	

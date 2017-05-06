@@ -30,11 +30,12 @@ using Inkscape::UI::NodeList;
 //static void gotFocus(GtkWidget*, void * data);
 static Gtk::Menu * pMenu = 0;
 
+std::vector<SPObject *> LAYERS_TO_HIDE;
+
 static void gotFocus(GtkWidget* w, GdkEventKey *event, gpointer callback_data)
 {
 	
 }
-
 
 bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
 {
@@ -51,10 +52,25 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 	if(!desktop)
 		return false;
 	
-	if(layer)
-		SP_ITEM(layer)->setHidden(true);
+	//if(layer)
+		//SP_ITEM(layer)->setHidden(true);
 		//layer->getRepr()->setAttribute("style", "display:none");
 	
+	if(layer != NULL)
+		LAYERS_TO_HIDE.push_back(layer);
+		
+	if(parent == NULL)
+		return false;
+	
+	if(parent->next == NULL)
+		return false;
+	
+	if(parent && parent->next->widgets[id-1]->layer)
+		LAYERS_TO_HIDE.push_back(parent->next->widgets[id-1]->layer);
+	
+	//if(parent && parent->next->widgets[id-1]->layer)
+	//	parent->animationControl->layersToHide.push_back(parent->next->widgets[id-1]->layer);
+	/*
 	if(!parent)
 		return false;
 		
@@ -71,7 +87,7 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 			n->setAttribute("style", "display:none");
 		//parent->next->layer->getRepr()->setAttribute("style", "display:none");
 	}
-	
+	*/
 	
 	//selectLayer();
 	//if(layer)
@@ -86,7 +102,7 @@ void KeyframeWidget::selectLayer()
 	if(!desktop)
 		return;
 
-	if(!layer)
+	if(layer == NULL)
 		layer = desktop->namedview->document->getObjectById(
 	Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
 
@@ -111,11 +127,13 @@ void KeyframeWidget::selectLayer()
 	
 	//////////also check if other layers exist, then show them as well, if they are set to be shown!//////////
 	KeyframeBar * next_kb = parent->next;
-	if(!next_kb)
+	if(next_kb == NULL)
 		return;
 	
 	if(next_kb->is_visible)
 		SP_ITEM(next_kb->layer)->setHidden(false);
+	else
+		LAYERS_TO_HIDE.push_back(next_kb->layer);
 	
 	if(next_kb->widgets.size() > 25 && next_kb->is_visible)
 	{
@@ -129,6 +147,7 @@ void KeyframeWidget::selectLayer()
 			return;
 		
 		obj->getRepr()->setAttribute("style", "display:inline");
+		//SP_ITEM(obj)->setHidden(false);
 		
 		/*
 		SPItem * test = SP_ITEM(obj);
@@ -139,7 +158,19 @@ void KeyframeWidget::selectLayer()
 		
 	}
 	
-		
+	
+	//also try this:
+	//if(parent->layersToHide.size() > 0)
+	//	parent->layersToHide[0]->getRepr()->setAttribute("style", "display:none");
+	
+	if(LAYERS_TO_HIDE.size() > 0)
+	{
+		for(int i = 0; i < LAYERS_TO_HIDE.size(); i++)
+			LAYERS_TO_HIDE[i]->getRepr()->setAttribute("style", "display:none");
+			//SP_ITEM(LAYERS_TO_HIDE[i])->setHidden(true);
+		LAYERS_TO_HIDE.clear();
+	}
+	
 	/*
 	while(next_kb)
 	{

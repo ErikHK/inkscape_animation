@@ -7,10 +7,14 @@
 #include <gtkmm/treemodelcolumn.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/scrolledwindow.h>
+#include "sp-object.h"
+
 namespace Inkscape {
 namespace UI {
 namespace Dialogs {
 
+//class KeyframeBar;
+//class KeyframeWidget;
 class AnimationControl : public Gtk::Table
 {
 public:
@@ -20,6 +24,7 @@ public:
 	void rebuildUi();
 	int num_layers;
 	void toggleVisible( Glib::ustring const& str );
+	//std::vector<SPObject*> layersToHide;
 	
 protected:
     virtual bool on_expose_event(GtkWidget * widget, GdkEventExpose* event);

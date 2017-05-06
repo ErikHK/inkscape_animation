@@ -188,6 +188,7 @@ void AnimationControl::rebuildUi()
 	
 	//iterate over keyframebars and set pointers to siblings
 	//kb_vec[0]->prev = NULL;
+	//kb_vec[0]->next = NULL;
 	if(kb_vec.size() > 1)
 	{
 		//for(int i=0; i < kb_vec.size()-1; i++)

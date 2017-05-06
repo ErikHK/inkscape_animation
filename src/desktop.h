@@ -60,6 +60,8 @@ class SPObject;
 class SPStyle;
 typedef struct _DocumentInterface DocumentInterface;//struct DocumentInterface;
 
+extern std::vector<SPObject *> LAYERS_TO_HIDE;
+
 namespace Gtk
 {
   class Window;
