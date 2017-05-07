@@ -28,7 +28,7 @@ using Inkscape::UI::PathManipulator;
 using Inkscape::UI::NodeList;
 
 //static void gotFocus(GtkWidget*, void * data);
-static Gtk::Menu * pMenu = 0;
+//static Gtk::Menu * pMenu = 0;
 
 std::vector<SPObject *> LAYERS_TO_HIDE;
 
@@ -39,14 +39,14 @@ static void gotFocus(GtkWidget* w, GdkEventKey *event, gpointer callback_data)
 
 bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
 {
-	pMenu = 0;
+	//pMenu = 0;
 	selectLayer();
 	return false;
 }
 
 bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 {
-	pMenu = 0;
+	//pMenu = 0;
 	//KeyframeWidget* kw = dynamic_cast<KeyframeWidget*>(event->window);
 	
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
@@ -172,11 +172,37 @@ void KeyframeWidget::selectLayer()
 	}
 }
 
+static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
+{
+	//pMenu = 0;
+}
+
+static void onionSkinning(KeyframeWidget * kww, gpointer user_data)
+{
+	//pMenu = 0;
+}
+
+static void showAllKeyframes(KeyframeWidget * kww, gpointer user_data)
+{
+	//pMenu = 0;
+}
+
+
+void KeyframeWidget::_fadeToggled(Gtk::CheckMenuItem* toggler)
+{
+	//pMenu = 0;
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	//_desktop FINNS INTE HÄR!
+	if(toggler && desktop)
+		desktop->fade_previous_layers = toggler->get_active() ? 1 : 0;
+}
+
+
 static void createTween(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
 	
-	pMenu = 0;
+	//pMenu = 0;
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	
 	if(!desktop)
@@ -419,26 +445,10 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	//select layer that corresponds to this keyframe
 	//selectLayer();
 	
-	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3 && !pMenu)
+	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
 	{
 		std::cout << "RIGHT-CLICK";
-		pMenu = new Gtk::Menu();
-		Gtk::MenuItem *pItem = new Gtk::MenuItem("Create tween");
 		
-		g_signal_connect( pItem->gobj(),
-                              "activate",
-                              G_CALLBACK(createTween),
-                              this);
-		
-		Gtk::MenuItem *pItem2 = new Gtk::MenuItem("Something other");
-		
-		g_signal_connect( pItem2->gobj(),
-                              "activate",
-                              G_CALLBACK(createTween),
-                              this);
-		
-		pMenu->add(*pItem);
-		pMenu->add(*pItem2);
 		pMenu->show_all();
 		pMenu->popup(event->button, event->time);
 	}
@@ -451,6 +461,53 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	layer = _layer;
 	id = _id;
 	
+	pMenu = new Gtk::Menu();
+	
+
+	Gtk::MenuItem *pItem3 = new Gtk::MenuItem("Insert keyframe");
+	
+	g_signal_connect( pItem3->gobj(),
+						  "activate",
+						  G_CALLBACK(insertKeyframe),
+						  this);
+	
+	Gtk::MenuItem *pItem = new Gtk::MenuItem("Create tween");
+	
+	g_signal_connect( pItem->gobj(),
+						  "activate",
+						  G_CALLBACK(createTween),
+						  this);
+	
+	//Gtk::MenuItem *pItem2 = new Gtk::MenuItem("Show all keyframes");
+	Gtk::CheckMenuItem *showAll = Gtk::manage(new Gtk::CheckMenuItem("Show all keyframes"));
+	showAll->set_active(false);
+	
+	g_signal_connect( showAll->gobj(),
+						  "activate",
+						  G_CALLBACK(showAllKeyframes),
+						  this);
+						  
+	Gtk::CheckMenuItem *onion = Gtk::manage(new Gtk::CheckMenuItem("Onion skinning"));
+	onion->set_active(true);
+	
+	/*
+	g_signal_connect( onion->gobj(),
+						  "activate",
+						  G_CALLBACK(onionSkinning),
+						  this);
+	*/
+	//pMenu->add(*pItem3);
+	//pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
+	pMenu->add(*pItem);
+	pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
+	pMenu->add(*showAll);
+	pMenu->add(*onion);
+	
+	onion->signal_toggled().connect(sigc::bind<Gtk::CheckMenuItem*>(sigc::mem_fun(*this, &KeyframeWidget::_fadeToggled), onion));
+	
+
+	
+	
 	parent_id = parent->id;
 	
 	this->set_size_request(15, 21);
@@ -458,7 +515,6 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	set_can_focus(true);
 	
 	is_empty = _is_empty;
-	
 	
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	if(desktop)
