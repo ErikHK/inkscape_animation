@@ -20,10 +20,12 @@ public:
 	SPObject * layer;
 	bool is_empty;
 	void selectLayer();
+	Gtk::CheckMenuItem *onion;
+	Gtk::CheckMenuItem *showAll;
 	//void createTween();
 	//void gotFocus();
-	void showAllKeyframes(KeyframeWidget * kww, gpointer user_data);
-	void onionSkinning(KeyframeWidget * kww, gpointer user_data);
+	//void showAllKeyframes(KeyframeWidget * kww, gpointer user_data);
+	//void onionSkinning(KeyframeWidget * kww, gpointer user_data);
 	//void insertKeyframe(KeyframeWidget * kww, gpointer user_data);
 
 protected:
@@ -36,7 +38,6 @@ protected:
 private:
 	void _fadeToggled(Gtk::CheckMenuItem* toggler);
 	Gtk::Menu *pMenu;
-	Gtk::CheckMenuItem *onion;
-	Gtk::CheckMenuItem *showAll;
+
 
 };

@@ -46,6 +46,7 @@ bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
 
 bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 {
+	
 	//pMenu = 0;
 	//KeyframeWidget* kw = dynamic_cast<KeyframeWidget*>(event->window);
 	
@@ -53,6 +54,8 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 	
 	if(!desktop)
 		return false;
+	
+	//onion->set_active(desktop->fade_previous_layers);
 	
 	//if(layer)
 		//SP_ITEM(layer)->setHidden(true);
@@ -141,8 +144,23 @@ void KeyframeWidget::selectLayer()
 	if(parent->is_visible)
 	{
 		SP_ITEM(layer)->setHidden(false);
+		if(desktop->fade_previous_layers)
+			layer->getRepr()->setAttribute("style", "opacity:1.0");
+
 		if(layer->parent)
 			SP_ITEM(layer->parent)->setHidden(false);
+		
+		if(desktop->fade_previous_layers && prev && prev->layer)
+		{
+			SP_ITEM(prev->layer)->setHidden(false);
+			prev->layer->getRepr()->setAttribute("style", "opacity:0.5");
+			
+			if(prev->prev && prev->prev->layer)
+			{
+				prev->prev->layer->getRepr()->setAttribute("style", "opacity:1");
+				SP_ITEM(prev->prev->layer)->setHidden(true);
+			}
+		}
 	}
 	//////////also check if other layers exist, then show them as well, if they are set to be shown!//////////
 	KeyframeBar * next_kb = parent->next;
@@ -179,41 +197,15 @@ void KeyframeWidget::selectLayer()
 static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
-	/*
-	//iterate backwards until a keyframe's layer has objects, then copy them to the current layer
-	KeyframeWidget * p = kw->parent->widgets[kw->id-2];
-	
-	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
-	
-	if(!desktop)
-		return;
-	
-	if(!p)
-		return;
-	
-	if(!p->layer)
-		return;
-	
-	if(p->layer->getRepr()->childCount() > 0)
-	{
-		Inkscape::XML::Node * child_copy = NULL;
-		Inkscape::XML::Node * child = p->layer->getRepr()->firstChild();
-		if(child)
-			child_copy = child->duplicate(desktop->getDocument()->getReprDoc());
-		if(child_copy && child && kw->layer)
-			kw->layer->getRepr()->appendChild(child_copy);
-	}
-	*/
-	
 	
 	KeyframeWidget * p = kw->prev;
+	
 	if(!p)
 		return;
+	
 	if(!p->layer)
 		return;
 
-	//int i = 3;
-	//while(p && p->layer && p->layer->getRepr()->childCount() < 1)
 	while(p)
 	{
 		//break if a p with at least 1 child is found
@@ -221,9 +213,10 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 			break;
 		
 		p = p->prev;
-		if(!p)
-			return;
 	}
+	
+	if(!p)
+		return;
 	
 	if(p && p->layer && p->layer->getRepr()->childCount() > 0)
 	{
@@ -236,16 +229,19 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 	}
 }
 
-void KeyframeWidget::onionSkinning(KeyframeWidget * kww, gpointer user_data)
+static void onionSkinning(KeyframeWidget * kww, gpointer user_data)
 {
+	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
+	
 	//pMenu = 0;
-	if(SP_ACTIVE_DESKTOP && onion && onion->get_active())
-		SP_ACTIVE_DESKTOP->fade_previous_layers = true;
-		
+	if(SP_ACTIVE_DESKTOP && kw->onion)
+		SP_ACTIVE_DESKTOP->fade_previous_layers = kw->onion->get_active();
 }
 
-void KeyframeWidget::showAllKeyframes(KeyframeWidget * kww, gpointer user_data)
+static void showAllKeyframes(KeyframeWidget * kww, gpointer user_data)
 {
+	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
+	
 	//pMenu = 0;
 	//if(SP_ACTIVE_DESKTOP)
 	//	SP_ACTIVE_DESKTOP->show_all_keyframes = showAll->get_active();
@@ -517,6 +513,8 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	
 	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
 	{
+		onion->set_active(SP_ACTIVE_DESKTOP->fade_previous_layers);
+		
 		pMenu->show_all();
 		pMenu->popup(event->button, event->time);
 	}
@@ -554,7 +552,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	
 	g_signal_connect( showAll->gobj(),
 						  "activate",
-						  G_CALLBACK(&KeyframeWidget::showAllKeyframes),
+						  G_CALLBACK(showAllKeyframes),
 						  this);
 						  
 	onion = Gtk::manage(new Gtk::CheckMenuItem("Onion skinning"));
@@ -562,7 +560,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	
 	g_signal_connect( onion->gobj(),
 						  "activate",
-						  G_CALLBACK(&KeyframeWidget::onionSkinning),
+						  G_CALLBACK(onionSkinning),
 						  this);
 
 	pMenu->add(*pItem3);
