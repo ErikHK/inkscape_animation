@@ -49,6 +49,7 @@ KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 	next = NULL;
 	prev = NULL;
 	
+	clear_tween = false;
 	id = _id;
 	is_visible = true;
 	layer = _layer;

@@ -182,8 +182,9 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 void KeyframeWidget::onionSkinning(KeyframeWidget * kww, gpointer user_data)
 {
 	//pMenu = 0;
-	//if(SP_ACTIVE_DESKTOP)
-	//	SP_ACTIVE_DESKTOP->fade_previous_layers = onion->get_active();
+	if(SP_ACTIVE_DESKTOP && onion && onion->get_active())
+		SP_ACTIVE_DESKTOP->fade_previous_layers = true;
+		
 }
 
 void KeyframeWidget::showAllKeyframes(KeyframeWidget * kww, gpointer user_data)
@@ -312,6 +313,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		i++;
 	}
 	
+	kw->parent->clear_tween = true;
+	
 	NodeTool *tool = 0;
     Inkscape::UI::Tools::ToolBase *ec = desktop->event_context;
 	if (INK_IS_NODE_TOOL(ec)) {
@@ -347,7 +350,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 
 	if(!n->nodeList().closed())
 	{
-	
 		for(int iii = 0; iii < sizeee-1; iii++)
 		{
 			inc = 1 - 1/num_layers;
@@ -554,6 +556,12 @@ void KeyframeWidget::on_selection_changed()
 	}
 	
 	queue_draw();
+	
+	if(parent->clear_tween)
+	{
+		SP_ACTIVE_DESKTOP->toggleHideAllLayers(true);
+		parent->clear_tween = false;
+	}
 }
 
 bool KeyframeWidget::on_expose_event(GdkEventExpose* event)

@@ -107,7 +107,6 @@ AnimationControl::AnimationControl() :
 _panes(), _keyframe_table(), _scroller(), _tree_scroller(),
 _new_layer_button("New Layer"), num_layers(0)
 {
-	
 	_new_layer_button.signal_clicked().connect(sigc::mem_fun(*this, &AnimationControl::addLayer));
 	signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
 	

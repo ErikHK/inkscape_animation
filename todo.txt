@@ -1,6 +1,5 @@
 high priority:
-
-- hide tweened layers after creation
+x hide tweened layers after creation AND changed selection
 - insert keyframe option
 - onion skinning
 - show all keyframes

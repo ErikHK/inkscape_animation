@@ -18,6 +18,7 @@ public:
 	int id;
 	void addLayers();
 	bool is_visible;
+	bool clear_tween;
 	KeyframeBar *next;
 	KeyframeBar *prev;
 	std::vector<KeyframeWidget*> widgets;
