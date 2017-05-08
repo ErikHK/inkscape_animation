@@ -205,13 +205,22 @@ AnimationControl::~AnimationControl()
 void AnimationControl::rebuildUi()
 {
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-	//clear tree thingy
-	//_store->clear();
 
-	//add a label that says keyframes, otherwise it won't line up...
-	//Gtk::Label * lbl3 = new Gtk::Label("Keyframes");
-	//_keyframe_table.attach(*lbl3, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-	//i = 0, kb_vec.size() = 1
+	
+	//check if layers already exist (a saved svg has been opened)
+	if(desktop)
+	{
+		int i = 1;
+		SPObject * child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i)));
+		while(child)
+		{
+			if(num_layers < i)
+				num_layers++;
+			i++;
+			child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i)));
+		}
+	}
+	
 	for(int i = 0; i < num_layers; i++)
 	{
 		if(kb_vec.size() <= i)
