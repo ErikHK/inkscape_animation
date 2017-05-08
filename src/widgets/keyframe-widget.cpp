@@ -179,7 +179,7 @@ void KeyframeWidget::selectLayer()
 static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
-	
+	/*
 	//iterate backwards until a keyframe's layer has objects, then copy them to the current layer
 	KeyframeWidget * p = kw->parent->widgets[kw->id-2];
 	
@@ -203,21 +203,24 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 		if(child_copy && child && kw->layer)
 			kw->layer->getRepr()->appendChild(child_copy);
 	}
+	*/
 	
-	/*
-	int i = 3;
+	
+	KeyframeWidget * p = kw->prev;
+	if(!p)
+		return;
+	if(!p->layer)
+		return;
+
+	//int i = 3;
 	//while(p && p->layer && p->layer->getRepr()->childCount() < 1)
 	while(p)
 	{
-		if(!p->layer)
-			return;
-		
 		//break if a p with at least 1 child is found
 		if(p->layer->getRepr()->childCount() >= 1)
 			break;
 		
-		p = parent->widgets[id-i];
-		i++;
+		p = p->prev;
 		if(!p)
 			return;
 	}
@@ -228,10 +231,9 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 		Inkscape::XML::Node * child = p->layer->getRepr()->firstChild();
 		if(child)
 			child_copy = child->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc());
-		if(child_copy && layer->getRepr()->childCount() == 0)
-			layer->getRepr()->appendChild(child_copy);
+		if(child_copy && kw->layer->getRepr()->childCount() == 0)
+			kw->layer->getRepr()->appendChild(child_copy);
 	}
-	*/
 }
 
 void KeyframeWidget::onionSkinning(KeyframeWidget * kww, gpointer user_data)
