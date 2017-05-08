@@ -45,9 +45,6 @@
 #include "color.h" // for SP_RGBA32_U_COMPOSE
 
 
-#include "layer-fns.h" //LPOS_BELOW
-#include "layer-model.h"
-
 namespace Inkscape {
 namespace UI {
 namespace Dialogs {
@@ -115,21 +112,10 @@ static void handleClick( GtkWidget* /*widget*/, gpointer callback_data ) {
     }
 }
 
-static void gotFocus(GtkWidget* , GdkEventKey *event, gpointer callback_data)
-{
-	ColorItem* item = reinterpret_cast<ColorItem*>(callback_data);
-    if ( item ) {
-        item->buttonClicked(false);
-		//_updatePreviews();
-    }
-	
-}
-
-//static void handleSecondaryClick( GtkWidget* /*widget*/, gint /*arg1*/, gpointer callback_data ) {
-	static void handleSecondaryClick( GtkWidget* /*widget*/, GdkEventButton * event, gpointer callback_data ) {
+static void handleSecondaryClick( GtkWidget* /*widget*/, gint /*arg1*/, gpointer callback_data ) {
     ColorItem* item = reinterpret_cast<ColorItem*>(callback_data);
     if ( item ) {
-        item->createPopupMenu(event);
+        item->buttonClicked(true);
     }
 }
 
@@ -138,11 +124,8 @@ static gboolean handleEnterNotify( GtkWidget* /*widget*/, GdkEventCrossing* /*ev
     if ( item ) {
         SPDesktop *desktop = SP_ACTIVE_DESKTOP;
         if ( desktop ) {
-            //gchar* msg = g_strdup_printf(_("Keyframe: <b>%s</b>; <b>Click</b> to set fill, <b>Shift+click</b> to set stroke"),
-            //                             item->def.descr.c_str());
-			gchar* msg = g_strdup_printf(_("Keyframe: <b>%i</b>"),
-                                         item->id);
-										 
+            gchar* msg = g_strdup_printf(_("Color: <b>%s</b>; <b>Click</b> to set fill, <b>Shift+click</b> to set stroke"),
+                                         item->def.descr.c_str());
             desktop->tipsMessageContext()->set(Inkscape::INFORMATION_MESSAGE, msg);
             g_free(msg);
         }
@@ -242,10 +225,7 @@ static void colorItemDragBegin( GtkWidget */*widget*/, GdkDragContext* dc, gpoin
                 cairo_surface_t *s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
                 cairo_pattern_t *gradient = sp_gradient_create_preview_pattern(item->getGradient(), width);
                 cairo_t *ct = cairo_create(s);
-                //cairo_set_source(ct, gradient);
-				cairo_set_source_rgb(ct, 0,255,0);
-				
-				
+                cairo_set_source(ct, gradient);
                 cairo_paint(ct);
                 cairo_destroy(ct);
                 cairo_pattern_destroy(gradient);
@@ -254,8 +234,6 @@ static void colorItemDragBegin( GtkWidget */*widget*/, GdkDragContext* dc, gpoin
                 pixbuf = ink_pixbuf_create_from_cairo_surface(s);
             } else {
                 Glib::RefPtr<Gdk::Pixbuf> thumb = Gdk::Pixbuf::create( Gdk::COLORSPACE_RGB, false, 8, width, height );
-				
-				
                 guint32 fillWith = (0xff000000 & (item->def.getR() << 24))
                     | (0x00ff0000 & (item->def.getG() << 16))
                     | (0x0000ff00 & (item->def.getB() <<  8));
@@ -303,13 +281,9 @@ ColorItem::ColorItem(ege::PaintDef::ColorType type) :
     _linkGray(0),
     _linkSrc(0),
     _grad(0),
-    _pattern(0),
-	isStartLoop(false),
-	isEndLoop(false)
+    _pattern(0)
 {
 }
-
-
 
 ColorItem::ColorItem( unsigned int r, unsigned int g, unsigned int b, Glib::ustring& name ) :
     def( r, g, b, name ),
@@ -323,26 +297,6 @@ ColorItem::ColorItem( unsigned int r, unsigned int g, unsigned int b, Glib::ustr
     _grad(0),
     _pattern(0)
 {
-}
-
-ColorItem::ColorItem( unsigned int r, unsigned int g, unsigned int b, Glib::ustring& name, int _id) :
-    def( r, g, b, name ),
-    _isFill(false),
-    _isStroke(false),
-    _isLive(false),
-    _linkIsTone(false),
-    _linkPercent(0),
-    _linkGray(0),
-    _linkSrc(0),
-    _grad(0),
-    _pattern(0)
-{
-	id = _id;
-	ti = new TimelineItem();
-	is_empty = true;
-	//layer = _layer;
-	//layer = Inkscape::create_layer(SP_ACTIVE_DESKTOP->layers->currentRoot(), SP_ACTIVE_DESKTOP->layers->currentLayer(), Inkscape::LPOS_ABOVE);
-	//SP_ACTIVE_DESKTOP->layer_manager->setCurrentLayer(layer);
 }
 
 ColorItem::~ColorItem()
@@ -510,7 +464,6 @@ void ColorItem::_updatePreviews()
         }
 
         (*it)->def.setRGB( r, g, b );
-		//(*it)->def.setRGB( 0, 0, 0 );
     }
 
 
@@ -561,17 +514,6 @@ void ColorItem::_updatePreviews()
 
 void ColorItem::_regenPreview(EekPreview * preview)
 {
-	//SPDesktop * desktop = SP_ACTIVE_DESKTOP;
-	//SPObject * this_layer;
-	
-	//if(desktop)
-	//	this_layer = desktop->namedview->document->getObjectById("layer1");
-
-	GtkAllocation allocation;
-    gtk_widget_get_allocation (GTK_WIDGET(preview), &allocation);
-	int width = allocation.width;
-	int height = allocation.height;
-	
     if ( def.getType() != ege::PaintDef::RGB ) {
         using Inkscape::IO::Resource::get_path;
         using Inkscape::IO::Resource::ICONS;
@@ -589,61 +531,14 @@ void ColorItem::_regenPreview(EekPreview * preview)
             g_warning("Null pixbuf for %p [%s]", localFilename, localFilename );
         }
         g_free(localFilename);
-		
-		
+
         eek_preview_set_pixbuf( preview, pixbuf );
     }
     else if ( !_pattern ){
-        //eek_preview_set_color( preview,
-        //                       (def.getR() << 8) | def.getR(),
-        //                       (def.getG() << 8) | def.getG(),
-        //                       (def.getB() << 8) | def.getB() ); 
-		
-		int w = 128;
-        int h = 16;
-
-        cairo_surface_t *s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
-        cairo_t *ct = cairo_create(s);
-        //cairo_set_source(ct, _pattern);
-		
-		
-		if(id%2==0)
-			cairo_set_source_rgb(ct, 1.0,1.0,1.0);
-		else
-			cairo_set_source_rgb(ct, .8,.8,.8);
-		
-		cairo_rectangle(ct, 0, 0, width, height);
-        cairo_fill(ct);
-				 
-		if(!is_empty)
-		{
-			//if(layer->getRepr()->childCount() > 0)
-			//{
-				if(isStartLoop)
-					cairo_set_source_rgb(ct,0,1.0,0);
-				else if(isEndLoop)
-					cairo_set_source_rgb(ct,1.0,0,0);
-				else
-					cairo_set_source_rgb(ct,0,0,0);
-				//cairo_rectangle(ct, 0, 0, 50.0, 50.0);
-				//cairo_arc(ct, 20, 20, 10, 0, 6.28);
-				cairo_arc(ct, width/2, height/2, width/4, 0, 6.283);
-				cairo_fill(ct);
-				//cairo_paint(ct);
-			//}
-		}
-		
-		
-        cairo_destroy(ct);
-        cairo_surface_flush(s);
-
-        GdkPixbuf* pixbuf = ink_pixbuf_create_from_cairo_surface(s);
-        eek_preview_set_pixbuf( preview, pixbuf );
-							   
-		//eek_preview_set_color( preview,
-        //                       0,
-        //                       0,
-        //                       0); 
+        eek_preview_set_color( preview,
+                               (def.getR() << 8) | def.getR(),
+                               (def.getG() << 8) | def.getG(),
+                               (def.getB() << 8) | def.getB() );
     } else {
         // These correspond to PREVIEW_PIXBUF_WIDTH and VBLOCK from swatches.cpp
         // TODO: the pattern to draw should be in the widget that draws the preview,
@@ -653,9 +548,7 @@ void ColorItem::_regenPreview(EekPreview * preview)
 
         cairo_surface_t *s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
         cairo_t *ct = cairo_create(s);
-        //cairo_set_source(ct, _pattern);
-		cairo_set_source_rgb(ct, 255,0,0);
-		
+        cairo_set_source(ct, _pattern);
         cairo_paint(ct);
         cairo_destroy(ct);
         cairo_surface_flush(s);
@@ -690,23 +583,15 @@ Gtk::Widget* ColorItem::getPreview(PreviewStyle style, ViewType view, ::PreviewS
                                  ratio,
                                  border );
 
-        def.addCallback(_colorDefChanged, this );
-        //eek_preview_set_focus_on_click(preview, FALSE);
-		eek_preview_set_focus_on_click(preview, TRUE);
-        //newBlot->set_tooltip_text(def.descr);
+        def.addCallback( _colorDefChanged, this );
+        eek_preview_set_focus_on_click(preview, FALSE);
+        newBlot->set_tooltip_text(def.descr);
 
-		/*
         g_signal_connect( G_OBJECT(newBlot->gobj()),
                           "clicked",
                           G_CALLBACK(handleClick),
                           this);
-						  */
-						  
-		g_signal_connect( G_OBJECT(newBlot->gobj()),
-                          "focus-in-event",
-                          G_CALLBACK(gotFocus),
-                          this);
-		
+
         g_signal_connect( G_OBJECT(newBlot->gobj()),
                           "alt-clicked",
                           G_CALLBACK(handleSecondaryClick),
@@ -716,7 +601,6 @@ Gtk::Widget* ColorItem::getPreview(PreviewStyle style, ViewType view, ::PreviewS
                           "button-press-event",
                           G_CALLBACK(colorItemHandleButtonPress),
                           this);
-		
 
         {
             std::vector<std::string> listing = def.getMIMETypes();
@@ -744,20 +628,16 @@ Gtk::Widget* ColorItem::getPreview(PreviewStyle style, ViewType view, ::PreviewS
             delete[] entries;
         }
 
-		/*
         g_signal_connect( G_OBJECT(newBlot->gobj()),
                           "drag-data-get",
                           G_CALLBACK(ColorItem::_dragGetColorData),
                           this);
 
-		
         g_signal_connect( G_OBJECT(newBlot->gobj()),
                           "drag-begin",
                           G_CALLBACK(colorItemDragBegin),
                           this );
-		*/
-		
-		
+
         g_signal_connect( G_OBJECT(newBlot->gobj()),
                           "enter-notify-event",
                           G_CALLBACK(handleEnterNotify),
@@ -767,7 +647,7 @@ Gtk::Widget* ColorItem::getPreview(PreviewStyle style, ViewType view, ::PreviewS
                           "leave-notify-event",
                           G_CALLBACK(handleLeaveNotify),
                           this);
-		
+
         g_signal_connect( G_OBJECT(newBlot->gobj()),
                           "destroy",
                           G_CALLBACK(dieDieDie),
@@ -782,133 +662,9 @@ Gtk::Widget* ColorItem::getPreview(PreviewStyle style, ViewType view, ::PreviewS
     return widget;
 }
 
-
-void ColorItem::createPopupMenu(GdkEventButton * event)
-{
-	/*
-	//create a new popup menu
-	GtkWidget * popupMenu = gtk_menu_new();
-	GtkWidget* child = 0;
-
-    //TRANSLATORS: An item in context menu on a colour in the swatches
-    child = gtk_menu_item_new_with_label(_("Set start loop"));
-            
-	g_signal_connect( G_OBJECT(child),
-                              "activate",
-                              G_CALLBACK(redirClick),
-                              user_data);
-							  
-    gtk_menu_shell_append(GTK_MENU_SHELL(popupMenu), child);
-	gtk_widget_show_all(popupMenu);
-	
-	gtk_menu_popup(GTK_MENU(popupMenu), NULL, NULL, NULL, NULL, event->button, event->time);
-
-	*/
-	return;
-	
-}
-
-void ColorItem::setStartLoop()
-{
-	isStartLoop = !isStartLoop;
-}
-
-void ColorItem::setEndLoop()
-{
-	isEndLoop = !isEndLoop;
-}
-
-
 void ColorItem::buttonClicked(bool secondary)
 {
-	
     SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
-	LayerManager * lm = desktop->layer_manager;
-	
-	
-	
-	
-	Glib::ustring strr = Glib::ustring::format(id);
-	Glib::ustring ids("layer" + strr);
-	//ids = lm->getNextLayerName(NULL, desktop->currentLayer()->label());
-	
-	/* create layers!! */
-	
-	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
-	{
-		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
-		lm->setCurrentLayer(lay);
-	}
-	
-	/* change layer!! */
-	//SPObject * nextlayer = doc->getObjectById(ids);
-	SPObject * nextLayer = desktop->namedview->document->getObjectById(ids);
-	//layer = nextLayer;
-	
-	lm->setCurrentLayer(nextLayer);
-	//SP_ITEM(nextLayer)->setHidden(false);
-	
-	//also check if layer is empty!
-	if(nextLayer->getRepr()->childCount() > 0)
-		is_empty = false;
-	else
-		is_empty = true;
-	
-	/* also hide other layers! */
-	desktop->toggleLayerSolo(nextLayer);
-	
-	_updatePreviews();
-	
-	
-	strr = Glib::ustring::format(id-1);
-	ids = "layer" + strr;
-	//change attribute of this and previous layer
-	if(desktop->fade_previous_layers)
-	{
-		if(id==1)
-			nextLayer->getRepr()->setAttribute("style", "opacity:1.0;");
-		if(id > 1)
-		{
-			nextLayer->getRepr()->setAttribute("style", "opacity:1.0;");
-			SPObject * prevLayer = desktop->namedview->document->getObjectById(ids);
-			prevLayer->getRepr()->setAttribute("style", "opacity:0.5;");
-		}
-		if(id > 2)
-		{
-			strr = Glib::ustring::format(id-2);
-			ids = "layer" + strr;
-			SPObject * prevPrevLayer = desktop->namedview->document->getObjectById(ids);
-			prevPrevLayer->getRepr()->setAttribute("style", "opacity:0.25;");
-		}
-	}else
-	{
-		nextLayer->getRepr()->setAttribute("style", "opacity:1.0;");
-	}
-	
-	if(desktop->show_all_keyframes)
-	{
-		//show all layers
-		desktop->layers->toggleHideAllLayers(!desktop->show_all_keyframes); 
-		
-		//lm->setCurrentLayer(nextLayer);
-	}
-	
-	/*
-	int newid = id+1;
-	//Glib::ustring otherid("layer" + Glib::ustring::format(newid));
-	Glib::ustring otherid;
-	//SPObject * _lay = desktop->namedview->document->getObjectById(otherid);
-	
-	while(SP_IS_ITEM(nextLayer)){
-		otherid = "layer" + Glib::ustring::format(newid);
-		nextLayer = desktop->namedview->document->getObjectById(otherid);
-		newid++;
-		SP_ITEM(nextLayer)->setHidden(true);
-	}
-	*/
-	
-	/*
     if (desktop) {
         char const * attrName = secondary ? "stroke" : "fill";
 
@@ -950,10 +706,7 @@ void ColorItem::buttonClicked(bool secondary)
 
         DocumentUndo::done( desktop->getDocument(), SP_VERB_DIALOG_SWATCHES, descr.c_str() );
     }
-	*/
 }
-
-
 
 void ColorItem::_wireMagicColors( SwatchPage *colorSet )
 {

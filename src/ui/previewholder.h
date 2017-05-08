@@ -20,7 +20,6 @@
 #include <gtkmm/box.h>
 #include <gtkmm/bin.h>
 
-
 namespace Gtk {
 #if WITH_GTKMM_3_0
 class Grid;
@@ -30,7 +29,6 @@ class Table;
 }
 
 #include "previewfillable.h"
-#include "dialog/color-item.h"
 #include "../widgets/eek-preview.h"
 #include "enums.h"
 
@@ -45,8 +43,6 @@ public:
 
     virtual void clear();
     virtual void addPreview( Previewable* preview );
-	virtual void addTimelineItem(TimelineItem* tItem);
-	//virtual void addPreview(ColorItem* ci);
     virtual void freezeUpdates();
     virtual void thawUpdates();
     virtual void setStyle( ::PreviewSize size, ViewType view, guint ratio, ::BorderStyle border );
@@ -71,7 +67,6 @@ private:
     void calcGridSize( const Gtk::Widget* thing, int itemCount, int& width, int& height );
 
     std::vector<Previewable*> items;
-	std::vector<TimelineItem*> timeline_items;
     Gtk::Bin *_scroller;
 
 #if WITH_GTKMM_3_0

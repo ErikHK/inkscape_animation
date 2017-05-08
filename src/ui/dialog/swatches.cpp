@@ -19,7 +19,6 @@
 #include <set>
 
 #include "swatches.h"
-//#include "timeline-item.h"
 #include <gtkmm/radiomenuitem.h>
 
 #include <glibmm/i18n.h>
@@ -59,16 +58,6 @@
 #include "helper/action.h"
 #include "helper/action-context.h"
 
-#include "layer-fns.h" //LPOS_BELOW
-#include "ui/tool/path-manipulator.h"
-#include "ui/tool/multi-path-manipulator.h"
-#include "ui/tools/node-tool.h"
-#include "ui/tool/control-point-selection.h"
-
-
-using Inkscape::UI::Tools::NodeTool;
-using Inkscape::Util::Quantity;
-
 namespace Inkscape {
 namespace UI {
 namespace Dialogs {
@@ -95,15 +84,14 @@ public:
 static void handleClick( GtkWidget* /*widget*/, gpointer callback_data ) {
     ColorItem* item = reinterpret_cast<ColorItem*>(callback_data);
     if ( item ) {
-        //item->buttonClicked(false);
-		item->setStartLoop();
+        item->buttonClicked(false); 
     }
 }
 
 static void handleSecondaryClick( GtkWidget* /*widget*/, gint /*arg1*/, gpointer callback_data ) {
     ColorItem* item = reinterpret_cast<ColorItem*>(callback_data);
     if ( item ) {
-        item->setEndLoop();
+        item->buttonClicked(true);
     }
 }
 
@@ -127,242 +115,6 @@ static void redirSecondaryClick( GtkMenuItem *menuitem, gpointer /*user_data*/ )
     if ( bounceTarget ) {
         handleSecondaryClick( GTK_WIDGET(menuitem), 0, bounceTarget );
     }
-}
-
-static void createTween(GtkMenuItem *menuitem, gpointer user_data)
-{
-	
-	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
-	
-	if(!desktop)
-		return;
-	
-	if(!bounceTarget)
-		return;
-	
-	SPObject * layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", bounceTarget->id)));
-	//SPObject * layer = desktop->getDocument()->getObjectById("layer1");
-	SPObject * startLayer = layer;
-	SPObject * endLayer;
-	SPObject * nextLayer;
-	float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0;
-	std::string xs = "x";
-	std::string ys = "y";
-	bool is_group = false;
-	
-	int num_layers = 1;
-	while(layer)
-	{
-		layer = Inkscape::next_layer(desktop->currentRoot(), layer);
-		//as soon as a layer has a child, break and set endLayer to this!
-		if (layer->getRepr()->childCount() > 0)
-			break;
-		
-		num_layers++;
-	}
-	endLayer = layer;
-	
-	if(endLayer)
-	{
-		Inkscape::XML::Node * child = endLayer->getRepr()->firstChild();
-		
-		if(!child)
-			return;
-		
-		//if a circle or an ellipse, use cx and cy
-		if(!strcmp(child->name(), "svg:circle") || !strcmp(child->name(), "svg:ellipse"))
-		{
-			xs = "cx";
-			ys = "cy";
-		}
-		
-		//else if a group, take special care!
-		if(!strcmp(child->name(), "svg:g"))
-		{
-			is_group = true;
-			
-		}
-		
-		if(!is_group)
-		{
-			end_x = std::stof(child->attribute(xs.c_str()));
-			end_y = std::stof(child->attribute(ys.c_str()));
-		}
-	}
-	
-	if(startLayer)
-	{
-		Inkscape::XML::Node * child = startLayer->getRepr()->firstChild();
-		if(!child)
-			return;
-
-		if(!is_group)
-		{
-			start_x = std::stof(child->attribute(xs.c_str()));
-			start_y = std::stof(child->attribute(ys.c_str()));
-		}
-	}
-	
-	inc_x = (end_x - start_x)/num_layers;
-	inc_y = (end_y - start_y)/num_layers;
-	
-	//now we have start and end, loop again, and copy children etcetc
-	layer = startLayer;
-	int i = 1;
-	while(layer != endLayer)
-	{
-		nextLayer = Inkscape::next_layer(desktop->currentRoot(), layer);
-		
-		if(nextLayer && layer)
-		{
-			Inkscape::XML::Node * child = layer->getRepr()->firstChild();
-			Inkscape::XML::Node * child_copy = child->duplicate(desktop->getDocument()->getReprDoc());
-			
-			if(!is_group)
-			{
-				child_copy->setAttribute(xs.c_str(), Glib::ustring::format(start_x + i*inc_x));
-				child_copy->setAttribute(ys.c_str(), Glib::ustring::format(start_y + i*inc_y));
-			}
-			
-			//Inkscape::XML::Node *child = desktop->getDocument()->getReprDoc()->createElement("svg:path");
-			//child->setAttribute("style", style);
-			//copy layer child to nextLayer
-			if(child)
-			{
-				nextLayer->getRepr()->appendChild(child_copy);
-				//Inkscape::GC::release(child);
-			}
-		}
-		layer = nextLayer;
-		i++;
-	}
-		
-		
-	NodeTool *tool = 0;
-    if (SP_ACTIVE_DESKTOP ) {
-        Inkscape::UI::Tools::ToolBase *ec = SP_ACTIVE_DESKTOP->event_context;
-        if (INK_IS_NODE_TOOL(ec)) {
-            tool = static_cast<NodeTool*>(ec);
-        }
-    }
-	
-	if(!tool)
-		return;
-	
-	Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
-	Node *n = dynamic_cast<Node *>(*cps->begin());
-			if (!n) return;
-	
-	NodeList::iterator this_iter = NodeList::get_iterator(n);
-	
-	int sizeee = n->nodeList().size();
-	
-	//if(n->nodeList().begin() == n->nodeList().end())
-	//	return;
-	
-	PathManipulator &pm = n->nodeList().subpathList().pm();
-	
-	
-	//float inc = 1.0/num_layers;
-	float inc = 1 - 1/num_layers;
-	float mult = inc;
-	
-	
-
-	if(!n->nodeList().closed())
-	{
-	
-		for(int iii = 0; iii < sizeee-1; iii++)
-		{
-			inc = 1 - 1/num_layers;
-			//mult = inc;
-			mult = 1;
-			
-			for(int k=0; k < num_layers/(sizeee - 1); k++)
-			{
-				mult -= (sizeee-1)*1.0/num_layers;
-				pm.insertNode(this_iter, mult/(mult + (sizeee-1)*1.0/num_layers), false);
-			}
-			
-			pm._selection.clear();
-			
-			//go to next point and add more there etc
-			for(int iiii=0; iiii < num_layers/(sizeee - 1) + 1; iiii++)
-				this_iter++;
-			
-			if(!this_iter)
-				break;
-			
-		}
-	
-	}
-	//else it's closed!
-	else
-	{
-		for(int iii = 0; iii < sizeee; iii++)
-		{
-			inc = 1 - 1/num_layers;
-			//mult = inc;
-			mult = 1;
-			
-			for(int k=0; k < num_layers/(sizeee ); k++)
-			{
-				mult -= (sizeee)*1.0/num_layers;
-				pm.insertNode(this_iter, mult/(mult + (sizeee)*1.0/num_layers), false);
-			}
-			
-			pm._selection.clear();
-			
-			//go to next point and add more there etc
-			for(int iiii=0; iiii < num_layers/(sizeee ) + 1; iiii++)
-				this_iter++;
-			
-			if(!this_iter)
-				break;
-			
-		}
-	}
-	
-	int ii = 1;
-	SPObject * lay;
-
-	for(NodeList::iterator j = n->nodeList().begin(); j != n->nodeList().end(); ++j) {
-		Node *node = dynamic_cast<Node*>(&*j);
-		if (node) {
-			//std::string id = node->nodeList().subpathList().pm().item()->getId(); 
-			double x = Quantity::convert(node->position()[0], "px", "mm");
-			double y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(node->position()[1], "px", "mm");
-				
-			//ii = std::distance(tool->_multipath->_selection.begin(), i);
-			ii = std::distance(n->nodeList().begin(), j);
-			//ii = (int)i - (int)tool->_multipath->_selection.begin();
-			
-			lay = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", ii)));
-			
-			//start_x = std::stof(startLayer->getRepr()->firstChild()->attribute("x"));
-			//Geom::Coord oldx = Quantity::convert(gtk_adjustment_get_value(xadj), unit, "px");
-			if(lay)
-			{
-				if(lay->getRepr()->childCount() == 0)
-					return;
-				
-				Inkscape::XML::Node * child = lay->getRepr()->firstChild();
-				if(!child)
-					return;
-				
-				if(!is_group)
-				{
-					child->setAttribute(xs, Glib::ustring::format(x));
-					child->setAttribute(ys, Glib::ustring::format(y));
-				}
-				
-				else //is group!
-				{
-					child->setAttribute("transform", Glib::ustring::format("translate(", x, ",", y, ")" ));
-				}
-			}
-		}		
-	}
 }
 
 static void editGradientImpl( SPDesktop* desktop, SPGradient* gr )
@@ -497,14 +249,12 @@ gboolean colorItemHandleButtonPress( GtkWidget* widget, GdkEventButton* event, g
     if ( event && (event->button == 3) && (event->type == GDK_BUTTON_PRESS) ) {
         SwatchesPanel* swp = findContainingPanel( widget );
 
-		
-		
         if ( !popupMenu ) {
             popupMenu = gtk_menu_new();
             GtkWidget* child = 0;
 
             //TRANSLATORS: An item in context menu on a colour in the swatches
-            child = gtk_menu_item_new_with_label(_("Set start loop"));
+            child = gtk_menu_item_new_with_label(_("Set fill"));
             g_signal_connect( G_OBJECT(child),
                               "activate",
                               G_CALLBACK(redirClick),
@@ -512,7 +262,7 @@ gboolean colorItemHandleButtonPress( GtkWidget* widget, GdkEventButton* event, g
             gtk_menu_shell_append(GTK_MENU_SHELL(popupMenu), child);
 
             //TRANSLATORS: An item in context menu on a colour in the swatches
-            child = gtk_menu_item_new_with_label(_("Set end loop"));
+            child = gtk_menu_item_new_with_label(_("Set stroke"));
 
             g_signal_connect( G_OBJECT(child),
                               "activate",
@@ -523,26 +273,7 @@ gboolean colorItemHandleButtonPress( GtkWidget* widget, GdkEventButton* event, g
             child = gtk_separator_menu_item_new();
             gtk_menu_shell_append(GTK_MENU_SHELL(popupMenu), child);
             popupExtras.push_back(child);
-			
-			
-			
-			//Tweening
-			child = gtk_menu_item_new_with_label(_("Create tween"));
 
-            g_signal_connect( G_OBJECT(child),
-                              "activate",
-                              G_CALLBACK(createTween),
-                              user_data);
-            gtk_menu_shell_append(GTK_MENU_SHELL(popupMenu), child);
-
-			
-			
-			child = gtk_separator_menu_item_new();
-            gtk_menu_shell_append(GTK_MENU_SHELL(popupMenu), child);
-            popupExtras.push_back(child);
-			
-			
-			/*
             child = gtk_menu_item_new_with_label(_("Delete"));
             g_signal_connect( G_OBJECT(child),
                               "activate",
@@ -573,11 +304,9 @@ gboolean colorItemHandleButtonPress( GtkWidget* widget, GdkEventButton* event, g
                 popupSub = gtk_menu_new();
                 gtk_menu_item_set_submenu( GTK_MENU_ITEM(child), popupSub );
             }
-			*/
 
             gtk_widget_show_all(popupMenu);
         }
-		
 
         if ( user_data ) {
             ColorItem* item = reinterpret_cast<ColorItem*>(user_data);
@@ -851,6 +580,8 @@ SwatchesPanel& SwatchesPanel::getInstance()
 {
     return *new SwatchesPanel();
 }
+
+
 /**
  * Constructor
  */
@@ -913,7 +644,6 @@ SwatchesPanel::SwatchesPanel(gchar const* prefsPath) :
 
         int i = 0;
         std::vector<SwatchPage*> swatchSets = _getSwatchSets();
-		/*
         for ( std::vector<SwatchPage*>::iterator it = swatchSets.begin(); it != swatchSets.end(); ++it) {
             SwatchPage* curr = *it;
             Gtk::RadioMenuItem* single = Gtk::manage(new Gtk::RadioMenuItem(groupOne, curr->_name));
@@ -924,7 +654,6 @@ SwatchesPanel::SwatchesPanel(gchar const* prefsPath) :
 
             i++;
         }
-		*/
     }
 
     if (Glib::ustring(prefsPath) == "/dialogs/swatches") {
@@ -950,7 +679,6 @@ SwatchesPanel::SwatchesPanel(gchar const* prefsPath) :
     if ( hotItem ) {
         hotItem->set_active();
     }
-	
 }
 
 SwatchesPanel::~SwatchesPanel()
@@ -1220,11 +948,9 @@ static void recalcSwatchContents(SPDocument* doc,
 
             cairo_pattern_t *check = ink_cairo_pattern_create_checkerboard();
             cairo_pattern_t *gradient = sp_gradient_create_preview_pattern(grad, PREVIEW_PIXBUF_WIDTH);
-            //cairo_set_source(ct, check);
-			cairo_set_source_rgb(ct, 1,0,0);
+            cairo_set_source(ct, check);
             cairo_paint(ct);
-            //cairo_set_source(ct, gradient);
-			cairo_set_source_rgb(ct, 1,0,0);
+            cairo_set_source(ct, gradient);
             cairo_paint(ct);
 
             cairo_destroy(ct);
@@ -1436,62 +1162,16 @@ void SwatchesPanel::_rebuild()
     std::vector<SwatchPage*> pages = _getSwatchSets();
     SwatchPage* curr = pages[_currentIndex];
     _holder->clear();
-	//LayerManager * lm = _currentDesktop->layer_manager;
 
     if ( curr->_prefWidth > 0 ) {
         _holder->setColumnPref( curr->_prefWidth );
     }
     _holder->freezeUpdates();
     // TODO restore once 'clear' works _holder->addPreview(_clear);
-    //_holder->addPreview(_remove);
-	Glib::ustring grayc("gray");
-	//ColorItem * gray = new ColorItem( 200,200,200, grayc);
-	
-	Glib::ustring whitec("white");
-	ColorItem * white = new ColorItem( 255,255,255, whitec);
-	int ind = 1;
-
-
-	//Gtk::Label * lbl = new Gtk::Label("hejsan");
-	//_holder->_scroller->add(lbl);
-	//_holder->pack_start(*lbl, true, true);
-
-	//SPObject * lay;
-	
-    //for ( boost::ptr_vector<ColorItem>::iterator it = curr->_colors.begin(); it != curr->_colors.end(); ++it) {
-	for(int i=0;i<100;i++)
-	{
-        //_holder->addPreview(&*it);
-		
-		//_holder->add(*white->ti);
-		//Gtk::Label *l = new Gtk::Label("hehe");
-		//l->set_alignment(Gtk::ALIGN_START, Gtk::ALIGN_CENTER);
-		//_holder->pack_start(*white->ti, true, true);
-		//_holder->pack_start(*l, true, true);
-		
-		//create a new layer for every keyframe!
-		//SPObject *new_layer = Inkscape::create_layer(SP_ACTIVE_DESKTOP->layers->currentRoot(), SP_ACTIVE_DESKTOP->layers->currentLayer(), Inkscape::LPOS_BELOW);
-		
-		//lay = Inkscape::create_layer(lm->currentRoot(), lm->currentLayer(), Inkscape::LPOS_ABOVE);
-		//lm->setCurrentLayer(lay);
-		
-		if(ind % 2 == 0)
-		{
-			_holder->addPreview(new ColorItem(255,255,255,whitec,ind));
-			//_holder->addTimelineItem(new TimelineItem());
-			//_holder->addPreview(new TimelineItem());
-		}
-		else
-		{
-			_holder->addPreview(new ColorItem(200,200,200,grayc,ind));
-		}
-		ind++;
-		
+    _holder->addPreview(_remove);
+    for ( boost::ptr_vector<ColorItem>::iterator it = curr->_colors.begin(); it != curr->_colors.end(); ++it) {
+        _holder->addPreview(&*it);
     }
-	//_holder är en vbox!
-	//_holder->set_hexpand();
-	//_holder->set_vexpand();
-	//_holder->show_all_children();
     _holder->thawUpdates();
 }
 

@@ -14,13 +14,10 @@
 #include "previewholder.h"
 #include "preferences.h"
 
-
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/sizegroup.h>
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/adjustment.h>
-#include <gtkmm/label.h>
-#include <gtkmm/button.h>
 
 #if WITH_GTKMM_3_0
 # include <gtkmm/grid.h>
@@ -126,12 +123,6 @@ void PreviewHolder::clear()
     rebuildUI();
 }
 
-void PreviewHolder::addTimelineItem(TimelineItem* tItem)
-{
-	timeline_items.push_back(tItem);	
-}
-
-
 /**
  * Add a Previewable item to the PreviewHolder
  *
@@ -140,7 +131,6 @@ void PreviewHolder::addTimelineItem(TimelineItem* tItem)
 void PreviewHolder::addPreview( Previewable* preview )
 {
     items.push_back(preview);
-	
     if ( !_updatesFrozen )
     {
         int i = items.size() - 1;
@@ -448,48 +438,37 @@ void PreviewHolder::rebuildUI()
                     //label->set_alignment(Gtk::ALIGN_LEFT, Gtk::ALIGN_CENTER);
 
                     Gtk::Widget* thing = Gtk::manage(items[i]->getPreview(PREVIEW_STYLE_PREVIEW, _view, _baseSize, _ratio, _border));
-					
 
 #if WITH_GTKMM_3_0
                     thing->set_hexpand();
                     thing->set_vexpand();
-                    //_insides->attach(*thing, 0, i, 1, 1);
-					timeline_items[0]->set_hexpand();
-					timeline_items[0]->set_vexpand();
-					_insides->attach(*timeline_items[0], 0, i, 1, 1);
+                    _insides->attach(*thing, 0, i, 1, 1);
 
                     label->set_hexpand();
                     label->set_valign(Gtk::ALIGN_CENTER);
-                    //_insides->attach(*label, 1, i, 1, 1);
-					
-					_insides->attach(*timeline_items[0], 1, i, 1, 1);
+                    _insides->attach(*label, 1, i, 1, 1);
 #else
                     _insides->attach( *thing, 0, 1, i, i+1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND );
-                    //_insides->attach( *label, 1, 2, i, i+1, Gtk::FILL|Gtk::EXPAND, Gtk::SHRINK );
-					//_insides->attach( *timeline_items[0], 1, 2, i, i+1, Gtk::FILL|Gtk::EXPAND, Gtk::SHRINK );
-                    //_insides->attach( *timeline_items[0], 0, 1, i, i+1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND );
+                    _insides->attach( *label, 1, 2, i, i+1, Gtk::FILL|Gtk::EXPAND, Gtk::SHRINK );
 #endif
                 }
 
-				
                 _scroller->add( *_insides );
             }
             break;
 
-			
         case VIEW_TYPE_GRID:
             {
                 int col = 0;
                 int row = 0;
                 int width = 2;
                 int height = 1;
-				Gtk::Widget * thing;
 
                 for ( unsigned int i = 0; i < items.size(); i++ ) {
 
                     // If this is the last row, flag so the previews can draw a bottom
                     ::BorderStyle border = ((row == height -1) && (_border == BORDER_SOLID)) ? BORDER_SOLID_LAST_ROW : _border;
-                    thing = Gtk::manage(items[i]->getPreview(PREVIEW_STYLE_PREVIEW, _view, _baseSize, _ratio, border));
+                    Gtk::Widget* thing = Gtk::manage(items[i]->getPreview(PREVIEW_STYLE_PREVIEW, _view, _baseSize, _ratio, border));
 
                     if ( !_insides ) {
                         calcGridSize( thing, items.size(), width, height );
@@ -512,20 +491,11 @@ void PreviewHolder::rebuildUI()
 #if WITH_GTKMM_3_0
                     thing->set_hexpand();
                     thing->set_vexpand();
-					//timeline_items[0]->set_hexpand();
-					//timeline_items[0]->set_vexpand();
-                    //_insides->attach( *thing, col, row, 1, 1);
-					//_insides->attach( *timeline_items[0], col, row, 1, 1);
-					
+                    _insides->attach( *thing, col, row, 1, 1);
 #else
                     _insides->attach( *thing, col, col+1, row, row+1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND );
-					//timeline_items[0]->set_size_request(30,30);
-					
-					//timeline_items[0]->show();
-					//_insides->attach( *timeline_items[0], col, col+1, row, row+1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND );
-					//timeline_items[0]->show();
 #endif
-					
+
                     if ( ++col >= width ) {
                         col = 0;
                         row++;
@@ -539,24 +509,8 @@ void PreviewHolder::rebuildUI()
 #endif
                 }
 
-				
-				Gtk::Label * lbl = new Gtk::Label("hejsansvejsansss");
-				//_scroller->add(*lbl);
-				
-				Gtk::Button * btn = new Gtk::Button("hej");
-				
-				_insides->attach(*lbl, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-				_insides->attach(*lbl, 0,3,0,2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-				_insides->attach(*lbl, 1,3,1,2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-				_insides->attach(*lbl, 1,1,1,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-				
-				_insides->attach(*btn, 0,1,0,1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-				_insides->add(*btn);
-				
                 _scroller->add( *_insides );
             }
-			
-
     }
 
     _scroller->show_all_children();

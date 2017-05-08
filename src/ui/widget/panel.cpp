@@ -99,10 +99,10 @@ void Panel::_init()
     _anchor = SP_ANCHOR_CENTER;
 
     guint panel_size = 0, panel_mode = 0, panel_ratio = 100, panel_border = 0;
-    bool panel_fade = 1;
+    bool panel_wrap = 0;
     if (!_prefs_path.empty()) {
         Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-        panel_fade = prefs->getBool(_prefs_path + "/panel_wrap");
+        panel_wrap = prefs->getBool(_prefs_path + "/panel_wrap");
         panel_size = prefs->getIntLimited(_prefs_path + "/panel_size", 1, 0, PREVIEW_SIZE_HUGE);
         panel_mode = prefs->getIntLimited(_prefs_path + "/panel_mode", 1, 0, 10);
         panel_ratio = prefs->getIntLimited(_prefs_path + "/panel_ratio", 100, 0, 500 );
@@ -240,7 +240,6 @@ void Panel::_init()
     }
 
     {
-		/*
         //TRANSLATORS: "Wrap" indicates how colour swatches are displayed
         Glib::ustring wrap_label(C_("Swatches","Wrap"));
         Gtk::CheckMenuItem *check = Gtk::manage(new Gtk::CheckMenuItem(wrap_label));
@@ -249,38 +248,11 @@ void Panel::_init()
         _non_vertical.push_back(check);
 
         check->signal_toggled().connect(sigc::bind<Gtk::CheckMenuItem*>(sigc::mem_fun(*this, &Panel::_wrapToggled), check));
-		*/
     }
-	
-	{
-		
-		//TRANSLATORS: "Onion skinning" indicates if the previous layers should be shown
-        Glib::ustring fade_label(C_("Swatches","Onion skinning"));
-        Gtk::CheckMenuItem *check = Gtk::manage(new Gtk::CheckMenuItem(fade_label));
-        check->set_active(panel_fade);
-        _menu->append(*check);
-        _non_vertical.push_back(check);
 
-        check->signal_toggled().connect(sigc::bind<Gtk::CheckMenuItem*>(sigc::mem_fun(*this, &Panel::_fadeToggled), check));
-	}
-	
-	{
-		//TRANSLATORS: "Show all keyframes" indicates if all keyframes should be shown
-        Glib::ustring show_all_keyframes(C_("Swatches","Show all keyframes"));
-        Gtk::CheckMenuItem *check = Gtk::manage(new Gtk::CheckMenuItem(show_all_keyframes));
-        check->set_active(false);
-        _menu->append(*check);
-        _non_vertical.push_back(check);
-
-        check->signal_toggled().connect(sigc::bind<Gtk::CheckMenuItem*>(sigc::mem_fun(*this, &Panel::_showKeyframes), check));
-		
-	}
-	
-	
-
-    //Gtk::SeparatorMenuItem *sep;
-    //sep = Gtk::manage(new Gtk::SeparatorMenuItem());
-    //_menu->append(*sep);
+    Gtk::SeparatorMenuItem *sep;
+    sep = Gtk::manage(new Gtk::SeparatorMenuItem());
+    _menu->append(*sep);
 
     _menu->show_all_children();
     for ( std::vector<Gtk::Widget*>::iterator iter = _non_vertical.begin(); iter != _non_vertical.end(); ++iter ) {
@@ -331,7 +303,7 @@ void Panel::_init()
     _bounceCall(PANEL_SETTING_SIZE, panel_size);
     _bounceCall(PANEL_SETTING_MODE, panel_mode);
     _bounceCall(PANEL_SETTING_SHAPE, panel_ratio);
-    _bounceCall(PANEL_SETTING_WRAP, panel_fade);
+    _bounceCall(PANEL_SETTING_WRAP, panel_wrap);
     _bounceCall(PANEL_SETTING_BORDER, panel_border);
 }
 
@@ -398,10 +370,10 @@ void Panel::present()
 void Panel::restorePanelPrefs()
 {
     guint panel_size = 0, panel_mode = 0, panel_ratio = 100, panel_border = 0;
-    bool panel_fade = 1;
+    bool panel_wrap = 0;
     if (!_prefs_path.empty()) {
         Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-        panel_fade = prefs->getBool(_prefs_path + "/panel_wrap");
+        panel_wrap = prefs->getBool(_prefs_path + "/panel_wrap");
         panel_size = prefs->getIntLimited(_prefs_path + "/panel_size", 1, 0, PREVIEW_SIZE_HUGE);
         panel_mode = prefs->getIntLimited(_prefs_path + "/panel_mode", 1, 0, 10);
         panel_ratio = prefs->getIntLimited(_prefs_path + "/panel_ratio", 000, 0, 500 );
@@ -410,7 +382,7 @@ void Panel::restorePanelPrefs()
     _bounceCall(PANEL_SETTING_SIZE, panel_size);
     _bounceCall(PANEL_SETTING_MODE, panel_mode);
     _bounceCall(PANEL_SETTING_SHAPE, panel_ratio);
-    _bounceCall(PANEL_SETTING_WRAP, panel_fade);
+    _bounceCall(PANEL_SETTING_WRAP, panel_wrap);
     _bounceCall(PANEL_SETTING_BORDER, panel_border);
 }
 
@@ -426,7 +398,6 @@ sigc::signal<void> &Panel::signalPresent()
 
 void Panel::_bounceCall(int i, int j)
 {
-	//SPDesktop * desktop = SP_ACTIVE_DESKTOP;
     _menu->set_active(0);
     switch (i) {
     case PANEL_SETTING_SIZE:
@@ -540,18 +511,13 @@ void Panel::_bounceCall(int i, int j)
         }
         break;
     case PANEL_SETTING_WRAP:
-		//KRASCHAR!!
-		//_desktop->fade_previous_layers = !_desktop->fade_previous_layers;
-		//if(_desktop)
-		//	_desktop->fade_previous_layers = !_desktop->fade_previous_layers;
-		/*
         if (!_prefs_path.empty()) {
             Inkscape::Preferences *prefs = Inkscape::Preferences::get();
             prefs->setBool(_prefs_path + "/panel_wrap", j);
         }
         if ( _fillable ) {
             _fillable->setWrap(j);
-        }*/
+        }
         break;
     default:
         _handleAction(i - PANEL_SETTING_NEXTFREE, j);
@@ -559,31 +525,11 @@ void Panel::_bounceCall(int i, int j)
 }
 
 
-void Panel::_fadeToggled(Gtk::CheckMenuItem* toggler)
+void Panel::_wrapToggled(Gtk::CheckMenuItem* toggler)
 {
-	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
-	//_desktop FINNS INTE HÄR!
-	if(toggler && desktop)
-		desktop->fade_previous_layers = toggler->get_active() ? 1 : 0;
-	/*
     if (toggler) {
         _bounceCall(PANEL_SETTING_WRAP, toggler->get_active() ? 1 : 0);
     }
-	*/
-}
-
-
-void Panel::_showKeyframes(Gtk::CheckMenuItem* toggler)
-{
-	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
-	//_desktop FINNS INTE HÄR!
-	if(toggler && desktop)
-		desktop->show_all_keyframes = toggler->get_active() ? 1 : 0;
-	/*
-    if (toggler) {
-        _bounceCall(PANEL_SETTING_WRAP, toggler->get_active() ? 1 : 0);
-    }
-	*/
 }
 
 gchar const *Panel::getPrefsPath() const

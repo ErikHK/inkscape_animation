@@ -16,11 +16,6 @@
 
 #include "widgets/ege-paint-def.h"
 #include "ui/previewable.h"
-#include "layer-manager.h"
-#include "sp-namedview.h"
-
-#include "timeline-item.h"
-
 
 class SPGradient;
 
@@ -52,8 +47,6 @@ public:
     ColorItem( ege::PaintDef::ColorType type );
     ColorItem( unsigned int r, unsigned int g, unsigned int b,
                Glib::ustring& name );
-	ColorItem( unsigned int r, unsigned int g, unsigned int b,
-               Glib::ustring& name, int _id );
     virtual ~ColorItem();
     ColorItem(ColorItem const &other);
     virtual ColorItem &operator=(ColorItem const &other);
@@ -63,10 +56,7 @@ public:
                                     guint ratio,
                                     guint border);
     void buttonClicked(bool secondary = false);
-	void createPopupMenu(GdkEventButton * event);
-	void setStartLoop();
-	void setEndLoop();
-	
+
     void setGradient(SPGradient *grad);
     SPGradient * getGradient() const { return _grad; }
     void setPattern(cairo_pattern_t *pattern);
@@ -75,15 +65,8 @@ public:
     void setState( bool fill, bool stroke );
     bool isFill() { return _isFill; }
     bool isStroke() { return _isStroke; }
-	bool isStartLoop;
-	bool isEndLoop;
 
     ege::PaintDef def;
-	int id;
-	SPObject * layer;
-	bool is_empty;
-	
-	TimelineItem * ti;
 
 private:
 

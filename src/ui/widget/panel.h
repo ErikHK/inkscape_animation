@@ -156,8 +156,7 @@ private:
     void _bounceCall(int i, int j);
 
     void _popper(GdkEventButton *btn);
-    void _fadeToggled(Gtk::CheckMenuItem *toggler);
-	void _showKeyframes(Gtk::CheckMenuItem *toggler);
+    void _wrapToggled(Gtk::CheckMenuItem *toggler);
 
     SPDesktop       *_desktop;
 

@@ -233,7 +233,6 @@ static void onionSkinning(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
 	
-	//pMenu = 0;
 	if(SP_ACTIVE_DESKTOP && kw->onion)
 		SP_ACTIVE_DESKTOP->fade_previous_layers = kw->onion->get_active();
 }
@@ -246,16 +245,6 @@ static void showAllKeyframes(KeyframeWidget * kww, gpointer user_data)
 	//if(SP_ACTIVE_DESKTOP)
 	//	SP_ACTIVE_DESKTOP->show_all_keyframes = showAll->get_active();
 }
-
-
-void KeyframeWidget::_fadeToggled(Gtk::CheckMenuItem* toggler)
-{
-	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
-
-	if(toggler && desktop)
-		desktop->fade_previous_layers = toggler->get_active() ? 1 : 0;
-}
-
 
 static void createTween(KeyframeWidget * kww, gpointer user_data)
 {
@@ -514,6 +503,7 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
 	{
 		onion->set_active(SP_ACTIVE_DESKTOP->fade_previous_layers);
+		showAll->set_active(SP_ACTIVE_DESKTOP->show_all_keyframes);
 		
 		pMenu->show_all();
 		pMenu->popup(event->button, event->time);
@@ -568,8 +558,6 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
 	pMenu->add(*showAll);
 	pMenu->add(*onion);
-	
-	//onion->signal_toggled().connect(sigc::bind<Gtk::CheckMenuItem*>(sigc::mem_fun(*this, &KeyframeWidget::_fadeToggled), onion));
 
 	parent_id = parent->id;
 	

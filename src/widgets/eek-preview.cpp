@@ -76,7 +76,7 @@ typedef struct
     guint        border;
     GdkPixbuf   *previewPixbuf;
     GdkPixbuf   *scaled;
-} EekPreviewPrivate;
+} EekPreviewPrivate; 
 
 #define EEK_PREVIEW_GET_PRIVATE(preview) \
   G_TYPE_INSTANCE_GET_PRIVATE(preview, EEK_PREVIEW_TYPE, EekPreviewPrivate)
@@ -302,18 +302,14 @@ gboolean eek_preview_draw(GtkWidget *widget,
 
     // Border
     if (priv->border != BORDER_NONE) {
-        cairo_set_source_rgb(cr, 0.0, 255.0, 0.0);
+        cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
         cairo_rectangle(cr, 0, 0, allocation.width, allocation.height);
         cairo_fill(cr);
-		
     }
 
     cairo_set_source_rgb(cr, priv->r/65535.0, priv->g/65535.0, priv->b/65535.0 );
     cairo_rectangle(cr, insetLeft, insetTop, allocation.width - (insetLeft + insetRight), allocation.height - (insetTop + insetBottom));
     cairo_fill(cr);
-	cairo_set_source_rgb(cr, 0, 0, 0);
-	cairo_arc(cr,allocation.width/2.0,allocation.width/2.0, allocation.width/4.0, 0, 6);
-	cairo_fill_preserve(cr);
 
     if (priv->previewPixbuf )
     {

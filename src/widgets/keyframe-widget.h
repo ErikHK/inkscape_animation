@@ -36,7 +36,6 @@ protected:
 	void on_selection_changed();
 	
 private:
-	void _fadeToggled(Gtk::CheckMenuItem* toggler);
 	Gtk::Menu *pMenu;
 
 

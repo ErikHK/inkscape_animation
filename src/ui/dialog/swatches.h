@@ -21,7 +21,6 @@ class PreviewHolder;
 namespace Dialogs {
 
 class ColorItem;
-//class TimelineItem;
 class SwatchPage;
 class DocTrack;
 
