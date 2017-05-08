@@ -1,0 +1,19 @@
+high priority:
+
+- hide tweened layers after creation
+- insert keyframe option
+- onion skinning
+- show all keyframes
+- enable editing of tween path
+- enable opening of saved animation svgs
+- stop tweening from crashing
+- export any amount of layers
+
+medium priority:
+- restore color swatches
+- rename layers
+- move layers up and down
+- rotation tweening
+- scale tweening
+- node tweening
+- enable cached playback
