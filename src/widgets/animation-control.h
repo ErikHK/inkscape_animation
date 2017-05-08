@@ -8,6 +8,7 @@
 #include <gtkmm/liststore.h>
 #include <gtkmm/scrolledwindow.h>
 #include "sp-object.h"
+#include "keyframe-bar.h"
 
 namespace Inkscape {
 namespace UI {
@@ -25,6 +26,7 @@ public:
 	int num_layers;
 	void toggleVisible( Glib::ustring const& str );
 	//std::vector<SPObject*> layersToHide;
+	std::vector<KeyframeBar*> kb_vec;
 	
 protected:
     virtual bool on_expose_event(GtkWidget * widget, GdkEventExpose* event);

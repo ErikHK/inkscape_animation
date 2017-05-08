@@ -7,7 +7,6 @@
 #include "inkscape.h" // for SP_ACTIVE_DESKTOP
 #include "layer-fns.h" //LPOS_ABOVE
 #include "animation-control.h"
-#include "keyframe-bar.h"
 #include <gdkmm/general.h>
 #include <gtkmm/treeselection.h>
 #include "layer-manager.h"
@@ -162,28 +161,28 @@ void AnimationControl::rebuildUi()
 {
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	//clear tree thingy
-	_store->clear();
+	//_store->clear();
 
 	//add a label that says keyframes, otherwise it won't line up...
 	//Gtk::Label * lbl3 = new Gtk::Label("Keyframes");
 	//_keyframe_table.attach(*lbl3, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-	
-	std::vector<KeyframeBar*> kb_vec;
-	
+	//i = 0, kb_vec.size() = 1
 	for(int i = 0; i < num_layers; i++)
 	{
-		
-		SPObject * child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
-		
-		Gtk::TreeModel::iterator iter = _store->append();
-		Gtk::TreeModel::Row row = *iter;
-		row[_model->m_col_id] = true;
-		row[_model->m_col_name] = Glib::ustring::format("animationlayer", i+1);
-		
-		KeyframeBar* kb = new KeyframeBar(i+1, child);
-		row[_model->m_col_object] = kb;
-		_keyframe_table.attach(*kb, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-		kb_vec.push_back(kb);
+		if(kb_vec.size() <= i)
+		{
+			SPObject * child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
+			
+			Gtk::TreeModel::iterator iter = _store->append();
+			Gtk::TreeModel::Row row = *iter;
+			row[_model->m_col_id] = true;
+			row[_model->m_col_name] = Glib::ustring::format("animationlayer", i+1);
+			
+			KeyframeBar* kb = new KeyframeBar(i+1, child);
+			row[_model->m_col_object] = kb;
+			_keyframe_table.attach(*kb, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+			kb_vec.push_back(kb);
+		}
 	}
 	
 	//iterate over keyframebars and set pointers to siblings
@@ -257,7 +256,6 @@ void AnimationControl::rebuildUi()
 
 void AnimationControl::addLayer()
 {
-	
 	Glib::RefPtr<Gtk::TreeSelection> selection = _tree.get_selection();
 	
 	//Gtk::TreeModel::iterator iter = selection->get_selected();
