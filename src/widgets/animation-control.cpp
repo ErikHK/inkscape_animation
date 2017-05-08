@@ -22,9 +22,10 @@ class AnimationControl::ModelColumns : public Gtk::TreeModel::ColumnRecord
 {
 	public:
 		ModelColumns()
-		{ add(m_col_id); add(m_col_name); add(m_col_object);}
+		{ add(m_col_visible); add(m_col_locked); add(m_col_name); add(m_col_object);}
 
-		Gtk::TreeModelColumn<bool> m_col_id;
+		Gtk::TreeModelColumn<bool> m_col_visible;
+		Gtk::TreeModelColumn<bool> m_col_locked;
 		Gtk::TreeModelColumn<Glib::ustring> m_col_name;
 		Gtk::TreeModelColumn<KeyframeBar*> m_col_object;
 };
@@ -66,8 +67,8 @@ void AnimationControl::toggleVisible( Glib::ustring const& str )
     KeyframeBar* obj = row[_model->m_col_object];
     //SPItem* item = ( obj && SP_IS_ITEM(obj) ) ? SP_ITEM(obj) : 0;
     if ( obj ) {
-		bool newValue = !row[_model->m_col_id];
-		row[_model->m_col_id] = newValue;
+		bool newValue = !row[_model->m_col_visible];
+		row[_model->m_col_visible] = newValue;
 		//item->setHidden(!newValue);
 		obj->is_visible = newValue;
 		//item->updateRepr();
@@ -75,6 +76,32 @@ void AnimationControl::toggleVisible( Glib::ustring const& str )
 		//					newValue? _("Unhide layer") : _("Hide layer"));
     }
 }
+
+void AnimationControl::toggleLocked( Glib::ustring const& str )
+{
+	
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+	if(!desktop)
+		return;
+	
+	Gtk::TreeModel::Children::iterator iter = _tree.get_model()->get_iter(str);
+    Gtk::TreeModel::Row row = *iter;
+
+    KeyframeBar* obj = row[_model->m_col_object];
+    SPItem* item = ( obj && obj->layer && SP_IS_ITEM(obj->layer) ) ? SP_ITEM(obj->layer) : 0;
+    if ( obj ) {
+		bool newValue = !row[_model->m_col_locked];
+		row[_model->m_col_locked] = newValue;
+		if(item)
+			item->setLocked(newValue);
+		//item->setHidden(!newValue);
+		//obj->is_visible = newValue;
+		//item->updateRepr();
+		//DocumentUndo::done( _desktop->doc() , SP_VERB_DIALOG_LAYERS,
+		//					newValue? _("Unhide layer") : _("Hide layer"));
+    }
+}
+
 
 AnimationControl::AnimationControl() : 
 _panes(), _keyframe_table(), _scroller(), _tree_scroller(),
@@ -128,14 +155,32 @@ _new_layer_button("New Layer"), num_layers(0)
         INKSCAPE_ICON("object-visible"), INKSCAPE_ICON("object-hidden")) );
 		
     int visibleColNum = _tree.append_column("vis", *eyeRenderer) - 1;
+	
 	eyeRenderer->signal_toggled().connect( sigc::mem_fun(*this, &AnimationControl::toggleVisible) ) ;
+	
 	//eyeRenderer->signal_toggled().connect( sigc::bind( sigc::mem_fun(*this, &LayersPanel::_toggled), (int)1) );
     eyeRenderer->property_activatable() = true;
     col = _tree.get_column(visibleColNum);
     if ( col ) {
-        col->add_attribute( eyeRenderer->property_active(), _model->m_col_id );
+        col->add_attribute( eyeRenderer->property_active(), _model->m_col_visible );
         lbl->show();
         col->set_widget( *lbl );
+    }
+	
+	Inkscape::UI::Widget::ImageToggler * renderer = Gtk::manage( new Inkscape::UI::Widget::ImageToggler(
+        INKSCAPE_ICON("object-locked"), INKSCAPE_ICON("object-unlocked")) );
+    
+	int lockedColNum = _tree.append_column("lock", *renderer) - 1;
+	
+	renderer->signal_toggled().connect( sigc::mem_fun(*this, &AnimationControl::toggleLocked) ) ;
+	
+	renderer->property_activatable() = true;
+    col = _tree.get_column(lockedColNum);
+    if ( col ) {
+        col->add_attribute( renderer->property_active(), _model->m_col_locked );
+        //_lockHeader.set_tooltip_text(_("Toggle lock of Layer, Group, or Object."));
+        //_lockHeader.show();
+        //col->set_widget( _lockHeader );
     }
 	
     //Label
@@ -175,7 +220,8 @@ void AnimationControl::rebuildUi()
 			
 			Gtk::TreeModel::iterator iter = _store->append();
 			Gtk::TreeModel::Row row = *iter;
-			row[_model->m_col_id] = true;
+			row[_model->m_col_visible] = true;
+			row[_model->m_col_locked] = false;
 			row[_model->m_col_name] = Glib::ustring::format("animationlayer", i+1);
 			
 			KeyframeBar* kb = new KeyframeBar(i+1, child);

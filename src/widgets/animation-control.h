@@ -25,6 +25,7 @@ public:
 	void rebuildUi();
 	int num_layers;
 	void toggleVisible( Glib::ustring const& str );
+	void toggleLocked( Glib::ustring const& str );
 	//std::vector<SPObject*> layersToHide;
 	std::vector<KeyframeBar*> kb_vec;
 	

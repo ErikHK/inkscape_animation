@@ -116,7 +116,7 @@ ColorPreview::on_draw(const Cairo::RefPtr<Cairo::Context>& cr)
 
     cairo_pattern_t *checkers = ink_cairo_pattern_create_checkerboard();
 
-    cr->rectangle(carea.x, carea.y, carea.width-carea.height, carea.height);
+    cr->rectangle(carea.x, carea.y, carea.width, carea.height);
     cairo_set_source(cr->cobj(), checkers);
     cr->fill_preserve();
     ink_cairo_set_source_rgba32(cr->cobj(), _rgba);
@@ -131,7 +131,7 @@ ColorPreview::on_draw(const Cairo::RefPtr<Cairo::Context>& cr)
     carea.width = warea.width - w2;
     carea.height = warea.height;
 
-    cr->rectangle(carea.x, carea.y, carea.width-carea.height, carea.height);
+    cr->rectangle(carea.x, carea.y, carea.width, carea.height);
     ink_cairo_set_source_rgba32(cr->cobj(), _rgba | 0xff);
     cr->fill();
 
@@ -156,7 +156,7 @@ ColorPreview::toPixbuf (int width, int height)
 
     cairo_pattern_t *checkers = ink_cairo_pattern_create_checkerboard();
 
-    cairo_rectangle(ct, carea.x, carea.y, carea.width-carea.height, carea.height);
+    cairo_rectangle(ct, carea.x, carea.y, carea.width, carea.height);
     cairo_set_source(ct, checkers);
     cairo_fill_preserve(ct);
     ink_cairo_set_source_rgba32(ct, _rgba);
@@ -170,7 +170,7 @@ ColorPreview::toPixbuf (int width, int height)
     carea.width = width - w2;
     carea.height = height;
 
-    cairo_rectangle(ct, carea.x, carea.y, carea.width-carea.height, carea.height);
+    cairo_rectangle(ct, carea.x, carea.y, carea.width, carea.height);
     ink_cairo_set_source_rgba32(ct, _rgba | 0xff);
     cairo_fill(ct);
 

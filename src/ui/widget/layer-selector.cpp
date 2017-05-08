@@ -120,8 +120,8 @@ LayerSelector::LayerSelector(SPDesktop *desktop)
 
     label = Gtk::manage(new AlternateIcons(Inkscape::ICON_SIZE_DECORATION,
         INKSCAPE_ICON("object-unlocked"), INKSCAPE_ICON("object-locked")));
-    //_lock_toggle.add(*label);
-	/*
+    _lock_toggle.add(*label);
+	
     _lock_toggle.signal_toggled().connect(
         sigc::compose(
             sigc::mem_fun(*label, &AlternateIcons::setState),
@@ -138,7 +138,7 @@ LayerSelector::LayerSelector(SPDesktop *desktop)
     _lock_toggle.set_relief(Gtk::RELIEF_NONE);
     _lock_toggle.set_tooltip_text(_("Lock or unlock current layer"));
     pack_start(_lock_toggle, Gtk::PACK_EXPAND_PADDING);
-	*/
+	
 
     _selector.set_tooltip_text(_("Current layer"));
     pack_start(_selector, Gtk::PACK_EXPAND_WIDGET);
