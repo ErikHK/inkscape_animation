@@ -187,8 +187,12 @@ void AnimationControl::rebuildUi()
 	}
 	
 	//iterate over keyframebars and set pointers to siblings
-	//kb_vec[0]->prev = NULL;
-	//kb_vec[0]->next = NULL;
+	
+	if(kb_vec.size() > 0)
+	{
+		kb_vec[0]->prev = NULL;
+		kb_vec[0]->next = NULL;
+	}
 	if(kb_vec.size() > 1)
 	{
 		//for(int i=0; i < kb_vec.size()-1; i++)
@@ -199,7 +203,6 @@ void AnimationControl::rebuildUi()
 		kb_vec[0]->next = kb_vec[1];
 		kb_vec[1]->prev = kb_vec[0];
 	}
-	
 	if(kb_vec.size() > 2)
 	{
 		//for(int i=0; i < kb_vec.size()-1; i++)
@@ -219,7 +222,18 @@ void AnimationControl::rebuildUi()
 		//	kb_vec[i+1]->prev = kb_vec[i];
 		//}
 		kb_vec[2]->next = kb_vec[3];
-		kb_vec[3]->prev = kb_vec[4];
+		kb_vec[3]->prev = kb_vec[2];
+	}
+	
+	if(kb_vec.size() > 4)
+	{
+		//for(int i=0; i < kb_vec.size()-1; i++)
+		//{
+		//	kb_vec[i]->next = kb_vec[i+1];
+		//	kb_vec[i+1]->prev = kb_vec[i];
+		//}
+		kb_vec[3]->next = kb_vec[4];
+		kb_vec[4]->prev = kb_vec[3];
 	}
 	
 	

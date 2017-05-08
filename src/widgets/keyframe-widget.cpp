@@ -79,7 +79,7 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 	while(parent && pre && pre->widgets[id-1]->layer)
 	{
 		LAYERS_TO_HIDE.push_back(pre->widgets[id-1]->layer);
-		pre = pre->next;
+		pre = pre->prev;
 	}
 	
 	
@@ -120,6 +120,15 @@ void KeyframeWidget::selectLayer()
 	if(!layer)
 		layer = desktop->namedview->document->getObjectById(
 				Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
+				
+				
+	if(LAYERS_TO_HIDE.size() > 0)
+	{
+		for(int i = 0; i < LAYERS_TO_HIDE.size(); i++)
+			//LAYERS_TO_HIDE[i]->getRepr()->setAttribute("style", "display:none");
+			SP_ITEM(LAYERS_TO_HIDE[i])->setHidden(true);
+		LAYERS_TO_HIDE.clear();
+	}
 
 	desktop->setCurrentLayer(layer);
 	//desktop->layer_manager->setCurrentLayer(layer);
@@ -129,10 +138,12 @@ void KeyframeWidget::selectLayer()
 	//desktop->toggleHideAllLayers(true);
 
 	//show current and parent
-	SP_ITEM(layer)->setHidden(false);
-	if(layer->parent)
-		SP_ITEM(layer->parent)->setHidden(false);
-	
+	if(parent->is_visible)
+	{
+		SP_ITEM(layer)->setHidden(false);
+		if(layer->parent)
+			SP_ITEM(layer->parent)->setHidden(false);
+	}
 	//////////also check if other layers exist, then show them as well, if they are set to be shown!//////////
 	KeyframeBar * next_kb = parent->next;
 	
@@ -158,17 +169,8 @@ void KeyframeWidget::selectLayer()
 			SP_ITEM(next_kb->layer)->setHidden(false);
 			if(next_kb->widgets[id-1]->layer)
 				SP_ITEM(next_kb->widgets[id-1]->layer)->setHidden(false);
-		}
-		
+		}	
 		next_kb = next_kb->prev;
-	}
-	
-	if(LAYERS_TO_HIDE.size() > 0)
-	{
-		for(int i = 0; i < LAYERS_TO_HIDE.size(); i++)
-			//LAYERS_TO_HIDE[i]->getRepr()->setAttribute("style", "display:none");
-			SP_ITEM(LAYERS_TO_HIDE[i])->setHidden(true);
-		LAYERS_TO_HIDE.clear();
 	}
 }
 
@@ -177,22 +179,25 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 	//pMenu = 0;
 }
 
-static void onionSkinning(KeyframeWidget * kww, gpointer user_data)
+void KeyframeWidget::onionSkinning(KeyframeWidget * kww, gpointer user_data)
 {
 	//pMenu = 0;
+	//if(SP_ACTIVE_DESKTOP)
+	//	SP_ACTIVE_DESKTOP->fade_previous_layers = onion->get_active();
 }
 
-static void showAllKeyframes(KeyframeWidget * kww, gpointer user_data)
+void KeyframeWidget::showAllKeyframes(KeyframeWidget * kww, gpointer user_data)
 {
 	//pMenu = 0;
+	//if(SP_ACTIVE_DESKTOP)
+	//	SP_ACTIVE_DESKTOP->show_all_keyframes = showAll->get_active();
 }
 
 
 void KeyframeWidget::_fadeToggled(Gtk::CheckMenuItem* toggler)
 {
-	//pMenu = 0;
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
-	//_desktop FINNS INTE HÄR!
+
 	if(toggler && desktop)
 		desktop->fade_previous_layers = toggler->get_active() ? 1 : 0;
 }
@@ -447,8 +452,6 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	
 	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
 	{
-		std::cout << "RIGHT-CLICK";
-		
 		pMenu->show_all();
 		pMenu->popup(event->button, event->time);
 	}
@@ -471,43 +474,37 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 						  G_CALLBACK(insertKeyframe),
 						  this);
 	
-	Gtk::MenuItem *pItem = new Gtk::MenuItem("Create tween");
+	Gtk::MenuItem *tweenItem = new Gtk::MenuItem("Create tween");
 	
-	g_signal_connect( pItem->gobj(),
+	g_signal_connect( tweenItem->gobj(),
 						  "activate",
 						  G_CALLBACK(createTween),
 						  this);
 	
 	//Gtk::MenuItem *pItem2 = new Gtk::MenuItem("Show all keyframes");
-	Gtk::CheckMenuItem *showAll = Gtk::manage(new Gtk::CheckMenuItem("Show all keyframes"));
+	showAll = Gtk::manage(new Gtk::CheckMenuItem("Show all keyframes"));
 	showAll->set_active(false);
 	
 	g_signal_connect( showAll->gobj(),
 						  "activate",
-						  G_CALLBACK(showAllKeyframes),
+						  G_CALLBACK(&KeyframeWidget::showAllKeyframes),
 						  this);
 						  
-	Gtk::CheckMenuItem *onion = Gtk::manage(new Gtk::CheckMenuItem("Onion skinning"));
+	onion = Gtk::manage(new Gtk::CheckMenuItem("Onion skinning"));
 	onion->set_active(true);
 	
-	/*
 	g_signal_connect( onion->gobj(),
 						  "activate",
-						  G_CALLBACK(onionSkinning),
+						  G_CALLBACK(&KeyframeWidget::onionSkinning),
 						  this);
-	*/
-	//pMenu->add(*pItem3);
-	//pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
-	pMenu->add(*pItem);
+
+	pMenu->add(*tweenItem);
 	pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
 	pMenu->add(*showAll);
 	pMenu->add(*onion);
 	
-	onion->signal_toggled().connect(sigc::bind<Gtk::CheckMenuItem*>(sigc::mem_fun(*this, &KeyframeWidget::_fadeToggled), onion));
-	
+	//onion->signal_toggled().connect(sigc::bind<Gtk::CheckMenuItem*>(sigc::mem_fun(*this, &KeyframeWidget::_fadeToggled), onion));
 
-	
-	
 	parent_id = parent->id;
 	
 	this->set_size_request(15, 21);
