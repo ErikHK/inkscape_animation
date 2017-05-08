@@ -174,9 +174,64 @@ void KeyframeWidget::selectLayer()
 	}
 }
 
+//void KeyframeWidget::insertKeyframe(KeyframeWidget * kww, gpointer user_data)
+
 static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 {
-	//pMenu = 0;
+	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
+	
+	//iterate backwards until a keyframe's layer has objects, then copy them to the current layer
+	KeyframeWidget * p = kw->parent->widgets[kw->id-2];
+	
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	
+	if(!desktop)
+		return;
+	
+	if(!p)
+		return;
+	
+	if(!p->layer)
+		return;
+	
+	if(p->layer->getRepr()->childCount() > 0)
+	{
+		Inkscape::XML::Node * child_copy = NULL;
+		Inkscape::XML::Node * child = p->layer->getRepr()->firstChild();
+		if(child)
+			child_copy = child->duplicate(desktop->getDocument()->getReprDoc());
+		if(child_copy && child && kw->layer)
+			kw->layer->getRepr()->appendChild(child_copy);
+	}
+	
+	/*
+	int i = 3;
+	//while(p && p->layer && p->layer->getRepr()->childCount() < 1)
+	while(p)
+	{
+		if(!p->layer)
+			return;
+		
+		//break if a p with at least 1 child is found
+		if(p->layer->getRepr()->childCount() >= 1)
+			break;
+		
+		p = parent->widgets[id-i];
+		i++;
+		if(!p)
+			return;
+	}
+	
+	if(p && p->layer && p->layer->getRepr()->childCount() > 0)
+	{
+		Inkscape::XML::Node * child_copy = NULL;
+		Inkscape::XML::Node * child = p->layer->getRepr()->firstChild();
+		if(child)
+			child_copy = child->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc());
+		if(child_copy && layer->getRepr()->childCount() == 0)
+			layer->getRepr()->appendChild(child_copy);
+	}
+	*/
 }
 
 void KeyframeWidget::onionSkinning(KeyframeWidget * kww, gpointer user_data)
@@ -287,7 +342,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	while(layer != endLayer)
 	{
 		//nextLayer = Inkscape::next_layer(desktop->currentRoot(), layer);
-		nextLayer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
+		nextLayer = desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
 		
 		if(nextLayer && layer)
 		{
@@ -298,6 +354,11 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			{
 				child_copy->setAttribute(xs.c_str(), Glib::ustring::format(start_x + i*inc_x));
 				child_copy->setAttribute(ys.c_str(), Glib::ustring::format(start_y + i*inc_y));
+			}
+			else
+			{
+				child_copy->setAttribute("transform", 
+				Glib::ustring::format("translate(", start_x + i*inc_x, ",", start_y + i*inc_y, ")" ));
 			}
 			
 			//Inkscape::XML::Node *child = desktop->getDocument()->getReprDoc()->createElement("svg:path");
@@ -457,7 +518,6 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 		pMenu->show_all();
 		pMenu->popup(event->button, event->time);
 	}
-	
 }
 
 KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer, bool _is_empty)
@@ -465,6 +525,9 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	parent = _parent;
 	layer = _layer;
 	id = _id;
+	
+	next = NULL;
+	prev = NULL;
 	
 	pMenu = new Gtk::Menu();
 	
@@ -500,6 +563,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 						  G_CALLBACK(&KeyframeWidget::onionSkinning),
 						  this);
 
+	pMenu->add(*pItem3);
 	pMenu->add(*tweenItem);
 	pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
 	pMenu->add(*showAll);

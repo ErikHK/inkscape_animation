@@ -147,6 +147,21 @@ void KeyframeBar::rebuildUi()
 		kw->set_can_focus(true);
 	}
 
+	/*
+	for(int i=0; i < widgets.size(); i++)
+	{
+		if(i>0)
+			widgets[i]->prev = widgets[i-1];
+		else
+			widgets[i]->prev = NULL;
+		
+		if(i < widgets.size() - 1)
+			widgets[i]->next = widgets[i+1];
+		else
+			widgets[i]->next = NULL;
+	}
+	*/
+
 	set_focus_chain(widgets);
 	show_all_children();
 	set_focus_chain(widgets);

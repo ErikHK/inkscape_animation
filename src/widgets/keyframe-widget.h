@@ -15,6 +15,8 @@ public:
 	int id;
 	int parent_id;
 	KeyframeBar * parent;
+	KeyframeWidget * next;
+	KeyframeWidget * prev;
 	SPObject * layer;
 	bool is_empty;
 	void selectLayer();
@@ -22,6 +24,7 @@ public:
 	//void gotFocus();
 	void showAllKeyframes(KeyframeWidget * kww, gpointer user_data);
 	void onionSkinning(KeyframeWidget * kww, gpointer user_data);
+	//void insertKeyframe(KeyframeWidget * kww, gpointer user_data);
 
 protected:
     virtual bool on_expose_event(GdkEventExpose* event);
