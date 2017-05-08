@@ -271,6 +271,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//layer = Inkscape::next_layer(desktop->currentRoot(), layer);
 		layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
 		
+		if(!layer)
+			return;
+		
 		//as soon as a layer has a child, break and set endLayer to this!
 		if (layer->getRepr()->childCount() > 0)
 			break;
