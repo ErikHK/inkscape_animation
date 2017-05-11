@@ -318,12 +318,19 @@ void AnimationControl::addLayer()
 	num_layers++;
 	
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-	
+	SPObject * prevLayer = NULL;
+	SPObject * lay = NULL;
 	//try to add a layer
 	if(desktop)
 	{
+		if(num_layers > 1)
+			prevLayer = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", num_layers-1)));
 		//SPObject * lay = Inkscape::create_animation_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
-		SPObject * lay = Inkscape::create_animation_layer(desktop->currentRoot(), desktop->currentRoot(), Inkscape::LPOS_ABOVE);
+		
+		if(prevLayer)
+			lay = Inkscape::create_animation_layer(desktop->currentRoot(), prevLayer, Inkscape::LPOS_BELOW);
+		else
+			lay = Inkscape::create_animation_layer(desktop->currentRoot(), desktop->currentRoot(), Inkscape::LPOS_BELOW);
 		if(!lay)
 			return;
 		
