@@ -74,6 +74,10 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 	while(parent && nex && nex->widgets[id-1]->layer)
 	{
 		LAYERS_TO_HIDE.push_back(nex->widgets[id-1]->layer);
+		
+		if(id > 1)
+			LAYERS_TO_HIDE.push_back(nex->widgets[id-2]->layer);
+		
 		nex = nex->next;
 	}
 
@@ -82,6 +86,10 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 	while(parent && pre && pre->widgets[id-1]->layer)
 	{
 		LAYERS_TO_HIDE.push_back(pre->widgets[id-1]->layer);
+		
+		if(id > 1)
+			LAYERS_TO_HIDE.push_back(pre->widgets[id-2]->layer);
+		
 		pre = pre->prev;
 	}
 	
@@ -182,6 +190,17 @@ void KeyframeWidget::selectLayer()
 			SP_ITEM(next_kb->layer)->setHidden(false);
 			if(next_kb->widgets[id-1]->layer)
 				SP_ITEM(next_kb->widgets[id-1]->layer)->setHidden(false);
+			
+			//also onion skinning
+			if(id > 1)
+			{
+				if(next_kb->widgets[id-2]->layer)
+				{
+					next_kb->widgets[id-2]->layer->getRepr()->setAttribute("style", "opacity:.5");
+					SP_ITEM(next_kb->widgets[id-2]->layer)->setHidden(false);
+				}
+			}
+			
 		}
 		//else
 		//	LAYERS_TO_HIDE.push_back(next_kb->layer);
@@ -197,6 +216,18 @@ void KeyframeWidget::selectLayer()
 			SP_ITEM(next_kb->layer)->setHidden(false);
 			if(next_kb->widgets[id-1]->layer)
 				SP_ITEM(next_kb->widgets[id-1]->layer)->setHidden(false);
+			
+			
+			//also onion skinning
+			if(id > 1)
+			{
+				if(next_kb->widgets[id-2]->layer)
+				{
+					next_kb->widgets[id-2]->layer->getRepr()->setAttribute("style", "opacity:.5");
+					SP_ITEM(next_kb->widgets[id-2]->layer)->setHidden(false);
+				}
+			}
+			
 		}	
 		next_kb = next_kb->prev;
 	}
