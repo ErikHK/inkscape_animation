@@ -1238,11 +1238,25 @@ void Export::onExport ()
 			for(int ii = 0; ii < 20; ii++)
 			{
 				if(layers[ii])
-				SP_ITEM(layers[ii])->setHidden(true);
+					SP_ITEM(layers[ii])->setHidden(true);
+			}
+			
+			bool finished = true;
+			for(int ii = 0; ii < 20; ii++)
+			{
+				if(layers[ii])
+				{
+					layers[ii] = Inkscape::next_layer(desktop->currentRoot(), layers[ii]);
+					if(layers[ii])
+						finished = false;
+				}
 			}
 			
 			layer = Inkscape::next_layer(desktop->currentRoot(), layer);
 			if(!layer)
+				return;
+			
+			if(finished)
 				return;
 			
 			i++;

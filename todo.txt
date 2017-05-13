@@ -2,11 +2,11 @@ high priority:
 x hide tweened layers after creation AND changed selection
 x insert keyframe option
 x onion skinning
-- show all keyframes
+x show all keyframes
 - enable editing of tween path
 / enable opening of saved animation svgs (half fixed, must create a new layer to update)
 x stop tweening from crashing
-- export any amount of layers
+x export any amount of layers
 x layers in correct order
 - clear animation layers when opening a new file/loading another
 
