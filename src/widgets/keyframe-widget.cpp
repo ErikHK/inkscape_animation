@@ -75,7 +75,7 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 	{
 		LAYERS_TO_HIDE.push_back(nex->widgets[id-1]->layer);
 		
-		if(id > 1)
+		if(id > 1 && nex->widgets[id-2]->layer)
 			LAYERS_TO_HIDE.push_back(nex->widgets[id-2]->layer);
 		
 		nex = nex->next;
@@ -87,37 +87,12 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 	{
 		LAYERS_TO_HIDE.push_back(pre->widgets[id-1]->layer);
 		
-		if(id > 1)
+		if(id > 1 && pre->widgets[id-2]->layer)
 			LAYERS_TO_HIDE.push_back(pre->widgets[id-2]->layer);
 		
 		pre = pre->prev;
 	}
 	
-	
-	//if(parent && parent->next->widgets[id-1]->layer)
-	//	parent->animationControl->layersToHide.push_back(parent->next->widgets[id-1]->layer);
-	/*
-	if(!parent)
-		return false;
-		
-	if(!parent->next)
-		return false;
-	
-	if(parent->next->widgets[id-1]->layer)
-	{
-		desktop->setCurrentLayer(parent->next->widgets[id-1]->layer);
-		//SP_ITEM(parent->next->widgets[id-1]->layer)->setHidden(true);
-		Inkscape::XML::Node * n = parent->next->widgets[id-1]->layer->getRepr();
-		//SP_ITEM(parent->next->widgets[id-1]->layer)->getRepr()->setAttribute("style", "display:none");
-		if(n)
-			n->setAttribute("style", "display:none");
-		//parent->next->layer->getRepr()->setAttribute("style", "display:none");
-	}
-	*/
-	
-	//selectLayer();
-	//if(layer)
-	//	SP_ITEM(layer)->setHidden(true);
 	return false;
 }
 
@@ -140,7 +115,6 @@ void KeyframeWidget::selectLayer()
 	{
 		for(int i = 0; i < LAYERS_TO_HIDE.size(); i++)
 		{
-			//LAYERS_TO_HIDE[i]->getRepr()->setAttribute("style", "display:none");
 			LAYERS_TO_HIDE[i]->getRepr()->setAttribute("style", "opacity:1.0");
 			if(!desktop->show_all_keyframes)
 				SP_ITEM(LAYERS_TO_HIDE[i])->setHidden(true);
@@ -152,17 +126,11 @@ void KeyframeWidget::selectLayer()
 	if(desktop->show_all_keyframes)
 		return;
 
-	//desktop->layer_manager->setCurrentLayer(layer);
-
-	//hide all layers
-	//TAKES A LOT OF TIME
-	//desktop->toggleHideAllLayers(true);
-
 	//show current and parent
 	if(parent->is_visible)
 	{
 		SP_ITEM(layer)->setHidden(false);
-		if(desktop->fade_previous_layers)
+		if(desktop->fade_previous_layers && layer)
 			layer->getRepr()->setAttribute("style", "opacity:1.0");
 
 		if(layer->parent)
@@ -175,7 +143,7 @@ void KeyframeWidget::selectLayer()
 			
 			if(prev->prev && prev->prev->layer)
 			{
-				prev->prev->layer->getRepr()->setAttribute("style", "opacity:1");
+				prev->prev->layer->getRepr()->setAttribute("style", "opacity:1.0");
 				SP_ITEM(prev->prev->layer)->setHidden(true);
 			}
 		}
@@ -185,7 +153,7 @@ void KeyframeWidget::selectLayer()
 	
 	while(next_kb)
 	{
-		if(next_kb->is_visible)
+		if(next_kb->is_visible && next_kb->layer)
 		{
 			SP_ITEM(next_kb->layer)->setHidden(false);
 			if(next_kb->widgets[id-1]->layer)
@@ -194,16 +162,13 @@ void KeyframeWidget::selectLayer()
 			//also onion skinning
 			if(id > 1)
 			{
-				if(next_kb->widgets[id-2]->layer)
+				if(next_kb->widgets[id-2]->layer && desktop->fade_previous_layers)
 				{
 					next_kb->widgets[id-2]->layer->getRepr()->setAttribute("style", "opacity:.5");
 					SP_ITEM(next_kb->widgets[id-2]->layer)->setHidden(false);
 				}
 			}
-			
 		}
-		//else
-		//	LAYERS_TO_HIDE.push_back(next_kb->layer);
 		
 		next_kb = next_kb->next;
 	}
@@ -211,7 +176,7 @@ void KeyframeWidget::selectLayer()
 	next_kb = parent->prev;
 	while(next_kb)
 	{
-		if(next_kb->is_visible)
+		if(next_kb->is_visible && next_kb->layer)
 		{
 			SP_ITEM(next_kb->layer)->setHidden(false);
 			if(next_kb->widgets[id-1]->layer)
@@ -221,7 +186,7 @@ void KeyframeWidget::selectLayer()
 			//also onion skinning
 			if(id > 1)
 			{
-				if(next_kb->widgets[id-2]->layer)
+				if(next_kb->widgets[id-2]->layer && desktop->fade_previous_layers)
 				{
 					next_kb->widgets[id-2]->layer->getRepr()->setAttribute("style", "opacity:.5");
 					SP_ITEM(next_kb->widgets[id-2]->layer)->setHidden(false);
@@ -233,7 +198,6 @@ void KeyframeWidget::selectLayer()
 	}
 }
 
-//void KeyframeWidget::insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 
 static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 {
@@ -288,14 +252,25 @@ static void showAllKeyframes(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
 	
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	
+	if(!desktop)
+		return;
+	
 	//pMenu = 0;
 	if(SP_ACTIVE_DESKTOP && kw->showAll)
 		SP_ACTIVE_DESKTOP->show_all_keyframes = kw->showAll->get_active();
 	
 	SP_ACTIVE_DESKTOP->toggleHideAllLayers(!kw->showAll->get_active());
 	
+	//show layer1
+	SPObject * layer = desktop->getDocument()->getObjectById("layer1");
+	
+	if(layer)
+		SP_ITEM(layer)->setHidden(false);
+	
 	kw->layer->getRepr()->setAttribute("style", "opacity:1.0");
-	if(kw->prev)
+	if(kw->prev && kw->prev->layer)
 		kw->prev->layer->getRepr()->setAttribute("style", "opacity:1.0");
 }
 
@@ -381,7 +356,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	//now we have start and end, loop again, and copy children etcetc
 	layer = startLayer;
-	i = kw->id+1;
+	i = kw->id;
 	while(layer != endLayer)
 	{
 		//nextLayer = Inkscape::next_layer(desktop->currentRoot(), layer);
@@ -476,21 +451,20 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 				break;
 			
 		}
-	
 	}
 	//else the path is closed!
 	else
 	{
 		for(int iii = 0; iii < sizeee; iii++)
 		{
-			inc = 1 - 1/num_layers;
+			inc = 1 - 1/(num_layers-1);
 			//mult = inc;
 			mult = 1;
 			
 			for(int k=0; k < num_layers/(sizeee ); k++)
 			{
-				mult -= (sizeee)*1.0/num_layers;
-				pm.insertNode(this_iter, mult/(mult + (sizeee)*1.0/num_layers), false);
+				mult -= (sizeee)*1.0/(num_layers-1);
+				pm.insertNode(this_iter, mult/(mult + (sizeee)*1.0/(num_layers-1)), false);
 			}
 			
 			pm._selection.clear();
@@ -676,8 +650,8 @@ void KeyframeWidget::on_selection_changed()
 	
 	if(parent->clear_tween)
 	{
-		SP_ACTIVE_DESKTOP->toggleHideAllLayers(true);
-		parent->clear_tween = false;
+		//SP_ACTIVE_DESKTOP->toggleHideAllLayers(true);
+		//parent->clear_tween = false;
 	}
 }
 

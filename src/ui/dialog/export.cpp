@@ -1156,26 +1156,15 @@ void Export::onExport ()
 		//first hide all layers
 		desktop->toggleHideAllLayers(true);
 		
-		SPObject * lay = doc->getObjectById("animationlayer1keyframe1");
-		if(!lay)
-			return;
-		
-		//determine number of layers
-		while(lay->getRepr()->childCount() > 0)
-		{
-			num++;
-			lay = Inkscape::next_layer(desktop->currentRoot(), lay);
-			if(!lay)
-				break;
-		}
-		
-		//hehe
-		SPObject * layer = doc->getObjectById("animationlayer1keyframe1"); //start with first layer
-		
+		//show layer1
+		SPObject * layer1 = desktop->getDocument()->getObjectById("layer1");
+	
+		if(layer1)
+			SP_ITEM(layer1)->setHidden(false);
+	
 		SPObject * layers[20];
 		for(int i=0;i < 20; i++)
-			layers[i] = doc->getObjectById(std::string(Glib::ustring::format("animationlayer", i, "keyframe1"))); //start with first layer
-		
+			layers[i] = doc->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1, "keyframe1"))); //start with first layer
 		
 		int i=0;
 		prog_dlg = create_progress_dialog(Glib::ustring::compose(_("Exporting %1 files"), num));
@@ -1183,8 +1172,7 @@ void Export::onExport ()
 		setExporting(true, Glib::ustring::compose(_("Exporting %1 files"), num));
 
 		gint export_count = 0;
-			
-		for(int j=0;j < num; j++)
+		for(int j=0;j < 50; j++)
 		{
 			for(int ii = 0; ii < 20; ii++)
 			{
@@ -1229,11 +1217,9 @@ void Export::onExport ()
 
                 sp_ui_error_dialog(error);
                 g_free(error);
-								  
 			}else{
 				++export_count;
 			}
-			
 			
 			for(int ii = 0; ii < 20; ii++)
 			{
@@ -1246,18 +1232,15 @@ void Export::onExport ()
 			{
 				if(layers[ii])
 				{
+					finished = false;
 					layers[ii] = Inkscape::next_layer(desktop->currentRoot(), layers[ii]);
 					if(layers[ii])
 						finished = false;
 				}
 			}
 			
-			layer = Inkscape::next_layer(desktop->currentRoot(), layer);
-			if(!layer)
-				return;
-			
 			if(finished)
-				return;
+				break;
 			
 			i++;
 		}
