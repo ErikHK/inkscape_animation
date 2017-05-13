@@ -121,7 +121,6 @@ _new_layer_button("New Layer"), num_layers(0)
     _model = zoop;
 
     _store = Gtk::TreeStore::create( *zoop );
-		
 	//Glib::RefPtr<Gtk::ListStore> m_refTreeModel;
 	
 	//m_refTreeModel = Gtk::ListStore::create(*_model);
@@ -136,19 +135,6 @@ _new_layer_button("New Layer"), num_layers(0)
     Gtk::TreeViewColumn* col;
 	Gtk::TreeView::Column *_name_column;
 	_text_renderer = Gtk::manage(new Gtk::CellRendererText());
-	
-	//Animation layer ID
-	/*
-	_text_renderer = Gtk::manage(new Gtk::CellRendererText());
-    int idColNum = _tree.append_column("highlight", *_text_renderer) - 1;
-    col = _tree.get_column(idColNum);
-    if ( col ) {
-        col->add_attribute( _text_renderer->property_text(), _model->m_col_id );
-        //lbl.set_tooltip_text(_("Highlight color of outline in Node tool. Click to set. If alpha is zero, use inherited color."));
-        lbl->show();
-        col->set_widget( *lbl );
-    }
-	*/
 	
 	Inkscape::UI::Widget::ImageToggler *eyeRenderer = Gtk::manage( new Inkscape::UI::Widget::ImageToggler(
         INKSCAPE_ICON("object-visible"), INKSCAPE_ICON("object-hidden")) );
@@ -171,7 +157,7 @@ _new_layer_button("New Layer"), num_layers(0)
     
 	int lockedColNum = _tree.append_column("lock", *renderer) - 1;
 	
-	renderer->signal_toggled().connect( sigc::mem_fun(*this, &AnimationControl::toggleLocked) ) ;
+	renderer->signal_toggled().connect(sigc::mem_fun(*this, &AnimationControl::toggleLocked));
 	
 	renderer->property_activatable() = true;
     col = _tree.get_column(lockedColNum);
@@ -194,17 +180,13 @@ _new_layer_button("New Layer"), num_layers(0)
 	rebuildUi();
 }
 
-
-
 AnimationControl::~AnimationControl()
 {
 }
 
-
 void AnimationControl::rebuildUi()
 {
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-
 	
 	//check if layers already exist (a saved svg has been opened)
 	if(desktop)
@@ -239,8 +221,7 @@ void AnimationControl::rebuildUi()
 		}
 	}
 	
-	//iterate over keyframebars and set pointers to siblings
-	
+	//TODO: iterate over keyframebars and set pointers to siblings
 	if(kb_vec.size() > 0)
 	{
 		kb_vec[0]->prev = NULL;
@@ -248,50 +229,37 @@ void AnimationControl::rebuildUi()
 	}
 	if(kb_vec.size() > 1)
 	{
-		//for(int i=0; i < kb_vec.size()-1; i++)
-		//{
-		//	kb_vec[i]->next = kb_vec[i+1];
-		//	kb_vec[i+1]->prev = kb_vec[i];
-		//}
 		kb_vec[0]->next = kb_vec[1];
 		kb_vec[1]->prev = kb_vec[0];
 	}
 	if(kb_vec.size() > 2)
 	{
-		//for(int i=0; i < kb_vec.size()-1; i++)
-		//{
-		//	kb_vec[i]->next = kb_vec[i+1];
-		//	kb_vec[i+1]->prev = kb_vec[i];
-		//}
 		kb_vec[1]->next = kb_vec[2];
 		kb_vec[2]->prev = kb_vec[1];
 	}
 	
 	if(kb_vec.size() > 3)
 	{
-		//for(int i=0; i < kb_vec.size()-1; i++)
-		//{
-		//	kb_vec[i]->next = kb_vec[i+1];
-		//	kb_vec[i+1]->prev = kb_vec[i];
-		//}
 		kb_vec[2]->next = kb_vec[3];
 		kb_vec[3]->prev = kb_vec[2];
 	}
 	
 	if(kb_vec.size() > 4)
 	{
+		kb_vec[3]->next = kb_vec[4];
+		kb_vec[4]->prev = kb_vec[3];
+	}
+	
+	if(kb_vec.size() > 5)
+	{
 		//for(int i=0; i < kb_vec.size()-1; i++)
 		//{
 		//	kb_vec[i]->next = kb_vec[i+1];
 		//	kb_vec[i+1]->prev = kb_vec[i];
 		//}
-		kb_vec[3]->next = kb_vec[4];
-		kb_vec[4]->prev = kb_vec[3];
+		kb_vec[4]->next = kb_vec[5];
+		kb_vec[5]->prev = kb_vec[4];
 	}
-	
-	
-	//kb_vec[kb_vec.size()-1]->next = NULL;
-	
 	
 	_scroller.add(_keyframe_table);
 	_scroller.set_policy(Gtk::POLICY_ALWAYS, Gtk::POLICY_NEVER);

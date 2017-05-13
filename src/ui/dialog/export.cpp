@@ -1171,12 +1171,11 @@ void Export::onExport ()
 		
 		//hehe
 		SPObject * layer = doc->getObjectById("animationlayer1keyframe1"); //start with first layer
-		SPObject * layer2 = doc->getObjectById("animationlayer2keyframe1"); //start with first layer
-		SPObject * layer3 = doc->getObjectById("animationlayer3keyframe1"); //start with first layer
-		SPObject * layer4 = doc->getObjectById("animationlayer4keyframe1"); //start with first layer
-		//if(layer)
-		//	desktop->layer_manager->setCurrentLayer(layer); //set first layer
-		//desktop->toggleLayerSolo(layer); //export one frame at a time
+		
+		SPObject * layers[20];
+		for(int i=0;i < 20; i++)
+			layers[i] = doc->getObjectById(std::string(Glib::ustring::format("animationlayer", i, "keyframe1"))); //start with first layer
+		
 		
 		int i=0;
 		prog_dlg = create_progress_dialog(Glib::ustring::compose(_("Exporting %1 files"), num));
@@ -1184,61 +1183,26 @@ void Export::onExport ()
 		setExporting(true, Glib::ustring::compose(_("Exporting %1 files"), num));
 
 		gint export_count = 0;
-		//while(layer->getRepr()->childCount() > 0) //export all layers that have objects
-		//while(layer)
 			
 		for(int j=0;j < num; j++)
 		{
-			//desktop->toggleLayerSolo(layer); //export one frame at a time
-			SP_ITEM(layer)->setHidden(false);
-			if(layer->parent)
-				SP_ITEM(layer->parent)->setHidden(false);
-			
-			//try to show animationlayer2keyframe j+1
-			layer2 = doc->getObjectById(std::string(Glib::ustring::format("animationlayer2keyframe", j+1)));
-			if(layer2)
+			for(int ii = 0; ii < 20; ii++)
 			{
-				SP_ITEM(layer2)->setHidden(false);
-				if(layer2->parent)
-				SP_ITEM(layer2->parent)->setHidden(false);
+				if(layers[ii])
+				{
+					SP_ITEM(layers[ii])->setHidden(false);
+					if(layers[ii]->parent)
+						SP_ITEM(layers[ii]->parent)->setHidden(false);
+				}
 			}
-			
-			//try to show animationlayer3keyframe j+1
-			layer3 = doc->getObjectById(std::string(Glib::ustring::format("animationlayer3keyframe", j+1)));
-			if(layer3)
-			{
-				SP_ITEM(layer3)->setHidden(false);
-				if(layer3->parent)
-				SP_ITEM(layer3->parent)->setHidden(false);
-			}
-			
-			//try to show animationlayer3keyframe j+1
-			layer4 = doc->getObjectById(std::string(Glib::ustring::format("animationlayer4keyframe", j+1)));
-			if(layer4)
-			{
-				SP_ITEM(layer4)->setHidden(false);
-				if(layer4->parent)
-				SP_ITEM(layer4->parent)->setHidden(false);
-			}
-			
-			// retrieve export filename hint
-			//const gchar *filename = layer->getRepr()->attribute("inkscape:export-filename");
-			//const gchar * filename = filename_entry.get_text();
 			Glib::ustring filename = filename_entry.get_text();
 			Glib::ustring path;
 			if (filename.empty()) {
-				//Glib::ustring tmp;
-				//path = create_filepath_from_id(Glib::ustring::format(i), tmp);
 				desktop->messageStack()->flash(Inkscape::ERROR_MESSAGE, _("You have to enter a filename."));
 				sp_ui_error_dialog(_("You have to enter a filename"));
 				return;
 			} else {
-				//path = absolutize_path_from_document_location(doc, filename);
-				//path = create_filepath_from_id(Glib::ustring::format(i), filename_entry.get_text());
-				
 				Glib::ustring const filename_ext = filename_add_extension(filename, "png", Glib::ustring::format(j));
-				//filename_entry.set_text(filename_ext);
-				//filename_entry.set_position(filename_ext.length());
 				path = absolutize_path_from_document_location(doc, filename_ext);
 				
 			}
@@ -1270,13 +1234,13 @@ void Export::onExport ()
 				++export_count;
 			}
 			
-			SP_ITEM(layer)->setHidden(true);
-			if(layer2)
-				SP_ITEM(layer2)->setHidden(true);
-			if(layer3)
-				SP_ITEM(layer3)->setHidden(true);
-			if(layer4)
-				SP_ITEM(layer4)->setHidden(true);
+			
+			for(int ii = 0; ii < 20; ii++)
+			{
+				if(layers[ii])
+				SP_ITEM(layers[ii])->setHidden(true);
+			}
+			
 			layer = Inkscape::next_layer(desktop->currentRoot(), layer);
 			if(!layer)
 				return;

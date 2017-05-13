@@ -124,16 +124,26 @@ void KeyframeWidget::selectLayer()
 		layer = desktop->namedview->document->getObjectById(
 				Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
 				
+	
+	desktop->setCurrentLayer(layer);
+
 				
 	if(LAYERS_TO_HIDE.size() > 0)
 	{
 		for(int i = 0; i < LAYERS_TO_HIDE.size(); i++)
+		{
 			//LAYERS_TO_HIDE[i]->getRepr()->setAttribute("style", "display:none");
-			SP_ITEM(LAYERS_TO_HIDE[i])->setHidden(true);
+			LAYERS_TO_HIDE[i]->getRepr()->setAttribute("style", "opacity:1.0");
+			if(!desktop->show_all_keyframes)
+				SP_ITEM(LAYERS_TO_HIDE[i])->setHidden(true);
+			
+		}
 		LAYERS_TO_HIDE.clear();
 	}
+	
+	if(desktop->show_all_keyframes)
+		return;
 
-	desktop->setCurrentLayer(layer);
 	//desktop->layer_manager->setCurrentLayer(layer);
 
 	//hide all layers
@@ -237,13 +247,27 @@ static void onionSkinning(KeyframeWidget * kww, gpointer user_data)
 		SP_ACTIVE_DESKTOP->fade_previous_layers = kw->onion->get_active();
 }
 
+static void settings(KeyframeWidget * kww, gpointer user_data)
+{
+	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
+	
+	if(SP_ACTIVE_DESKTOP && kw->onion)
+		SP_ACTIVE_DESKTOP->fade_previous_layers = kw->onion->get_active();
+}
+
 static void showAllKeyframes(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
 	
 	//pMenu = 0;
-	//if(SP_ACTIVE_DESKTOP)
-	//	SP_ACTIVE_DESKTOP->show_all_keyframes = showAll->get_active();
+	if(SP_ACTIVE_DESKTOP && kw->showAll)
+		SP_ACTIVE_DESKTOP->show_all_keyframes = kw->showAll->get_active();
+	
+	SP_ACTIVE_DESKTOP->toggleHideAllLayers(!kw->showAll->get_active());
+	
+	kw->layer->getRepr()->setAttribute("style", "opacity:1.0");
+	if(kw->prev)
+		kw->prev->layer->getRepr()->setAttribute("style", "opacity:1.0");
 }
 
 static void createTween(KeyframeWidget * kww, gpointer user_data)
@@ -555,12 +579,22 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 						  "activate",
 						  G_CALLBACK(onionSkinning),
 						  this);
+						  
+	settingsItem = Gtk::manage(new Gtk::CheckMenuItem("Settings..."));
+	settingsItem->set_active(true);
+	
+	g_signal_connect( settingsItem->gobj(),
+						  "activate",
+						  G_CALLBACK(settings),
+						  this);
 
 	pMenu->add(*pItem3);
 	pMenu->add(*tweenItem);
 	pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
 	pMenu->add(*showAll);
 	pMenu->add(*onion);
+	pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
+	pMenu->add(*settingsItem);
 
 	parent_id = parent->id;
 	

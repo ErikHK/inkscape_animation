@@ -7,10 +7,12 @@ x onion skinning
 / enable opening of saved animation svgs (half fixed, must create a new layer to update)
 x stop tweening from crashing
 - export any amount of layers
-- layers in correct order
+x layers in correct order
+- clear animation layers when opening a new file/loading another
 
 medium priority:
 x restore color swatches
+- same buttons as objects dialog
 - rename layers
 - move layers up and down
 - delete layers
