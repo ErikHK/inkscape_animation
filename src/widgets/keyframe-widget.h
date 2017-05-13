@@ -22,7 +22,7 @@ public:
 	void selectLayer();
 	Gtk::CheckMenuItem *onion;
 	Gtk::CheckMenuItem *showAll;
-	Gtk::CheckMenuItem *settingsItem;
+	Gtk::MenuItem *settingsItem;
 	//void createTween();
 	//void gotFocus();
 	//void showAllKeyframes(KeyframeWidget * kww, gpointer user_data);

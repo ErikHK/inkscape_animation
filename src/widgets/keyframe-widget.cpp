@@ -282,8 +282,6 @@ static void settings(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
 	
-	if(SP_ACTIVE_DESKTOP && kw->onion)
-		SP_ACTIVE_DESKTOP->fade_previous_layers = kw->onion->get_active();
 }
 
 static void showAllKeyframes(KeyframeWidget * kww, gpointer user_data)
@@ -611,8 +609,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 						  G_CALLBACK(onionSkinning),
 						  this);
 						  
-	settingsItem = Gtk::manage(new Gtk::CheckMenuItem("Settings..."));
-	settingsItem->set_active(true);
+	settingsItem = Gtk::manage(new Gtk::MenuItem("Settings..."));
 	
 	g_signal_connect( settingsItem->gobj(),
 						  "activate",
