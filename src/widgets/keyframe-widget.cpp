@@ -463,8 +463,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			
 			for(int k=0; k < num_layers/(sizeee ); k++)
 			{
-				mult -= (sizeee)*1.0/(num_layers-1);
-				pm.insertNode(this_iter, mult/(mult + (sizeee)*1.0/(num_layers-1)), false);
+				mult -= (sizeee)*1.0/(num_layers);
+				pm.insertNode(this_iter, mult/(mult + (sizeee)*1.0/(num_layers)), false);
 			}
 			
 			pm._selection.clear();
