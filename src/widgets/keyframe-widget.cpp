@@ -457,14 +457,14 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	{
 		for(int iii = 0; iii < sizeee; iii++)
 		{
-			inc = 1 - 1/(num_layers-1);
+			//inc = 1 - 1/(num_layers);
 			//mult = inc;
 			mult = 1;
 			
-			for(int k=0; k < num_layers/(sizeee ); k++)
+			for(int k=0; k < num_layers/(sizeee); k++)
 			{
-				mult -= (sizeee)*1.0/(num_layers);
-				pm.insertNode(this_iter, mult/(mult + (sizeee)*1.0/(num_layers)), false);
+				mult -= (sizeee)*1.0/(num_layers+1);
+				pm.insertNode(this_iter, mult/(mult + (sizeee)*1.0/(num_layers+1)), false);
 			}
 			
 			pm._selection.clear();
@@ -495,7 +495,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			
 			//lay = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", ii)));
 			lay = desktop->namedview->document->getObjectById(
-					Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", ii));
+					Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", ii+1));
 
 			if(lay)
 			{
