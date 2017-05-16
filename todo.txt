@@ -18,6 +18,7 @@ x restore color swatches
 - delete layers
 - rotation tweening
 - scale tweening
+- opacity tweening
 - node tweening
 - cached playback window!
 - show messages in status bar

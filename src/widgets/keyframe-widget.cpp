@@ -225,12 +225,12 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 	
 	if(p && p->layer && p->layer->getRepr()->childCount() > 0)
 	{
-		Inkscape::XML::Node * child_copy = NULL;
-		Inkscape::XML::Node * child = p->layer->getRepr()->firstChild();
-		if(child)
-			child_copy = child->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc());
-		if(child_copy && kw->layer->getRepr()->childCount() == 0)
-			kw->layer->getRepr()->appendChild(child_copy);
+		Inkscape::XML::Node * childn_copy = NULL;
+		Inkscape::XML::Node * childn = p->layer->getRepr()->firstChild();
+		if(childn)
+			childn_copy = childn->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc());
+		if(childn_copy && kw->layer->getRepr()->childCount() == 0)
+			kw->layer->getRepr()->appendChild(childn_copy);
 	}
 }
 
@@ -292,6 +292,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	std::string xs = "x";
 	std::string ys = "y";
 	bool is_group = false;
+	bool is_path = false;
 	int i = kw->id+1;
 	int num_layers = 1;
 	while(layer)
@@ -313,41 +314,68 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	if(endLayer)
 	{
-		Inkscape::XML::Node * child = endLayer->getRepr()->firstChild();
+		Inkscape::XML::Node * childn = endLayer->getRepr()->firstChild();
+		SPObject * child = endLayer->firstChild();
+		
+		if(!childn)
+			return;
 		
 		if(!child)
 			return;
 		
 		//if a circle or an ellipse, use cx and cy
-		if(!strcmp(child->name(), "svg:circle") || !strcmp(child->name(), "svg:ellipse"))
+		if(!strcmp(childn->name(), "svg:circle") || !strcmp(childn->name(), "svg:ellipse"))
 		{
 			xs = "cx";
 			ys = "cy";
 		}
 		
+		if(!strcmp(childn->name(), "svg:path"))
+		{
+			is_path = true;
+		}
+		
 		//else if a group, take special care later!
-		if(!strcmp(child->name(), "svg:g"))
+		if(!strcmp(childn->name(), "svg:g"))
 		{
 			is_group = true;
 		}
 		
-		if(!is_group)
+		if(!is_group && !is_path)
 		{
-			end_x = std::stof(child->attribute(xs.c_str()));
-			end_y = std::stof(child->attribute(ys.c_str()));
+			end_x = std::stof(childn->attribute(xs.c_str()));
+			end_y = std::stof(childn->attribute(ys.c_str()));
+		}
+		
+		if(is_path)
+		{
+			end_x = SP_ITEM(child)->transform.translation()[0];
+			end_y = SP_ITEM(child)->transform.translation()[1];
+			
 		}
 	}
 	
 	if(startLayer)
 	{
-		Inkscape::XML::Node * child = startLayer->getRepr()->firstChild();
+		SPObject * child = startLayer->firstChild();
+		Inkscape::XML::Node * childn = startLayer->getRepr()->firstChild();
+		if(!childn)
+			return;
+		
 		if(!child)
 			return;
 
-		if(!is_group)
+		if(!is_group && !is_path)
 		{
-			start_x = std::stof(child->attribute(xs.c_str()));
-			start_y = std::stof(child->attribute(ys.c_str()));
+			start_x = std::stof(childn->attribute(xs.c_str()));
+			start_y = std::stof(childn->attribute(ys.c_str()));
+		}
+		
+		if(is_path || is_group)
+		{
+			start_x = SP_ITEM(child)->transform.translation()[0];
+			start_y = SP_ITEM(child)->transform.translation()[1];
+			
 		}
 	}
 	
@@ -365,27 +393,35 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		
 		if(nextLayer && layer)
 		{
-			Inkscape::XML::Node * child = layer->getRepr()->firstChild();
-			Inkscape::XML::Node * child_copy = child->duplicate(desktop->getDocument()->getReprDoc());
+			SPObject * child = layer->firstChild();
 			
-			if(!is_group)
+			if(is_path && child)
 			{
-				child_copy->setAttribute(xs.c_str(), Glib::ustring::format(start_x + i*inc_x));
-				child_copy->setAttribute(ys.c_str(), Glib::ustring::format(start_y + i*inc_y));
+				SP_ITEM(child)->transform.setTranslation(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
+				child->updateRepr(0);
 			}
-			else
+			
+			Inkscape::XML::Node * childn = child->getRepr();
+			Inkscape::XML::Node * childn_copy = childn->duplicate(desktop->getDocument()->getReprDoc());
+			
+			if(!is_group && !is_path)
 			{
-				child_copy->setAttribute("transform", 
+				childn_copy->setAttribute(xs.c_str(), Glib::ustring::format(start_x + i*inc_x));
+				childn_copy->setAttribute(ys.c_str(), Glib::ustring::format(start_y + i*inc_y));
+			}
+			else if(is_group && !is_path)
+			{
+				childn_copy->setAttribute("transform", 
 				Glib::ustring::format("translate(", start_x + i*inc_x, ",", start_y + i*inc_y, ")" ));
 			}
 			
-			//Inkscape::XML::Node *child = desktop->getDocument()->getReprDoc()->createElement("svg:path");
-			//child->setAttribute("style", style);
-			//copy layer child to nextLayer
-			if(child)
+			//Inkscape::XML::Node *childn = desktop->getDocument()->getReprDoc()->createElement("svg:path");
+			//childn->setAttribute("style", style);
+			//copy layer childn to nextLayer
+			if(childn)
 			{
-				nextLayer->getRepr()->appendChild(child_copy);
-				//Inkscape::GC::release(child);
+				nextLayer->getRepr()->appendChild(childn_copy);
+				//Inkscape::GC::release(childn);
 			}
 		}
 		layer = nextLayer;
@@ -502,19 +538,19 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 				if(lay->getRepr()->childCount() == 0)
 					return;
 				
-				Inkscape::XML::Node * child = lay->getRepr()->firstChild();
-				if(!child)
+				Inkscape::XML::Node * childn = lay->getRepr()->firstChild();
+				if(!childn)
 					return;
 				
-				if(!is_group)
+				if(!is_group && !is_path)
 				{
-					child->setAttribute(xs, Glib::ustring::format(x));
-					child->setAttribute(ys, Glib::ustring::format(y));
+					childn->setAttribute(xs, Glib::ustring::format(x));
+					childn->setAttribute(ys, Glib::ustring::format(y));
 				}
 				
-				else //is group!
+				else if(is_group) //is group!
 				{
-					child->setAttribute("transform", Glib::ustring::format("translate(", x, ",", y, ")" ));
+					childn->setAttribute("transform", Glib::ustring::format("translate(", x, ",", y, ")" ));
 				}
 			}
 		}		
