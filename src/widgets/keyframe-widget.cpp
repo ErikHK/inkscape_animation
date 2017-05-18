@@ -405,9 +405,12 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 				
 				if(n)
 				{
+					PathManipulator &pm = n->nodeList().subpathList().pm();
+					
 					n->move(Geom::Point(0, 0));
 					n->updateHandles();
-					child->updateRepr();
+					//child->updateRepr();
+					pm.update(false);
 				}
 			}
 			
