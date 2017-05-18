@@ -349,9 +349,15 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		
 		if(is_path)
 		{
-			end_x = SP_ITEM(child)->transform.translation()[0];
-			end_y = SP_ITEM(child)->transform.translation()[1];
+			//end_x = SP_ITEM(child)->transform.translation()[0];
+			//end_y = SP_ITEM(child)->transform.translation()[1];
 			
+			end_x = SP_ITEM(child)->getCenter()[0];
+			end_y = SP_ITEM(child)->getCenter()[1];
+			
+			//convert
+			end_x = Quantity::convert(end_x, "px", "mm");
+			end_y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(end_y, "px", "mm");
 		}
 	}
 	
@@ -371,11 +377,37 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			start_y = std::stof(childn->attribute(ys.c_str()));
 		}
 		
-		if(is_path || is_group)
+		if(is_group)
 		{
 			start_x = SP_ITEM(child)->transform.translation()[0];
 			start_y = SP_ITEM(child)->transform.translation()[1];
+		}
+		if(is_path)
+		{
+			start_x = SP_ITEM(child)->getCenter()[0];
+			start_y = SP_ITEM(child)->getCenter()[1];
 			
+			NodeTool *tool = 0;
+			Inkscape::UI::Tools::ToolBase *ec = desktop->event_context;
+			if (INK_IS_NODE_TOOL(ec)) {
+				tool = static_cast<NodeTool*>(ec);
+			}
+			
+			if(tool)
+			{
+				Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
+				
+				Node *n = dynamic_cast<Node *>(*cps->begin());
+				
+				if(n)
+				{
+					n->move(Geom::Point(0, 0));
+				}
+			}
+			
+			//convert
+			start_x = Quantity::convert(start_x, "px", "mm");
+			start_y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(start_y, "px", "mm");
 		}
 	}
 	
@@ -384,7 +416,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	//now we have start and end, loop again, and copy children etcetc
 	layer = startLayer;
-	i = kw->id;
+	i = kw->id + 1;
 	while(layer != endLayer)
 	{
 		//nextLayer = Inkscape::next_layer(desktop->currentRoot(), layer);
@@ -397,8 +429,13 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			
 			if(is_path && child)
 			{
-				SP_ITEM(child)->transform.setTranslation(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
-				child->updateRepr(0);
+				//SP_PATH(child)->get_original_curve()->geometricBounds();
+				SP_PATH(child)->transform.setTranslation(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
+				//SP_ITEM(child)->setCenter(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
+				//child->updateRepr(0);
+				
+				//SP_PATH(child)->get_original_curve()->
+				
 			}
 			
 			Inkscape::XML::Node * childn = child->getRepr();
