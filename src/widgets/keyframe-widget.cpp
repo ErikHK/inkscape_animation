@@ -14,6 +14,9 @@
 
 #include "keyframe-bar.h"
 
+#include "document-undo.h"
+#include "verbs.h"
+
 #include <gdkmm/general.h>
 #include <gtkmm/menu.h>
 #include "ui/tool/path-manipulator.h"
@@ -26,6 +29,7 @@ using Inkscape::Util::Quantity;
 using Inkscape::UI::Node;
 using Inkscape::UI::PathManipulator;
 using Inkscape::UI::NodeList;
+using Inkscape::DocumentUndo;
 
 //static void gotFocus(GtkWidget*, void * data);
 //static Gtk::Menu * pMenu = 0;
@@ -402,6 +406,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 				if(n)
 				{
 					n->move(Geom::Point(0, 0));
+					n->updateHandles();
+					child->updateRepr();
 				}
 			}
 			
@@ -435,7 +441,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 				//child->updateRepr(0);
 				
 				//SP_PATH(child)->get_original_curve()->
-				
 			}
 			
 			Inkscape::XML::Node * childn = child->getRepr();
@@ -467,6 +472,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	kw->parent->clear_tween = true;
 	
+	DocumentUndo::done(desktop->getDocument(), SP_VERB_CONTEXT_NODE, "hehe");
+	
 	NodeTool *tool = 0;
     Inkscape::UI::Tools::ToolBase *ec = desktop->event_context;
 	if (INK_IS_NODE_TOOL(ec)) {
@@ -480,6 +487,11 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	if(!cps)
 		return;
+	
+	//have selected nodes, check if we have one object each in startlayer and endlayer, in that case, return
+	if(startLayer->getRepr()->childCount() == 1 && startLayer->getRepr()->childCount() == 1)
+		return;
+	
 	
 	Node *n = dynamic_cast<Node *>(*cps->begin());
 			if (!n) return;
