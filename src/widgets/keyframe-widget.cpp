@@ -278,6 +278,20 @@ static void showAllKeyframes(KeyframeWidget * kww, gpointer user_data)
 		kw->prev->layer->getRepr()->setAttribute("style", "opacity:1.0");
 }
 
+
+static NodeTool *get_node_tool()
+{
+    NodeTool *tool = 0;
+    if (SP_ACTIVE_DESKTOP ) {
+        Inkscape::UI::Tools::ToolBase *ec = SP_ACTIVE_DESKTOP->event_context;
+        if (INK_IS_NODE_TOOL(ec)) {
+            tool = static_cast<NodeTool*>(ec);
+        }
+    }
+    return tool;
+}
+
+
 static void createTween(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
@@ -388,14 +402,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		}
 		if(is_path)
 		{
-			start_x = SP_ITEM(child)->getCenter()[0];
-			start_y = SP_ITEM(child)->getCenter()[1];
 			
-			NodeTool *tool = 0;
-			Inkscape::UI::Tools::ToolBase *ec = desktop->event_context;
-			if (INK_IS_NODE_TOOL(ec)) {
-				tool = static_cast<NodeTool*>(ec);
-			}
+			NodeTool *tool = get_node_tool();
 			
 			if(tool)
 			{
@@ -414,6 +422,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 				}
 			}
 			
+			start_x = SP_ITEM(child)->getCenter()[0];
+			start_y = SP_ITEM(child)->getCenter()[1];
+			
 			//convert
 			start_x = Quantity::convert(start_x, "px", "mm");
 			start_y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(start_y, "px", "mm");
@@ -423,11 +434,16 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	inc_x = (end_x - start_x)/num_layers;
 	inc_y = (end_y - start_y)/num_layers;
 	
+	//NodeList::iterator node_iter = NodeList::get_iterator(n);
+	
 	//now we have start and end, loop again, and copy children etcetc
 	layer = startLayer;
 	i = kw->id + 1;
 	while(layer != endLayer)
 	{
+		//Node *node = dynamic_cast<Node*>(&*node_iter);
+		//if (node) {
+		//}
 		//nextLayer = Inkscape::next_layer(desktop->currentRoot(), layer);
 		nextLayer = desktop->getDocument()->getObjectById(
 		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
@@ -466,7 +482,28 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			if(childn)
 			{
 				nextLayer->getRepr()->appendChild(childn_copy);
-				//Inkscape::GC::release(childn);
+				
+				
+				//select new object in order to move nodes
+				NodeTool *tool = get_node_tool();
+				if(tool)
+				{
+					Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
+					//cps->clear();
+					//cps->toggle(child);
+					cps->selectAll();
+					Node *n = dynamic_cast<Node *>(*cps->begin());
+				
+					if(n)
+					{
+						PathManipulator &pm = n->nodeList().subpathList().pm();
+						
+						n->move(Geom::Point(0, 0));
+						n->updateHandles();
+						//child->updateRepr();
+						pm.update(false);
+					}
+				}
 			}
 		}
 		layer = nextLayer;
@@ -477,11 +514,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	DocumentUndo::done(desktop->getDocument(), SP_VERB_CONTEXT_NODE, "hehe");
 	
-	NodeTool *tool = 0;
-    Inkscape::UI::Tools::ToolBase *ec = desktop->event_context;
-	if (INK_IS_NODE_TOOL(ec)) {
-		tool = static_cast<NodeTool*>(ec);
-	}
+	NodeTool *tool = get_node_tool();
 	
 	if(!tool)
 		return;
