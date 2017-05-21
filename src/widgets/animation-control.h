@@ -37,6 +37,10 @@ protected:
 	bool on_mouse_(GdkEventMotion* event);
 	
 private:
+	void _handleEdited(const Glib::ustring& path, const Glib::ustring& new_text);
+	void _renameObject(Gtk::TreeModel::Row row, const Glib::ustring& name);
+	void _handleEditingCancelled();
+	
 	Gtk::Paned _panes;
 	class ModelColumns;
 	Glib::RefPtr<Gtk::TreeStore> _store;
@@ -46,6 +50,8 @@ private:
 	Gtk::ScrolledWindow _scroller;
 	Gtk::ScrolledWindow _tree_scroller;
 	Gtk::Button _new_layer_button;
+	Gtk::CellRendererText *_text_renderer;
+	Gtk::TreeView::Column *_name_column;
 	
 };
 }

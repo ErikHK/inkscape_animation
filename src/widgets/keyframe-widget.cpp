@@ -496,7 +496,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	}
 	
 	
-	/*
 	layer = startLayer;
 	i = kw->id + 1;
 	while(layer != endLayer)
@@ -515,13 +514,13 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 
 			//select new object in order to move nodes
 			
+			Inkscape::SelectionHelper::selectAll(desktop);
 			NodeTool *tool = get_node_tool();
 			if(tool && is_path)
 			{
 				Inkscape::UI::ControlPointSelection *cps = 0;
 				cps = tool->_selected_nodes;
 				
-				Inkscape::SelectionHelper::selectAll(desktop);
 				if(cps)
 					cps->selectAll();
 				Node *n = 0;
@@ -546,7 +545,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			desktop->setCurrentLayer(layer);
 		i++;
 	}
-	*/
 
 	
 	if(is_path)
@@ -605,7 +603,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		return;
 	
 	//have selected nodes, check if we have one object each in startlayer and endlayer, in that case, return
-	if(startLayer->getRepr()->childCount() == 1 && startLayer->getRepr()->childCount() == 1)
+	if(startLayer->getRepr()->childCount() == 1 && endLayer->getRepr()->childCount() == 1)
 		return;
 	
 	Node *n = dynamic_cast<Node *>(*cps->begin());

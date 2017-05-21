@@ -10,6 +10,10 @@
 #include <gdkmm/general.h>
 #include <gtkmm/treeselection.h>
 #include "layer-manager.h"
+#include <gdk/gdkkeysyms.h>
+
+#include "inkscape.h"
+#include "document-undo.h"
 
 #include "ui/widget/imagetoggler.h"
 #include "ui/icon-names.h"
@@ -17,6 +21,9 @@
 namespace Inkscape {
 namespace UI {
 namespace Dialogs {
+	
+//using namespace Inkscape::UI::Tools;
+using Inkscape::DocumentUndo;
 
 class AnimationControl::ModelColumns : public Gtk::TreeModel::ColumnRecord
 {
@@ -35,6 +42,31 @@ bool AnimationControl::handleKeyEvent(GdkEventKey *event)
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	if(!desktop)
 		return false;
+	
+	
+	//switch (Inkscape::UI::Tools::get_group0_keyval(event)) {
+		switch (event->keyval) {
+        case GDK_KEY_Return:
+        case GDK_KEY_KP_Enter:
+        case GDK_KEY_F2:
+        {
+            Gtk::TreeModel::iterator iter = _tree.get_selection()->get_selected();
+            if (iter && !_text_renderer->property_editable()) {
+                //Rename item
+                Gtk::TreeModel::Path *path = new Gtk::TreeModel::Path(iter);
+                _text_renderer->property_editable() = true;
+                _tree.set_cursor(*path, *_name_column, true);
+                grab_focus();
+                return true;
+            }
+        }
+        break;
+
+        default:
+            return false;
+    }
+	
+	
 	
 	//if(Inkscape::UI::Tools::get_group0_keyval(event) == GDK_KEY_Page_Up)
 		if(event->keyval == GDK_KEY_Page_Up)
@@ -102,19 +134,110 @@ void AnimationControl::toggleLocked( Glib::ustring const& str )
     }
 }
 
+/*
+bool AnimationControl::_handleKeyEvent(GdkEventKey *event)
+{
+
+    //bool empty = _desktop->selection->isEmpty();
+
+    switch (Inkscape::UI::Tools::get_group0_keyval(event)) {
+        case GDK_KEY_Return:
+        case GDK_KEY_KP_Enter:
+        case GDK_KEY_F2:
+        {
+            Gtk::TreeModel::iterator iter = _tree.get_selection()->get_selected();
+            if (iter && !_text_renderer->property_editable()) {
+                //Rename item
+                Gtk::TreeModel::Path *path = new Gtk::TreeModel::Path(iter);
+                _text_renderer->property_editable() = true;
+                _tree.set_cursor(*path, *_name_column, true);
+                grab_focus();
+                return true;
+            }
+        }
+        break;
+		
+        case GDK_KEY_Home:
+            //Move item(s) to top of containing group/layer
+            _fireAction( empty ? SP_VERB_LAYER_TO_TOP : SP_VERB_SELECTION_TO_FRONT );
+            break;
+        case GDK_KEY_End:
+            //Move item(s) to bottom of containing group/layer
+            _fireAction( empty ? SP_VERB_LAYER_TO_BOTTOM : SP_VERB_SELECTION_TO_BACK );
+            break;
+        case GDK_KEY_Page_Up:
+        {
+            //Move item(s) up in containing group/layer
+            //int ch = event->state & GDK_SHIFT_MASK ? SP_VERB_LAYER_MOVE_TO_NEXT : SP_VERB_SELECTION_RAISE;
+            //_fireAction( empty ? SP_VERB_LAYER_RAISE : ch );
+			SPObject * prev_lay = Inkscape::previous_layer(_desktop->currentRoot(), _desktop->currentLayer());
+			_desktop->layer_manager->setCurrentLayer(prev_lay);
+            break;
+        }
+        case GDK_KEY_Page_Down:
+        {
+            //Move item(s) down in containing group/layer
+            //int ch = event->state & GDK_SHIFT_MASK ? SP_VERB_LAYER_MOVE_TO_PREV : SP_VERB_SELECTION_LOWER;
+            //_fireAction( empty ? SP_VERB_LAYER_LOWER : ch );
+			SPObject * next_lay = Inkscape::next_layer(_desktop->currentRoot(), _desktop->currentLayer());
+			_desktop->layer_manager->setCurrentLayer(next_lay);
+            break;
+        }
+
+        //TODO: Handle Ctrl-A, etc.
+        default:
+            return false;
+    }
+    return true;
+}
+*/
+
+void AnimationControl::_handleEditingCancelled()
+{
+    _text_renderer->property_editable() = false;
+}
+
+void AnimationControl::_handleEdited(const Glib::ustring& path, const Glib::ustring& new_text)
+{
+    Gtk::TreeModel::iterator iter = _tree.get_model()->get_iter(path);
+    Gtk::TreeModel::Row row = *iter;
+
+    _renameObject(row, new_text);
+    _text_renderer->property_editable() = false;
+}
+
+void AnimationControl::_renameObject(Gtk::TreeModel::Row row, const Glib::ustring& name)
+{
+	SPDesktop * _desktop = SP_ACTIVE_DESKTOP;
+	
+    if ( row && _desktop) {
+         //Glib::ustring str = row[_model->m_col_name];
+		 row[_model->m_col_name] = name;
+		 /*
+        if ( item ) {
+            gchar const* oldLabel = item->label();
+            if ( !name.empty() && (!oldLabel || name != oldLabel) ) {
+                item->setLabel(name.c_str());
+                DocumentUndo::done( _desktop->doc() , SP_VERB_NONE,
+                                                    "Rename object");
+            }
+        }
+		*/
+    }
+}
 
 AnimationControl::AnimationControl() : 
 _panes(), _keyframe_table(), _scroller(), _tree_scroller(),
 _new_layer_button("New Layer"), num_layers(0)
 {
 	_new_layer_button.signal_clicked().connect(sigc::mem_fun(*this, &AnimationControl::addLayer));
-	signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
+	//signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
 	
 	//Create the tree model and store
 	Gtk::Label * lbl = new Gtk::Label("ID");
 	Gtk::Label * lbl2 = new Gtk::Label("Animation Layer");
 	//Gtk::Label * lbl3 = new Gtk::Label("Visibility");
-	Gtk::CellRendererText *_text_renderer;
+	
 	Gtk::TreeView m_TreeView;
 	
     ModelColumns *zoop = new ModelColumns();
@@ -129,12 +252,20 @@ _new_layer_button("New Layer"), num_layers(0)
     //Set up the tree
     _tree.set_model( _store );
     _tree.set_headers_visible(false);
+	
+	_tree.signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
+
+	
     //_tree.set_reorderable(true);
     //_tree.enable_model_drag_dest (Gdk::ACTION_MOVE);
 	//_tree.get_selection()->set_mode(Gtk::SELECTION_MULTIPLE);
     Gtk::TreeViewColumn* col;
-	Gtk::TreeView::Column *_name_column;
+	
 	_text_renderer = Gtk::manage(new Gtk::CellRendererText());
+	
+	//Set up the label editing signals
+    _text_renderer->signal_edited().connect( sigc::mem_fun(*this, &AnimationControl::_handleEdited));
+    _text_renderer->signal_editing_canceled().connect( sigc::mem_fun(*this, &AnimationControl::_handleEditingCancelled));
 	
 	Inkscape::UI::Widget::ImageToggler *eyeRenderer = Gtk::manage( new Inkscape::UI::Widget::ImageToggler(
         INKSCAPE_ICON("object-visible"), INKSCAPE_ICON("object-hidden")) );
