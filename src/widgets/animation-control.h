@@ -44,7 +44,7 @@ private:
 	void _handleEditingCancelled();
 	void _styleButton(Gtk::Button& btn, char const* iconName, char const* tooltip);
 	
-	Gtk::Paned _panes;
+	Gtk::HPaned _panes;
 	class ModelColumns;
 	Glib::RefPtr<Gtk::TreeStore> _store;
 	ModelColumns* _model;

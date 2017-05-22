@@ -475,6 +475,9 @@ void AnimationControl::rebuildUi()
 	//add(_panes);
 	attach(_panes, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 	
+	//attach(_tree_scroller, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+	//attach(_scroller, 1, 2, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+	
 	
 	//attach(_new_layer_button, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
 	
@@ -494,7 +497,12 @@ void AnimationControl::_styleButton(Gtk::Button& btn, char const* iconName, char
 
 void AnimationControl::removeLayer()
 {
+	//Glib::RefPtr<Gtk::TreeSelection> selection = _tree.get_selection();
 	
+	//_tree.remove(_tree.get_selection());
+	
+	num_layers--;
+	rebuildUi();
 }
 
 void AnimationControl::addLayer()

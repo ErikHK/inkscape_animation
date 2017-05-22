@@ -13,7 +13,7 @@ x layers in correct order
 medium priority:
 x restore color swatches
 - same buttons as objects dialog
-- rename layers
+/ rename layers
 - move layers up and down
 - delete layers
 - rotation tweening
