@@ -11,6 +11,17 @@
 #include <gtkmm/treeselection.h>
 #include "layer-manager.h"
 #include <gdk/gdkkeysyms.h>
+#include "ui/widget/layertypeicon.h"
+#include "preferences.h"
+#include <gtkmm/icontheme.h>
+#include <gtkmm/stock.h>
+
+#include "style.h"
+#include "desktop-style.h"
+#include "widgets/icon.h"
+
+#include <glibmm/i18n.h>
+#include <glibmm/main.h>
 
 #include "inkscape.h"
 #include "document-undo.h"
@@ -238,6 +249,67 @@ _new_layer_button("New Layer"), num_layers(0)
 	Gtk::Label * lbl2 = new Gtk::Label("Animation Layer");
 	//Gtk::Label * lbl3 = new Gtk::Label("Visibility");
 	
+	/*
+	_add = Gtk::manage( new Gtk::Button() );
+	_rem = Gtk::manage( new Gtk::Button() );
+	_bottom = Gtk::manage( new Gtk::Button() );
+	_top = Gtk::manage( new Gtk::Button() );
+	_down = Gtk::manage( new Gtk::Button() );
+	_up = Gtk::manage( new Gtk::Button() );
+	*/
+	
+	
+    //Add object/layer
+    Gtk::Button* _add = Gtk::manage( new Gtk::Button() );
+    _styleButton(*_add, INKSCAPE_ICON("list-add"), _("Add animation layer"));
+    _add->set_relief(Gtk::RELIEF_NONE);
+    _add->signal_clicked().connect( sigc::mem_fun(*this, &AnimationControl::addLayer) );
+    //_buttonsSecondary.pack_start(*btn, Gtk::PACK_SHRINK);
+	//attach(*btn, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
+	_buttons.pack_start(*_add, Gtk::PACK_SHRINK);
+
+    //Remove object
+    _rem = Gtk::manage( new Gtk::Button() );
+    _styleButton(*_rem, INKSCAPE_ICON("list-remove"), _("Remove object"));
+    _rem->set_relief(Gtk::RELIEF_NONE);
+	_rem->signal_clicked().connect( sigc::mem_fun(*this, &AnimationControl::removeLayer) );
+	_buttons.pack_start(*_rem, Gtk::PACK_SHRINK);
+
+    //Move to bottom
+    _bottom = Gtk::manage( new Gtk::Button() );
+    _styleButton(*_bottom, INKSCAPE_ICON("go-bottom"), _("Move To Bottom"));
+    _bottom->set_relief(Gtk::RELIEF_NONE);
+    //btn->signal_clicked().connect( sigc::bind( sigc::mem_fun(*this, &ObjectsPanel::_takeAction), (int)BUTTON_BOTTOM) );
+	_buttons.pack_start(*_bottom, Gtk::PACK_SHRINK);
+    
+    //Move down
+    _down = Gtk::manage( new Gtk::Button() );
+    _styleButton(*_down, INKSCAPE_ICON("go-down"), _("Move Down"));
+    _down->set_relief(Gtk::RELIEF_NONE);
+    //btn->signal_clicked().connect( sigc::bind( sigc::mem_fun(*this, &ObjectsPanel::_takeAction), (int)BUTTON_DOWN) );
+    //_watchingNonBottom.push_back( btn );
+    //_buttonsPrimary.pack_end(*btn, Gtk::PACK_SHRINK);
+	//attach(*btn, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
+	_buttons.pack_start(*_down, Gtk::PACK_SHRINK);
+    
+    //Move up
+    _up = Gtk::manage( new Gtk::Button() );
+    _styleButton(*_up, INKSCAPE_ICON("go-up"), _("Move Up"));
+    _up->set_relief(Gtk::RELIEF_NONE);
+    //btn->signal_clicked().connect( sigc::bind( sigc::mem_fun(*this, &ObjectsPanel::_takeAction), (int)BUTTON_UP) );
+	_buttons.pack_start(*_up, Gtk::PACK_SHRINK);
+    
+    //Move to top
+    _top = Gtk::manage( new Gtk::Button() );
+    _styleButton(*_top, INKSCAPE_ICON("go-top"), _("Move To Top"));
+    _top->set_relief(Gtk::RELIEF_NONE);
+    //btn->signal_clicked().connect( sigc::bind( sigc::mem_fun(*this, &ObjectsPanel::_takeAction), (int)BUTTON_TOP) );
+    //_watchingNonTop.push_back( btn );
+    //__buttonsPrimary.pack_end(*btn, Gtk::PACK_SHRINK);
+	//attach(*btn, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
+	_buttons.pack_start(*_top, Gtk::PACK_SHRINK);
+	
+	
 	Gtk::TreeView m_TreeView;
 	
     ModelColumns *zoop = new ModelColumns();
@@ -402,9 +474,27 @@ void AnimationControl::rebuildUi()
 	_panes.add2(_scroller);
 	//add(_panes);
 	attach(_panes, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-	attach(_new_layer_button, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
+	
+	
+	//attach(_new_layer_button, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
+	
+	attach(_buttons, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
 	
 	show_all_children();
+}
+
+void AnimationControl::_styleButton(Gtk::Button& btn, char const* iconName, char const* tooltip)
+{
+    GtkWidget *child = sp_icon_new( Inkscape::ICON_SIZE_SMALL_TOOLBAR, iconName );
+    gtk_widget_show( child );
+    btn.add( *Gtk::manage(Glib::wrap(child)) );
+    btn.set_relief(Gtk::RELIEF_NONE);
+    btn.set_tooltip_text (tooltip);
+}
+
+void AnimationControl::removeLayer()
+{
+	
 }
 
 void AnimationControl::addLayer()

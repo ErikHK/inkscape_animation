@@ -1,3 +1,4 @@
+#include <gtkmm/box.h>
 #include <gtkmm/table.h>
 #include <gtkmm/paned.h>
 #include <gdk/gdk.h>
@@ -22,6 +23,7 @@ public:
     AnimationControl();
     virtual ~AnimationControl();
 	void addLayer();
+	void removeLayer();
 	void rebuildUi();
 	int num_layers;
 	void toggleVisible( Glib::ustring const& str );
@@ -40,6 +42,7 @@ private:
 	void _handleEdited(const Glib::ustring& path, const Glib::ustring& new_text);
 	void _renameObject(Gtk::TreeModel::Row row, const Glib::ustring& name);
 	void _handleEditingCancelled();
+	void _styleButton(Gtk::Button& btn, char const* iconName, char const* tooltip);
 	
 	Gtk::Paned _panes;
 	class ModelColumns;
@@ -50,6 +53,15 @@ private:
 	Gtk::ScrolledWindow _scroller;
 	Gtk::ScrolledWindow _tree_scroller;
 	Gtk::Button _new_layer_button;
+	Gtk::HBox _buttons;
+	
+	Gtk::Button * _add;
+	Gtk::Button * _rem;
+	Gtk::Button * _bottom;
+	Gtk::Button * _top;
+	Gtk::Button * _down;
+	Gtk::Button * _up;
+	
 	Gtk::CellRendererText *_text_renderer;
 	Gtk::TreeView::Column *_name_column;
 	
