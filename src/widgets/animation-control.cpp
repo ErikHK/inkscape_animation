@@ -54,7 +54,6 @@ bool AnimationControl::handleKeyEvent(GdkEventKey *event)
 	if(!desktop)
 		return false;
 	
-	
 	//switch (Inkscape::UI::Tools::get_group0_keyval(event)) {
 		switch (event->keyval) {
         case GDK_KEY_Return:
@@ -76,7 +75,6 @@ bool AnimationControl::handleKeyEvent(GdkEventKey *event)
         default:
             return false;
     }
-	
 	
 	
 	//if(Inkscape::UI::Tools::get_group0_keyval(event) == GDK_KEY_Page_Up)
@@ -224,6 +222,11 @@ void AnimationControl::_renameObject(Gtk::TreeModel::Row row, const Glib::ustrin
     if ( row && _desktop) {
          //Glib::ustring str = row[_model->m_col_name];
 		 row[_model->m_col_name] = name;
+		 KeyframeBar * kb = row[_model->m_col_object];
+		 
+		 kb->layer->getRepr()->setAttribute("name", name);
+		 
+		 
 		 /*
         if ( item ) {
             gchar const* oldLabel = item->label();
@@ -237,9 +240,113 @@ void AnimationControl::_renameObject(Gtk::TreeModel::Row row, const Glib::ustrin
     }
 }
 
+
+/**
+ * Default row selection function taken from the layers dialog
+ */
+bool AnimationControl::_rowSelectFunction( Glib::RefPtr<Gtk::TreeModel> const & /*model*/, Gtk::TreeModel::Path const & /*path*/, bool currentlySelected )
+{
+    bool val = true;
+    if ( !currentlySelected && _toggleEvent )
+	//	if ( !currentlySelected)
+    {
+        GdkEvent* event = gtk_get_current_event();
+        if ( event ) {
+            // (keep these checks separate, so we know when to call gdk_event_free()
+            if ( event->type == GDK_BUTTON_PRESS ) {
+                GdkEventButton const* target = reinterpret_cast<GdkEventButton const*>(_toggleEvent);
+                GdkEventButton const* evtb = reinterpret_cast<GdkEventButton const*>(event);
+
+                if ( (evtb->window == target->window)
+                     && (evtb->send_event == target->send_event)
+                     && (evtb->time == target->time)
+                     && (evtb->state == target->state)
+                    )
+                {
+                    // Ooooh! It's a magic one
+                    val = false;
+                }
+            }
+            gdk_event_free(event);
+        }
+    }
+    return val;
+}
+
+
+bool AnimationControl::_handleButtonEvent(GdkEventButton* event)
+{
+    static unsigned doubleclick = 0;
+	
+	/*
+	//single click
+	if ( event->type == GDK_BUTTON_RELEASE && !doubleclick) {
+        Gtk::TreeModel::Path path;
+        Gtk::TreeViewColumn* col = 0;
+        int x = static_cast<int>(event->x);
+        int y = static_cast<int>(event->y);
+        int x2 = 0;
+        int y2 = 0;
+        if ( _tree.get_path_at_pos( x, y, path, col, x2, y2 ) && col == _name_column) {
+            _tree.set_cursor (path, *_name_column, true);
+            //grab_focus();
+			return true;
+        }
+    }
+	*/
+    //Right mouse button was clicked, launch the pop-up menu
+    if ( (event->type == GDK_BUTTON_PRESS) && (event->button == 3) ) {
+        Gtk::TreeModel::Path path;
+        int x = static_cast<int>(event->x);
+        int y = static_cast<int>(event->y);
+        if ( _tree.get_path_at_pos( x, y, path ) ) {
+            //_checkTreeSelection();
+            _popupMenu.popup(event->button, event->time);
+            if (_tree.get_selection()->is_selected(path)) {
+                return true;
+            }
+        }
+    }
+	
+	
+	//Restore the selection function to allow tree selection on mouse button release
+    //if ( event->type == GDK_BUTTON_RELEASE) {
+    //    _tree.get_selection()->set_select_function(sigc::mem_fun(*this, &AnimationControl::_rowSelectFunction));
+    //}
+	
+	
+	//Second mouse button press, set double click status for when the mouse is released
+    if ( (event->type == GDK_2BUTTON_PRESS) && (event->button == 1) ) {
+        doubleclick = 1;
+    }
+
+    //Double click on mouse button release, if we're over the label column, edit
+    //the item name
+    if ( event->type == GDK_BUTTON_RELEASE && doubleclick) {
+        doubleclick = 0;
+        Gtk::TreeModel::Path path;
+        Gtk::TreeViewColumn* col = 0;
+        int x = static_cast<int>(event->x);
+        int y = static_cast<int>(event->y);
+        int x2 = 0;
+        int y2 = 0;
+        if ( _tree.get_path_at_pos( x, y, path, col, x2, y2 ) && col == _name_column) {
+            // Double click on the Layer name, enable editing
+            _text_renderer->property_editable() = true;
+            _tree.set_cursor (path, *_name_column, true);
+            grab_focus();
+        }
+    }
+	
+	
+	
+	
+}
+
+
 AnimationControl::AnimationControl() : 
 _panes(), _keyframe_table(), _scroller(), _tree_scroller(),
-_new_layer_button("New Layer"), num_layers(0)
+_new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
 {
 	_new_layer_button.signal_clicked().connect(sigc::mem_fun(*this, &AnimationControl::addLayer));
 	//signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
@@ -259,6 +366,11 @@ _new_layer_button("New Layer"), num_layers(0)
 	*/
 	
 	
+	_popupMenu.append(*Gtk::manage(new Gtk::SeparatorMenuItem()));
+	Gtk::MenuItem *testitem = new Gtk::MenuItem("Insert keyframe");
+	_popupMenu.append(*testitem);
+	_popupMenu.show_all_children();
+	
     //Add object/layer
     Gtk::Button* _add = Gtk::manage( new Gtk::Button() );
     _styleButton(*_add, INKSCAPE_ICON("list-add"), _("Add animation layer"));
@@ -270,7 +382,7 @@ _new_layer_button("New Layer"), num_layers(0)
 
     //Remove object
     _rem = Gtk::manage( new Gtk::Button() );
-    _styleButton(*_rem, INKSCAPE_ICON("list-remove"), _("Remove object"));
+    _styleButton(*_rem, INKSCAPE_ICON("list-remove"), _("Remove animation layer"));
     _rem->set_relief(Gtk::RELIEF_NONE);
 	_rem->signal_clicked().connect( sigc::mem_fun(*this, &AnimationControl::removeLayer) );
 	_buttons.pack_start(*_rem, Gtk::PACK_SHRINK);
@@ -325,7 +437,10 @@ _new_layer_button("New Layer"), num_layers(0)
     _tree.set_model( _store );
     _tree.set_headers_visible(false);
 	
+	//_tree.signal_button_press_event().connect( sigc::mem_fun(*this, &AnimationControl::_handleButtonEvent), false );
+    //_tree.signal_button_release_event().connect( sigc::mem_fun(*this, &AnimationControl::_handleButtonEvent), false );
 	_tree.signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
+	//_tree.get_selection()->set_select_function( sigc::mem_fun(*this, &AnimationControl::_rowSelectFunction) );
 
 	
     //_tree.set_reorderable(true);
@@ -478,7 +593,6 @@ void AnimationControl::rebuildUi()
 	//attach(_tree_scroller, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 	//attach(_scroller, 1, 2, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 	
-	
 	//attach(_new_layer_button, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
 	
 	attach(_buttons, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
@@ -497,12 +611,40 @@ void AnimationControl::_styleButton(Gtk::Button& btn, char const* iconName, char
 
 void AnimationControl::removeLayer()
 {
+	
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	if(!desktop)
+		return;
+	
+	Gtk::TreeModel::iterator iterr = _tree.get_selection()->get_selected();
+    Gtk::TreeModel::Path *path = new Gtk::TreeModel::Path(iterr);
+	
 	//Glib::RefPtr<Gtk::TreeSelection> selection = _tree.get_selection();
 	
 	//_tree.remove(_tree.get_selection());
 	
-	num_layers--;
-	rebuildUi();
+	Gtk::TreeModel::iterator iter = _store->get_iter(*path);
+	
+	//Gtk::TreeModel::iterator iter = _tree.get_model()->get_iter(path);
+    Gtk::TreeModel::Row row = *iter;
+	
+	
+	//remove layer too
+	//SPObject * obj = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", 1)));
+	KeyframeBar * kb = row[_model->m_col_object];
+	SPObject * lay = kb->layer;
+	
+	if(lay)
+	{
+		Inkscape::XML::Node * n = lay->getRepr();
+		if(n)
+			desktop->getDocument()->getReprRoot()->removeChild(n);
+		
+		_store->erase(iter);
+		
+		num_layers--;
+		rebuildUi();
+	}
 }
 
 void AnimationControl::addLayer()
@@ -556,7 +698,7 @@ bool AnimationControl::on_my_button_press_event(GdkEventButton*)
 
 bool AnimationControl::on_mouse_(GdkEventMotion* event)
 {
-	return true;
+	return false;
 }
 
 bool AnimationControl::on_my_focus_in_event(GdkEventFocus*)

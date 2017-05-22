@@ -8,12 +8,13 @@ x show all keyframes
 x stop tweening from crashing
 x export any amount of layers
 x layers in correct order
+- enable/disable animation view in View->...
 - clear animation layers when opening a new file/loading another
 
 medium priority:
 x restore color swatches
-- same buttons as objects dialog
-/ rename layers
+x same buttons as objects dialog
+x rename layers
 - move layers up and down
 - delete layers
 - rotation tweening

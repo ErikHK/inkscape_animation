@@ -43,7 +43,11 @@ private:
 	void _renameObject(Gtk::TreeModel::Row row, const Glib::ustring& name);
 	void _handleEditingCancelled();
 	void _styleButton(Gtk::Button& btn, char const* iconName, char const* tooltip);
+	bool _handleButtonEvent(GdkEventButton* event);
+	bool _rowSelectFunction( Glib::RefPtr<Gtk::TreeModel> const & /*model*/, Gtk::TreeModel::Path const & /*path*/, bool currentlySelected );
 	
+	GdkEvent* _toggleEvent;
+	Gtk::Menu _popupMenu;
 	Gtk::HPaned _panes;
 	class ModelColumns;
 	Glib::RefPtr<Gtk::TreeStore> _store;
