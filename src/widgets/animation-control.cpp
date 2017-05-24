@@ -15,6 +15,7 @@
 #include "preferences.h"
 #include <gtkmm/icontheme.h>
 #include <gtkmm/stock.h>
+#include "verbs.h"
 
 #include "style.h"
 #include "desktop-style.h"
@@ -113,7 +114,7 @@ void AnimationControl::toggleVisible( Glib::ustring const& str )
 		//item->setHidden(!newValue);
 		obj->is_visible = newValue;
 		//item->updateRepr();
-		//DocumentUndo::done( _desktop->doc() , SP_VERB_DIALOG_LAYERS,
+		//DocumentUndo::done( desktop->doc() , SP_VERB_DIALOG_LAYERS,
 		//					newValue? _("Unhide layer") : _("Hide layer"));
     }
 }
@@ -138,8 +139,8 @@ void AnimationControl::toggleLocked( Glib::ustring const& str )
 		//item->setHidden(!newValue);
 		//obj->is_visible = newValue;
 		//item->updateRepr();
-		//DocumentUndo::done( _desktop->doc() , SP_VERB_DIALOG_LAYERS,
-		//					newValue? _("Unhide layer") : _("Hide layer"));
+		//DocumentUndo::done( desktop->doc() , SP_VERB_DIALOG_LAYERS,
+		//					newValue? _("Unlock layer") : _("Lock layer"));
     }
 }
 
@@ -226,6 +227,9 @@ void AnimationControl::_renameObject(Gtk::TreeModel::Row row, const Glib::ustrin
 		 
 		 kb->layer->getRepr()->setAttribute("name", name);
 		 
+		 
+		 //DocumentUndo::done( _desktop->doc() , SP_VERB_NONE,
+         //                                           "Rename object");
 		 
 		 /*
         if ( item ) {

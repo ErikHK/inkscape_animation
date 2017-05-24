@@ -433,75 +433,78 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		}
 	}
 	
-	inc_x = (end_x - start_x)/num_layers;
-	inc_y = (end_y - start_y)/num_layers;
+	inc_x = (end_x - start_x)/(num_layers);
+	inc_y = (end_y - start_y)/(num_layers);
 	
 	//NodeList::iterator node_iter = NodeList::get_iterator(n);
 	
 	//now we have start and end, loop again, and copy children etcetc
 	layer = startLayer;
-	i = kw->id + 1;
+	i = 1;
 	while(layer != endLayer)
 	{
 		//Node *node = dynamic_cast<Node*>(&*node_iter);
 		//if (node) {
 		//}
 		//nextLayer = Inkscape::next_layer(desktop->currentRoot(), layer);
-		nextLayer = desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
 		
-		if(nextLayer && layer)
+		nextLayer = desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
+		
+		if(!nextLayer)
+			break;
+		
+		if(nextLayer == endLayer)
+			break;
+		
+		SPObject * child = layer->firstChild();
+		
+		if(!child)
+			break;
+		
+		if(is_path)
 		{
-			SPObject * child = layer->firstChild();
+			//SP_PATH(child)->get_original_curve()->geometricBounds();
+			SP_PATH(child)->transform.setTranslation(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
+			//SP_ITEM(child)->setCenter(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
+			//child->updateRepr(0);
 			
-			if(!child)
-				break;
-			
-			if(is_path && child)
-			{
-				//SP_PATH(child)->get_original_curve()->geometricBounds();
-				SP_PATH(child)->transform.setTranslation(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
-				//SP_ITEM(child)->setCenter(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
-				//child->updateRepr(0);
-				
-				//SP_PATH(child)->get_original_curve()->
-			}
-			
-			Inkscape::XML::Node * childn = child->getRepr();
-			Inkscape::XML::Node * childn_copy = childn->duplicate(desktop->getDocument()->getReprDoc());
-			
-			if(!is_group && !is_path)
-			{
-				childn_copy->setAttribute(xs.c_str(), Glib::ustring::format(start_x + i*inc_x));
-				childn_copy->setAttribute(ys.c_str(), Glib::ustring::format(start_y + i*inc_y));
-			}
-			else if(is_group && !is_path)
-			{
-				childn_copy->setAttribute("transform", 
-				Glib::ustring::format("translate(", start_x + i*inc_x, ",", start_y + i*inc_y, ")" ));
-			}
-			
-			//Inkscape::XML::Node *childn = desktop->getDocument()->getReprDoc()->createElement("svg:path");
-			//childn->setAttribute("style", style);
-			//copy layer childn to nextLayer
-			if(childn && childn_copy)
-			{
-				nextLayer->getRepr()->appendChild(childn_copy);
-			}
+			//SP_PATH(child)->get_original_curve()->
 		}
+		
+		Inkscape::XML::Node * childn = child->getRepr();
+		Inkscape::XML::Node * childn_copy = childn->duplicate(desktop->getDocument()->getReprDoc());
+		
+		if(!is_group && !is_path)
+		{
+			childn_copy->setAttribute(xs.c_str(), Glib::ustring::format(start_x + i*inc_x));
+			childn_copy->setAttribute(ys.c_str(), Glib::ustring::format(start_y + i*inc_y));
+		}
+		else if(is_group && !is_path)
+		{
+			childn_copy->setAttribute("transform", 
+			Glib::ustring::format("translate(", start_x + i*inc_x, ",", start_y + i*inc_y, ")" ));
+		}
+		
+		//Inkscape::XML::Node *childn = desktop->getDocument()->getReprDoc()->createElement("svg:path");
+		//childn->setAttribute("style", style);
+		//copy layer childn to nextLayer
+		if(childn && childn_copy)
+		{
+			nextLayer->getRepr()->appendChild(childn_copy);
+		}
+		
 		layer = nextLayer;
-		//if(layer && is_path)
-		//	desktop->setCurrentLayer(layer);
 		i++;
 	}
 	
 	
 	layer = startLayer;
-	i = kw->id + 1;
+	i = 1;
 	while(layer != endLayer)
 	{
 		nextLayer = desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
+		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
 		
 		if(nextLayer && layer)
 		{
@@ -590,7 +593,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	kw->parent->clear_tween = true;
 	
-	DocumentUndo::done(desktop->getDocument(), SP_VERB_CONTEXT_NODE, "hehe");
+	DocumentUndo::done(desktop->getDocument(), SP_VERB_CONTEXT_NODE, "Create tween");
 	
 	NodeTool *tool = get_node_tool();
 	
