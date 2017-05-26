@@ -497,97 +497,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		layer = nextLayer;
 		i++;
 	}
-	
-	
-	layer = startLayer;
-	i = 1;
-	while(layer != endLayer)
-	{
-		nextLayer = desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
-		
-		if(nextLayer && layer)
-		{
-			SPObject * child = layer->firstChild();
-			
-			if(!child)
-				break;
-			
-			Inkscape::XML::Node * childn = child->getRepr();
 
-			//select new object in order to move nodes
-			
-			Inkscape::SelectionHelper::selectAll(desktop);
-			NodeTool *tool = get_node_tool();
-			if(tool && is_path)
-			{
-				Inkscape::UI::ControlPointSelection *cps = 0;
-				cps = tool->_selected_nodes;
-				
-				if(cps)
-					cps->selectAll();
-				Node *n = 0;
-				n = dynamic_cast<Node *>(*cps->begin());
-			
-				if(n && cps)
-				{
-					PathManipulator &pm = n->nodeList().subpathList().pm();
-					
-					n->move(n->position() + Geom::Point(20.0, 20.0));
-					//n->updateHandles();
-					//child->updateRepr();
-					pm.update(false);
-					
-					cps->clear();
-					Inkscape::SelectionHelper::selectNone(desktop);
-				}
-			}
-		}
-		layer = nextLayer;
-		if(layer && is_path)
-			desktop->setCurrentLayer(layer);
-		i++;
-	}
-
-	
 	if(is_path)
-	{
-		/*
-		NodeTool *tool = get_node_tool();
-		if(tool)
-		{
-			Inkscape::UI::ControlPointSelection *cps = 0;
-			cps = tool->_selected_nodes;
-			
-			Inkscape::SelectionHelper::selectAllInAll(desktop);
-			
-			cps->selectAll();
-			
-			Node *n = dynamic_cast<Node *>(*cps->begin());
-			//NodeList::iterator node_iter = NodeList::get_iterator(n);
-			
-			PathManipulator &pm = n->nodeList().subpathList().pm();
-			
-			for(NodeList::iterator j = n->nodeList().begin(); j != n->nodeList().end(); ++j) {
-				Node *node = dynamic_cast<Node*>(&*j);
-				if (node) {
-
-					node->move(n->position() + Geom::Point(20.0, 20.0));
-					//n->updateHandles();
-					//child->updateRepr();
-					pm.update(false);
-
-					//Inkscape::SelectionHelper::selectNone(desktop);
-				}
-				
-				j++;
-				j++;
-				j++;
-			}
-		}
-		*/
-		return;	
-	}
+		return;
 	
 	desktop->setCurrentLayer(startLayer);
 	
