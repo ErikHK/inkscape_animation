@@ -510,20 +510,24 @@ void AnimationControl::rebuildUi()
 {
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	
-	//check if layers already exist (a saved svg has been opened)
-	if(desktop)
-	{
-		int i = 1;
-		SPObject * child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i)));
-		while(child)
-		{
-			if(num_layers < i)
-				num_layers++;
-			i++;
-			child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i)));
-		}
-	}
+	if(!desktop)
+		return;
 	
+	//check if layers already exist (a saved svg has been opened)
+
+	/*
+	int i = 1;
+	SPObject * child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i)));
+	while(child)
+	{
+		if(num_layers < i)
+			num_layers++;
+		i++;
+		child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i)));
+	}
+	*/
+	
+	/*
 	for(int i = 0; i < num_layers; i++)
 	{
 		if(kb_vec.size() <= i)
@@ -542,7 +546,42 @@ void AnimationControl::rebuildUi()
 			kb_vec.push_back(kb);
 		}
 	}
+	*/
 	
+	for(int i = 0; i < num_layers*2; i++)
+	{
+		if(layers.size() <= i)
+		{
+			SPObject * child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
+			
+			if(child)
+			{
+				Gtk::TreeModel::iterator iter = _store->append();
+				Gtk::TreeModel::Row row = *iter;
+				row[_model->m_col_visible] = true;
+				row[_model->m_col_locked] = false;
+				row[_model->m_col_name] = Glib::ustring::format("animationlayer", i+1);
+				
+				KeyframeBar* kb = new KeyframeBar(i+1, child);
+				row[_model->m_col_object] = kb;
+				//_keyframe_table.attach(*kb, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+				kb_vec.push_back(kb);
+				
+				layers.push_back(std::make_pair(&row, kb));
+			}
+		}
+	}
+	
+	for(int i = 0; i < layers.size(); i++)
+	{
+		
+		_keyframe_table.attach(*layers[i].second, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+		
+	}
+	
+	
+	
+
 	//TODO: iterate over keyframebars and set pointers to siblings
 	if(kb_vec.size() > 0)
 	{
@@ -632,10 +671,13 @@ void AnimationControl::removeLayer()
 	//Gtk::TreeModel::iterator iter = _tree.get_model()->get_iter(path);
     Gtk::TreeModel::Row row = *iter;
 	
+	KeyframeBar* kb = row[_model->m_col_object];
+	int id = kb->id;
+	
+	layers.erase(layers.begin() + id);
 	
 	//remove layer too
 	//SPObject * obj = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", 1)));
-	KeyframeBar * kb = row[_model->m_col_object];
 	SPObject * lay = kb->layer;
 	
 	if(lay)

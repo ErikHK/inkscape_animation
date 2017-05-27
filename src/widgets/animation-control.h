@@ -46,6 +46,8 @@ private:
 	bool _handleButtonEvent(GdkEventButton* event);
 	bool _rowSelectFunction( Glib::RefPtr<Gtk::TreeModel> const & /*model*/, Gtk::TreeModel::Path const & /*path*/, bool currentlySelected );
 	
+	std::vector<std::pair<Gtk::TreeModel::Row*, KeyframeBar*> > layers;
+	
 	GdkEvent* _toggleEvent;
 	Gtk::Menu _popupMenu;
 	Gtk::HPaned _panes;
