@@ -510,47 +510,25 @@ void AnimationControl::rebuildUi()
 {
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	
-	if(!desktop)
-		return;
-	
 	//check if layers already exist (a saved svg has been opened)
-
-	/*
-	int i = 1;
-	SPObject * child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i)));
-	while(child)
+	if(desktop)
 	{
-		if(num_layers < i)
-			num_layers++;
-		i++;
-		child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i)));
-	}
-	*/
-	
-	/*
-	for(int i = 0; i < num_layers; i++)
-	{
-		if(kb_vec.size() <= i)
+		int i = 1;
+		SPObject * child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i)));
+		while(child)
 		{
-			SPObject * child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
-			
-			Gtk::TreeModel::iterator iter = _store->append();
-			Gtk::TreeModel::Row row = *iter;
-			row[_model->m_col_visible] = true;
-			row[_model->m_col_locked] = false;
-			row[_model->m_col_name] = Glib::ustring::format("animationlayer", i+1);
-			
-			KeyframeBar* kb = new KeyframeBar(i+1, child);
-			row[_model->m_col_object] = kb;
-			_keyframe_table.attach(*kb, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-			kb_vec.push_back(kb);
+			if(num_layers < i)
+				num_layers++;
+			i++;
+			//child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i)));
+			child = Inkscape::next_layer(desktop->currentRoot(), child);
 		}
 	}
-	*/
 	
-	for(int i = 0; i < num_layers*2; i++)
+	/*
+	for(int i = 0; i < kb_vec.size(); i++)
 	{
-		if(layers.size() <= i)
+		if(kb_vec.size() <= i)
 		{
 			SPObject * child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
 			
@@ -564,22 +542,12 @@ void AnimationControl::rebuildUi()
 				
 				KeyframeBar* kb = new KeyframeBar(i+1, child);
 				row[_model->m_col_object] = kb;
-				//_keyframe_table.attach(*kb, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+				_keyframe_table.attach(*kb, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 				kb_vec.push_back(kb);
-				
-				layers.push_back(std::make_pair(&row, kb));
 			}
 		}
 	}
-	
-	for(int i = 0; i < layers.size(); i++)
-	{
-		
-		_keyframe_table.attach(*layers[i].second, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-		
-	}
-	
-	
+	*/
 	
 
 	//TODO: iterate over keyframebars and set pointers to siblings
@@ -622,9 +590,13 @@ void AnimationControl::rebuildUi()
 		kb_vec[5]->prev = kb_vec[4];
 	}
 	
+	_scroller.set_shadow_type(Gtk::SHADOW_NONE);
 	_scroller.add(_keyframe_table);
 	_scroller.set_policy(Gtk::POLICY_ALWAYS, Gtk::POLICY_NEVER);
 	
+	_tree_scroller.set_size_request(300);
+	
+	_tree_scroller.set_shadow_type(Gtk::SHADOW_NONE);
 	_tree_scroller.add(_tree);
 	_tree_scroller.set_policy(Gtk::POLICY_ALWAYS, Gtk::POLICY_NEVER);
 
@@ -674,8 +646,7 @@ void AnimationControl::removeLayer()
 	KeyframeBar* kb = row[_model->m_col_object];
 	int id = kb->id;
 	
-	layers.erase(layers.begin() + id);
-	
+
 	//remove layer too
 	//SPObject * obj = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", 1)));
 	SPObject * lay = kb->layer;
@@ -683,10 +654,13 @@ void AnimationControl::removeLayer()
 	if(lay)
 	{
 		Inkscape::XML::Node * n = lay->getRepr();
-		if(n)
-			desktop->getDocument()->getReprRoot()->removeChild(n);
+		//if(n)
+			//n->parent()->removeChild(n);
 		
 		_store->erase(iter);
+		layers.erase(layers.begin() + id);
+		kb_vec.erase(kb_vec.begin() + id);
+		_keyframe_table.remove(*kb);
 		
 		num_layers--;
 		rebuildUi();
@@ -695,11 +669,6 @@ void AnimationControl::removeLayer()
 
 void AnimationControl::addLayer()
 {
-	Glib::RefPtr<Gtk::TreeSelection> selection = _tree.get_selection();
-	
-	//Gtk::TreeModel::iterator iter = selection->get_selected();
-	//iter++;
-    //Gtk::TreeModel::Row row = *iter;
 	num_layers++;
 	
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
@@ -726,6 +695,26 @@ void AnimationControl::addLayer()
 			Inkscape::create_animation_keyframe(desktop->currentRoot(), desktop->currentLayer(), i+1);
 	}
 	
+	
+	if(kb_vec.size() < num_layers)
+	{
+		SPObject * child = lay;
+		
+		if(child)
+		{
+			Gtk::TreeModel::iterator iter = _store->append();
+			Gtk::TreeModel::Row row = *iter;
+			row[_model->m_col_visible] = true;
+			row[_model->m_col_locked] = false;
+			row[_model->m_col_name] = Glib::ustring::format("animationlayer", num_layers);
+			
+			KeyframeBar* kb = new KeyframeBar(num_layers, child);
+			row[_model->m_col_object] = kb;
+			_keyframe_table.attach(*kb, 0, 1, num_layers+1, num_layers+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+			kb_vec.push_back(kb);
+		}
+	}
+	
 	rebuildUi();
 }
 
@@ -734,8 +723,6 @@ bool AnimationControl::on_expose_event(GtkWidget * widget, GdkEventExpose* event
 	//rebuildUi();
 	return true;
 }
-
-
 
 bool AnimationControl::on_my_button_press_event(GdkEventButton*)
 {
