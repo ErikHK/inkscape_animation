@@ -223,6 +223,7 @@ SPObject *create_animation_layer(SPObject *root, SPObject *layer, LayerRelativeP
     repr->setAttribute("inkscape:groupmode", "layer");
 	repr->setAttribute("inkscape:animationlayer", "true");
     repr->setAttribute("id", id);
+	repr->setAttribute("num", Glib::ustring::format(layer_suffix-1));
     g_free(id);
     
     if ( LPOS_CHILD == position ) {

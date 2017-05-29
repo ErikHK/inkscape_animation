@@ -511,6 +511,7 @@ void AnimationControl::rebuildUi()
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	
 	//check if layers already exist (a saved svg has been opened)
+	/*
 	if(desktop)
 	{
 		int i = 1;
@@ -524,7 +525,7 @@ void AnimationControl::rebuildUi()
 			child = Inkscape::next_layer(desktop->currentRoot(), child);
 		}
 	}
-	
+	*/
 	/*
 	for(int i = 0; i < kb_vec.size(); i++)
 	{
@@ -632,7 +633,12 @@ void AnimationControl::removeLayer()
 		return;
 	
 	Gtk::TreeModel::iterator iterr = _tree.get_selection()->get_selected();
+	if(!iterr)
+		return;
+	
     Gtk::TreeModel::Path *path = new Gtk::TreeModel::Path(iterr);
+	if(!path)
+		return;
 	
 	//Glib::RefPtr<Gtk::TreeSelection> selection = _tree.get_selection();
 	
@@ -644,6 +650,8 @@ void AnimationControl::removeLayer()
     Gtk::TreeModel::Row row = *iter;
 	
 	KeyframeBar* kb = row[_model->m_col_object];
+	if(!kb)
+		return;
 	int id = kb->id;
 	
 
@@ -688,6 +696,8 @@ void AnimationControl::addLayer()
 		if(!lay)
 			return;
 		
+		//lay->getRepr()->setAttribute("num", num_layers);
+		
 		desktop->setCurrentLayer(lay);
 		//SPObject * nextLayer = desktop->namedview->document->getObjectById(ids);
 		
@@ -695,9 +705,8 @@ void AnimationControl::addLayer()
 			Inkscape::create_animation_keyframe(desktop->currentRoot(), desktop->currentLayer(), i+1);
 	}
 	
-	
-	if(kb_vec.size() < num_layers)
-	{
+	//if(kb_vec.size() < num_layers)
+	//{
 		SPObject * child = lay;
 		
 		if(child)
@@ -706,14 +715,25 @@ void AnimationControl::addLayer()
 			Gtk::TreeModel::Row row = *iter;
 			row[_model->m_col_visible] = true;
 			row[_model->m_col_locked] = false;
-			row[_model->m_col_name] = Glib::ustring::format("animationlayer", num_layers);
 			
-			KeyframeBar* kb = new KeyframeBar(num_layers, child);
+			//row[_model->m_col_name] = Glib::ustring::format("animationlayer", num_layers);
+			if(child->getRepr()->attribute("name"))
+				row[_model->m_col_name] = Glib::ustring::format(child->getRepr()->attribute("name"));
+			else
+				row[_model->m_col_name] = Glib::ustring::format(child->getRepr()->attribute("id"));
+			
+			Glib::ustring str = Glib::ustring::format(child->getRepr()->attribute("num"));
+			
+			int place = atoi(str.c_str());
+			
+			//KeyframeBar* kb = new KeyframeBar(atoi(str.substr(str.length()-1, 1).c_str()), child);
+			KeyframeBar* kb = new KeyframeBar(place, child);
+			//KeyframeBar* kb = new KeyframeBar(num_layers, child);
 			row[_model->m_col_object] = kb;
-			_keyframe_table.attach(*kb, 0, 1, num_layers+1, num_layers+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+			_keyframe_table.attach(*kb, 0, 1, place-1, place, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 			kb_vec.push_back(kb);
 		}
-	}
+	//}
 	
 	rebuildUi();
 }
