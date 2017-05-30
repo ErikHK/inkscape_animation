@@ -646,17 +646,19 @@ void AnimationControl::removeLayer()
 	
 	Gtk::TreeModel::iterator iter = _store->get_iter(*path);
 	
+	if(!iter)
+		return;
+	
 	//Gtk::TreeModel::iterator iter = _tree.get_model()->get_iter(path);
     Gtk::TreeModel::Row row = *iter;
 	
 	KeyframeBar* kb = row[_model->m_col_object];
 	if(!kb)
 		return;
-	int id = kb->id;
 	
+	int id = kb->id;
 
 	//remove layer too
-	//SPObject * obj = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", 1)));
 	SPObject * lay = kb->layer;
 	
 	if(lay)
@@ -666,8 +668,15 @@ void AnimationControl::removeLayer()
 			//n->parent()->removeChild(n);
 		
 		_store->erase(iter);
-		layers.erase(layers.begin() + id);
-		kb_vec.erase(kb_vec.begin() + id);
+		//layers.erase(layers.begin() + id);
+		//look for correct kb in kb_vec
+		int ind=0;
+		for(int i=0;i < kb_vec.size(); i++)
+		{
+			if(kb_vec[i]->id == id)
+				ind = i;
+		}
+		kb_vec.erase(kb_vec.begin() + ind);
 		_keyframe_table.remove(*kb);
 		
 		num_layers--;
