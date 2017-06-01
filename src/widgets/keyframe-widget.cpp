@@ -12,6 +12,8 @@
 //#include "ui/previewable.h"
 #include "sp-namedview.h"
 
+#include "style.h"
+
 #include "keyframe-bar.h"
 #include "selection-chemistry.h"
 #include "document-undo.h"
@@ -306,7 +308,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	SPObject * startLayer = kw->layer;
 	SPObject * endLayer;
 	SPObject * nextLayer;
-	float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0;
+	float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0, start_opacity=1, end_opacity=1, inc_opacity=0;
 	std::string xs = "x";
 	std::string ys = "y";
 	bool is_group = false;
@@ -340,6 +342,10 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		
 		if(!child)
 			return;
+		
+		//get opacity
+		end_opacity = SP_ITEM(child)->style->opacity.value;
+		
 		
 		//if a circle or an ellipse, use cx and cy
 		if(!strcmp(childn->name(), "svg:circle") || !strcmp(childn->name(), "svg:ellipse"))
@@ -388,6 +394,10 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		
 		if(!child)
 			return;
+		
+		//get opacity
+		start_opacity = SP_ITEM(child)->style->opacity.value;
+		
 
 		if(!is_group && !is_path)
 		{
@@ -436,6 +446,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	inc_x = (end_x - start_x)/(num_layers);
 	inc_y = (end_y - start_y)/(num_layers);
 	
+	inc_opacity = (end_opacity - start_opacity)/(num_layers);
+	
 	//NodeList::iterator node_iter = NodeList::get_iterator(n);
 	
 	//now we have start and end, loop again, and copy children etcetc
@@ -443,23 +455,22 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	i = 1;
 	while(layer != endLayer)
 	{
-		//Node *node = dynamic_cast<Node*>(&*node_iter);
-		//if (node) {
-		//}
-		//nextLayer = Inkscape::next_layer(desktop->currentRoot(), layer);
 		
 		nextLayer = desktop->getDocument()->getObjectById(
 		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
+		
+		SPObject * child = layer->firstChild();
+		
+		if(!child)
+			break;
+		
+		//tween opacity
+		SP_ITEM(child)->style->opacity.value = start_opacity + (i-1)*inc_opacity;
 		
 		if(!nextLayer)
 			break;
 		
 		if(nextLayer == endLayer)
-			break;
-		
-		SPObject * child = layer->firstChild();
-		
-		if(!child)
 			break;
 		
 		if(is_path)
@@ -538,8 +549,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	float inc = 1 - 1/num_layers;
 	float mult = inc;
 	
-	
-
 	if(!n->nodeList().closed())
 	{
 		for(int iii = 0; iii < sizeee-1; iii++)

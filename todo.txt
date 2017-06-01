@@ -10,13 +10,17 @@ x export any amount of layers
 x layers in correct order
 - enable/disable animation view in View->...
 - clear animation layers when opening a new file/loading another
+- notifyContentChanged instead of selection_changed?
+- fix undo
 
 medium priority:
 x restore color swatches
 x same buttons as objects dialog
 x rename layers
-- move layers up and down
-- delete layers
+x move layers up and down
+- move layers to top and bottom
+/ delete layers
+- static layers?
 - rotation tweening
 - scale tweening
 - opacity tweening
