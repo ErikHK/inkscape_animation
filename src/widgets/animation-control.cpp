@@ -798,7 +798,6 @@ void AnimationControl::moveLayer(int dir)
 
 		if(ind > 0 && dir==1) //move up
 		{
-
 			KeyframeBar * pkb = kb->prev;
 			if(pkb)
 			{
@@ -810,6 +809,12 @@ void AnimationControl::moveLayer(int dir)
 
 				_keyframe_table.attach(*pkb, 0, 1, ind, ind+1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 				_keyframe_table.attach(*kb, 0, 1, ind-1, ind, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+				
+				//change order of layers
+				//if(pkb->prev)
+				//	lay->getRepr()->parent()->changeOrder(lay->getRepr(), pkb->prev->layer->getRepr());
+				
+				SP_ITEM(lay)->raiseOne();
 			}
 			
 		}
@@ -827,12 +832,16 @@ void AnimationControl::moveLayer(int dir)
 
 				_keyframe_table.attach(*nkb, 0, 1, ind, ind+1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 				_keyframe_table.attach(*kb, 0, 1, ind+1, ind+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+				
+				//change order of layers
+				//lay->getRepr()->parent()->changeOrder(lay->getRepr(), nkb->layer->getRepr());
+				
+				SP_ITEM(lay)->lowerOne();
 			}
 			
 		}
 		rebuildUi();
 	}
-	
 }
 
 
