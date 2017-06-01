@@ -403,6 +403,7 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
     _styleButton(*_down, INKSCAPE_ICON("go-down"), _("Move Down"));
     _down->set_relief(Gtk::RELIEF_NONE);
     //btn->signal_clicked().connect( sigc::bind( sigc::mem_fun(*this, &ObjectsPanel::_takeAction), (int)BUTTON_DOWN) );
+	_down->signal_clicked().connect( sigc::mem_fun(*this, &AnimationControl::moveLayerDown) );
     //_watchingNonBottom.push_back( btn );
     //_buttonsPrimary.pack_end(*btn, Gtk::PACK_SHRINK);
 	//attach(*btn, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
@@ -412,6 +413,7 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
     _up = Gtk::manage( new Gtk::Button() );
     _styleButton(*_up, INKSCAPE_ICON("go-up"), _("Move Up"));
     _up->set_relief(Gtk::RELIEF_NONE);
+	_up->signal_clicked().connect( sigc::mem_fun(*this, &AnimationControl::moveLayerUp) );
     //btn->signal_clicked().connect( sigc::bind( sigc::mem_fun(*this, &ObjectsPanel::_takeAction), (int)BUTTON_UP) );
 	_buttons.pack_start(*_up, Gtk::PACK_SHRINK);
     
@@ -561,23 +563,27 @@ void AnimationControl::rebuildUi()
 	{
 		kb_vec[0]->next = kb_vec[1];
 		kb_vec[1]->prev = kb_vec[0];
+		kb_vec[1]->next = NULL;
 	}
 	if(kb_vec.size() > 2)
 	{
 		kb_vec[1]->next = kb_vec[2];
 		kb_vec[2]->prev = kb_vec[1];
+		kb_vec[2]->next = NULL;
 	}
 	
 	if(kb_vec.size() > 3)
 	{
 		kb_vec[2]->next = kb_vec[3];
 		kb_vec[3]->prev = kb_vec[2];
+		kb_vec[3]->next = NULL;
 	}
 	
 	if(kb_vec.size() > 4)
 	{
 		kb_vec[3]->next = kb_vec[4];
 		kb_vec[4]->prev = kb_vec[3];
+		kb_vec[4]->next = NULL;
 	}
 	
 	if(kb_vec.size() > 5)
@@ -589,6 +595,7 @@ void AnimationControl::rebuildUi()
 		//}
 		kb_vec[4]->next = kb_vec[5];
 		kb_vec[5]->prev = kb_vec[4];
+		kb_vec[5]->next = NULL;
 	}
 	
 	_scroller.set_shadow_type(Gtk::SHADOW_NONE);
@@ -663,9 +670,10 @@ void AnimationControl::removeLayer()
 	
 	if(lay)
 	{
-		Inkscape::XML::Node * n = lay->getRepr();
+		//Inkscape::XML::Node * n = lay->getRepr();
 		//if(n)
-			//n->parent()->removeChild(n);
+		//	n->parent()->removeChild(n);
+		SP_ITEM(lay)->setHidden(true);
 		
 		_store->erase(iter);
 		//layers.erase(layers.begin() + id);
@@ -746,6 +754,98 @@ void AnimationControl::addLayer()
 	
 	rebuildUi();
 }
+
+void AnimationControl::moveLayer(int dir)
+{
+		SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	if(!desktop)
+		return;
+	
+	Gtk::TreeModel::iterator iterr = _tree.get_selection()->get_selected();
+	if(!iterr)
+		return;
+	
+    Gtk::TreeModel::Path *path = new Gtk::TreeModel::Path(iterr);
+	if(!path)
+		return;
+	
+	Gtk::TreeModel::iterator iter = _store->get_iter(*path);
+	
+	if(!iter)
+		return;
+	
+    Gtk::TreeModel::Row row = *iter;
+	
+	KeyframeBar* kb = row[_model->m_col_object];
+	
+	if(!kb)
+		return;
+	
+	int id = kb->id;
+
+	SPObject * lay = kb->layer;
+	
+	if(lay)
+	{
+
+		//look for correct kb in kb_vec
+		int ind=0;
+		for(int i=0;i < kb_vec.size(); i++)
+		{
+			if(kb_vec[i]->id == id)
+				ind = i;
+		}
+
+		if(ind > 0 && dir==1) //move up
+		{
+
+			KeyframeBar * pkb = kb->prev;
+			if(pkb)
+			{
+				std::iter_swap(kb_vec.begin() + ind, kb_vec.begin() + ind - 1);
+				_store->iter_swap(iter, iter--);
+				
+				_keyframe_table.remove(*kb);
+				_keyframe_table.remove(*pkb);
+
+				_keyframe_table.attach(*pkb, 0, 1, ind, ind+1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+				_keyframe_table.attach(*kb, 0, 1, ind-1, ind, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+			}
+			
+		}
+		
+		else if(ind < kb_vec.size()-1 && dir==0) //move down
+		{
+			KeyframeBar * nkb = kb->next;
+			if(nkb)
+			{
+				std::iter_swap(kb_vec.begin() + ind, kb_vec.begin() + ind + 1);
+				_store->iter_swap(iter, iter++);
+				
+				_keyframe_table.remove(*kb);
+				_keyframe_table.remove(*nkb);
+
+				_keyframe_table.attach(*nkb, 0, 1, ind, ind+1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+				_keyframe_table.attach(*kb, 0, 1, ind+1, ind+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+			}
+			
+		}
+		rebuildUi();
+	}
+	
+}
+
+
+void AnimationControl::moveLayerUp()
+{
+	moveLayer(1);
+}
+
+void AnimationControl::moveLayerDown()
+{
+	moveLayer(0);
+}
+
 
 bool AnimationControl::on_expose_event(GtkWidget * widget, GdkEventExpose* event)
 {

@@ -24,6 +24,9 @@ public:
     virtual ~AnimationControl();
 	void addLayer();
 	void removeLayer();
+	void moveLayerUp();
+	void moveLayerDown();
+	void moveLayer(int dir);
 	void rebuildUi();
 	int num_layers;
 	void toggleVisible( Glib::ustring const& str );
