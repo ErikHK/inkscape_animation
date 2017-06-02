@@ -308,7 +308,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	SPObject * startLayer = kw->layer;
 	SPObject * endLayer;
 	SPObject * nextLayer;
-	float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0, start_opacity=1, end_opacity=1, inc_opacity=0;
+	float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0, start_opacity=1, end_opacity=1, inc_opacity=0, inc_r=0, inc_g=0, inc_b=0;
+	gfloat start_rgb[3];
+	gfloat end_rgb[3];
 	std::string xs = "x";
 	std::string ys = "y";
 	bool is_group = false;
@@ -342,6 +344,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		
 		if(!child)
 			return;
+		
+		sp_color_get_rgb_floatv (&SP_ITEM(child)->style->fill.value.color, end_rgb);
 		
 		//get opacity
 		end_opacity = SP_ITEM(child)->style->opacity.value;
@@ -395,6 +399,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(!child)
 			return;
 		
+		sp_color_get_rgb_floatv (&SP_ITEM(child)->style->fill.value.color, start_rgb);
+		
 		//get opacity
 		start_opacity = SP_ITEM(child)->style->opacity.value;
 		
@@ -446,6 +452,10 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	inc_x = (end_x - start_x)/(num_layers);
 	inc_y = (end_y - start_y)/(num_layers);
 	
+	inc_r = (end_rgb[0]-start_rgb[0])/num_layers;
+	inc_g = (end_rgb[1]-start_rgb[1])/num_layers;
+	inc_b = (end_rgb[2]-start_rgb[2])/num_layers;
+	
 	inc_opacity = (end_opacity - start_opacity)/(num_layers);
 	
 	//NodeList::iterator node_iter = NodeList::get_iterator(n);
@@ -464,8 +474,24 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(!child)
 			break;
 		
+		//tween color
+
+        //paint_res->setColor(d[0], d[1], d[2]);
+		SP_ITEM(child)->style->fill.clear();
+		//SP_ITEM(child)->style->fill.setColor(i*16777000/num_layers, 0, 0);
+		SP_ITEM(child)->style->fill.setColor(start_rgb[0] + i*inc_r,
+											start_rgb[1] + i*inc_g,
+											start_rgb[2] + i*inc_b);
+		SP_ITEM(child)->style->fill.colorSet = TRUE;
+		SP_ITEM(child)->style->fill.set = TRUE;
+		
+		//SP_ITEM(child)->style->fill_opacity.value = 16777000;
+		//SP_ITEM(child)->style->fill_opacity.set = TRUE;
+		//SP_ITEM(child)->style->fill.set = TRUE;
+		
 		//tween opacity
 		SP_ITEM(child)->style->opacity.value = start_opacity + (i-1)*inc_opacity;
+		
 		
 		if(!nextLayer)
 			break;

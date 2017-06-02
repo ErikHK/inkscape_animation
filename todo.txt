@@ -11,7 +11,7 @@ x layers in correct order
 - enable/disable animation view in View->...
 - clear animation layers when opening a new file/loading another
 - notifyContentChanged instead of selection_changed?
-- fix undo
+- implement undo
 
 medium priority:
 x restore color swatches
@@ -23,7 +23,8 @@ x move layers up and down
 - static layers?
 - rotation tweening
 - scale tweening
-- opacity tweening
+x opacity tweening
+- color tweening
 - node tweening
 - cached playback window!
 - show messages in status bar
