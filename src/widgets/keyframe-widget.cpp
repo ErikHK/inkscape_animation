@@ -419,7 +419,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(is_path)
 		{
 			
-			/*
+			
 			NodeTool *tool = get_node_tool();
 			
 			if(tool)
@@ -431,14 +431,17 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 				if(n)
 				{
 					PathManipulator &pm = n->nodeList().subpathList().pm();
-					
-					n->move(Geom::Point(0, 0));
-					n->updateHandles();
+					Geom::Point pos = n->position();
+					pos[0] = pos[0] + 100;
+					n->move(pos);
+					//n->updateHandles();
 					//child->updateRepr();
-					pm.update(false);
+					pm.update();
 				}
 			}
-			*/
+			
+			//pm.update();
+			
 			
 			start_x = SP_ITEM(child)->getCenter()[0];
 			start_y = SP_ITEM(child)->getCenter()[1];
