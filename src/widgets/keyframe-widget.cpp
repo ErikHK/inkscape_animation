@@ -479,9 +479,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
         //paint_res->setColor(d[0], d[1], d[2]);
 		SP_ITEM(child)->style->fill.clear();
 		//SP_ITEM(child)->style->fill.setColor(i*16777000/num_layers, 0, 0);
-		SP_ITEM(child)->style->fill.setColor(start_rgb[0] + i*inc_r,
-											start_rgb[1] + i*inc_g,
-											start_rgb[2] + i*inc_b);
+		SP_ITEM(child)->style->fill.setColor(start_rgb[0] + (i-1)*inc_r,
+											start_rgb[1] + (i-1)*inc_g,
+											start_rgb[2] + (i-1)*inc_b);
 		SP_ITEM(child)->style->fill.colorSet = TRUE;
 		SP_ITEM(child)->style->fill.set = TRUE;
 		
