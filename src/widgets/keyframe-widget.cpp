@@ -12,6 +12,8 @@
 //#include "ui/previewable.h"
 #include "sp-namedview.h"
 
+#include "ui/tools-switch.h"
+
 #include "style.h"
 
 #include "keyframe-bar.h"
@@ -419,7 +421,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(is_path)
 		{
 			
-			
+			/*
 			NodeTool *tool = get_node_tool();
 			
 			if(tool)
@@ -436,10 +438,10 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 					n->move(pos);
 					//n->updateHandles();
 					//child->updateRepr();
-					pm.update();
+					//pm.update();
 				}
 			}
-			
+			*/
 			//pm.update();
 			
 			
@@ -510,6 +512,42 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			//child->updateRepr(0);
 			
 			//SP_PATH(child)->get_original_curve()->
+			
+			
+			
+			
+			
+			Inkscape::SelectionHelper::selectNone(desktop);
+			tools_switch(desktop, TOOLS_NODES);
+			desktop->setCurrentLayer(layer);
+			Inkscape::SelectionHelper::selectAll(desktop);
+			
+			NodeTool *tool = get_node_tool();
+			
+			if(tool)
+			{
+				Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
+				cps->selectAll();
+				
+				if(cps && !cps->empty())
+				{
+					Node *n = dynamic_cast<Node *>(*cps->begin());
+					
+					if(n)
+					{
+						PathManipulator &pm = n->nodeList().subpathList().pm();
+						Geom::Point pos = n->position();
+						pos[0] = pos[0] + 500;
+						n->move(pos);
+						//n->updateHandles();
+						//child->updateRepr();
+						pm.update();
+						//pm._selection.clear();
+						cps->clear();
+					}
+				}
+			}
+			
 		}
 		
 		Inkscape::XML::Node * childn = child->getRepr();
@@ -546,6 +584,12 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	kw->parent->clear_tween = true;
 	
 	DocumentUndo::done(desktop->getDocument(), SP_VERB_CONTEXT_NODE, "Create tween");
+	
+	
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	return;
+	
+	
 	
 	NodeTool *tool = get_node_tool();
 	
