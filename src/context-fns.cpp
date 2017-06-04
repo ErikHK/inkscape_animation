@@ -72,11 +72,11 @@ bool Inkscape::have_viable_layer(SPDesktop *desktop, MessageStack *message)
 		return false;
 	
 	//disregard if we have an animation layer
-	if(std::string(desktop->currentLayer()->getRepr()->name()).find("animationlayer") != std::string::npos )
-	{
-		SP_ITEM(layer)->setHidden(false);
-		return true;
-	}
+	//if(std::string(desktop->currentLayer()->getRepr()->name()).find("animationlayer") != std::string::npos )
+	//{
+	//	SP_ITEM(layer)->setHidden(false);
+	//	return true;
+	//}
 
     if ( !layer || desktop->itemIsHidden(layer) ) {
             message->flash(Inkscape::WARNING_MESSAGE,

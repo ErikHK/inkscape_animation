@@ -347,6 +347,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(!child)
 			return;
 		
+		//get end color
 		sp_color_get_rgb_floatv (&SP_ITEM(child)->style->fill.value.color, end_rgb);
 		
 		//get opacity
@@ -382,8 +383,28 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			//end_x = SP_ITEM(child)->transform.translation()[0];
 			//end_y = SP_ITEM(child)->transform.translation()[1];
 			
-			end_x = SP_ITEM(child)->getCenter()[0];
-			end_y = SP_ITEM(child)->getCenter()[1];
+			
+			NodeTool *tool = get_node_tool();
+			
+			if(tool)
+			{
+				Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
+				cps->selectAll();
+				Node *n = dynamic_cast<Node *>(*cps->begin());
+				
+				if(n)
+				{
+					PathManipulator &pm = n->nodeList().subpathList().pm();
+					Geom::Point pos = n->position();
+					end_x = pos[0];
+					end_y = pos[1];
+				}
+				else
+				{
+					end_x = SP_ITEM(child)->getCenter()[0];
+					end_y = SP_ITEM(child)->getCenter()[1];
+				}
+			}
 			
 			//convert
 			//end_x = Quantity::convert(end_x, "px", "mm");
@@ -421,32 +442,30 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(is_path)
 		{
 			
-			/*
+			
 			NodeTool *tool = get_node_tool();
 			
 			if(tool)
 			{
 				Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
-				
+				cps->selectAll();
 				Node *n = dynamic_cast<Node *>(*cps->begin());
 				
 				if(n)
 				{
 					PathManipulator &pm = n->nodeList().subpathList().pm();
 					Geom::Point pos = n->position();
-					pos[0] = pos[0] + 100;
-					n->move(pos);
-					//n->updateHandles();
-					//child->updateRepr();
-					//pm.update();
+					start_x = pos[0];
+					start_y = pos[1];
+				}
+				else
+				{
+					start_x = SP_ITEM(child)->getCenter()[0];
+					start_y = SP_ITEM(child)->getCenter()[1];
 				}
 			}
-			*/
-			//pm.update();
 			
-			
-			start_x = SP_ITEM(child)->getCenter()[0];
-			start_y = SP_ITEM(child)->getCenter()[1];
+		
 			
 			//convert
 			//start_x = Quantity::convert(start_x, "px", "mm");
@@ -479,8 +498,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(!child)
 			break;
 		
-		//tween color
-
+		//tween color TODO: check if it already has color...
         //paint_res->setColor(d[0], d[1], d[2]);
 		SP_ITEM(child)->style->fill.clear();
 		//SP_ITEM(child)->style->fill.setColor(i*16777000/num_layers, 0, 0);
@@ -490,37 +508,28 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		SP_ITEM(child)->style->fill.colorSet = TRUE;
 		SP_ITEM(child)->style->fill.set = TRUE;
 		
-		//SP_ITEM(child)->style->fill_opacity.value = 16777000;
-		//SP_ITEM(child)->style->fill_opacity.set = TRUE;
-		//SP_ITEM(child)->style->fill.set = TRUE;
-		
 		//tween opacity
 		SP_ITEM(child)->style->opacity.value = start_opacity + (i-1)*inc_opacity;
-		
 		
 		if(!nextLayer)
 			break;
 		
-		if(nextLayer == endLayer)
-			break;
+		//if(nextLayer == endLayer)
+		//	break;
 		
 		if(is_path)
 		{
-			//SP_PATH(child)->get_original_curve()->geometricBounds();
-			SP_PATH(child)->transform.setTranslation(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
-			//SP_ITEM(child)->setCenter(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
-			//child->updateRepr(0);
-			
-			//SP_PATH(child)->get_original_curve()->
-			
-			
-			
-			
+			//SP_PATH(child)->transform.setTranslation(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
 			
 			Inkscape::SelectionHelper::selectNone(desktop);
-			tools_switch(desktop, TOOLS_NODES);
+			
+			//tools_switch(desktop, TOOLS_NODES);
 			desktop->setCurrentLayer(layer);
 			Inkscape::SelectionHelper::selectAll(desktop);
+			// TODO remove the tools_switch atrocity.
+			if (!tools_isactive(desktop, TOOLS_NODES)) {
+				tools_switch(desktop, TOOLS_NODES);
+			}
 			
 			NodeTool *tool = get_node_tool();
 			
@@ -537,19 +546,19 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 					{
 						PathManipulator &pm = n->nodeList().subpathList().pm();
 						Geom::Point pos = n->position();
-						pos[0] = pos[0] + 500;
-						n->move(pos);
+						//pos[0] = pos[0] + 500;
+						n->move(pos + Geom::Point(500, 0));
 						//n->updateHandles();
-						//child->updateRepr();
 						pm.update();
+						//child->updateRepr(); //this fucks it up, why??
 						//pm._selection.clear();
 						cps->clear();
 					}
 				}
 			}
-			
 		}
 		
+		//child->updateRepr();
 		Inkscape::XML::Node * childn = child->getRepr();
 		Inkscape::XML::Node * childn_copy = childn->duplicate(desktop->getDocument()->getReprDoc());
 		
@@ -572,12 +581,15 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			nextLayer->getRepr()->appendChild(childn_copy);
 		}
 		
+		//child->updateRepr();
+		//layer->updateRepr();
+		//nextLayer->updateRepr();
 		layer = nextLayer;
 		i++;
 	}
 
-	if(is_path)
-		return;
+	//if(is_path)
+	//	return;
 	
 	desktop->setCurrentLayer(startLayer);
 	
