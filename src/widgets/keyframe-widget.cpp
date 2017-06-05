@@ -319,6 +319,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	bool is_path = false;
 	int i = kw->id+1;
 	int num_layers = 1;
+	
+	desktop->toggleHideAllLayers(false);
+	
 	while(layer)
 	{
 		//layer = Inkscape::next_layer(desktop->currentRoot(), layer);
@@ -427,7 +430,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//get opacity
 		start_opacity = SP_ITEM(child)->style->opacity.value;
 		
-
 		if(!is_group && !is_path)
 		{
 			start_x = std::stof(childn->attribute(xs.c_str()));
@@ -441,7 +443,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		}
 		if(is_path)
 		{
-			
 			
 			NodeTool *tool = get_node_tool();
 			
@@ -465,8 +466,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 				}
 			}
 			
-		
-			
 			//convert
 			//start_x = Quantity::convert(start_x, "px", "mm");
 			//start_y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(start_y, "px", "mm");
@@ -486,6 +485,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	//now we have start and end, loop again, and copy children etcetc
 	layer = startLayer;
+	
 	i = 1;
 	while(layer != endLayer)
 	{
@@ -514,11 +514,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//tween opacity
 		SP_ITEM(child)->style->opacity.value = start_opacity + (i-1)*inc_opacity;
 		
-		
 		//if(nextLayer == endLayer)
 		//	break;
 		
-		/*
 		if(is_path)
 		{
 			//SP_PATH(child)->transform.setTranslation(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
@@ -551,7 +549,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 					{
 						PathManipulator &pm = n->nodeList().subpathList().pm();
 						Geom::Point pos = n->position();
-						n->move(pos + Geom::Point(100, 0));
+						n->move(pos + Geom::Point(200, 0));
 						//n->updateHandles();
 						pm.update();
 						//child->updateRepr(); //this fucks it up, why??
@@ -564,7 +562,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 				}
 			}
 		}
-		*/
+		
 		
 		//child->updateRepr();
 		Inkscape::XML::Node * childn = child->getRepr();
@@ -596,7 +594,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		i++;
 	}
 	
-	
+	/*
 	layer = startLayer;
 	i = 1;
 	while(layer != endLayer)
@@ -621,7 +619,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(is_path)
 		{
 			//tools_switch(desktop, TOOLS_NODES);
-			desktop->toggleHideAllLayers(false);
+			
 			Inkscape::SelectionHelper::selectAll(desktop);
 			// TODO remove the tools_switch atrocity.
 			if (!tools_isactive(desktop, TOOLS_NODES)) {
@@ -648,7 +646,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 					{
 						PathManipulator &pm = n->nodeList().subpathList().pm();
 						Geom::Point pos = n->position();
-						n->move(pos + Geom::Point(100, 0));
+						n->move(pos + Geom::Point(200, 0));
 						pm.update();
 					}
 				}
@@ -658,8 +656,10 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		}
 		i++;
 	}
+	*/
 	
-	//desktop->toggleHideAllLayers(true);
+	desktop->toggleHideAllLayers(true);
+	SP_ITEM(startLayer->parent)->setHidden(false);
 
 	//if(is_path)
 	//	return;
@@ -668,49 +668,11 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	kw->parent->clear_tween = true;
 	
-	
-	/*
-	//Inkscape::SelectionHelper::selectNone(desktop);
-	tools_switch(desktop, TOOLS_NODES);
-	Inkscape::SelectionHelper::selectAllInAll(desktop);
-
-	NodeTool *toolll = get_node_tool();
-			
-	if(toolll)
-	{
-		Inkscape::UI::ControlPointSelection *cps = toolll->_selected_nodes;
-		cps->selectAll();
-				
-		if(cps && !cps->empty())
-		{
-			Node *n = NULL;
-			for (Inkscape::UI::ControlPointSelection::iterator ii = cps->begin(); ii != cps->end(); ++ii) {
-				n = dynamic_cast<Node *>(*ii);
-				
-				if(n)
-				{
-					PathManipulator &pm = n->nodeList().subpathList().pm();
-					Geom::Point pos = n->position();
-					n->move(pos + Geom::Point(100, 0));
-					pm.update();
-				}
-				
-				ii++;
-				ii++;
-				ii++;
-				ii++;
-				ii++;
-			}
-		}
-	}
-	*/
-	
 	DocumentUndo::done(desktop->getDocument(), SP_VERB_CONTEXT_NODE, "Create tween");
 	
 	
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	return;
-	
 	
 	
 	NodeTool *tool = get_node_tool();
