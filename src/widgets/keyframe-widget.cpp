@@ -489,10 +489,13 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	i = 1;
 	while(layer != endLayer)
 	{
-		
 		nextLayer = desktop->getDocument()->getObjectById(
 		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
 		
+		if(!nextLayer)
+			break;
+		
+		//SPObject * child = layer->firstChild();
 		SPObject * child = layer->firstChild();
 		
 		if(!child)
@@ -511,19 +514,17 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//tween opacity
 		SP_ITEM(child)->style->opacity.value = start_opacity + (i-1)*inc_opacity;
 		
-		if(!nextLayer)
-			break;
 		
 		//if(nextLayer == endLayer)
 		//	break;
 		
+		/*
 		if(is_path)
 		{
 			//SP_PATH(child)->transform.setTranslation(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
 			
 			Inkscape::SelectionHelper::selectNone(desktop);
-			
-			//tools_switch(desktop, TOOLS_NODES);
+			tools_switch(desktop, TOOLS_NODES);
 			desktop->setCurrentLayer(layer);
 			Inkscape::SelectionHelper::selectAll(desktop);
 			// TODO remove the tools_switch atrocity.
@@ -540,23 +541,30 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 				
 				if(cps && !cps->empty())
 				{
-					Node *n = dynamic_cast<Node *>(*cps->begin());
+					
+					Node *n = NULL;
+					for (Inkscape::UI::ControlPointSelection::iterator ii = cps->begin(); ii != cps->end(); ++ii) {
+						n = dynamic_cast<Node *>(*ii);
+					}
 					
 					if(n)
 					{
 						PathManipulator &pm = n->nodeList().subpathList().pm();
 						Geom::Point pos = n->position();
-						//pos[0] = pos[0] + 500;
-						n->move(pos + Geom::Point(500, 0));
+						n->move(pos + Geom::Point(100, 0));
 						//n->updateHandles();
 						pm.update();
 						//child->updateRepr(); //this fucks it up, why??
 						//pm._selection.clear();
-						cps->clear();
+						//cps->clear();
+						//Inkscape::SelectionHelper::selectNone(desktop);
 					}
+					
+					cps->clear();
 				}
 			}
 		}
+		*/
 		
 		//child->updateRepr();
 		Inkscape::XML::Node * childn = child->getRepr();
@@ -587,6 +595,71 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		layer = nextLayer;
 		i++;
 	}
+	
+	
+	layer = startLayer;
+	i = 1;
+	while(layer != endLayer)
+	{
+		Inkscape::SelectionHelper::selectNone(desktop);
+		nextLayer = desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
+		
+		if(!nextLayer)
+			break;
+		
+		layer = nextLayer;
+		desktop->setCurrentLayer(layer);
+		SPObject * child = layer->firstChild();
+		
+		if(!child)
+			break;
+		
+		if(layer == endLayer)
+			break;
+		
+		if(is_path)
+		{
+			//tools_switch(desktop, TOOLS_NODES);
+			desktop->toggleHideAllLayers(false);
+			Inkscape::SelectionHelper::selectAll(desktop);
+			// TODO remove the tools_switch atrocity.
+			if (!tools_isactive(desktop, TOOLS_NODES)) {
+				tools_switch(desktop, TOOLS_NODES);
+			}
+			
+			NodeTool *tool = get_node_tool();
+			
+			if(tool)
+			{
+				Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
+				cps->selectAll();
+				
+				if(!cps->empty())
+				{
+					
+					Node *n = NULL;
+					//for (Inkscape::UI::ControlPointSelection::iterator ii = cps->begin(); ii != cps->end(); ++ii) {
+					//	n = dynamic_cast<Node *>(*ii);
+					//}
+					n = dynamic_cast<Node *>(*cps->begin());
+					
+					if(n)
+					{
+						PathManipulator &pm = n->nodeList().subpathList().pm();
+						Geom::Point pos = n->position();
+						n->move(pos + Geom::Point(100, 0));
+						pm.update();
+					}
+				}
+				
+				cps->clear();
+			}
+		}
+		i++;
+	}
+	
+	//desktop->toggleHideAllLayers(true);
 
 	//if(is_path)
 	//	return;
@@ -594,6 +667,43 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	desktop->setCurrentLayer(startLayer);
 	
 	kw->parent->clear_tween = true;
+	
+	
+	/*
+	//Inkscape::SelectionHelper::selectNone(desktop);
+	tools_switch(desktop, TOOLS_NODES);
+	Inkscape::SelectionHelper::selectAllInAll(desktop);
+
+	NodeTool *toolll = get_node_tool();
+			
+	if(toolll)
+	{
+		Inkscape::UI::ControlPointSelection *cps = toolll->_selected_nodes;
+		cps->selectAll();
+				
+		if(cps && !cps->empty())
+		{
+			Node *n = NULL;
+			for (Inkscape::UI::ControlPointSelection::iterator ii = cps->begin(); ii != cps->end(); ++ii) {
+				n = dynamic_cast<Node *>(*ii);
+				
+				if(n)
+				{
+					PathManipulator &pm = n->nodeList().subpathList().pm();
+					Geom::Point pos = n->position();
+					n->move(pos + Geom::Point(100, 0));
+					pm.update();
+				}
+				
+				ii++;
+				ii++;
+				ii++;
+				ii++;
+				ii++;
+			}
+		}
+	}
+	*/
 	
 	DocumentUndo::done(desktop->getDocument(), SP_VERB_CONTEXT_NODE, "Create tween");
 	
