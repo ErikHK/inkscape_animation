@@ -549,18 +549,36 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	}
 	
 	for (int i = 0; i < end_nodes.size(); i++) {
-		inc_node_pos.push_back( (end_nodes[i]->position() - start_nodes[i]->position())/num_layers  );
+		inc_node_pos.push_back( (end_nodes[i]->position() - start_nodes[i]->position())/num_layers);
 		//inc_node_front_handle.push_back( (end_nodes[i]->front()->position() - start_nodes[i]->front()->position())/num_layers);
 		//inc_node_back_handle.push_back( (end_nodes[i]->back()->position() - start_nodes[i]->back()->position())/num_layers);
 		
 		//inc_node_front_handle.push_back((end_nodes[i]->front()->relativePos())/num_layers);
 		//inc_node_back_handle.push_back((end_nodes[i]->back()->relativePos())/num_layers);
 		
-		inc_node_front_handle.push_back( 
-		(end_nodes[i]->front()->relativePos() - start_nodes[i]->front()->relativePos()) / num_layers  );
-		
-		inc_node_back_handle.push_back( 
-		(end_nodes[i]->back()->relativePos() - start_nodes[i]->back()->relativePos()) / num_layers  );
+		Inkscape::UI::Handle * front_end = end_nodes[i]->front();
+		Inkscape::UI::Handle * back_end = end_nodes[i]->back();
+
+		Inkscape::UI::Handle * front_start = start_nodes[i]->front();
+		Inkscape::UI::Handle * back_start = start_nodes[i]->back();
+
+		if(front_end && back_end && front_start && back_start)
+		{
+			Geom::Point front_end_rel_pos = front_end->relativePos();
+			Geom::Point front_start_rel_pos = front_start->relativePos();
+
+			Geom::Point back_end_rel_pos = back_end->relativePos();
+			Geom::Point back_start_rel_pos = back_start->relativePos();
+
+			inc_node_front_handle.push_back(
+			(front_end_rel_pos - front_start_rel_pos) / num_layers  );
+
+			inc_node_back_handle.push_back(
+					(back_end_rel_pos - back_start_rel_pos) / num_layers  );
+		}
+
+		//inc_node_back_handle.push_back(
+		//(end_nodes[i]->back()->relativePos() - start_nodes[i]->back()->relativePos()) / num_layers  );
 		
 	}
 	
