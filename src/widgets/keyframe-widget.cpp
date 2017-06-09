@@ -898,14 +898,55 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	{
 		Inkscape::UI::ControlPointSelection *cps = toolss->_selected_nodes;
 		//Inkscape::UI::ControlPointSelection *cps = tool->_all_points;
+
+		//DOES NOT SELECT IN ORDER!
 		cps->selectAll();
+		Node * node = dynamic_cast<Node *>(*(cps->begin()));
+
+		PathManipulator &pm = node->nodeList().subpathList().pm();
+		MultiPathManipulator &mpm = pm.mpm();
+		//mpm.selectSubpaths();
+		cps->clear();
+		//mpm.clear();
+		//pm.clear();
+		mpm.selectAllinOrder();
+
+		int test = mpm._selection.size();
+
+		int ind = 0;
+		int amount = 0;
+		for(int i=0; i < 10*4; i++)
+		{
+			node = dynamic_cast<Node *>(*mpm._selection.begin());
+			//cps->clear();
+			//nodes.push_back( dynamic_cast<Node *> (*pm._selection.begin()) );
+			ind = i%4;
+			amount = i/4;
+
+			Geom::Point extra_front = amount*inc_node_front_handle[ind];
+			Geom::Point extra_back = amount*inc_node_back_handle[ind];
+
+			//if(i > 3)
+			{
+				node->front()->setRelativePos(start_nodes_front[ind] + extra_front);
+				node->back()->setRelativePos(start_nodes_back[ind] + extra_back);
+			}
+
+			mpm.shiftSelection(1);
+			pm.update();
+			pm.updateHandles();
+			mpm.updateHandles();
+		}
+
+
+		/*
 		//cps->selectAll();
 
 		if(cps && !cps->empty())
 		{
 			for (Inkscape::UI::ControlPointSelection::iterator ii = cps->begin(); ii != cps->end(); ++ii) {
 				Node *n = dynamic_cast<Node *>(*ii);
-				num = std::distance(cps->begin(), ii);
+				//num = std::distance(cps->begin(), ii);
 				PathManipulator &pm = n->nodeList().subpathList().pm();
 
 				if(num > 3 && num < 20)
@@ -917,8 +958,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 
 					//if(hf && hb)
 					{
-						n->front()->setRelativePos(start_nodes_front[num%4] + ((int)(num/4))*inc_node_front_handle[num%4]);
-						n->back()->setRelativePos(start_nodes_back[num%4] + ((int)(num/4))*inc_node_back_handle[num%4]);
+						int ind = num%4;
+						n->front()->setRelativePos(start_nodes_front[ind] + ((int)(num/4))*inc_node_front_handle[ind]);
+						n->back()->setRelativePos(start_nodes_back[ind] + ((int)(num/4))*inc_node_back_handle[ind]);
 					}
 				}
 				pm.update();
@@ -926,9 +968,10 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 
 				//n->updateHandles();
 				//n->updateState();
-				//num++;
+				num++;
 			}
 		}
+		*/
 
 	}
 
