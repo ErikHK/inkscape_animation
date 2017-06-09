@@ -887,6 +887,88 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	//	back_points.push_back(start_nodes[i]->back()->relativePos());
 	//}
 
+
+	layer = startLayer;
+
+	i = 1;
+	int tot=0;
+	while(layer != endLayer)
+	{
+		nextLayer = desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
+
+		if(!nextLayer)
+			break;
+
+		//SPObject * child = layer->firstChild();
+		SPObject * child = layer->firstChild();
+
+		if(!child)
+			break;
+
+		Inkscape::SelectionHelper::selectNone(desktop);
+		tools_switch(desktop, TOOLS_SELECT);
+		desktop->setCurrentLayer(layer);
+		Inkscape::SelectionHelper::selectAll(desktop); //select everything
+		tools_switch(desktop, TOOLS_NODES);
+
+		NodeTool *toolss = get_node_tool();
+
+		if(toolss)
+		{
+			Inkscape::UI::ControlPointSelection *cps = toolss->_selected_nodes;
+			//Inkscape::UI::ControlPointSelection *cps = tool->_all_points;
+
+			//DOES NOT SELECT IN ORDER!
+			cps->selectAll();
+
+			Node * node = dynamic_cast<Node *>(*(cps->begin()));
+
+			PathManipulator &pm = node->nodeList().subpathList().pm();
+			MultiPathManipulator &mpm = pm.mpm();
+			//mpm.selectSubpaths();
+			cps->clear();
+			//mpm.clear();
+			//pm.clear();
+			mpm.selectAllinOrder();
+
+			int ind=0;
+			int amount = 0;
+
+
+			//now one is selected, loop
+			for(int j=0; j < 4; j++)
+			{
+				node = dynamic_cast<Node *>(*mpm._selection.begin());
+				//cps->clear();
+				//nodes.push_back( dynamic_cast<Node *> (*pm._selection.begin()) );
+
+				Geom::Point extra_front = i*inc_node_front_handle[j];
+				Geom::Point extra_back = i*inc_node_back_handle[j];
+
+				//if(i > 3)
+				{
+					node->front()->setRelativePos(start_nodes_front[j] + extra_front);
+					node->back()->setRelativePos(start_nodes_back[j] + extra_back);
+				}
+
+				mpm.shiftSelection(1);
+				pm.update();
+				pm.updateHandles();
+				mpm.updateHandles();
+			}
+		}
+		layer = nextLayer;
+		i++;
+	}
+
+
+
+
+
+
+
+	/*
 	tools_switch(desktop, TOOLS_SELECT); //this destroys the nodes!! WHY?
 	desktop->toggleHideAllLayers(false); //show all layers
 	Inkscape::SelectionHelper::selectAllInAll(desktop); //select everything
@@ -938,6 +1020,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			mpm.updateHandles();
 		}
 
+		*/
+
 
 		/*
 		//cps->selectAll();
@@ -972,8 +1056,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			}
 		}
 		*/
-
-	}
 
 
 	//while(layer != endLayer)
