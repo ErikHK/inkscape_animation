@@ -12,6 +12,15 @@
 //#include "ui/previewable.h"
 #include "sp-namedview.h"
 
+//#include "sp-path.h"
+
+#include "display/curve.h"
+#include <2geom/pathvector.h>
+#include <2geom/curves.h>
+#include <2geom/transforms.h>
+#include <helper/geom.h>
+#include "helper/geom-curves.h"
+
 #include "ui/tools-switch.h"
 
 #include "style.h"
@@ -32,6 +41,7 @@ using Inkscape::UI::Tools::NodeTool;
 using Inkscape::Util::Quantity;
 using Inkscape::UI::Node;
 using Inkscape::UI::PathManipulator;
+using Inkscape::UI::MultiPathManipulator;
 using Inkscape::UI::NodeList;
 using Inkscape::DocumentUndo;
 
@@ -308,8 +318,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	SPObject * layer = kw->layer;// = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id)));
 	SPObject * startLayer = kw->layer;
-	SPObject * endLayer;
-	SPObject * nextLayer;
+	SPObject * endLayer = NULL;
+	SPObject * nextLayer = NULL;
 	float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0, start_opacity=1, end_opacity=1, inc_opacity=0, inc_r=0, inc_g=0, inc_b=0;
 	gfloat start_rgb[3];
 	gfloat end_rgb[3];
@@ -320,18 +330,89 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	int i = kw->id+1;
 	int num_layers = 1;
 	
-	std::vector<Node *> start_nodes;
-	std::vector<Node *> end_nodes;
 	
-	Inkscape::UI::ControlPointSelection *cps_start = (Inkscape::UI::ControlPointSelection *) std::malloc(sizeof(Inkscape::UI::ControlPointSelection));
-	Inkscape::UI::ControlPointSelection *cps_end = (Inkscape::UI::ControlPointSelection *) std::malloc(sizeof(Inkscape::UI::ControlPointSelection));
+	std::vector<Node*> nodes;
+	//std::vector<Node*> start_nodes;
+	std::vector<Geom::Point> start_nodes_position;
+	std::vector<Geom::Point> start_nodes_front;
+	std::vector<Geom::Point> start_nodes_back;
+
+	//std::vector<Node*> end_nodes;
+	std::vector<Geom::Point> end_nodes_position;
+	std::vector<Geom::Point> end_nodes_front;
+	std::vector<Geom::Point> end_nodes_back;
+
 
 	std::vector<Geom::Point> inc_node_pos;
 	std::vector<Geom::Point> inc_node_front_handle;
 	std::vector<Geom::Point> inc_node_back_handle;
 	
-	desktop->toggleHideAllLayers(false);
+	//desktop->toggleHideAllLayers(true);
+	//desktop->toggleLockAllLayers(true);
 	
+	//SP_ITEM(startLayer)->setLocked(true);
+	//tools_switch(desktop, TOOLS_SELECT);
+	//Inkscape::SelectionHelper::selectAllInAll(desktop);
+	//tools_switch(desktop, TOOLS_NODES);
+
+	//get START nodes
+	NodeTool *toolz = get_node_tool();
+
+	if(toolz)
+	{
+		Inkscape::UI::ControlPointSelection *cps = toolz->_selected_nodes;
+		//cps->selectAll();
+		//Inkscape::UI::ControlPointSelection *cps = toolz->_all_points;
+		Node *n = dynamic_cast<Node *>(* cps->begin() );
+		PathManipulator &pm = n->nodeList().subpathList().pm();
+		MultiPathManipulator &mpm = pm.mpm();
+		//mpm.selectSubpaths();
+
+		for(int i=0; i < 8; i++)
+		{
+			n = dynamic_cast<Node *>(*cps->begin());
+			nodes.push_back( dynamic_cast<Node *> (*pm._selection.begin()) );
+			mpm.shiftSelection(1);
+
+		}
+		/*
+		mpm.selectAllinOrder();
+		mpm.selectAllinOrder();
+		mpm.selectAllinOrder();
+		mpm.selectAllinOrder();
+		mpm.selectAllinOrder();
+		mpm.selectAllinOrder();
+		mpm.selectAllinOrder();
+		mpm.shiftSelection(1);
+
+		for (Inkscape::UI::ControlPointSelection::iterator ii = cps->begin(); ii != cps->end(); ++ii) {
+			n = dynamic_cast<Node *>(*ii);
+			start_nodes.push_back(n);
+		}
+		*/
+		cps->clear();
+		cps->clear();
+	}
+
+
+
+	std::size_t const half_size = nodes.size() / 2;
+	std::vector<Node*> start_nodes(nodes.begin(), nodes.begin() + half_size);
+	std::vector<Node*> end_nodes(nodes.begin() + half_size, nodes.end());
+
+
+	for (int i = 0; i < start_nodes.size(); i++) {
+		start_nodes_position.push_back(start_nodes[i]->position());
+		start_nodes_front.push_back(start_nodes[i]->front()->relativePos());
+		start_nodes_back.push_back(start_nodes[i]->back()->relativePos());
+	}
+
+	for (int i = 0; i < end_nodes.size(); i++) {
+		end_nodes_position.push_back(end_nodes[i]->position());
+		end_nodes_front.push_back(end_nodes[i]->front()->relativePos());
+		end_nodes_back.push_back(end_nodes[i]->back()->relativePos());
+	}
+
 	while(layer)
 	{
 		//layer = Inkscape::next_layer(desktop->currentRoot(), layer);
@@ -351,8 +432,77 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	if(endLayer)
 	{
+		/*
+		Inkscape::SelectionHelper::selectNone(desktop);
+		tools_switch(desktop, TOOLS_SELECT);
+		Inkscape::SelectionHelper::selectNone(desktop);
+		SP_ITEM(endLayer)->setHidden(false);
+		desktop->setCurrentLayer(endLayer);
+		//SP_ITEM(startLayer)->setHidden(true);
+		Inkscape::SelectionHelper::selectAll(desktop);
+		tools_switch(desktop, TOOLS_NODES);
+		Inkscape::SelectionHelper::selectAll(desktop);
+		//tools_switch(desktop, TOOLS_NODES);
+		//get END nodes
+		NodeTool *toolz = get_node_tool();
+
+		if(toolz)
+		{
+			Inkscape::UI::ControlPointSelection *cps = toolz->_selected_nodes;
+			cps->selectAll();
+			cps->selectAll();
+			//Inkscape::UI::ControlPointSelection *cps = toolz->_all_points;
+			Node *n = NULL;
+
+			for (Inkscape::UI::ControlPointSelection::iterator ii = cps->begin(); ii != cps->end(); ++ii) {
+				n = dynamic_cast<Node *>(*ii);
+				end_nodes.push_back(n);
+			}
+			cps->clear();
+			//cps->clear();
+		}
+
+
+
+		for (i = 0; i < end_nodes.size(); i++) {
+				end_nodes_position.push_back(end_nodes[i]->position());
+				end_nodes_front.push_back(end_nodes[i]->front()->position());
+				end_nodes_back.push_back(end_nodes[i]->back()->position());
+			}
+		*/
+
+		//SP_ITEM(startLayer)->setHidden(false);
+		Inkscape::SelectionHelper::selectNone(desktop);
+
+
 		Inkscape::XML::Node * childn = endLayer->getRepr()->firstChild();
 		SPObject * child = endLayer->firstChild();
+
+		//auto test = SP_SHAPE(child)->_curve->_pathv;
+		//SPCurve * curve = SP_SHAPE(child)->getCurve();
+
+		//Geom::PathVector hehe = curve->get_pathvector();
+		//std::vector<Geom::Point> noodes = hehe.nodes();
+
+
+		//Geom::Point p = hehe.initialPoint();
+		//Geom::Point p2 = hehe.finalPoint();
+
+		//auto p3 = hehe[0];
+		//auto p4 = hehe[1];
+
+
+
+		//for (Inkscape::UI::ControlPointSelection::iterator ii = hehe.begin(); ii != hehe.end(); ++ii) {
+		//	Geom::PathVector path = dynamic_cast<Geom::PathVector *>(*ii);
+
+		//	Geom::Point p = path.initialPoint();
+		//}
+
+
+		//Geom::Point p = curve->first_point();
+		//Geom::Point p2 = test2->second_point();
+
 		
 		if(!childn)
 			return;
@@ -367,10 +517,15 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		end_opacity = SP_ITEM(child)->style->opacity.value;
 		
 		
+		/*
+		//tools_switch(desktop, TOOLS_SELECT);
 		Inkscape::SelectionHelper::selectNone(desktop);
-		tools_switch(desktop, TOOLS_NODES);
 		desktop->setCurrentLayer(endLayer);
+		//SP_ITEM(endLayer)->setHidden(false);
+		//SP_ITEM(endLayer)->setLocked(false);
+
 		Inkscape::SelectionHelper::selectAll(desktop);
+		tools_switch(desktop, TOOLS_NODES);
 		
 		//get nodes
 		NodeTool *tool = get_node_tool();
@@ -378,20 +533,21 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(tool)
 		{
 			Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
+			//Inkscape::UI::ControlPointSelection *cps = tool->_all_points;
+			cps->selectAll();
 			cps->selectAll();
 			Node *n = NULL;
 			
 			for (Inkscape::UI::ControlPointSelection::iterator ii = cps->begin(); ii != cps->end(); ++ii) {
-				//int i = std::distance(cps->begin(), ii);
-
 				n = dynamic_cast<Node *>(*ii);
 				end_nodes.push_back(n);
 			}
-
-			std::memcpy(&cps_end, &cps, sizeof(cps));
-
+			cps->clear();
 			cps->clear();
 		}
+		*/
+
+
 		//Inkscape::SelectionHelper::selectNone(desktop);
 		
 		
@@ -419,7 +575,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			end_y = std::stof(childn->attribute(ys.c_str()));
 		}
 		
-
 		/*
 		if(is_path)
 		{
@@ -456,8 +611,12 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		*/
 	}
 	
+	//SP_ITEM(startLayer)->setLocked(false);
+
 	if(startLayer)
 	{
+		//SP_ITEM(startLayer)->setHidden(false);
+
 		SPObject * child = startLayer->firstChild();
 		Inkscape::XML::Node * childn = startLayer->getRepr()->firstChild();
 		if(!childn)
@@ -472,10 +631,15 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		start_opacity = SP_ITEM(child)->style->opacity.value;
 		
 		
+		/*
 		Inkscape::SelectionHelper::selectNone(desktop);
-		tools_switch(desktop, TOOLS_NODES);
 		desktop->setCurrentLayer(startLayer);
+		//SP_ITEM(startLayer)->setHidden(false);
+		//SP_ITEM(startLayer)->setLocked(false);
+		//tools_switch(desktop, TOOLS_SELECT);
+
 		Inkscape::SelectionHelper::selectAll(desktop);
+		tools_switch(desktop, TOOLS_NODES);
 		
 		//get nodes
 		NodeTool *tool = get_node_tool();
@@ -483,6 +647,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(tool)
 		{
 			Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
+			cps->clear();
 			cps->selectAll();
 			Node *n = NULL;
 			
@@ -490,11 +655,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 				n = dynamic_cast<Node *>(*ii);
 				start_nodes.push_back(n);
 			}
-
-			std::memcpy(&cps_start, &cps, sizeof(cps));
-
 			cps->clear();
 		}
+		*/
 		//Inkscape::SelectionHelper::selectNone(desktop);
 		
 		
@@ -509,6 +672,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			start_x = SP_ITEM(child)->transform.translation()[0];
 			start_y = SP_ITEM(child)->transform.translation()[1];
 		}
+		/*
 		if(is_path)
 		{
 			
@@ -532,90 +696,42 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 					start_x = SP_ITEM(child)->getCenter()[0];
 					start_y = SP_ITEM(child)->getCenter()[1];
 				}
-				cps->clear();
 			}
 			
 			//convert
 			//start_x = Quantity::convert(start_x, "px", "mm");
 			//start_y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(start_y, "px", "mm");
 		}
+		*/
 	}
 	
-	
-	/*
-	for (int i = 0; i < end_nodes.size(); i++) {
-		//int ii = std::distance(end_nodes[0]->nodeList().begin(), j);
-
-		inc_node_pos.push_back( (end_nodes[i]->position() - start_nodes[i]->position())/num_layers  );
+	for (int i = 0; i < end_nodes_position.size(); i++) {
+		inc_node_pos.push_back( (end_nodes_position[i] - start_nodes_position[i])/num_layers  );
 		//inc_node_front_handle.push_back( (end_nodes[i]->front()->position() - start_nodes[i]->front()->position())/num_layers);
 		//inc_node_back_handle.push_back( (end_nodes[i]->back()->position() - start_nodes[i]->back()->position())/num_layers);
 		
 		//inc_node_front_handle.push_back((end_nodes[i]->front()->relativePos())/num_layers);
 		//inc_node_back_handle.push_back((end_nodes[i]->back()->relativePos())/num_layers);
 		
-		inc_node_front_handle.push_back(
-		(end_nodes[i]->front()->relativePos() - start_nodes[i]->front()->relativePos()) / num_layers);
-		
-		inc_node_back_handle.push_back(
-		(end_nodes[i]->back()->relativePos() - start_nodes[i]->back()->relativePos()) / num_layers);
-		
+		//Node end_node = end_nodes[i];
+		//Node start_node = start_nodes[i];
+
+		Geom::Point end_front = end_nodes_front[i];
+		Geom::Point start_front = start_nodes_front[i];
+
+		Geom::Point end_back = end_nodes_back[i];
+		Geom::Point start_back = start_nodes_back[i];
+
+		//Inkscape::UI::Handle * h = end_node->front();
+
+		//if(!end_node->isDegenerate() && !start_node->isDegenerate())
+		{
+			inc_node_front_handle.push_back(
+					(end_nodes_front[i] - start_nodes_front[i]) / num_layers  );
+			inc_node_back_handle.push_back(
+					(end_nodes_back[i] - start_nodes_back[i]) / num_layers  );
+		}
 	}
-	*/
-	
-	float front_start_x[4];
-	float front_start_y[4];
-
-	float front_end_x[4];
-	float front_end_y[4];
-
-	float back_start_x[4];
-	float back_start_y[4];
-
-	float back_end_x[4];
-	float back_end_y[4];
-
-
-	for (Inkscape::UI::ControlPointSelection::iterator ii = cps_start->begin(); ii != cps_start->end(); ++ii) {
-		int i = std::distance(cps_start->begin(), ii);
-		Node *n1 = dynamic_cast<Node *>(*ii);
-
-		front_start_x[i] = n1->front()->relativePos()[0];
-		front_start_y[i] = n1->front()->relativePos()[1];
-
-		back_start_x[i] = n1->back()->relativePos()[0];
-		back_start_y[i] = n1->back()->relativePos()[1];
-
-
-		//Node *n2 = dynamic_cast<Node *>(*cps_end[i]);
-
-		//inc_node_front_handle.push_back(
-		//		(n2->front()->relativePos() - n1->front()->relativePos()) / num_layers);
-
-		//inc_node_back_handle.push_back(
-		//		(n2->back()->relativePos() - n1->back()->relativePos()) / num_layers);
-	}
-
-	for (Inkscape::UI::ControlPointSelection::iterator ii = cps_end->begin(); ii != cps_end->end(); ++ii) {
-		int i = std::distance(cps_end->begin(), ii);
-		Node *n1 = dynamic_cast<Node *>(*ii);
-
-		front_end_x[i] = n1->front()->relativePos()[0];
-		front_end_y[i] = n1->front()->relativePos()[1];
-
-		back_end_x[i] = n1->back()->relativePos()[0];
-		back_end_y[i] = n1->back()->relativePos()[1];
-	}
-
-	for(int i = 0; i < 4; i++)
-	{
-		inc_node_front_handle.push_back(
-				(Geom::Point(front_end_x[i], front_end_y[i]) - Geom::Point(front_start_x[i], front_start_y[i])) / num_layers);
-
-		inc_node_front_handle.push_back(
-						(Geom::Point(back_end_x[i], back_end_y[i]) - Geom::Point(back_start_x[i], back_start_y[i])) / num_layers);
-	}
-
-
 
 	inc_x = (end_x - start_x)/(num_layers);
 	inc_y = (end_y - start_y)/(num_layers);
@@ -662,24 +778,31 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//if(nextLayer == endLayer)
 		//	break;
 		
+		/*
 		if(is_path)
 		{
 			//SP_PATH(child)->transform.setTranslation(Geom::Point(start_x + i*inc_x, start_y + i*inc_y));
 			
 			Inkscape::SelectionHelper::selectNone(desktop);
-			tools_switch(desktop, TOOLS_NODES);
 			desktop->setCurrentLayer(layer);
+			//SP_ITEM(layer)->setHidden(false);
+			//SP_ITEM(layer)->setLocked(false);
+			//tools_switch(desktop, TOOLS_SELECT);
+
 			Inkscape::SelectionHelper::selectAll(desktop);
+			//tools_switch(desktop, TOOLS_NODES);
 			// TODO remove the tools_switch atrocity.
-			if (!tools_isactive(desktop, TOOLS_NODES)) {
-				tools_switch(desktop, TOOLS_NODES);
-			}
+			//if (!tools_isactive(desktop, TOOLS_NODES)) {
+			//	tools_switch(desktop, TOOLS_NODES);
+			//}
 			
 			NodeTool *tool = get_node_tool();
 			
 			if(tool)
 			{
 				Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
+				//Inkscape::UI::ControlPointSelection *cps = tool->_all_points;
+				cps->selectAll();
 				cps->selectAll();
 				
 				if(cps && !cps->empty())
@@ -700,8 +823,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 							//n->front()->setRelativePos((i-1)*inc_node_front_handle[j]);
 							//n->back()->setRelativePos((i-1)*inc_node_back_handle[j]);
 							
-							n->front()->setRelativePos( (i-1)*inc_node_front_handle[j]);
-							n->back()->setRelativePos( (i-1)*inc_node_back_handle[j]);
+							n->front()->setRelativePos( end_nodes[j]->front()->relativePos() + (i-1)*inc_node_front_handle[j]);
+							n->back()->setRelativePos( end_nodes[j]->back()->relativePos() + (i-1)*inc_node_back_handle[j]);
 							//n->updateHandles();
 							pm.update();
 							//child->updateRepr(); //this fucks it up, why??
@@ -711,13 +834,15 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 						}
 						j++;
 					}
-					
+
+					cps->clear();
 					cps->clear();
 				}
 			}
 		}
 		
-		
+		*/
+
 		//child->updateRepr();
 		Inkscape::XML::Node * childn = child->getRepr();
 		Inkscape::XML::Node * childn_copy = childn->duplicate(desktop->getDocument()->getReprDoc());
@@ -748,72 +873,77 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		i++;
 	}
 	
-	/*
-	layer = startLayer;
-	i = 1;
-	while(layer != endLayer)
+
+	//layer = startLayer;
+	//i = 1;
+	int num=0;
+
+	//std::vector<Node> new_nodes(nodes);
+	std::vector<Geom::Point> front_points;
+	std::vector<Geom::Point> back_points;
+
+	//for (int i = 0; i < start_nodes.size(); i++) {
+	//	front_points.push_back(start_nodes[i]->front()->relativePos());
+	//	back_points.push_back(start_nodes[i]->back()->relativePos());
+	//}
+
+	tools_switch(desktop, TOOLS_SELECT); //this destroys the nodes!! WHY?
+	desktop->toggleHideAllLayers(false); //show all layers
+	Inkscape::SelectionHelper::selectAllInAll(desktop); //select everything
+	tools_switch(desktop, TOOLS_NODES);
+
+	NodeTool *toolss = get_node_tool();
+
+	if(toolss)
 	{
-		Inkscape::SelectionHelper::selectNone(desktop);
-		nextLayer = desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
-		
-		if(!nextLayer)
-			break;
-		
-		layer = nextLayer;
-		desktop->setCurrentLayer(layer);
-		SPObject * child = layer->firstChild();
-		
-		if(!child)
-			break;
-		
-		if(layer == endLayer)
-			break;
-		
-		if(is_path)
+		Inkscape::UI::ControlPointSelection *cps = toolss->_selected_nodes;
+		//Inkscape::UI::ControlPointSelection *cps = tool->_all_points;
+		cps->selectAll();
+		//cps->selectAll();
+
+		if(cps && !cps->empty())
 		{
-			//tools_switch(desktop, TOOLS_NODES);
-			
-			Inkscape::SelectionHelper::selectAll(desktop);
-			// TODO remove the tools_switch atrocity.
-			if (!tools_isactive(desktop, TOOLS_NODES)) {
-				tools_switch(desktop, TOOLS_NODES);
-			}
-			
-			NodeTool *tool = get_node_tool();
-			
-			if(tool)
-			{
-				Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
-				cps->selectAll();
-				
-				if(!cps->empty())
+			for (Inkscape::UI::ControlPointSelection::iterator ii = cps->begin(); ii != cps->end(); ++ii) {
+				Node *n = dynamic_cast<Node *>(*ii);
+				num = std::distance(cps->begin(), ii);
+				PathManipulator &pm = n->nodeList().subpathList().pm();
+
+				if(num > 3 && num < 20)
 				{
-					
-					Node *n = NULL;
-					//for (Inkscape::UI::ControlPointSelection::iterator ii = cps->begin(); ii != cps->end(); ++ii) {
-					//	n = dynamic_cast<Node *>(*ii);
-					//}
-					n = dynamic_cast<Node *>(*cps->begin());
-					
-					if(n)
+
+					//Inkscape::UI::Handle * hf = start_nodes[i%4].front();
+					//Inkscape::UI::Handle * hb = start_nodes[i%4].back();
+
+
+					//if(hf && hb)
 					{
-						PathManipulator &pm = n->nodeList().subpathList().pm();
-						Geom::Point pos = n->position();
-						n->move(pos + Geom::Point(200, 0));
-						pm.update();
+						n->front()->setRelativePos(start_nodes_front[num%4] + ((int)(num/4))*inc_node_front_handle[num%4]);
+						n->back()->setRelativePos(start_nodes_back[num%4] + ((int)(num/4))*inc_node_back_handle[num%4]);
 					}
 				}
-				
-				cps->clear();
+				pm.update();
+
+
+				//n->updateHandles();
+				//n->updateState();
+				//num++;
 			}
 		}
-		i++;
+
 	}
-	*/
+
+
+	//while(layer != endLayer)
+	//{
+
+	//}
 	
+
 	desktop->toggleHideAllLayers(true);
+	//desktop->toggleLockAllLayers(false);
+	SP_ITEM(startLayer)->setHidden(false);
 	SP_ITEM(startLayer->parent)->setHidden(false);
+	//SP_ITEM(startLayer->parent)->setLocked(false);
 
 	//if(is_path)
 	//	return;
