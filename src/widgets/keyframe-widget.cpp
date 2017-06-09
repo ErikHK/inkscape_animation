@@ -329,6 +329,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	bool is_path = false;
 	int i = kw->id+1;
 	int num_layers = 1;
+	int num_nodes = 0;
 	
 	
 	std::vector<Node*> nodes;
@@ -355,6 +356,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	//Inkscape::SelectionHelper::selectAllInAll(desktop);
 	//tools_switch(desktop, TOOLS_NODES);
 
+	if(SP_IS_PATH(layer->firstChild()))
+		num_nodes = SP_PATH(layer->firstChild())->_curve->nodes_in_path();
+
 	//get START nodes
 	NodeTool *toolz = get_node_tool();
 
@@ -362,13 +366,16 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	{
 		Inkscape::UI::ControlPointSelection *cps = toolz->_selected_nodes;
 		//cps->selectAll();
+
+		//cps->clear();
 		//Inkscape::UI::ControlPointSelection *cps = toolz->_all_points;
 		Node *n = dynamic_cast<Node *>(* cps->begin() );
 		PathManipulator &pm = n->nodeList().subpathList().pm();
 		MultiPathManipulator &mpm = pm.mpm();
 		//mpm.selectSubpaths();
+		//mpm.selectAllinOrder();
 
-		for(int i=0; i < 8; i++)
+		for(int i=0; i < num_nodes*2; i++)
 		{
 			n = dynamic_cast<Node *>(*cps->begin());
 			nodes.push_back( dynamic_cast<Node *> (*pm._selection.begin()) );
@@ -393,8 +400,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		cps->clear();
 		cps->clear();
 	}
-
-
 
 	std::size_t const half_size = nodes.size() / 2;
 	std::vector<Node*> start_nodes(nodes.begin(), nodes.begin() + half_size);
@@ -625,6 +630,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(!child)
 			return;
 		
+
+
 		sp_color_get_rgb_floatv (&SP_ITEM(child)->style->fill.value.color, start_rgb);
 		
 		//get opacity
@@ -937,14 +944,14 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 
 
 			//now one is selected, loop
-			for(int j=0; j < 4; j++)
+			for(int j=0; j < num_nodes; j++)
 			{
 				node = dynamic_cast<Node *>(*mpm._selection.begin());
 				//cps->clear();
 				//nodes.push_back( dynamic_cast<Node *> (*pm._selection.begin()) );
 
-				Geom::Point extra_front = i*inc_node_front_handle[j];
-				Geom::Point extra_back = i*inc_node_back_handle[j];
+				Geom::Point extra_front = (i-1)*inc_node_front_handle[j];
+				Geom::Point extra_back = (i-1)*inc_node_back_handle[j];
 
 				//if(i > 3)
 				{
