@@ -868,7 +868,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//Inkscape::XML::Node *childn = desktop->getDocument()->getReprDoc()->createElement("svg:path");
 		//childn->setAttribute("style", style);
 		//copy layer childn to nextLayer
-		if(childn && childn_copy)
+		if(childn && childn_copy && nextLayer != endLayer)
 		{
 			nextLayer->getRepr()->appendChild(childn_copy);
 		}
@@ -899,76 +899,79 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 
 	i = 1;
 	int tot=0;
-	while(layer != endLayer)
+	if(is_path)
 	{
-		nextLayer = desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
-
-		if(!nextLayer)
-			break;
-
-		//SPObject * child = layer->firstChild();
-		SPObject * child = layer->firstChild();
-
-		if(!child)
-			break;
-
-		Inkscape::SelectionHelper::selectNone(desktop);
-		tools_switch(desktop, TOOLS_SELECT);
-		desktop->setCurrentLayer(layer);
-		Inkscape::SelectionHelper::selectAll(desktop); //select everything
-		tools_switch(desktop, TOOLS_NODES);
-
-		NodeTool *toolss = get_node_tool();
-
-		if(toolss)
+		while(layer != endLayer)
 		{
-			Inkscape::UI::ControlPointSelection *cps = toolss->_selected_nodes;
-			//Inkscape::UI::ControlPointSelection *cps = tool->_all_points;
+			nextLayer = desktop->getDocument()->getObjectById(
+			std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
 
-			//DOES NOT SELECT IN ORDER!
-			cps->selectAll();
+			if(!nextLayer)
+				break;
 
-			Node * node = dynamic_cast<Node *>(*(cps->begin()));
+			//SPObject * child = layer->firstChild();
+			SPObject * child = layer->firstChild();
 
-			PathManipulator &pm = node->nodeList().subpathList().pm();
-			MultiPathManipulator &mpm = pm.mpm();
-			//mpm.selectSubpaths();
-			cps->clear();
-			//mpm.clear();
-			//pm.clear();
-			mpm.selectAllinOrder();
+			if(!child)
+				break;
 
-			int ind=0;
-			int amount = 0;
+			Inkscape::SelectionHelper::selectNone(desktop);
+			tools_switch(desktop, TOOLS_SELECT);
+			desktop->setCurrentLayer(layer);
+			Inkscape::SelectionHelper::selectAll(desktop); //select everything
+			tools_switch(desktop, TOOLS_NODES);
 
+			NodeTool *toolss = get_node_tool();
 
-			//now one is selected, loop
-			for(int j=0; j < num_nodes; j++)
+			if(toolss)
 			{
-				node = dynamic_cast<Node *>(*mpm._selection.begin());
-				//cps->clear();
-				//nodes.push_back( dynamic_cast<Node *> (*pm._selection.begin()) );
+				Inkscape::UI::ControlPointSelection *cps = toolss->_selected_nodes;
+				//Inkscape::UI::ControlPointSelection *cps = tool->_all_points;
 
-				Geom::Point extra_front = (i-1)*inc_node_front_handle[j];
-				Geom::Point extra_back = (i-1)*inc_node_back_handle[j];
+				//DOES NOT SELECT IN ORDER!
+				cps->selectAll();
 
-				node->move(node->position() + (i-1)*inc_node_pos[j]);
+				Node * node = dynamic_cast<Node *>(*(cps->begin()));
 
-				//if(i > 3)
+				PathManipulator &pm = node->nodeList().subpathList().pm();
+				MultiPathManipulator &mpm = pm.mpm();
+				//mpm.selectSubpaths();
+				cps->clear();
+				//mpm.clear();
+				//pm.clear();
+				mpm.selectAllinOrder();
+
+				int ind=0;
+				int amount = 0;
+
+
+				//now one is selected, loop
+				for(int j=0; j < num_nodes; j++)
 				{
-					node->front()->setRelativePos(start_nodes_front[j] + extra_front);
-					node->back()->setRelativePos(start_nodes_back[j] + extra_back);
-				}
+					node = dynamic_cast<Node *>(*mpm._selection.begin());
+					//cps->clear();
+					//nodes.push_back( dynamic_cast<Node *> (*pm._selection.begin()) );
 
-				mpm.shiftSelection(1);
-				pm.update();
-				pm.updateHandles();
-				mpm.updateHandles();
+					Geom::Point extra_front = (i-1)*inc_node_front_handle[j];
+					Geom::Point extra_back = (i-1)*inc_node_back_handle[j];
+
+					node->move(node->position() + (i-1)*inc_node_pos[j]);
+
+					//if(i > 3)
+					{
+						node->front()->setRelativePos(start_nodes_front[j] + extra_front);
+						node->back()->setRelativePos(start_nodes_back[j] + extra_back);
+					}
+
+					mpm.shiftSelection(1);
+					pm.update();
+					pm.updateHandles();
+					mpm.updateHandles();
+				}
 			}
+			layer = nextLayer;
+			i++;
 		}
-		layer = nextLayer;
-		i++;
 	}
 
 
