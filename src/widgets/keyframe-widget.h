@@ -19,6 +19,7 @@ public:
 	KeyframeWidget * prev;
 	SPObject * layer;
 	bool is_empty;
+	bool is_focused;
 	void selectLayer();
 	Gtk::CheckMenuItem *onion;
 	Gtk::CheckMenuItem *showAll;
