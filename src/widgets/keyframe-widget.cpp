@@ -953,6 +953,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 				Geom::Point extra_front = (i-1)*inc_node_front_handle[j];
 				Geom::Point extra_back = (i-1)*inc_node_back_handle[j];
 
+				node->move(node->position() + (i-1)*inc_node_pos[j]);
+
 				//if(i > 3)
 				{
 					node->front()->setRelativePos(start_nodes_front[j] + extra_front);
