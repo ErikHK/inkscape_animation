@@ -667,8 +667,12 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		}
 		else if(is_path)
 		{
+			Geom::Point orig_p = SP_PATH(child)->desktopGeometricBounds()->midpoint();
+
 			childn_copy->setAttribute("transform",
-				Glib::ustring::format("translate(", start_x + i*inc_x, ",", start_y + i*inc_y, ")" ));
+				Glib::ustring::format("translate(",
+						start_x + i*inc_x, ",",
+						start_y + i*inc_y, ")" ));
 
 		}
 		
@@ -906,15 +910,21 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	return;
+	//return;
 	
-	
+	tools_switch(desktop, TOOLS_SELECT);
+	Inkscape::SelectionHelper::selectAll(desktop); //select everything
+	tools_switch(desktop, TOOLS_NODES);
+
 	NodeTool *tool = get_node_tool();
 	
 	if(!tool)
 		return;
 	
+
 	Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
+	cps->selectAll();
+	int testttt = cps->size();
 	
 	if(!cps)
 		return;
@@ -930,6 +940,52 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	int sizeee = n->nodeList().size();
 	
+
+
+	layer = startLayer;
+	i = 0;
+	while(layer != endLayer->next)
+	{
+		nextLayer = desktop->getDocument()->getObjectById(
+					std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
+
+
+		SPPath * path = NULL;
+		if(SP_IS_PATH(startLayer->firstChild()))
+			path = SP_PATH(startLayer->firstChild());
+		else
+			path = SP_PATH(startLayer->firstChild()->next);
+
+		SPCurve * curve = path->_curve;
+
+		Geom::PathVector pathv = curve->get_pathvector();
+
+		Geom::Point p = pathv.pointAt(i*pathv.timeRange().max()/(num_layers + 1));
+
+
+		nextLayer = desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
+
+		if(!nextLayer)
+			break;
+
+		//SPObject * child = layer->firstChild();
+		SPObject * child = layer->firstChild();
+
+		if(!child)
+			break;
+
+		child->setAttribute("transform",
+					Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
+
+		layer = nextLayer;
+		i++;
+
+	}
+
+	/*
+
+
 	//if(n->nodeList().begin() == n->nodeList().end())
 	//	return;
 	
@@ -1032,6 +1088,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			}
 		}		
 	}
+
+	*/
+
 }
 
 bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
