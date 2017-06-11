@@ -584,14 +584,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	for (int i = 0; i < end_nodes_position.size(); i++) {
 		inc_node_pos.push_back( (end_nodes_position[i] - start_nodes_position[i])/num_layers  );
-		//inc_node_front_handle.push_back( (end_nodes[i]->front()->position() - start_nodes[i]->front()->position())/num_layers);
-		//inc_node_back_handle.push_back( (end_nodes[i]->back()->position() - start_nodes[i]->back()->position())/num_layers);
-		
-		//inc_node_front_handle.push_back((end_nodes[i]->front()->relativePos())/num_layers);
-		//inc_node_back_handle.push_back((end_nodes[i]->back()->relativePos())/num_layers);
-		
-		//Node end_node = end_nodes[i];
-		//Node start_node = start_nodes[i];
 
 		Geom::Point end_front = end_nodes_front[i];
 		Geom::Point start_front = start_nodes_front[i];
@@ -791,127 +783,17 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		}
 	}
 
-
-
-
-
-
-
-	/*
-	tools_switch(desktop, TOOLS_SELECT); //this destroys the nodes!! WHY?
-	desktop->toggleHideAllLayers(false); //show all layers
-	Inkscape::SelectionHelper::selectAllInAll(desktop); //select everything
-	tools_switch(desktop, TOOLS_NODES);
-
-	NodeTool *toolss = get_node_tool();
-
-	if(toolss)
-	{
-		Inkscape::UI::ControlPointSelection *cps = toolss->_selected_nodes;
-		//Inkscape::UI::ControlPointSelection *cps = tool->_all_points;
-
-		//DOES NOT SELECT IN ORDER!
-		cps->selectAll();
-		Node * node = dynamic_cast<Node *>(*(cps->begin()));
-
-		PathManipulator &pm = node->nodeList().subpathList().pm();
-		MultiPathManipulator &mpm = pm.mpm();
-		//mpm.selectSubpaths();
-		cps->clear();
-		//mpm.clear();
-		//pm.clear();
-		mpm.selectAllinOrder();
-
-		int test = mpm._selection.size();
-
-		int ind = 0;
-		int amount = 0;
-		for(int i=0; i < 10*4; i++)
-		{
-			node = dynamic_cast<Node *>(*mpm._selection.begin());
-			//cps->clear();
-			//nodes.push_back( dynamic_cast<Node *> (*pm._selection.begin()) );
-			ind = i%4;
-			amount = i/4;
-
-			Geom::Point extra_front = amount*inc_node_front_handle[ind];
-			Geom::Point extra_back = amount*inc_node_back_handle[ind];
-
-			//if(i > 3)
-			{
-				node->front()->setRelativePos(start_nodes_front[ind] + extra_front);
-				node->back()->setRelativePos(start_nodes_back[ind] + extra_back);
-			}
-
-			mpm.shiftSelection(1);
-			pm.update();
-			pm.updateHandles();
-			mpm.updateHandles();
-		}
-
-		*/
-
-
-		/*
-		//cps->selectAll();
-
-		if(cps && !cps->empty())
-		{
-			for (Inkscape::UI::ControlPointSelection::iterator ii = cps->begin(); ii != cps->end(); ++ii) {
-				Node *n = dynamic_cast<Node *>(*ii);
-				//num = std::distance(cps->begin(), ii);
-				PathManipulator &pm = n->nodeList().subpathList().pm();
-
-				if(num > 3 && num < 20)
-				{
-
-					//Inkscape::UI::Handle * hf = start_nodes[i%4].front();
-					//Inkscape::UI::Handle * hb = start_nodes[i%4].back();
-
-
-					//if(hf && hb)
-					{
-						int ind = num%4;
-						n->front()->setRelativePos(start_nodes_front[ind] + ((int)(num/4))*inc_node_front_handle[ind]);
-						n->back()->setRelativePos(start_nodes_back[ind] + ((int)(num/4))*inc_node_back_handle[ind]);
-					}
-				}
-				pm.update();
-
-
-				//n->updateHandles();
-				//n->updateState();
-				num++;
-			}
-		}
-		*/
-
-
-	//while(layer != endLayer)
-	//{
-
-	//}
-	
-
 	desktop->toggleHideAllLayers(true);
-	//desktop->toggleLockAllLayers(false);
 	SP_ITEM(startLayer)->setHidden(false);
 	SP_ITEM(startLayer->parent)->setHidden(false);
-	//SP_ITEM(startLayer->parent)->setLocked(false);
 
-	//if(is_path)
-	//	return;
-	
 	desktop->setCurrentLayer(startLayer);
 	
 	kw->parent->clear_tween = true;
 	
 	DocumentUndo::done(desktop->getDocument(), SP_VERB_CONTEXT_NODE, "Create tween");
 	
-	
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//return;
-	
+
 	tools_switch(desktop, TOOLS_SELECT);
 	Inkscape::SelectionHelper::selectAll(desktop); //select everything
 	tools_switch(desktop, TOOLS_NODES);
@@ -983,113 +865,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 
 	}
 
-	/*
-
-
-	//if(n->nodeList().begin() == n->nodeList().end())
-	//	return;
-	
-	PathManipulator &pm = n->nodeList().subpathList().pm();
-	
-	
-	//float inc = 1.0/num_layers;
-	float inc = 1 - 1/num_layers;
-	float mult = inc;
-	
-	if(!n->nodeList().closed())
-	{
-		for(int iii = 0; iii < sizeee-1; iii++)
-		{
-			inc = 1 - 1/num_layers;
-			//mult = inc;
-			mult = 1;
-			
-			for(int k=0; k < num_layers/(sizeee - 1); k++)
-			{
-				mult -= (sizeee-1)*1.0/num_layers;
-				pm.insertNode(this_iter, mult/(mult + (sizeee-1)*1.0/num_layers), false);
-			}
-			
-			pm._selection.clear();
-			
-			//go to next point and add more there etc
-			for(int iiii=0; iiii < num_layers/(sizeee - 1) + 1; iiii++)
-				this_iter++;
-			
-			if(!this_iter)
-				break;
-			
-		}
-	}
-	//else the path is closed!
-	else
-	{
-		for(int iii = 0; iii < sizeee; iii++)
-		{
-			//inc = 1 - 1/(num_layers);
-			//mult = inc;
-			mult = 1;
-			
-			for(int k=0; k < num_layers/(sizeee); k++)
-			{
-				mult -= (sizeee)*1.0/(num_layers+1);
-				pm.insertNode(this_iter, mult/(mult + (sizeee)*1.0/(num_layers+1)), false);
-			}
-			
-			pm._selection.clear();
-			
-			//go to next point and add more there etc
-			for(int iiii=0; iiii < num_layers/(sizeee ) + 1; iiii++)
-				this_iter++;
-			
-			if(!this_iter)
-				break;
-			
-		}
-	}
-	
-	int ii = 1;
-	SPObject * lay;
-
-	for(NodeList::iterator j = n->nodeList().begin(); j != n->nodeList().end(); ++j) {
-		Node *node = dynamic_cast<Node*>(&*j);
-		if (node) {
-			//std::string id = node->nodeList().subpathList().pm().item()->getId(); 
-			double x = Quantity::convert(node->position()[0], "px", "mm");
-			double y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(node->position()[1], "px", "mm");
-
-			//ii = std::distance(tool->_multipath->_selection.begin(), i);
-			ii = std::distance(n->nodeList().begin(), j);
-			//ii = (int)i - (int)tool->_multipath->_selection.begin();
-			
-			//lay = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("layer", ii)));
-			lay = desktop->namedview->document->getObjectById(
-					Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", ii+1));
-
-			if(lay)
-			{
-				if(lay->getRepr()->childCount() == 0)
-					return;
-				
-				Inkscape::XML::Node * childn = lay->getRepr()->firstChild();
-				if(!childn)
-					return;
-				
-				if(!is_group && !is_path)
-				{
-					childn->setAttribute(xs, Glib::ustring::format(x));
-					childn->setAttribute(ys, Glib::ustring::format(y));
-				}
-				
-				else if(is_group) //is group!
-				{
-					childn->setAttribute("transform", Glib::ustring::format("translate(", x, ",", y, ")" ));
-				}
-			}
-		}		
-	}
-
-	*/
 
 }
 
