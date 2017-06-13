@@ -309,6 +309,107 @@ static NodeTool *get_node_tool()
 }
 
 
+static int numKeyframes(KeyframeWidget * kw)
+{
+
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+
+	if(!desktop)
+		return 1;
+
+	int num_layers = 1;
+	int i = kw->id + 1;
+
+	SPObject * layer = kw->layer;// = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id)));
+	SPObject * startLayer = kw->layer;
+	SPObject * endLayer = NULL;
+	SPObject * nextLayer = NULL;
+
+
+	while(layer)
+		{
+			//layer = Inkscape::next_layer(desktop->currentRoot(), layer);
+			layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
+
+			if(!layer)
+				return 1;
+
+			//as soon as a layer has a child, break and set endLayer to this!
+			if (layer->getRepr()->childCount() > 0)
+				break;
+
+			num_layers++;
+			i++;
+		}
+		endLayer = layer;
+
+	return num_layers;
+}
+
+
+static void updateTween(KeyframeWidget * kww, gpointer user_data)
+{
+	KeyframeWidget * kw = reinterpret_cast<KeyframeWidget*>(user_data);
+
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+
+		if(!desktop)
+			return;
+
+	int num_keyframes = kw->parent->num_keyframes;
+
+	SPObject * layer = kw->layer;// = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id)));
+	SPObject * startLayer = kw->layer;
+	SPObject * endLayer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", num_keyframes)));
+	SPObject * nextLayer = NULL;
+
+	layer = startLayer;
+	int i = 0;
+	while(layer != endLayer->next)
+	{
+		nextLayer = desktop->getDocument()->getObjectById(
+					std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
+
+
+		SPPath * path = NULL;
+		if(SP_IS_PATH(startLayer->firstChild()))
+			path = SP_PATH(startLayer->firstChild());
+		else
+			path = SP_PATH(startLayer->firstChild()->next);
+
+		SPCurve * curve = path->_curve;
+
+		Geom::PathVector pathv = curve->get_pathvector();
+
+		Geom::Point p = pathv.pointAt(i*pathv.timeRange().max()/(num_keyframes + 1));
+
+
+		nextLayer = desktop->getDocument()->getObjectById(
+		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
+
+		if(!nextLayer)
+			break;
+
+		//SPObject * child = layer->firstChild();
+		SPObject * child = layer->firstChild();
+
+		if(!child)
+			break;
+
+		child->setAttribute("transform",
+					Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
+
+		layer = nextLayer;
+		i++;
+
+	}
+
+
+
+}
+
+
+
 static void createTween(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
@@ -408,6 +509,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	}
 	endLayer = layer;
 	
+	kw->parent->num_keyframes = num_layers;
+
 	if(endLayer)
 	{
 
@@ -914,6 +1017,15 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 						  G_CALLBACK(createTween),
 						  this);
 	
+
+	Gtk::MenuItem *tweenItem2 = new Gtk::MenuItem("Update tween");
+
+		g_signal_connect( tweenItem2->gobj(),
+							  "activate",
+							  G_CALLBACK(updateTween),
+							  this);
+
+
 	//Gtk::MenuItem *pItem2 = new Gtk::MenuItem("Show all keyframes");
 	showAll = Gtk::manage(new Gtk::CheckMenuItem("Show all keyframes"));
 	showAll->set_active(false);
@@ -940,6 +1052,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 
 	pMenu->add(*pItem3);
 	pMenu->add(*tweenItem);
+	pMenu->add(*tweenItem2);
 	pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
 	pMenu->add(*showAll);
 	pMenu->add(*onion);
