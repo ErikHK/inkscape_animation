@@ -18,7 +18,7 @@ public:
 	int id;
 	void addLayers();
 	bool is_visible;
-	bool num_keyframes;
+	int num_keyframes;
 	bool clear_tween;
 	KeyframeBar *next;
 	KeyframeBar *prev;
