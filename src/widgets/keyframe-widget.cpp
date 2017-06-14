@@ -374,8 +374,10 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		SPPath * path = NULL;
 		if(SP_IS_PATH(startLayer->firstChild()))
 			path = SP_PATH(startLayer->firstChild());
-		else
+		else if(startLayer->getRepr()->childCount() > 1 && SP_IS_PATH(startLayer->firstChild()->next))
 			path = SP_PATH(startLayer->firstChild()->next);
+		else
+			return;
 
 		SPCurve * curve = path->_curve;
 
@@ -1072,6 +1074,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	{
 		Inkscape::Selection * selection = desktop->getSelection();
 		sigc::connection _sel_changed_connection;
+		sigc::connection _sel_changed_connection2;
 		//_sel_changed_connection = selection->connectChanged(
 		//	sigc::bind(
 		//		sigc::ptr_fun(&KeyframeWidget::on_selection_changed),
@@ -1079,6 +1082,12 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 		
 		_sel_changed_connection = selection->connectChangedFirst(
 		sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_selection_changed)));
+
+		_sel_changed_connection2 = desktop->connectToolSubselectionChanged(
+				sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_update_tween)));
+
+		//desktop->connectToolSubselectionChanged()
+
 	}
 	
 	
@@ -1095,6 +1104,12 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 
 KeyframeWidget::~KeyframeWidget()
 {
+}
+
+void KeyframeWidget::on_update_tween()
+{
+	//is_empty = false;
+	updateTween(this, this);
 }
 
 void KeyframeWidget::on_selection_changed()
