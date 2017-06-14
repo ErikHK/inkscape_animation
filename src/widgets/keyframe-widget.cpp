@@ -1077,7 +1077,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 		//		sigc::ptr_fun(&KeyframeWidget::on_selection_changed),
 		//		desktop));
 		
-		_sel_changed_connection = selection->connectChanged(
+		_sel_changed_connection = selection->connectChangedFirst(
 		sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_selection_changed)));
 	}
 	

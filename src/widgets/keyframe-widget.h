@@ -36,6 +36,7 @@ protected:
 	virtual bool on_my_focus_out_event(GdkEventFocus* event);
 	bool on_my_button_press_event(GdkEventButton* event);
 	void on_selection_changed();
+	void on_update_tween();
 	
 private:
 	Gtk::Menu *pMenu;
