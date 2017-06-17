@@ -364,11 +364,15 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	SPObject * nextLayer = NULL;
 
 	layer = startLayer;
-	int i = 0;
+	int i = 1;
 	while(layer != endLayer->next)
 	{
 		nextLayer = desktop->getDocument()->getObjectById(
 					std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
+					
+		//if it's not a tween, return
+		if(!nextLayer || !nextLayer->getRepr()->attribute("inkscape:tween"))
+			return;
 
 
 		SPPath * path = NULL;
@@ -378,12 +382,17 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 			path = SP_PATH(startLayer->firstChild()->next);
 		else
 			return;
+		
+		bool is_along_path = false;
+		
+		if(path->getRepr()->attribute("inkscape:tweenpath"))
+			is_along_path = true;
 
 		SPCurve * curve = path->_curve;
 
 		Geom::PathVector pathv = curve->get_pathvector();
 
-		Geom::Point p = pathv.pointAt(i*pathv.timeRange().max()/(num_keyframes + 1));
+		Geom::Point p = pathv.pointAt((i-1)*pathv.timeRange().max()/(num_keyframes + 1));
 
 
 		nextLayer = desktop->getDocument()->getObjectById(
@@ -398,15 +407,14 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		if(!child)
 			break;
 
-		child->setAttribute("transform",
+		if(is_along_path)
+			child->setAttribute("transform",
 					Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
 
 		layer = nextLayer;
 		i++;
 
 	}
-
-
 
 }
 
@@ -433,6 +441,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	std::string ys = "y";
 	bool is_group = false;
 	bool is_path = false;
+	bool is_along_path = false;
 	int i = kw->id+1;
 	int num_layers = 1;
 	int num_nodes = 0;
@@ -446,13 +455,22 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	std::vector<Geom::Point> end_nodes_front;
 	std::vector<Geom::Point> end_nodes_back;
 
-
 	std::vector<Geom::Point> inc_node_pos;
 	std::vector<Geom::Point> inc_node_front_handle;
 	std::vector<Geom::Point> inc_node_back_handle;
 	
 	if(SP_IS_PATH(layer->firstChild()))
 		num_nodes = SP_PATH(layer->firstChild())->_curve->nodes_in_path();
+	
+	if(layer->getRepr()->childCount() == 2 && ( SP_IS_PATH(layer->firstChild()) || SP_IS_PATH(layer->firstChild()->next)  )  )
+	{
+		if(SP_IS_PATH(layer->firstChild()))
+			layer->firstChild()->getRepr()->setAttribute("inkscape:tweenpath", "true");
+		else if(SP_IS_PATH(layer->firstChild()->next))
+			layer->firstChild()->next->getRepr()->setAttribute("inkscape:tweenpath", "true");
+		
+		is_along_path = true;
+	}
 
 	//get START nodes
 	NodeTool *toolz = get_node_tool();
@@ -501,6 +519,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		
 		if(!layer)
 			return;
+		
+		layer->getRepr()->setAttribute("inkscape:tween", "true");
+		
 		
 		//as soon as a layer has a child, break and set endLayer to this!
 		if (layer->getRepr()->childCount() > 0)
@@ -558,7 +579,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			end_y = std::stof(childn->attribute(ys.c_str()));
 		}
 		
-
+		/*
 		if(is_path)
 		{
 			//end_x = SP_ITEM(child)->transform.translation()[0];
@@ -575,6 +596,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			//end_y = Quantity::convert(end_y, "px", "mm");
 			end_y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(end_y, "px", "mm");
 		}
+		*/
 
 	}
 	
@@ -642,6 +664,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			start_y = SP_ITEM(child)->transform.translation()[1];
 		}
 
+		/*
 		if(is_path)
 		{
 			Geom::Point p = SP_SHAPE(child)->desktopGeometricBounds()->midpoint();
@@ -653,6 +676,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			start_x = Quantity::convert(start_x, "px", "mm");
 			start_y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(start_y, "px", "mm");
 		}
+		*/
 
 		/*
 		if(is_path)
@@ -762,6 +786,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			childn_copy->setAttribute("transform", 
 			Glib::ustring::format("translate(", start_x + i*inc_x, ",", start_y + i*inc_y, ")" ));
 		}
+		
+		/*
 		else if(is_path)
 		{
 			Geom::Point orig_p = SP_PATH(child)->desktopGeometricBounds()->midpoint();
@@ -772,6 +798,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 						start_y + i*inc_y, ")" ));
 
 		}
+		*/
 		
 		//Inkscape::XML::Node *childn = desktop->getDocument()->getReprDoc()->createElement("svg:path");
 		//childn->setAttribute("style", style);
@@ -917,8 +944,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		return;
 	
 	//have selected nodes, check if we have one object each in startlayer and endlayer, in that case, return
-	if(startLayer->getRepr()->childCount() == 1 && endLayer->getRepr()->childCount() == 1)
-		return;
+	//if(startLayer->getRepr()->childCount() == 1 && endLayer->getRepr()->childCount() == 1)
+	//	return;
 	
 	Node *n = dynamic_cast<Node *>(*cps->begin());
 			if (!n) return;
@@ -962,7 +989,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(!child)
 			break;
 
-		child->setAttribute("transform",
+		if(is_along_path)
+			child->setAttribute("transform",
 					Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
 
 		layer = nextLayer;
@@ -1020,13 +1048,14 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 						  this);
 	
 
+	/*
 	Gtk::MenuItem *tweenItem2 = new Gtk::MenuItem("Update tween");
 
 		g_signal_connect( tweenItem2->gobj(),
 							  "activate",
 							  G_CALLBACK(updateTween),
 							  this);
-
+	*/
 
 	//Gtk::MenuItem *pItem2 = new Gtk::MenuItem("Show all keyframes");
 	showAll = Gtk::manage(new Gtk::CheckMenuItem("Show all keyframes"));
@@ -1054,7 +1083,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 
 	pMenu->add(*pItem3);
 	pMenu->add(*tweenItem);
-	pMenu->add(*tweenItem2);
+	//pMenu->add(*tweenItem2);
 	pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
 	pMenu->add(*showAll);
 	pMenu->add(*onion);
