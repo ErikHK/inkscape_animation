@@ -427,7 +427,7 @@ static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * en
 	SPObject * layer = startLayer;
 	SPObject * nextLayer = NULL;
 	
-	int num_layers = kw->parent->num_keyframes;
+	int num_layers = kw->parent->num_keyframes+1;
 	
 	std::vector<Node*> nodes;
 	
@@ -445,20 +445,23 @@ static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * en
 	
 	num_nodes = SP_PATH(layer->firstChild())->_curve->nodes_in_path();
 	
-	//showAllKeyframes(kw, kw);
 	
+	kw->showAll->set_active(true);
+	desktop->show_all_keyframes = true;
+
+	showAllKeyframes(kw, kw);
 	//desktop->toggleHideAllLayers(false);
 	
 	//tools_switch(desktop, TOOLS_SELECT);
-	desktop->setCurrentLayer(layer);
+	//desktop->setCurrentLayer(layer);
 	//SP_ITEM(endLayer)->setHidden(false);
 	//SP_ITEM(endLayer->firstChild())->setHidden(false);
-	endLayer->getRepr()->setAttribute("style", "opacity:1.0");
-	endLayer->firstChild()->getRepr()->setAttribute("style", "opacity:1.0");
+	//endLayer->getRepr()->setAttribute("style", "opacity:1.0");
+	//endLayer->firstChild()->getRepr()->setAttribute("style", "opacity:1.0");
 	
 	Inkscape::SelectionHelper::selectAllInAll(desktop);
 	tools_switch(desktop, TOOLS_NODES);
-	//Inkscape::SelectionHelper::selectAllInAll(desktop);
+	Inkscape::SelectionHelper::selectAllInAll(desktop);
 	
 	//get START nodes
 	NodeTool *toolz = get_node_tool();
@@ -466,7 +469,9 @@ static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * en
 	if(toolz)
 	{
 		Inkscape::UI::ControlPointSelection *cps = toolz->_selected_nodes;
+		cps->clear();
 		cps->selectAll();
+		//cps->allPoints();
 		
 		if(!cps)
 			return;
@@ -754,7 +759,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	int i = kw->id+1;
 	int num_layers = 1;
 	int num_nodes = 0;
-	
+
+
 	while(layer)
 	{
 		layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
@@ -937,6 +943,11 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		nextLayer = desktop->getDocument()->getObjectById(
 		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
 		
+		//if(!kw->onion->get_active())
+			layer->getRepr()->setAttribute("style", "opacity:1.0;");
+
+
+
 		if(!nextLayer)
 			break;
 		
@@ -1005,7 +1016,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	//if()
 	
 	
-	
+	kw->showAll->set_active(false);
+	desktop->show_all_keyframes = false;
+	showAllKeyframes(kw, kw);
 	
 }
 
