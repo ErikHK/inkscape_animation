@@ -1090,7 +1090,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 						  this);
 						  
 	onion = Gtk::manage(new Gtk::CheckMenuItem("Onion skinning"));
-	onion->set_active(true);
+	onion->set_active(false);
 	
 	g_signal_connect( onion->gobj(),
 						  "activate",

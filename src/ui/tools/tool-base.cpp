@@ -355,20 +355,39 @@ static gdouble accelerate_scroll(GdkEvent *event, gdouble acceleration,
 static gint playLoop(ToolBase * tb)
 {
 	SPDesktop * desktop = tb->desktop;
-	
+	static int i = 2;
 	//SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	if(desktop)
 	{
 		if(!desktop->is_playing)
 			return false;
 		
-		SPObject *next=Inkscape::next_layer(desktop->currentRoot(), desktop->currentLayer());
+		//SPObject *next=Inkscape::next_layer(desktop->currentRoot(), desktop->currentLayer());
+		//SPObject * next = desktop->currentLayer()->getNext();
+		SPObject * next = desktop->getDocument()->getObjectById(
+				std::string(Glib::ustring::format("animationlayer", 1, "keyframe", i)));
+		SPObject * thisl = desktop->getDocument()->getObjectById(
+				std::string(Glib::ustring::format("animationlayer", 1, "keyframe", i-1)));  //desktop->currentLayer();
+		//SPObject * prev = desktop->currentLayer()->getPrev();
 		
+		SP_ITEM(thisl)->setHidden(true);
+		SP_ITEM(next)->setHidden(false);
+
+		i++;
+
+		if(next->getRepr()->childCount() == 0)
+		{
+			next = desktop->getDocument()->getObjectById(
+					std::string(Glib::ustring::format("animationlayer", 1, "keyframe", 1)));
+			SP_ITEM(next)->setHidden(false);
+			i = 2;
+		}
+
 		
 		if(!next)
 			return false;
-		desktop->layer_manager->setCurrentLayer(next);
-		desktop->toggleLayerSolo(next);
+		//desktop->layer_manager->setCurrentLayer(next);
+		//desktop->toggleLayerSolo(next);
 		
 		//desktop->setCurrentLayer(next);
 		

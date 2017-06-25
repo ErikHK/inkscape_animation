@@ -127,7 +127,7 @@ SPDesktop::SPDesktop() :
 	is_playing(false),
 	start_loop_keyframe(1),
 	end_loop_keyframe(90),
-	fps(10),
+	fps(20),
     guides_active( false ),
     gr_item( NULL ),
     gr_point_type( POINT_LG_BEGIN ),
