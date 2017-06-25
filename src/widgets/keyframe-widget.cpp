@@ -446,10 +446,10 @@ static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * en
 	num_nodes = SP_PATH(layer->firstChild())->_curve->nodes_in_path();
 	
 	
-	kw->showAll->set_active(true);
-	desktop->show_all_keyframes = true;
+	//kw->showAll->set_active(true);
+	//desktop->show_all_keyframes = true;
 
-	showAllKeyframes(kw, kw);
+	//showAllKeyframes(kw, kw);
 	//desktop->toggleHideAllLayers(false);
 	
 	//tools_switch(desktop, TOOLS_SELECT);
@@ -459,9 +459,9 @@ static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * en
 	//endLayer->getRepr()->setAttribute("style", "opacity:1.0");
 	//endLayer->firstChild()->getRepr()->setAttribute("style", "opacity:1.0");
 	
-	Inkscape::SelectionHelper::selectAllInAll(desktop);
-	tools_switch(desktop, TOOLS_NODES);
-	Inkscape::SelectionHelper::selectAllInAll(desktop);
+	//Inkscape::SelectionHelper::selectAllInAll(desktop);
+	//tools_switch(desktop, TOOLS_NODES);
+	//Inkscape::SelectionHelper::selectAllInAll(desktop);
 	
 	//get START nodes
 	NodeTool *toolz = get_node_tool();
@@ -510,7 +510,7 @@ static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * en
 	}
 	
 	for (int i = 0; i < end_nodes_position.size(); i++) {
-		inc_node_pos.push_back( (end_nodes_position[i] - start_nodes_position[i])/num_layers  );
+		inc_node_pos.push_back( (end_nodes_position[i] - start_nodes_position[i])/(num_layers - 1)  );
 
 		Geom::Point end_front = end_nodes_front[i];
 		Geom::Point start_front = start_nodes_front[i];
@@ -523,9 +523,9 @@ static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * en
 		//if(!end_node->isDegenerate() && !start_node->isDegenerate())
 		{
 			inc_node_front_handle.push_back(
-					(end_nodes_front[i] - start_nodes_front[i]) / num_layers  );
+					(end_nodes_front[i] - start_nodes_front[i]) / (num_layers - 1)  );
 			inc_node_back_handle.push_back(
-					(end_nodes_back[i] - start_nodes_back[i]) / num_layers  );
+					(end_nodes_back[i] - start_nodes_back[i]) / (num_layers - 1)  );
 		}
 	}
 	
@@ -549,6 +549,8 @@ static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * en
 
 		Inkscape::SelectionHelper::selectNone(desktop);
 		tools_switch(desktop, TOOLS_SELECT);
+		desktop->toggleHideAllLayers(true);
+		SP_ITEM(layer)->setHidden(false);
 		desktop->setCurrentLayer(layer);
 		Inkscape::SelectionHelper::selectAll(desktop); //select everything
 		tools_switch(desktop, TOOLS_NODES);
