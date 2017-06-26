@@ -366,20 +366,30 @@ static gint playLoop(ToolBase * tb)
 		//SPObject * next = desktop->currentLayer()->getNext();
 		SPObject * next = desktop->getDocument()->getObjectById(
 				std::string(Glib::ustring::format("animationlayer", 1, "keyframe", i)));
+		//SPObject * next2 = desktop->getDocument()->getObjectById(
+		//				std::string(Glib::ustring::format("animationlayer", 2, "keyframe", i)));
 		SPObject * thisl = desktop->getDocument()->getObjectById(
 				std::string(Glib::ustring::format("animationlayer", 1, "keyframe", i-1)));  //desktop->currentLayer();
+		//SPObject * thisl2 = desktop->getDocument()->getObjectById(
+		//				std::string(Glib::ustring::format("animationlayer", 2, "keyframe", i-1)));  //desktop->currentLayer();
 		//SPObject * prev = desktop->currentLayer()->getPrev();
 		
 		SP_ITEM(thisl)->setHidden(true);
+		//SP_ITEM(thisl2)->setHidden(true);
 		SP_ITEM(next)->setHidden(false);
+		//SP_ITEM(next2)->setHidden(false);
 
 		i++;
 
-		if(next->getRepr()->childCount() == 0)
+		//if(next->getRepr()->childCount() == 0)
+		if(i == 22)
 		{
 			next = desktop->getDocument()->getObjectById(
 					std::string(Glib::ustring::format("animationlayer", 1, "keyframe", 1)));
+			//next2 = desktop->getDocument()->getObjectById(
+					//std::string(Glib::ustring::format("animationlayer", 2, "keyframe", 1)));
 			SP_ITEM(next)->setHidden(false);
+			//SP_ITEM(next2)->setHidden(false);
 			i = 2;
 		}
 

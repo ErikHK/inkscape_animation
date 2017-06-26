@@ -364,16 +364,15 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	SPObject * nextLayer = NULL;
 
 	layer = startLayer;
-	int i = 1;
+	int i = 0;
 	while(layer != endLayer->next)
 	{
 		nextLayer = desktop->getDocument()->getObjectById(
 					std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
 					
 		//if it's not a tween, return
-		if(!nextLayer || !nextLayer->getRepr()->attribute("inkscape:tween"))
+		if(i > 0 && ( !nextLayer || !nextLayer->getRepr()->attribute("inkscape:tween")))
 			return;
-
 
 		SPPath * path = NULL;
 		if(SP_IS_PATH(startLayer->firstChild()))
@@ -392,7 +391,7 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 
 		Geom::PathVector pathv = curve->get_pathvector();
 
-		Geom::Point p = pathv.pointAt((i-1)*pathv.timeRange().max()/(num_keyframes + 1));
+		Geom::Point p = pathv.pointAt((i)*pathv.timeRange().max()/(num_keyframes + 1));
 
 
 		nextLayer = desktop->getDocument()->getObjectById(
