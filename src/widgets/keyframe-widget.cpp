@@ -66,7 +66,8 @@ bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
 bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 {
 	
-	is_focused = false;
+	if(!parent->shift_held)
+		is_focused = false;
 
 	//pMenu = 0;
 	//KeyframeWidget* kw = dynamic_cast<KeyframeWidget*>(event->window);

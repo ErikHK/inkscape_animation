@@ -18,10 +18,12 @@ public:
 	int id;
 	void addLayers();
 	bool is_visible;
+	bool shift_held;
 	int num_keyframes;
 	bool clear_tween;
 	KeyframeBar *next;
 	KeyframeBar *prev;
+	void deleteAllActiveKeyframes();
 	std::vector<KeyframeWidget*> widgets;
 	//std::vector<SPObject*> layersToHide;
 	
@@ -35,6 +37,7 @@ protected:
     virtual bool on_expose_event(GdkEventExpose* event);
 	bool on_my_focus_in_event(GdkEventFocus* event);
 	bool on_my_button_press_event(GdkEventButton* event);
+	bool on_my_key_press_event(GdkEventKey * event);
 	void on_selection_changed();
 	//bool on_my_button_press_event();
 	Gtk::Button btn;

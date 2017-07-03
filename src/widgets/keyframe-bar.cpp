@@ -49,6 +49,7 @@ KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 	next = NULL;
 	prev = NULL;
 	
+	shift_held = false;
 	clear_tween = false;
 	id = _id;
 	is_visible = true;
@@ -72,6 +73,9 @@ KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 		_sel_changed_connection = selection->connectChanged(
 		sigc::hide(sigc::mem_fun(*this, &KeyframeBar::on_selection_changed)));
 	}
+	
+	add_events(Gdk::ALL_EVENTS_MASK);
+	this->signal_key_press_event().connect(sigc::mem_fun(this, &KeyframeBar::on_my_key_press_event));
 }
 
 KeyframeBar::~KeyframeBar()
@@ -97,6 +101,51 @@ bool KeyframeBar::on_mouse_(GdkEventMotion* event)
 	//rebuildUi();
 	return true;
 	
+}
+
+void KeyframeBar::deleteAllActiveKeyframes()
+{
+	for(int i=0; i < widgets.size(); i++)
+	{
+		KeyframeWidget * kw = widgets[i];
+		
+		while(kw->layer->getRepr()->childCount() > 0 && kw->is_focused)
+			kw->layer->getRepr()->removeChild(kw->layer->getRepr()->firstChild());
+	}
+}
+
+bool KeyframeBar::on_my_key_press_event(GdkEventKey * event)
+{
+	if(event->state & GDK_SHIFT_MASK)
+	{
+		shift_held = true;
+		
+		bool activated = false;
+		
+		for(int i=0; i < widgets.size(); i++)
+		{
+			KeyframeWidget * kw = widgets[i];
+			/*
+			if(activated && kw->is_focused)
+			{
+				activated = false;
+			}
+			else if(activated)
+				kw->is_focused = true;
+			
+			if(kw->is_focused)
+				activated = true;
+			*/
+			kw->is_focused = true;	
+		}
+	}
+	else
+		shift_held = false;
+	
+	if(event->keyval == GDK_KEY_Delete)
+		deleteAllActiveKeyframes();
+	
+	return false;
 }
 
 void KeyframeBar::rebuildUi()
@@ -138,12 +187,13 @@ void KeyframeBar::rebuildUi()
 		//wlist.push_back(kw);
 		widgets.push_back(kw);
 		
-		add_events(Gdk::ALL_EVENTS_MASK);
+		
 		kw->add_events(Gdk::ALL_EVENTS_MASK);
 		
 		//kw->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_focus_in_event));
 		kw->signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_button_press_event));
 		kw->signal_motion_notify_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_mouse_));
+		
 		kw->set_can_focus(true);
 	}
 
@@ -165,6 +215,8 @@ void KeyframeBar::rebuildUi()
 	set_focus_chain(widgets);
 	show_all_children();
 	set_focus_chain(widgets);
+	
+	
 }
 
 void KeyframeBar::addLayers()
