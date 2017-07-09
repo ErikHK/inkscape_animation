@@ -859,7 +859,7 @@ void AnimationControl::moveLayerDown()
 bool AnimationControl::on_expose_event(GtkWidget * widget, GdkEventExpose* event)
 {
 	//rebuildUi();
-	return true;
+	return false;
 }
 
 bool AnimationControl::on_my_button_press_event(GdkEventButton*)

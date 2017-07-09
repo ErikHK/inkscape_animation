@@ -53,6 +53,7 @@ KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 	clear_tween = false;
 	id = _id;
 	is_visible = true;
+	several_selected = false;
 	layer = _layer;
 	rebuildUi();
 	
@@ -75,7 +76,7 @@ KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 	}
 	
 	add_events(Gdk::ALL_EVENTS_MASK);
-	this->signal_key_press_event().connect(sigc::mem_fun(this, &KeyframeBar::on_my_key_press_event));
+	this->signal_key_press_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_key_press_event));
 }
 
 KeyframeBar::~KeyframeBar()
@@ -88,10 +89,41 @@ bool KeyframeBar::on_expose_event(GdkEventExpose* event)
 	//grab_focus();
 }
 
-bool KeyframeBar::on_my_button_press_event(GdkEventButton*)
+bool KeyframeBar::on_my_button_press_event(GdkEventButton* event)
 {
 	//rebuildUi();
 	grab_focus();
+
+	/*
+	if(event->state & GDK_SHIFT_MASK)
+	{
+		shift_held = true;
+
+		bool activated = false;
+
+		for(int i=0; i < widgets.size(); i++)
+		{
+			KeyframeWidget * kw = widgets[i];
+
+			if(activated && kw->is_focused)
+			{
+				activated = false;
+			}
+			else if(activated)
+				kw->is_focused = true;
+
+			if(kw->is_focused)
+				activated = true;
+
+			//kw->is_focused = true;
+		}
+	}
+	else
+		shift_held = false;
+*/
+	//if(event->keyval == GDK_KEY_Delete)
+	//	deleteAllActiveKeyframes();
+	queue_draw();
 	return false;
 }
 
@@ -116,6 +148,13 @@ void KeyframeBar::deleteAllActiveKeyframes()
 
 bool KeyframeBar::on_my_key_press_event(GdkEventKey * event)
 {
+
+	if(event->state & GDK_SHIFT_MASK)
+	{
+		shift_held = true;
+	}
+
+	/*
 	if(event->state & GDK_SHIFT_MASK)
 	{
 		shift_held = true;
@@ -125,7 +164,7 @@ bool KeyframeBar::on_my_key_press_event(GdkEventKey * event)
 		for(int i=0; i < widgets.size(); i++)
 		{
 			KeyframeWidget * kw = widgets[i];
-			/*
+
 			if(activated && kw->is_focused)
 			{
 				activated = false;
@@ -135,16 +174,16 @@ bool KeyframeBar::on_my_key_press_event(GdkEventKey * event)
 			
 			if(kw->is_focused)
 				activated = true;
-			*/
+
 			kw->is_focused = true;	
 		}
 	}
 	else
 		shift_held = false;
-	
+	*/
 	if(event->keyval == GDK_KEY_Delete)
 		deleteAllActiveKeyframes();
-	
+
 	return false;
 }
 

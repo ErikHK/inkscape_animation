@@ -55,11 +55,28 @@ static void gotFocus(GtkWidget* w, GdkEventKey *event, gpointer callback_data)
 	
 }
 
-bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus*)
+bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus* event)
 {
 	//pMenu = 0;
 	selectLayer();
 	is_focused = true;
+	return false;
+}
+
+bool KeyframeWidget::on_my_key_press_event(GdkEventKey * event)
+{
+	if(event->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK))
+	{
+		parent->shift_held = true;
+	}
+
+	return false;
+}
+
+bool KeyframeWidget::on_my_key_release_event(GdkEventKey * event)
+{
+
+
 	return false;
 }
 
@@ -114,7 +131,21 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 		
 		pre = pre->prev;
 	}
-	
+
+	if(parent->several_selected)
+	{
+		for(int i=0; i < parent->widgets.size(); i++)
+		{
+			KeyframeWidget * kw = parent->widgets[i];
+
+			kw->is_focused = false;
+		}
+
+		parent->several_selected = false;
+
+	}
+
+	queue_draw();
 	return false;
 }
 
@@ -1021,7 +1052,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	kw->showAll->set_active(false);
 	desktop->show_all_keyframes = false;
 	showAllKeyframes(kw, kw);
-	
 }
 
 bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
@@ -1033,6 +1063,39 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	//select layer that corresponds to this keyframe
 	//selectLayer();
 	
+	if(event->state &  (GDK_SHIFT_MASK | GDK_CONTROL_MASK))
+	{
+		parent->shift_held = true;
+
+		bool activated = false;
+
+		for(int i=0; i < parent->widgets.size(); i++)
+		{
+			KeyframeWidget * kw = parent->widgets[i];
+
+			if(activated && (id - 1) == i)
+			{
+				activated = false;
+				break;
+			}
+
+			else if(activated)
+			{
+				kw->is_focused = true;
+				parent->several_selected = true;
+			}
+
+			if(kw->is_focused)
+				activated = true;
+
+			//kw->is_focused = true;
+		}
+	}
+	else
+		parent->shift_held = false;
+
+	queue_draw();
+
 	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
 	{
 		onion->set_active(SP_ACTIVE_DESKTOP->fade_previous_layers);
@@ -1041,6 +1104,9 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 		pMenu->show_all();
 		pMenu->popup(event->button, event->time);
 	}
+
+	return false;
+
 }
 
 KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer, bool _is_empty)
@@ -1146,9 +1212,11 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	
 	add_events(Gdk::ALL_EVENTS_MASK);
 	
-	signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
 	signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
 	signal_focus_out_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_out_event));
+	signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
+	signal_key_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_key_press_event));
+	signal_key_release_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_key_release_event));
 	set_can_focus(true);
 	//set_receives_default();
     set_sensitive();

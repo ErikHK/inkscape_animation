@@ -19,6 +19,7 @@ public:
 	void addLayers();
 	bool is_visible;
 	bool shift_held;
+	bool several_selected;
 	int num_keyframes;
 	bool clear_tween;
 	KeyframeBar *next;
