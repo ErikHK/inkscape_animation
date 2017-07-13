@@ -11,6 +11,8 @@
 #include "sp-object.h"
 #include "keyframe-bar.h"
 
+//static gint playLoop();
+
 namespace Inkscape {
 namespace UI {
 namespace Dialogs {

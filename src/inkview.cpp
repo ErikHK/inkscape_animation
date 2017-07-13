@@ -111,12 +111,14 @@ static int sp_svgview_main_delete (GtkWidget */*widget*/,
 }
 
 
+/*
 bool playLoop()
 {
 	
 	
 	return true;
 }
+*/
 
 
 static int sp_svgview_main_key_press (GtkWidget */*widget*/, 

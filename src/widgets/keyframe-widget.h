@@ -3,6 +3,7 @@
 #include <sp-object.h>
 #include "inkscape.h"
 //#include "keyframe-bar.h"
+//#include "animation-control.h"
 
 class KeyframeBar;
 //class AnimationControl;
@@ -21,7 +22,7 @@ public:
 	bool is_empty;
 	bool is_focused;
 	void selectLayer();
-	void deFocusAllKeyframes();
+	void defocusAllKeyframes();
 	Gtk::CheckMenuItem *onion;
 	Gtk::CheckMenuItem *showAll;
 	Gtk::MenuItem *settingsItem;

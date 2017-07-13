@@ -63,35 +63,115 @@ bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus* event)
 	return false;
 }
 
+
+static gint playLoop()
+{
+	//SPDesktop * desktop = tb->desktop;
+	static int i = 2;
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	if(desktop)
+	{
+		if(!desktop->is_playing)
+			return false;
+
+		//SPObject *next=Inkscape::next_layer(desktop->currentRoot(), desktop->currentLayer());
+		//SPObject * next = desktop->currentLayer()->getNext();
+		SPObject * next = desktop->getDocument()->getObjectById(
+				std::string(Glib::ustring::format("animationlayer", 1, "keyframe", i)));
+		//SPObject * next2 = desktop->getDocument()->getObjectById(
+		//				std::string(Glib::ustring::format("animationlayer", 2, "keyframe", i)));
+		SPObject * thisl = desktop->getDocument()->getObjectById(
+				std::string(Glib::ustring::format("animationlayer", 1, "keyframe", i-1)));  //desktop->currentLayer();
+		//SPObject * thisl2 = desktop->getDocument()->getObjectById(
+		//				std::string(Glib::ustring::format("animationlayer", 2, "keyframe", i-1)));  //desktop->currentLayer();
+		//SPObject * prev = desktop->currentLayer()->getPrev();
+
+		SP_ITEM(thisl)->setHidden(true);
+		//SP_ITEM(thisl2)->setHidden(true);
+		SP_ITEM(next)->setHidden(false);
+		//SP_ITEM(next2)->setHidden(false);
+
+		i++;
+
+		//if(next->getRepr()->childCount() == 0)
+		if(i == 22)
+		{
+			next = desktop->getDocument()->getObjectById(
+					std::string(Glib::ustring::format("animationlayer", 1, "keyframe", 1)));
+			//next2 = desktop->getDocument()->getObjectById(
+					//std::string(Glib::ustring::format("animationlayer", 2, "keyframe", 1)));
+			SP_ITEM(next)->setHidden(false);
+			//SP_ITEM(next2)->setHidden(false);
+			i = 2;
+		}
+
+
+		if(!next)
+			return false;
+		//desktop->layer_manager->setCurrentLayer(next);
+		//desktop->toggleLayerSolo(next);
+
+		//desktop->setCurrentLayer(next);
+
+	}
+	return true;
+}
+
+
 bool KeyframeWidget::on_my_key_press_event(GdkEventKey * event)
 {
-	if(event->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK))
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+
+
+	if(event->keyval == GDK_KEY_space)
+	{
+		guint delay = (guint)(1000/desktop->fps);
+
+		if(!desktop->is_playing)
+		{
+			gint func_ref = g_timeout_add(delay, (GSourceFunc)playLoop, this);
+			desktop->is_playing = true;
+		}
+		else
+		{
+			desktop->is_playing = false;
+		}
+	}
+
+
+	if(event->state & (GDK_SHIFT_MASK))
 	{
 		parent->shift_held = true;
 		
 		if(event->keyval == GDK_KEY_Right)
 		{
-			//gtk_widget_grab_focus();
-			GtkWidget * gw = gtk_widget_get_toplevel(GTK_WIDGET(this));
-			gtk_widget_child_focus(GTK_WIDGET(gw), GTK_DIR_RIGHT);
-			
-			//GTK_WIDGET(get_toplevel())->child_focus(GTK_DIR_RIGHT);
-			//gtk_widget_grab_focus();
+
+			if(next)
+			{
+				next->grab_focus();
+				parent->several_selected = true;
+			}
 			queue_draw();
-			//child_focus(GTK_DIR_TAB_FORWARD);
-			//gtk_widget_child_focus
 		}
-		
 	}
 	else
+	{
 		parent->shift_held = false;
+		defocusAllKeyframes();
+	}
 
+
+	queue_draw();
 	return false;
 }
 
 bool KeyframeWidget::on_my_key_release_event(GdkEventKey * event)
 {
 
+	//parent->several_selected = true;
+	//defocusAllKeyframes();
+
+	queue_draw();
 
 	return false;
 }
@@ -148,17 +228,9 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 		pre = pre->prev;
 	}
 
-	if(parent->several_selected)
+	if(parent->several_selected && !parent->shift_held)
 	{
-		for(int i=0; i < parent->widgets.size(); i++)
-		{
-			KeyframeWidget * kw = parent->widgets[i];
-
-			kw->is_focused = false;
-		}
-
-		parent->several_selected = false;
-
+		defocusAllKeyframes();
 	}
 
 	queue_draw();
@@ -1070,7 +1142,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	showAllKeyframes(kw, kw);
 }
 
-void KeyframeWidget::deFocusAllKeyframes()
+void KeyframeWidget::defocusAllKeyframes()
 {
 	if(parent->several_selected)
 	{
@@ -1079,10 +1151,12 @@ void KeyframeWidget::deFocusAllKeyframes()
 			KeyframeWidget * kw = parent->widgets[i];
 
 			kw->is_focused = false;
+
 		}
 		parent->several_selected = false;
 	}
-	queue_draw();
+	parent->queue_draw();
+	//queue_draw();
 }
 
 bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
@@ -1122,10 +1196,11 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 			//kw->is_focused = true;
 		}
 	}
+
 	else
 	{
 		parent->shift_held = false;
-		deFocusAllKeyframes();
+		defocusAllKeyframes();
 	}
 
 	queue_draw();
@@ -1140,7 +1215,6 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	}
 
 	return false;
-
 }
 
 KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer, bool _is_empty)
@@ -1302,11 +1376,13 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		else
 			cr->set_source_rgba(.8, .8, .8, 1);
 		
+		cr->paint();
+
 		if(has_focus())
 			is_focused = true;
 
 		if(is_focused)
-			cr->set_source_rgba(.8, 0, 0, 1);
+			cr->set_source_rgba(.8, 0, 0, .75);
 		
 		cr->paint();
 		

@@ -377,7 +377,7 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
     _opacity_sb.set_adjustment(_opacity_adjustment);
     sp_set_font_size_smaller (GTK_WIDGET(_opacity_sb.gobj()));
     _opacity_sb.set_size_request (SELECTED_STYLE_SB_WIDTH, -1);
-    _opacity_sb.set_sensitive (false);
+    //_opacity_sb.set_sensitive (false);
 
 #if WITH_GTKMM_3_0
     _table.attach(_fill_label, 0, 0, 1, 1);
@@ -1117,7 +1117,7 @@ SelectedStyle::update()
     case QUERY_STYLE_NOTHING:
         _opacity_place.set_tooltip_text(_("Nothing selected"));
         _opacity_sb.set_tooltip_text(_("Nothing selected"));
-        _opacity_sb.set_sensitive(false);
+        //_opacity_sb.set_sensitive(false);
         break;
     case QUERY_STYLE_SINGLE:
     case QUERY_STYLE_MULTIPLE_AVERAGED:

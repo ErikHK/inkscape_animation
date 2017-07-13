@@ -131,7 +131,7 @@ bool KeyframeBar::on_mouse_(GdkEventMotion* event)
 {
 	//addLayers();
 	//rebuildUi();
-	return true;
+	return false;
 	
 }
 

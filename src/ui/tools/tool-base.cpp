@@ -23,6 +23,7 @@
 #include "shortcuts.h"
 #include "file.h"
 #include "ui/tools/tool-base.h"
+#include "inkscape.h" // for SP_ACTIVE_DESKTOP
 
 #include <string.h>
 #include <gdk/gdkkeysyms.h>
@@ -79,7 +80,7 @@ namespace UI {
 namespace Tools {
 
 static void set_event_location(SPDesktop * desktop, GdkEvent * event);
-static gint playLoop(ToolBase * tb);
+static gint playLoop();
 
 
 void ToolBase::set(const Inkscape::Preferences::Entry& /*val*/) {
@@ -352,11 +353,11 @@ static gdouble accelerate_scroll(GdkEvent *event, gdouble acceleration,
     return scroll_multiply;
 }
 
-static gint playLoop(ToolBase * tb)
+static gint playLoop()
 {
-	SPDesktop * desktop = tb->desktop;
+	//SPDesktop * desktop = tb->desktop;
 	static int i = 2;
-	//SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	if(desktop)
 	{
 		if(!desktop->is_playing)
