@@ -68,7 +68,23 @@ bool KeyframeWidget::on_my_key_press_event(GdkEventKey * event)
 	if(event->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK))
 	{
 		parent->shift_held = true;
+		
+		if(event->keyval == GDK_KEY_Right)
+		{
+			//gtk_widget_grab_focus();
+			GtkWidget * gw = gtk_widget_get_toplevel(GTK_WIDGET(this));
+			gtk_widget_child_focus(GTK_WIDGET(gw), GTK_DIR_RIGHT);
+			
+			//GTK_WIDGET(get_toplevel())->child_focus(GTK_DIR_RIGHT);
+			//gtk_widget_grab_focus();
+			queue_draw();
+			//child_focus(GTK_DIR_TAB_FORWARD);
+			//gtk_widget_child_focus
+		}
+		
 	}
+	else
+		parent->shift_held = false;
 
 	return false;
 }
@@ -1054,6 +1070,21 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	showAllKeyframes(kw, kw);
 }
 
+void KeyframeWidget::deFocusAllKeyframes()
+{
+	if(parent->several_selected)
+	{
+		for(int i=0; i < parent->widgets.size(); i++)
+		{
+			KeyframeWidget * kw = parent->widgets[i];
+
+			kw->is_focused = false;
+		}
+		parent->several_selected = false;
+	}
+	queue_draw();
+}
+
 bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 {
 	grab_focus();
@@ -1092,7 +1123,10 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 		}
 	}
 	else
+	{
 		parent->shift_held = false;
+		deFocusAllKeyframes();
+	}
 
 	queue_draw();
 

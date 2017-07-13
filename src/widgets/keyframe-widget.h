@@ -21,6 +21,7 @@ public:
 	bool is_empty;
 	bool is_focused;
 	void selectLayer();
+	void deFocusAllKeyframes();
 	Gtk::CheckMenuItem *onion;
 	Gtk::CheckMenuItem *showAll;
 	Gtk::MenuItem *settingsItem;
