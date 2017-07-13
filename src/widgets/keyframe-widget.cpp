@@ -11,6 +11,7 @@
 #include "layer-model.h"
 //#include "ui/previewable.h"
 #include "sp-namedview.h"
+#include "ui/tool/event-utils.h"
 
 //#include "sp-path.h"
 
@@ -167,14 +168,21 @@ bool KeyframeWidget::on_my_key_press_event(GdkEventKey * event)
 
 
 	}
-	else
+
+	//if(event->state & GDK_CONTROL_MASK)
+	if(Inkscape::UI::state_held_only_control(event->state))
+		parent->ctrl_held = true;
+
+	if(!(event->state & GDK_CONTROL_MASK) && !(event->state & GDK_SHIFT_MASK))
 	{
 		parent->shift_held = false;
+		parent->ctrl_held = false;
 		defocusAllKeyframes();
 	}
 
 
-	queue_draw();
+	//queue_draw();
+	parent->queue_draw();
 	return false;
 }
 
@@ -192,7 +200,7 @@ bool KeyframeWidget::on_my_key_release_event(GdkEventKey * event)
 bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 {
 	
-	if(!parent->shift_held)
+	if(!parent->shift_held && !parent->ctrl_held)
 		is_focused = false;
 
 	//pMenu = 0;
@@ -241,7 +249,7 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 		pre = pre->prev;
 	}
 
-	if(parent->several_selected && !parent->shift_held)
+	if(parent->several_selected && !parent->shift_held && !parent->ctrl_held)
 	{
 		defocusAllKeyframes();
 	}
@@ -1181,7 +1189,7 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	//select layer that corresponds to this keyframe
 	//selectLayer();
 	
-	if(event->state &  (GDK_SHIFT_MASK | GDK_CONTROL_MASK))
+	if(event->state &  (GDK_SHIFT_MASK))
 	{
 		parent->shift_held = true;
 
