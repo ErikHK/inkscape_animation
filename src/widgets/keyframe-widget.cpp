@@ -151,8 +151,21 @@ bool KeyframeWidget::on_my_key_press_event(GdkEventKey * event)
 				next->grab_focus();
 				parent->several_selected = true;
 			}
-			queue_draw();
+			//queue_draw();
 		}
+
+		if(event->keyval == GDK_KEY_Left)
+		{
+
+			if(prev)
+			{
+				prev->grab_focus();
+				parent->several_selected = true;
+			}
+			//queue_draw();
+		}
+
+
 	}
 	else
 	{
