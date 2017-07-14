@@ -1217,14 +1217,22 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 			//kw->is_focused = true;
 		}
 	}
-
-	else
+	
+	if(event->state & (GDK_CONTROL_MASK))
+	{
+		parent->ctrl_held = true;
+		parent->several_selected = true;
+	}
+	
+	if(!(event->state & GDK_CONTROL_MASK) && !(event->state & GDK_SHIFT_MASK))
 	{
 		parent->shift_held = false;
+		parent->ctrl_held = false;
+		
 		defocusAllKeyframes();
 	}
 
-	queue_draw();
+	parent->queue_draw();
 
 	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
 	{
