@@ -1,5 +1,6 @@
 #include <gtkmm/drawingarea.h>
 #include <gtkmm/checkmenuitem.h>
+#include <gtkmm/targetlist.h>
 #include <sp-object.h>
 #include "inkscape.h"
 //#include "keyframe-bar.h"
@@ -38,7 +39,9 @@ protected:
 	virtual bool on_my_focus_out_event(GdkEventFocus* event);
 	bool on_my_key_press_event(GdkEventKey * event);
 	bool on_my_key_release_event(GdkEventKey* event);
-	bool on_my_button_press_event(GdkEventButton* event);
+	bool on_my_button_release_event(GdkEventButton* event);
+	bool on_my_drag_motion_event(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time);
+	void on_my_drag_begin_event(const Glib::RefPtr<Gdk::DragContext>& context);
 	void on_selection_changed();
 	void on_update_tween();
 	

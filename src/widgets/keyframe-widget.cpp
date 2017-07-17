@@ -61,6 +61,7 @@ bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus* event)
 	//pMenu = 0;
 	selectLayer();
 	is_focused = true;
+
 	return false;
 }
 
@@ -139,7 +140,6 @@ bool KeyframeWidget::on_my_key_press_event(GdkEventKey * event)
 		}
 	}
 
-
 	if(event->state & (GDK_SHIFT_MASK))
 	{
 		parent->shift_held = true;
@@ -165,18 +165,17 @@ bool KeyframeWidget::on_my_key_press_event(GdkEventKey * event)
 			}
 			//queue_draw();
 		}
-
-
 	}
 
-	//if(event->state & GDK_CONTROL_MASK)
-	if(Inkscape::UI::state_held_only_control(event->state))
+	if(event->state & GDK_CONTROL_MASK)
 		parent->ctrl_held = true;
+	//if(Inkscape::UI::state_held_only_control(event->state))
+	//	parent->ctrl_held = true;
 
-	if(!(event->state & GDK_CONTROL_MASK) && !(event->state & GDK_SHIFT_MASK))
+	if(!(event->state & GDK_CONTROL_MASK) && !(event->state & GDK_SHIFT_MASK) && event->keyval != GDK_KEY_Delete)
 	{
 		parent->shift_held = false;
-		parent->ctrl_held = false;
+		//parent->ctrl_held = false;
 		defocusAllKeyframes();
 	}
 
@@ -199,9 +198,10 @@ bool KeyframeWidget::on_my_key_release_event(GdkEventKey * event)
 
 bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 {
-	
+
 	if(!parent->shift_held && !parent->ctrl_held)
 		is_focused = false;
+
 
 	//pMenu = 0;
 	//KeyframeWidget* kw = dynamic_cast<KeyframeWidget*>(event->window);
@@ -249,12 +249,12 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 		pre = pre->prev;
 	}
 
-	if(parent->several_selected && !parent->shift_held && !parent->ctrl_held)
+	if( parent->several_selected &&  !parent->shift_held && !parent->ctrl_held)
 	{
 		defocusAllKeyframes();
 	}
 
-	queue_draw();
+	parent->queue_draw();
 	return false;
 }
 
@@ -1088,8 +1088,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//if(!kw->onion->get_active())
 			layer->getRepr()->setAttribute("style", "opacity:1.0;");
 
-
-
 		if(!nextLayer)
 			break;
 		
@@ -1180,7 +1178,7 @@ void KeyframeWidget::defocusAllKeyframes()
 	//queue_draw();
 }
 
-bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
+bool KeyframeWidget::on_my_button_release_event(GdkEventButton* event)
 {
 	grab_focus();
 	//gtk_widget_grab_focus(GTK_WIDGET(this));
@@ -1217,22 +1215,28 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 			//kw->is_focused = true;
 		}
 	}
+	else
+	{
+		parent->shift_held = false;
+	}
 	
 	if(event->state & (GDK_CONTROL_MASK))
 	{
 		parent->ctrl_held = true;
 		parent->several_selected = true;
 	}
-	
-	if(!(event->state & GDK_CONTROL_MASK) && !(event->state & GDK_SHIFT_MASK))
+	else
 	{
-		parent->shift_held = false;
 		parent->ctrl_held = false;
-		
+	}
+	
+	if(!(event->state & GDK_SHIFT_MASK) && !(event->state & GDK_CONTROL_MASK))
+	{
 		defocusAllKeyframes();
 	}
 
 	parent->queue_draw();
+	queue_draw();
 
 	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
 	{
@@ -1244,6 +1248,21 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	}
 
 	return false;
+}
+
+bool KeyframeWidget::on_my_drag_motion_event(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time)
+{
+	int xx = x;
+	int yy = y;
+
+	return false;
+}
+
+
+void KeyframeWidget::on_my_drag_begin_event(const Glib::RefPtr<Gdk::DragContext>& context)
+{
+
+	//return false;
 }
 
 KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer, bool _is_empty)
@@ -1346,17 +1365,42 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	}
 	
 	
-	
 	add_events(Gdk::ALL_EVENTS_MASK);
 	
-	signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
-	signal_focus_out_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_out_event));
-	signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
-	signal_key_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_key_press_event));
-	signal_key_release_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_key_release_event));
 	set_can_focus(true);
 	//set_receives_default();
-    set_sensitive();
+	set_sensitive();
+	signal_key_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_key_press_event));
+	signal_button_release_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_release_event));
+	signal_key_release_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_key_release_event));
+	signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
+	signal_focus_out_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_out_event));
+
+	std::vector<std::string> listing;
+	listing.push_back("text/html");
+	listing.push_back("STRING");
+	listing.push_back("number");
+	listing.push_back("image/jpeg");
+	int entryCount = listing.size();
+
+	GtkTargetEntry* entries = new GtkTargetEntry[entryCount];
+	GtkTargetEntry* curr = entries;
+	for ( std::vector<std::string>::iterator it = listing.begin(); it != listing.end(); ++it ) {
+		curr->target = g_strdup(it->c_str());
+		curr->flags = 0;
+
+		//mimeStrings.push_back(*it);
+
+		//curr->info = mimeToInt[curr->target];
+		curr++;
+	}
+	//drag_source_set(entries, GDK_BUTTON1_MASK, GdkDragAction(GDK_ACTION_MOVE | GDK_ACTION_COPY));
+	gtk_drag_source_set( GTK_WIDGET(this->gobj() ), GDK_BUTTON1_MASK, entries, entryCount, GdkDragAction(GDK_ACTION_MOVE | GDK_ACTION_COPY));
+	gtk_drag_dest_set( GTK_WIDGET(this->gobj() ), GTK_DEST_DEFAULT_MOTION, entries, entryCount, GdkDragAction(GDK_ACTION_MOVE | GDK_ACTION_COPY));
+
+	signal_drag_motion().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_motion_event));
+	signal_drag_begin().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_begin_event));
+
 }
 
 KeyframeWidget::~KeyframeWidget()

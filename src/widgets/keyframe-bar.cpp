@@ -93,6 +93,11 @@ bool KeyframeBar::on_expose_event(GdkEventExpose* event)
 bool KeyframeBar::on_my_button_press_event(GdkEventButton* event)
 {
 	//rebuildUi();
+	if(event->state & GDK_CONTROL_MASK)
+	{
+		ctrl_held = true;
+	}
+
 	grab_focus();
 
 	/*
