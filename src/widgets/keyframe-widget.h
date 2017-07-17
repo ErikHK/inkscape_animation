@@ -3,6 +3,8 @@
 #include <gtkmm/targetlist.h>
 #include <sp-object.h>
 #include "inkscape.h"
+
+#include <gtkmm/selectiondata.h>
 //#include "keyframe-bar.h"
 //#include "animation-control.h"
 
@@ -42,11 +44,18 @@ protected:
 	bool on_my_button_release_event(GdkEventButton* event);
 	bool on_my_drag_motion_event(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time);
 	void on_my_drag_begin_event(const Glib::RefPtr<Gdk::DragContext>& context);
+	void on_my_drag_data_get(const Glib::RefPtr< Gdk::DragContext >&  	context,
+			Gtk::SelectionData&  	selection_data,
+			guint  	info,
+			guint  	time);
+
+	bool on_my_drag_drop(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time);
 	void on_selection_changed();
 	void on_update_tween();
 	
 private:
 	Gtk::Menu *pMenu;
+
 
 
 };

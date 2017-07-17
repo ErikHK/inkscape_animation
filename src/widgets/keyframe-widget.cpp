@@ -1261,8 +1261,42 @@ bool KeyframeWidget::on_my_drag_motion_event(const Glib::RefPtr<Gdk::DragContext
 
 void KeyframeWidget::on_my_drag_begin_event(const Glib::RefPtr<Gdk::DragContext>& context)
 {
-
+	//drag_source_set_icon(NULL, NULL, NULL);
 	//return false;
+}
+
+void KeyframeWidget::on_my_drag_data_get(const Glib::RefPtr< Gdk::DragContext >&  	context,
+		Gtk::SelectionData&  	selection_data,
+		guint  	info,
+		guint  	time)
+{
+	auto test = selection_data.get_target();
+	auto test2 = get_data("id");
+
+	//auto test2 = selection_data.get_text();
+	//KeyframeWidget * kw = dynamic_cast<KeyframeWidget*>(selection_data.);
+	//auto test3 = selection_data.get_type();
+	//KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
+	//int iiiidddd = kw->id;
+	//int iddd = id;
+
+}
+
+bool KeyframeWidget::on_my_drag_drop(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time)
+{
+	int xxx = x;
+	int yyy = y;
+
+	//KeyframeWidget * kw = dynamic_cast<KeyframeWidget*>(context);
+	//int iiidddd = id;
+	//auto test = context->get_type();
+	auto test2 = get_data("id");
+	auto test3 = get_data("i");
+	int iddddd = id;
+	//int id2 = test2->id;
+	//auto test2 = context->get_data("id");
+
+	return true;
 }
 
 KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer, bool _is_empty)
@@ -1396,10 +1430,22 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	}
 	//drag_source_set(entries, GDK_BUTTON1_MASK, GdkDragAction(GDK_ACTION_MOVE | GDK_ACTION_COPY));
 	gtk_drag_source_set( GTK_WIDGET(this->gobj() ), GDK_BUTTON1_MASK, entries, entryCount, GdkDragAction(GDK_ACTION_MOVE | GDK_ACTION_COPY));
-	gtk_drag_dest_set( GTK_WIDGET(this->gobj() ), GTK_DEST_DEFAULT_MOTION, entries, entryCount, GdkDragAction(GDK_ACTION_MOVE | GDK_ACTION_COPY));
+
+	set_data(Glib::Quark("i"), (gpointer) this);
+
+	gtk_drag_dest_set( GTK_WIDGET(this->gobj() ), GTK_DEST_DEFAULT_ALL, entries, entryCount, GdkDragAction(GDK_ACTION_MOVE | GDK_ACTION_COPY));
 
 	signal_drag_motion().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_motion_event));
 	signal_drag_begin().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_begin_event));
+	signal_drag_data_get().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_data_get));
+
+	//g_signal_connect( G_OBJECT(this->gobj()),
+	 //                         "drag-data-get",
+	   //                       G_CALLBACK(KeyframeWidget::on_my_drag_data_get),
+	     //                     this);
+
+
+	signal_drag_drop().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_drop));
 
 }
 
