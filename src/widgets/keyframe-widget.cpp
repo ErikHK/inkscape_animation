@@ -1265,13 +1265,34 @@ void KeyframeWidget::on_my_drag_begin_event(const Glib::RefPtr<Gdk::DragContext>
 	//return false;
 }
 
+
+void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContext>& context, int, int,
+        const Gtk::SelectionData& selection_data, guint, guint time)
+{
+	
+	const int length = selection_data.get_length();
+	if((length >= 0) && (selection_data.get_format() == 8))
+	{
+		int id = atoi(selection_data.get_data_as_string().c_str());
+		parent->widgets[id]->is_focused = true;
+		parent->queue_draw();
+		
+	}
+
+	context->drag_finish(false, false, time);
+}
+
 void KeyframeWidget::on_my_drag_data_get(const Glib::RefPtr< Gdk::DragContext >&  	context,
 		Gtk::SelectionData&  	selection_data,
 		guint  	info,
 		guint  	time)
 {
-	auto test = selection_data.get_target();
-	auto test2 = get_data("id");
+	//auto test = selection_data.get_target();
+	//auto test2 = get_data("id");
+	
+	  selection_data.set(selection_data.get_target(), 8 /* 8 bits format */,
+          (const guchar*)"9",
+          1 /* the length of I'm Data! in bytes */);
 
 	//auto test2 = selection_data.get_text();
 	//KeyframeWidget * kw = dynamic_cast<KeyframeWidget*>(selection_data.);
@@ -1438,6 +1459,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	signal_drag_motion().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_motion_event));
 	signal_drag_begin().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_begin_event));
 	signal_drag_data_get().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_data_get));
+	signal_drag_data_received().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_data_received));
 
 	//g_signal_connect( G_OBJECT(this->gobj()),
 	 //                         "drag-data-get",

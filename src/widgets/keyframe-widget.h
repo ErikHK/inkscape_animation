@@ -48,6 +48,8 @@ protected:
 			Gtk::SelectionData&  	selection_data,
 			guint  	info,
 			guint  	time);
+	void on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContext>& context, int, int,
+        const Gtk::SelectionData& selection_data, guint, guint time);
 
 	bool on_my_drag_drop(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time);
 	void on_selection_changed();
