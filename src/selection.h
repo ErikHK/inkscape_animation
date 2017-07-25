@@ -105,6 +105,9 @@ public:
      */
     void add(SPObject *obj, bool persist_selection_context = false);
 
+
+    void emit();
+
     /**
      * Add an XML node's SPObject to the set of selected objects.
      *

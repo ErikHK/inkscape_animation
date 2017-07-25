@@ -57,7 +57,7 @@ KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 	several_selected = false;
 	layer = _layer;
 	rebuildUi();
-	
+
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	if(desktop)
 	{
@@ -150,6 +150,12 @@ void KeyframeBar::deleteAllActiveKeyframes()
 		while(kw->layer->getRepr()->childCount() > 0 && kw->is_focused)
 			kw->layer->getRepr()->removeChild(kw->layer->getRepr()->firstChild());
 	}
+
+
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	//emit change
+	if(desktop)
+		desktop->getSelection()->emit();
 }
 
 bool KeyframeBar::on_my_key_press_event(GdkEventKey * event)

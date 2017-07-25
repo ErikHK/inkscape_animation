@@ -264,6 +264,10 @@ void Selection::addList(std::vector<SPItem*> const &list) {
     _emitChanged();
 }
 
+void Selection::emit(){
+	_changed_signal.emit(this);
+}
+
 void Selection::setReprList(std::vector<XML::Node*> const &list) {
     _clear();
 

@@ -25,6 +25,7 @@ public:
 	bool clear_tween;
 	KeyframeBar *next;
 	KeyframeBar *prev;
+
 	void deleteAllActiveKeyframes();
 	std::vector<KeyframeWidget*> widgets;
 	//std::vector<SPObject*> layersToHide;

@@ -179,7 +179,6 @@ bool KeyframeWidget::on_my_key_press_event(GdkEventKey * event)
 		defocusAllKeyframes();
 	}
 
-
 	//queue_draw();
 	parent->queue_draw();
 	return false;
@@ -394,6 +393,11 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 		if(childn_copy && kw->layer->getRepr()->childCount() == 0)
 			kw->layer->getRepr()->appendChild(childn_copy);
 	}
+
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+		//emit change
+		if(desktop)
+			desktop->getSelection()->emit();
 }
 
 static void onionSkinning(KeyframeWidget * kww, gpointer user_data)
@@ -1238,6 +1242,14 @@ bool KeyframeWidget::on_my_button_release_event(GdkEventButton* event)
 	parent->queue_draw();
 	queue_draw();
 
+
+
+	return false;
+}
+
+bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
+{
+
 	if (event->type == GDK_BUTTON_PRESS  &&  event->button == 3)
 	{
 		onion->set_active(SP_ACTIVE_DESKTOP->fade_previous_layers);
@@ -1246,7 +1258,6 @@ bool KeyframeWidget::on_my_button_release_event(GdkEventButton* event)
 		pMenu->show_all();
 		pMenu->popup(event->button, event->time);
 	}
-
 	return false;
 }
 
@@ -1332,7 +1343,6 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	
 	pMenu = new Gtk::Menu();
 	
-
 	Gtk::MenuItem *pItem3 = new Gtk::MenuItem("Insert keyframe");
 	
 	g_signal_connect( pItem3->gobj(),
@@ -1412,13 +1422,13 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 		_sel_changed_connection = selection->connectChangedFirst(
 		sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_selection_changed)));
 
+
 		_sel_changed_connection2 = desktop->connectToolSubselectionChanged(
 				sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_update_tween)));
 
 		//desktop->connectToolSubselectionChanged()
 
 	}
-	
 	
 	add_events(Gdk::ALL_EVENTS_MASK);
 	
@@ -1427,6 +1437,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	set_sensitive();
 	signal_key_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_key_press_event));
 	signal_button_release_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_release_event));
+	signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_button_press_event));
 	signal_key_release_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_key_release_event));
 	signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_in_event));
 	signal_focus_out_event().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_focus_out_event));

@@ -372,6 +372,7 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
 	_up = Gtk::manage( new Gtk::Button() );
 	*/
 	
+	//_changed_signal.emit();
 	
 	_popupMenu.append(*Gtk::manage(new Gtk::SeparatorMenuItem()));
 	Gtk::MenuItem *testitem = new Gtk::MenuItem("Insert keyframe");

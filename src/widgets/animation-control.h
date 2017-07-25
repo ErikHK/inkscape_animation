@@ -35,6 +35,9 @@ public:
 	void toggleLocked( Glib::ustring const& str );
 	//std::vector<SPObject*> layersToHide;
 	std::vector<KeyframeBar*> kb_vec;
+	//sigc::connection connectChanged(sigc::slot<void> const &slot) {
+	//        return _changed_signal.connect(slot);
+	//    }
 	
 protected:
     virtual bool on_expose_event(GtkWidget * widget, GdkEventExpose* event);
@@ -44,6 +47,7 @@ protected:
 	bool on_mouse_(GdkEventMotion* event);
 	
 private:
+	//sigc::signal<void> _changed_signal;
 	void _handleEdited(const Glib::ustring& path, const Glib::ustring& new_text);
 	void _renameObject(Gtk::TreeModel::Row row, const Glib::ustring& name);
 	void _handleEditingCancelled();
