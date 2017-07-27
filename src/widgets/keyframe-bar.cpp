@@ -217,7 +217,8 @@ void KeyframeBar::rebuildUi()
 	if(!animation_layer)
 		return;
 	
-	int num_keyframes = animation_layer->getRepr()->childCount();
+	//int num_keyframes = animation_layer->getRepr()->childCount();
+	int num_keyframes = 100;
 	
 	//std::vector<Gtk::Widget*> wlist;
 	

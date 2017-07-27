@@ -271,7 +271,21 @@ SPObject *create_animation_keyframe(SPObject *root, SPObject *layer, int num)
         layer_repr->parent()->addChild(repr, layer_repr);
     }
 	*/
-	layer->getRepr()->appendChild(repr);
+
+    SPObject * layerr = NULL;
+    int i = num;
+    while(layerr == NULL && i > 1)
+    {
+    	layerr = document->getObjectById(
+    				Glib::ustring::format(strr, "keyframe", i-1));
+    	i--;
+    }
+
+	//layer->getRepr()->appendChild(repr);
+    if(layerr)
+    	layer->getRepr()->addChild(repr, layerr->getRepr());
+    else
+    	layer->getRepr()->appendChild(repr);
     
     return document->getObjectByRepr(repr);	
 }

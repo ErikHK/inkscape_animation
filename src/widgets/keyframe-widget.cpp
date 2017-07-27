@@ -88,9 +88,11 @@ static gint playLoop()
 		//				std::string(Glib::ustring::format("animationlayer", 2, "keyframe", i-1)));  //desktop->currentLayer();
 		//SPObject * prev = desktop->currentLayer()->getPrev();
 
-		SP_ITEM(thisl)->setHidden(true);
+		if(thisl)
+			SP_ITEM(thisl)->setHidden(true);
 		//SP_ITEM(thisl2)->setHidden(true);
-		SP_ITEM(next)->setHidden(false);
+		if(next)
+			SP_ITEM(next)->setHidden(false);
 		//SP_ITEM(next2)->setHidden(false);
 
 		i++;
@@ -102,7 +104,8 @@ static gint playLoop()
 					std::string(Glib::ustring::format("animationlayer", 1, "keyframe", 1)));
 			//next2 = desktop->getDocument()->getObjectById(
 					//std::string(Glib::ustring::format("animationlayer", 2, "keyframe", 1)));
-			SP_ITEM(next)->setHidden(false);
+			if(next)
+				SP_ITEM(next)->setHidden(false);
 			//SP_ITEM(next2)->setHidden(false);
 			i = 2;
 		}
@@ -268,7 +271,15 @@ void KeyframeWidget::selectLayer()
 		layer = desktop->namedview->document->getObjectById(
 				Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
 				
-	
+	if(!layer)
+		Inkscape::create_animation_keyframe(desktop->currentRoot(), desktop->currentLayer()->parent, id);
+
+	layer = desktop->namedview->document->getObjectById(
+			Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
+
+	if(!layer)
+		return;
+
 	desktop->setCurrentLayer(layer);
 
 				

@@ -791,8 +791,9 @@ void AnimationControl::addLayer()
 		desktop->setCurrentLayer(lay);
 		//SPObject * nextLayer = desktop->namedview->document->getObjectById(ids);
 		
-		for(int i=0;i < 100;i++)
-			Inkscape::create_animation_keyframe(desktop->currentRoot(), desktop->currentLayer(), i+1);
+		//for(int i=0;i < 10;i++)
+		//create only first frame layer
+		Inkscape::create_animation_keyframe(desktop->currentRoot(), desktop->currentLayer(), 1);
 	}
 	
 	//if(kb_vec.size() < num_layers)
