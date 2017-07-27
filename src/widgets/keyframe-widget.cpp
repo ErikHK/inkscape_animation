@@ -272,7 +272,7 @@ void KeyframeWidget::selectLayer()
 				Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
 				
 	if(!layer)
-		Inkscape::create_animation_keyframe(desktop->currentRoot(), desktop->currentLayer()->parent, id);
+		Inkscape::create_animation_keyframe(desktop->currentRoot(), parent->layer, id);
 
 	layer = desktop->namedview->document->getObjectById(
 			Glib::ustring::format("animationlayer", parent_id, "keyframe", id));

@@ -147,10 +147,9 @@ void KeyframeBar::deleteAllActiveKeyframes()
 	{
 		KeyframeWidget * kw = widgets[i];
 		
-		while(kw->layer->getRepr()->childCount() > 0 && kw->is_focused)
+		while(kw->layer &&  kw->layer->getRepr()->childCount() > 0 && kw->is_focused)
 			kw->layer->getRepr()->removeChild(kw->layer->getRepr()->firstChild());
 	}
-
 
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	//emit change
@@ -226,8 +225,12 @@ void KeyframeBar::rebuildUi()
 	
 	for(int i=1;i <= num_keyframes;i++)
 	{
-		SPObject * assoc_layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
 		
+		SPObject * assoc_layer = NULL;
+
+		if(i==1)
+			desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
+
 		//keyframe has objects
 		if(animation_layer->getRepr()->nthChild(i-1) && animation_layer->getRepr()->nthChild(i-1)->childCount() > 0)
 			kw = new KeyframeWidget(i, this, assoc_layer, false);

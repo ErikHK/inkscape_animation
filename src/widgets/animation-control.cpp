@@ -793,7 +793,7 @@ void AnimationControl::addLayer()
 		
 		//for(int i=0;i < 10;i++)
 		//create only first frame layer
-		Inkscape::create_animation_keyframe(desktop->currentRoot(), desktop->currentLayer(), 1);
+		Inkscape::create_animation_keyframe(desktop->currentRoot(), lay, 1);
 	}
 	
 	//if(kb_vec.size() < num_layers)
