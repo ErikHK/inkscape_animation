@@ -347,7 +347,7 @@ bool AnimationControl::_handleButtonEvent(GdkEventButton* event)
 	
 	
 	
-	
+	return false;
 }
 
 
@@ -374,9 +374,23 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
 	
 	//_changed_signal.emit();
 	
+	
+	Gtk::MenuItem *rename = new Gtk::MenuItem("Rename");
+	_popupMenu.append(*rename);
+	Gtk::MenuItem *duplicate = new Gtk::MenuItem("Duplicate");
+	_popupMenu.append(*duplicate);
+	Gtk::MenuItem *neww = new Gtk::MenuItem("New");
+	_popupMenu.append(*neww);
+	
 	_popupMenu.append(*Gtk::manage(new Gtk::SeparatorMenuItem()));
-	Gtk::MenuItem *testitem = new Gtk::MenuItem("Insert keyframe");
-	_popupMenu.append(*testitem);
+	
+	Gtk::MenuItem *solo = new Gtk::MenuItem("Solo");
+	_popupMenu.append(*solo);
+	Gtk::MenuItem *showall = new Gtk::MenuItem("Show All");
+	_popupMenu.append(*showall);
+	Gtk::MenuItem *hideall = new Gtk::MenuItem("Hide All");
+	_popupMenu.append(*hideall);
+	
 	_popupMenu.show_all_children();
 	
     //Add object/layer
@@ -447,7 +461,7 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
     _tree.set_model( _store );
     _tree.set_headers_visible(false);
 	
-	//_tree.signal_button_press_event().connect( sigc::mem_fun(*this, &AnimationControl::_handleButtonEvent), false );
+	_tree.signal_button_press_event().connect( sigc::mem_fun(*this, &AnimationControl::_handleButtonEvent), false );
     //_tree.signal_button_release_event().connect( sigc::mem_fun(*this, &AnimationControl::_handleButtonEvent), false );
 	_tree.signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
 	//_tree.get_selection()->set_select_function( sigc::mem_fun(*this, &AnimationControl::_rowSelectFunction) );

@@ -1285,32 +1285,24 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
 	if((length >= 0) && (selection_data.get_format() == 8))
 	{
 		int id = atoi(selection_data.get_data_as_string().c_str());
-		parent->widgets[id]->is_focused = true;
+		parent->widgets[id-1]->is_focused = true;
 		parent->queue_draw();
-		
 	}
 
 	context->drag_finish(false, false, time);
 }
 
+/* what to send */
 void KeyframeWidget::on_my_drag_data_get(const Glib::RefPtr< Gdk::DragContext >&  	context,
 		Gtk::SelectionData&  	selection_data,
 		guint  	info,
 		guint  	time)
 {
-	//auto test = selection_data.get_target();
-	//auto test2 = get_data("id");
+	std::string hehe = std::to_string(id);
 	
-	  selection_data.set(selection_data.get_target(), 8 /* 8 bits format */,
-          (const guchar*)"9",
-          1 /* the length of I'm Data! in bytes */);
-
-	//auto test2 = selection_data.get_text();
-	//KeyframeWidget * kw = dynamic_cast<KeyframeWidget*>(selection_data.);
-	//auto test3 = selection_data.get_type();
-	//KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
-	//int iiiidddd = kw->id;
-	//int iddd = id;
+	selection_data.set(selection_data.get_target(), 8 /* 8 bits format */,
+          (const guchar*) hehe.c_str(),
+          sizeof(hehe.c_str()));
 
 }
 
