@@ -1394,7 +1394,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 
 	parent_id = parent->id;
 	
-	this->set_size_request(15, 21);
+	this->set_size_request(12, 22);
 	
 	set_can_focus(true);
 	
@@ -1515,10 +1515,12 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		Cairo::RefPtr<Cairo::Context> cr = window->create_cairo_context();
 		cairo_surface_t *s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
 
-		if(id % 2 == 0)
+		if(id % 5 == 0)
+			cr->set_source_rgba(.8, .8, .8, 1);
+		else if(id % 2 == 0)
 			cr->set_source_rgba(1, 1, 1, 1);
 		else
-			cr->set_source_rgba(.8, .8, .8, 1);
+			cr->set_source_rgba(.9, .9, .9, 1);
 		
 		cr->paint();
 
@@ -1539,7 +1541,7 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		cr->fill();
 	
 		//add line to the bottom
-		cr->set_source_rgba(.3,.3,.3,1);
+		cr->set_source_rgba(.6,.6,.6,1);
 		cr->set_line_width(1.0);
 		cr->move_to(0, height-.5);
 		cr->line_to(width, height-.5);

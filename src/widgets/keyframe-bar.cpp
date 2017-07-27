@@ -44,7 +44,7 @@ void KeyframeBar::on_selection_changed()
 }
 
 KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
-: btn("hehe"), btn2("hehe2"), num_keyframes(1)
+: num_keyframes(1)
 {
 	next = NULL;
 	prev = NULL;

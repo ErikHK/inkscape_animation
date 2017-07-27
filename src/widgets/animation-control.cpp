@@ -466,7 +466,30 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
 	_tree.signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
 	//_tree.get_selection()->set_select_function( sigc::mem_fun(*this, &AnimationControl::_rowSelectFunction) );
 
-	
+
+
+	_scroller.set_shadow_type(Gtk::SHADOW_NONE);
+	_scroller.add(_keyframe_table);
+	_scroller.set_policy(Gtk::POLICY_ALWAYS, Gtk::POLICY_NEVER);
+
+	_tree_scroller.set_size_request(300);
+
+	_tree_scroller.set_shadow_type(Gtk::SHADOW_NONE);
+	_tree_scroller.add(_tree); //this fails!
+	_tree_scroller.set_policy(Gtk::POLICY_ALWAYS, Gtk::POLICY_NEVER);
+
+	_panes.add1(_tree_scroller);
+	_panes.add2(_scroller);
+	//add(_panes);
+	attach(_panes, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+
+	//attach(_tree_scroller, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+	//attach(_scroller, 1, 2, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+
+	//attach(_new_layer_button, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
+
+	attach(_buttons, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
+
     //_tree.set_reorderable(true);
     //_tree.enable_model_drag_dest (Gdk::ACTION_MOVE);
 	//_tree.get_selection()->set_mode(Gtk::SELECTION_MULTIPLE);
@@ -474,6 +497,8 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
 	
 	_text_renderer = Gtk::manage(new Gtk::CellRendererText());
 	
+	_text_renderer->set_fixed_size(-1,20);
+
 	//Set up the label editing signals
     _text_renderer->signal_edited().connect( sigc::mem_fun(*this, &AnimationControl::_handleEdited));
     _text_renderer->signal_editing_canceled().connect( sigc::mem_fun(*this, &AnimationControl::_handleEditingCancelled));
@@ -572,6 +597,30 @@ void AnimationControl::rebuildUi()
 	
 
 	//TODO: iterate over keyframebars and set pointers to siblings
+
+
+	int s = kb_vec.size();
+
+	if(s>0)
+	{
+		kb_vec[0]->prev = NULL;
+		kb_vec[0]->next = NULL;
+	}
+
+	for(int i=0; i < s-1; i++)
+	{
+		kb_vec[i]->next = kb_vec[i+1];
+		kb_vec[i+1]->prev = kb_vec[i];
+	}
+
+	if(s>1)
+	{
+		kb_vec[s-1]->prev = kb_vec[s-2];
+		kb_vec[s-1]->next = NULL;
+	}
+
+
+	/*
 	if(kb_vec.size() > 0)
 	{
 		kb_vec[0]->prev = NULL;
@@ -615,7 +664,9 @@ void AnimationControl::rebuildUi()
 		kb_vec[5]->prev = kb_vec[4];
 		kb_vec[5]->next = NULL;
 	}
+	*/
 	
+	/*
 	_scroller.set_shadow_type(Gtk::SHADOW_NONE);
 	_scroller.add(_keyframe_table);
 	_scroller.set_policy(Gtk::POLICY_ALWAYS, Gtk::POLICY_NEVER);
@@ -623,11 +674,11 @@ void AnimationControl::rebuildUi()
 	_tree_scroller.set_size_request(300);
 	
 	_tree_scroller.set_shadow_type(Gtk::SHADOW_NONE);
-	_tree_scroller.add(_tree);
+	//_tree_scroller.add(_tree); //this fails!
 	_tree_scroller.set_policy(Gtk::POLICY_ALWAYS, Gtk::POLICY_NEVER);
 
-	_panes.add1(_tree_scroller);
-	_panes.add2(_scroller);
+	//_panes.add1(_tree_scroller);
+	//_panes.add2(_scroller);
 	//add(_panes);
 	attach(_panes, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
 	
@@ -637,7 +688,11 @@ void AnimationControl::rebuildUi()
 	//attach(_new_layer_button, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
 	
 	attach(_buttons, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
+	*/
 	
+	_tree.set_size_request(-1, num_layers*22);
+
+
 	show_all_children();
 }
 
@@ -736,7 +791,7 @@ void AnimationControl::addLayer()
 		desktop->setCurrentLayer(lay);
 		//SPObject * nextLayer = desktop->namedview->document->getObjectById(ids);
 		
-		for(int i=0;i < 50;i++)
+		for(int i=0;i < 100;i++)
 			Inkscape::create_animation_keyframe(desktop->currentRoot(), desktop->currentLayer(), i+1);
 	}
 	
@@ -762,7 +817,7 @@ void AnimationControl::addLayer()
 			int place = atoi(str.c_str());
 			
 			//KeyframeBar* kb = new KeyframeBar(atoi(str.substr(str.length()-1, 1).c_str()), child);
-			KeyframeBar* kb = new KeyframeBar(place, child);
+			KeyframeBar* kb = new KeyframeBar(place, child);  //hmm här det kraschar?
 			//KeyframeBar* kb = new KeyframeBar(num_layers, child);
 			row[_model->m_col_object] = kb;
 			_keyframe_table.attach(*kb, 0, 1, place-1, place, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
@@ -793,6 +848,8 @@ void AnimationControl::moveLayer(int dir)
 		return;
 	
     Gtk::TreeModel::Row row = *iter;
+
+
 	
 	KeyframeBar* kb = row[_model->m_col_object];
 	
