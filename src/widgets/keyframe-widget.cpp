@@ -66,8 +66,10 @@ bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus* event)
 }
 
 
-static gint playLoop()
+static gint playLoop(gpointer data)
 {
+	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(data);
+
 	//SPDesktop * desktop = tb->desktop;
 	static int i = 2;
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
@@ -110,7 +112,6 @@ static gint playLoop()
 			i = 2;
 		}
 
-
 		if(!next)
 			return false;
 		//desktop->layer_manager->setCurrentLayer(next);
@@ -119,6 +120,14 @@ static gint playLoop()
 		//desktop->setCurrentLayer(next);
 
 	}
+
+	if(kw->parent->widgets[i] && kw->parent->widgets[i-1])
+	{
+		kw->parent->widgets[i]->is_focused = true;
+		kw->parent->widgets[i-1]->is_focused = false;
+		kw->parent->queue_draw();
+	}
+
 	return true;
 }
 
@@ -140,6 +149,7 @@ bool KeyframeWidget::on_my_key_press_event(GdkEventKey * event)
 		else
 		{
 			desktop->is_playing = false;
+			defocusAllKeyframes();
 		}
 	}
 
@@ -221,6 +231,9 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 	
 	if(layer != NULL)
 		LAYERS_TO_HIDE.push_back(layer);
+
+	if(prev && prev->layer != NULL)
+		LAYERS_TO_HIDE.push_back(prev->layer);
 		
 	if(parent == NULL)
 		return false;
@@ -354,7 +367,6 @@ void KeyframeWidget::selectLayer()
 			if(next_kb->widgets[id-1]->layer)
 				SP_ITEM(next_kb->widgets[id-1]->layer)->setHidden(false);
 			
-			
 			//also onion skinning
 			if(id > 1)
 			{
@@ -379,14 +391,12 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 	
 	if(!p)
 		return;
-	
-	if(!p->layer)
-		return;
+
 
 	while(p)
 	{
 		//break if a p with at least 1 child is found
-		if(p->layer->getRepr()->childCount() >= 1)
+		if(p->layer && p->layer->getRepr()->childCount() >= 1)
 			break;
 		
 		p = p->prev;
@@ -867,13 +877,12 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	SPObject * layer = startLayer;
 	
-	int i = 0;
+	int j = 1;
 	
-	
-	
-	while(layer)
+	while(layer->next)
 	{
-		layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
+		//layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
+		layer = layer->next;
 		
 		if(!layer)
 			return;
@@ -884,8 +893,9 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 			return;
 		
 		child->getRepr()->setAttribute("transform", 
-			Glib::ustring::format("translate(", start_x + i*inc_x, ",", start_y + i*inc_y, ")" ));
-		
+			Glib::ustring::format("translate(", start_x + j*inc_x, ",", start_y + j*inc_y, ")" ));
+
+		j++;
 	}
 	
 }
@@ -1170,7 +1180,10 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	//check if a color/opacity tween is in order
 	//if()
 	
-	
+	//emit selection signal
+	desktop->getSelection()->emit();
+
+
 	kw->showAll->set_active(false);
 	desktop->show_all_keyframes = false;
 	showAllKeyframes(kw, kw);
@@ -1178,8 +1191,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 
 void KeyframeWidget::defocusAllKeyframes()
 {
-	if(parent->several_selected)
-	{
+	//if(parent->several_selected)
+	//{
 		for(int i=0; i < parent->widgets.size(); i++)
 		{
 			KeyframeWidget * kw = parent->widgets[i];
@@ -1188,7 +1201,7 @@ void KeyframeWidget::defocusAllKeyframes()
 
 		}
 		parent->several_selected = false;
-	}
+	//}
 	parent->queue_draw();
 	//queue_draw();
 }

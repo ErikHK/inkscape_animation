@@ -119,6 +119,9 @@ void AnimationControl::toggleVisible( Glib::ustring const& str )
 		//item->updateRepr();
 		//DocumentUndo::done( desktop->doc() , SP_VERB_DIALOG_LAYERS,
 		//					newValue? _("Unhide layer") : _("Hide layer"));
+
+		obj->update();
+
     }
 }
 
@@ -768,7 +771,6 @@ void AnimationControl::removeLayer()
 void AnimationControl::addLayer()
 {
 	num_layers++;
-	
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	SPObject * prevLayer = NULL;
 	SPObject * lay = NULL;
@@ -827,6 +829,8 @@ void AnimationControl::addLayer()
 	//}
 	
 	rebuildUi();
+
+	DocumentUndo::done(desktop->getDocument(), SP_VERB_DIALOG_LAYERS, "Add animation layer");
 }
 
 void AnimationControl::moveLayer(int dir)

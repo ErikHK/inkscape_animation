@@ -43,6 +43,12 @@ void KeyframeBar::on_selection_changed()
 	//rebuildUi();
 }
 
+void KeyframeBar::update()
+{
+	if(widgets[0])
+		widgets[0]->selectLayer();
+}
+
 KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 : num_keyframes(1)
 {
@@ -272,17 +278,6 @@ void KeyframeBar::rebuildUi()
 	set_focus_chain(widgets);
 	
 	
-}
-
-void KeyframeBar::addLayers()
-{
-	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-
-	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
-	{
-		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
-		//lm->setCurrentLayer(lay);
-	}
 }
 
 bool KeyframeBar::on_my_focus_in_event(GdkEventFocus*)
