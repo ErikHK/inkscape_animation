@@ -100,7 +100,8 @@ static gint playLoop(gpointer data)
 		i++;
 
 		//if(next->getRepr()->childCount() == 0)
-		if(i == 22)
+		//if(i == 22)
+		if(kw->parent->widgets[i]->is_animation_stop || i == 99)
 		{
 			next = desktop->getDocument()->getObjectById(
 					std::string(Glib::ustring::format("animationlayer", 1, "keyframe", 1)));
@@ -213,7 +214,6 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 
 	if(!parent->shift_held && !parent->ctrl_held)
 		is_focused = false;
-
 
 	//pMenu = 0;
 	//KeyframeWidget* kw = dynamic_cast<KeyframeWidget*>(event->window);
@@ -421,6 +421,18 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 			desktop->getSelection()->emit();
 }
 
+static void animationStop(KeyframeWidget * kww, gpointer data)
+{
+	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(data);
+	
+	for(int i=0;i < kw->parent->widgets.size();i++)
+		kw->parent->widgets[i]->is_animation_stop = false;
+	
+	kw->is_animation_stop = true;
+	
+	kw->parent->queue_draw();
+}
+
 static void onionSkinning(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
@@ -530,6 +542,13 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	SPObject * nextLayer = NULL;
 
 	layer = startLayer;
+	
+	if(!layer)
+		return;
+	
+	if(!endLayer)
+		return;
+	
 	int i = 0;
 	while(layer != endLayer->next)
 	{
@@ -1215,6 +1234,8 @@ bool KeyframeWidget::on_my_button_release_event(GdkEventButton* event)
 	//select layer that corresponds to this keyframe
 	//selectLayer();
 	
+	/*
+	
 	if(event->state &  (GDK_SHIFT_MASK))
 	{
 		parent->shift_held = true;
@@ -1247,6 +1268,7 @@ bool KeyframeWidget::on_my_button_release_event(GdkEventButton* event)
 	{
 		parent->shift_held = false;
 	}
+	*/
 	
 	if(event->state & (GDK_CONTROL_MASK))
 	{
@@ -1265,8 +1287,6 @@ bool KeyframeWidget::on_my_button_release_event(GdkEventButton* event)
 
 	parent->queue_draw();
 	queue_draw();
-
-
 
 	return false;
 }
@@ -1349,10 +1369,12 @@ bool KeyframeWidget::on_my_drag_drop(const Glib::RefPtr<Gdk::DragContext>& conte
 
 KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer, bool _is_empty)
 {
+	height = 0;
 	parent = _parent;
 	layer = _layer;
 	id = _id;
 	is_focused = false;
+	is_animation_stop = false;
 	
 	next = NULL;
 	prev = NULL;
@@ -1374,15 +1396,6 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 						  this);
 	
 
-	/*
-	Gtk::MenuItem *tweenItem2 = new Gtk::MenuItem("Update tween");
-
-		g_signal_connect( tweenItem2->gobj(),
-							  "activate",
-							  G_CALLBACK(updateTween),
-							  this);
-	*/
-
 	//Gtk::MenuItem *pItem2 = new Gtk::MenuItem("Show all keyframes");
 	showAll = Gtk::manage(new Gtk::CheckMenuItem("Show all keyframes"));
 	showAll->set_active(false);
@@ -1400,6 +1413,14 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 						  G_CALLBACK(onionSkinning),
 						  this);
 						  
+						  
+	Gtk::MenuItem *addAnimationStop = new Gtk::MenuItem("Set animation stop");
+	
+	g_signal_connect( addAnimationStop->gobj(),
+						  "activate",
+						  G_CALLBACK(animationStop),
+						  this);
+						  
 	settingsItem = Gtk::manage(new Gtk::MenuItem("Settings..."));
 	
 	g_signal_connect( settingsItem->gobj(),
@@ -1414,9 +1435,12 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	pMenu->add(*showAll);
 	pMenu->add(*onion);
 	pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
+	pMenu->add(*addAnimationStop);
+	pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
 	pMenu->add(*settingsItem);
 
 	parent_id = parent->id;
+	
 	
 	this->set_size_request(12, 22);
 	
@@ -1546,6 +1570,7 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		else
 			cr->set_source_rgba(.9, .9, .9, 1);
 		
+
 		cr->paint();
 
 		if(has_focus())
@@ -1553,6 +1578,9 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 
 		if(is_focused)
 			cr->set_source_rgba(.8, 0, 0, .75);
+		
+		if(is_animation_stop)
+			cr->set_source_rgba(.4, 0, 0, .75);
 		
 		cr->paint();
 		
@@ -1571,6 +1599,9 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		cr->line_to(width, height-.5);
 		cr->stroke();
 	}
+	
+	if(height > 10)
+		set_size_request(12, height);
 	
 	return true;
 }

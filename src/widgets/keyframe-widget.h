@@ -17,6 +17,7 @@ public:
     KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer, bool _is_empty);
     virtual ~KeyframeWidget();
 	int id;
+	int height;
 	int parent_id;
 	KeyframeBar * parent;
 	KeyframeWidget * next;
@@ -24,6 +25,7 @@ public:
 	SPObject * layer;
 	bool is_empty;
 	bool is_focused;
+	bool is_animation_stop;
 	void selectLayer();
 	void defocusAllKeyframes();
 	Gtk::CheckMenuItem *onion;

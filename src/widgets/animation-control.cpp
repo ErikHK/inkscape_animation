@@ -500,7 +500,8 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
 	
 	_text_renderer = Gtk::manage(new Gtk::CellRendererText());
 	
-	_text_renderer->set_fixed_size(-1,20);
+	_text_renderer->set_fixed_size(-1,22);
+	_text_renderer->set_padding(0,0);
 
 	//Set up the label editing signals
     _text_renderer->signal_edited().connect( sigc::mem_fun(*this, &AnimationControl::_handleEdited));
@@ -693,8 +694,7 @@ void AnimationControl::rebuildUi()
 	attach(_buttons, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
 	*/
 	
-	_tree.set_size_request(-1, num_layers*22);
-
+	//_tree.set_size_request(-1, num_layers*22);
 
 	show_all_children();
 }

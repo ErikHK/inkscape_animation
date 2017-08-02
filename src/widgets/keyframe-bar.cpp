@@ -49,9 +49,19 @@ void KeyframeBar::update()
 		widgets[0]->selectLayer();
 }
 
+static void my_getsize(KeyframeBar * kbb, gpointer user_data)
+{
+	KeyframeBar* kb = reinterpret_cast<KeyframeBar*>(user_data);
+	
+	kb->height = kb->get_allocation().get_height();
+	kb->widgets[0]->height = kb->height;
+	kb->widgets[0]->queue_draw();
+}
+
 KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 : num_keyframes(1)
 {
+	height = 0;
 	next = NULL;
 	prev = NULL;
 	
@@ -63,6 +73,8 @@ KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 	several_selected = false;
 	layer = _layer;
 	rebuildUi();
+	
+	g_signal_connect(GTK_WIDGET(this), "size-allocate", G_CALLBACK(my_getsize), this);
 
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	if(desktop)
@@ -105,7 +117,40 @@ bool KeyframeBar::on_my_button_press_event(GdkEventButton* event)
 	}
 
 	grab_focus();
+	
+	if(event->state &  (GDK_SHIFT_MASK))
+	{
+		shift_held = true;
 
+		bool activated = false;
+
+		for(int i=0; i < widgets.size(); i++)
+		{
+			KeyframeWidget * kw = widgets[i];
+
+			if(activated && (id - 1) == i)
+			{
+				activated = false;
+				//break;
+				return true;
+			}
+
+			else if(activated)
+			{
+				kw->is_focused = true;
+				several_selected = true;
+			}
+
+			if(kw->is_focused)
+				activated = true;
+
+			//kw->is_focused = true;
+		}
+	}
+	else
+	{
+		shift_held = false;
+	}
 	/*
 	if(event->state & GDK_SHIFT_MASK)
 	{
@@ -136,7 +181,7 @@ bool KeyframeBar::on_my_button_press_event(GdkEventButton* event)
 	//if(event->keyval == GDK_KEY_Delete)
 	//	deleteAllActiveKeyframes();
 	queue_draw();
-	return false;
+	return true;
 }
 
 bool KeyframeBar::on_mouse_(GdkEventMotion* event)
@@ -144,7 +189,6 @@ bool KeyframeBar::on_mouse_(GdkEventMotion* event)
 	//addLayers();
 	//rebuildUi();
 	return false;
-	
 }
 
 void KeyframeBar::deleteAllActiveKeyframes()

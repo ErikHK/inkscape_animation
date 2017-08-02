@@ -16,6 +16,7 @@ public:
     KeyframeBar(int _id, SPObject * _layer);
     virtual ~KeyframeBar();
 	int id;
+	int height;
 	void update();
 	bool is_visible;
 	bool shift_held;
