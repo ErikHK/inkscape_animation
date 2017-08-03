@@ -71,7 +71,7 @@ static gint playLoop(gpointer data)
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(data);
 
 	//SPDesktop * desktop = tb->desktop;
-	static int i = 2;
+	static int i = kw->parent->animation_start;
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	if(desktop)
 	{
@@ -101,7 +101,8 @@ static gint playLoop(gpointer data)
 
 		//if(next->getRepr()->childCount() == 0)
 		//if(i == 22)
-		if(kw->parent->widgets[i]->is_animation_stop || i == 99)
+		//if(kw->parent->widgets[i]->is_animation_stop || i == 99)
+			if(kw->parent->animation_stop == i || i == 99)
 		{
 			next = desktop->getDocument()->getObjectById(
 					std::string(Glib::ustring::format("animationlayer", 1, "keyframe", 1)));
@@ -110,7 +111,7 @@ static gint playLoop(gpointer data)
 			if(next)
 				SP_ITEM(next)->setHidden(false);
 			//SP_ITEM(next2)->setHidden(false);
-			i = 2;
+			i = kw->parent->animation_start;
 		}
 
 		if(!next)
@@ -425,10 +426,31 @@ static void animationStop(KeyframeWidget * kww, gpointer data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(data);
 	
+	if(kw->id < kw->parent->animation_start)
+		return;
+	
 	for(int i=0;i < kw->parent->widgets.size();i++)
 		kw->parent->widgets[i]->is_animation_stop = false;
 	
 	kw->is_animation_stop = true;
+	kw->parent->animation_stop = kw->id;
+	
+	kw->parent->queue_draw();
+}
+
+static void animationStart(KeyframeWidget * kww, gpointer data)
+{
+	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(data);
+	
+	if(kw->id > kw->parent->animation_stop)
+		return;
+	
+	for(int i=0;i < kw->parent->widgets.size();i++)
+		kw->parent->widgets[i]->is_animation_start = false;
+	
+
+	kw->is_animation_start = true;
+	kw->parent->animation_start = kw->id;
 	
 	kw->parent->queue_draw();
 }
@@ -1375,6 +1397,15 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	id = _id;
 	is_focused = false;
 	is_animation_stop = false;
+	is_animation_start = false;
+	animation_start = 1;
+	animation_stop = 10;
+	
+	if(id == 1)
+		is_animation_start = true;
+	
+	if(id==10)
+		is_animation_stop = true;
 	
 	next = NULL;
 	prev = NULL;
@@ -1421,6 +1452,13 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 						  G_CALLBACK(animationStop),
 						  this);
 						  
+	Gtk::MenuItem *addAnimationStart = new Gtk::MenuItem("Set animation start");
+	
+	g_signal_connect( addAnimationStart->gobj(),
+						  "activate",
+						  G_CALLBACK(animationStart),
+						  this);
+						  
 	settingsItem = Gtk::manage(new Gtk::MenuItem("Settings..."));
 	
 	g_signal_connect( settingsItem->gobj(),
@@ -1435,6 +1473,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	pMenu->add(*showAll);
 	pMenu->add(*onion);
 	pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
+	pMenu->add(*addAnimationStart);
 	pMenu->add(*addAnimationStop);
 	pMenu->add(*Gtk::manage(new Gtk::SeparatorMenuItem()));
 	pMenu->add(*settingsItem);
@@ -1579,9 +1618,6 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		if(is_focused)
 			cr->set_source_rgba(.8, 0, 0, .75);
 		
-		if(is_animation_stop)
-			cr->set_source_rgba(.4, 0, 0, .75);
-		
 		cr->paint();
 		
 		if(!is_empty)
@@ -1589,6 +1625,18 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 			cr->set_source_rgba(0, 0, 0, 1);
 			cr->arc(width/2, height/2, width/4, 0, 6.283);
 		}
+		
+		if(is_animation_stop)
+		{
+			cr->set_source_rgba(.4, 0, 0, .75);
+			cr->rectangle(width*3/4, 0, width/4, height);
+		}
+		if(is_animation_start)
+		{
+			cr->set_source_rgba(.4, 0, 0, .75);
+			cr->rectangle(0, 0, width/4, height);
+		}
+		
 		
 		cr->fill();
 	
