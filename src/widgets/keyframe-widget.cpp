@@ -73,62 +73,68 @@ static gint playLoop(gpointer data)
 	//SPDesktop * desktop = tb->desktop;
 	static int i = kw->parent->animation_start;
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
-	if(desktop)
+	if(!desktop)
+		return false;
+
+	if(!desktop->is_playing)
+		return false;
+
+	SPObject * nextl = desktop->getDocument()->getObjectById(
+			std::string(Glib::ustring::format("animationlayer", 1, "keyframe", i)));
+
+	SPObject * thisl = desktop->getDocument()->getObjectById(
+			std::string(Glib::ustring::format("animationlayer", 1, "keyframe", i-1)));  //desktop->currentLayer();
+
+	if(kw->parent->animation_start == i)
 	{
-		if(!desktop->is_playing)
-			return false;
+		thisl = desktop->getDocument()->getObjectById(
+						std::string(Glib::ustring::format("animationlayer", 1, "keyframe", kw->parent->animation_stop)));
 
-		//SPObject *next=Inkscape::next_layer(desktop->currentRoot(), desktop->currentLayer());
-		//SPObject * next = desktop->currentLayer()->getNext();
-		SPObject * next = desktop->getDocument()->getObjectById(
-				std::string(Glib::ustring::format("animationlayer", 1, "keyframe", i)));
-		//SPObject * next2 = desktop->getDocument()->getObjectById(
-		//				std::string(Glib::ustring::format("animationlayer", 2, "keyframe", i)));
-		SPObject * thisl = desktop->getDocument()->getObjectById(
-				std::string(Glib::ustring::format("animationlayer", 1, "keyframe", i-1)));  //desktop->currentLayer();
-		//SPObject * thisl2 = desktop->getDocument()->getObjectById(
-		//				std::string(Glib::ustring::format("animationlayer", 2, "keyframe", i-1)));  //desktop->currentLayer();
-		//SPObject * prev = desktop->currentLayer()->getPrev();
+		if(kw->parent->widgets[kw->parent->animation_stop-1])
+			kw->parent->widgets[kw->parent->animation_stop-1]->is_focused = false;
 
-		if(thisl)
-			SP_ITEM(thisl)->setHidden(true);
-		//SP_ITEM(thisl2)->setHidden(true);
-		if(next)
-			SP_ITEM(next)->setHidden(false);
-		//SP_ITEM(next2)->setHidden(false);
-
-		i++;
-
-		//if(next->getRepr()->childCount() == 0)
-		//if(i == 22)
-		//if(kw->parent->widgets[i]->is_animation_stop || i == 99)
-			if(kw->parent->animation_stop == i || i == 99)
-		{
-			next = desktop->getDocument()->getObjectById(
-					std::string(Glib::ustring::format("animationlayer", 1, "keyframe", 1)));
-			//next2 = desktop->getDocument()->getObjectById(
-					//std::string(Glib::ustring::format("animationlayer", 2, "keyframe", 1)));
-			if(next)
-				SP_ITEM(next)->setHidden(false);
-			//SP_ITEM(next2)->setHidden(false);
-			i = kw->parent->animation_start;
-		}
-
-		if(!next)
-			return false;
-		//desktop->layer_manager->setCurrentLayer(next);
-		//desktop->toggleLayerSolo(next);
-
-		//desktop->setCurrentLayer(next);
-
+		kw->parent->widgets[i-1]->is_focused = true;
 	}
 
-	if(kw->parent->widgets[i] && kw->parent->widgets[i-1])
+	if(thisl)
+		SP_ITEM(thisl)->setHidden(true);
+
+	if(nextl)
+		SP_ITEM(nextl)->setHidden(false);
+
+	if(kw->parent->animation_stop == i)
 	{
-		kw->parent->widgets[i]->is_focused = true;
-		kw->parent->widgets[i-1]->is_focused = false;
+		//nextl = desktop->getDocument()->getObjectById(
+		//		std::string(Glib::ustring::format("animationlayer", 1, "keyframe", kw->parent->animation_start)));
+
+		//if(nextl)
+		//	SP_ITEM(nextl)->setHidden(false);
+
+		//kw->parent->widgets[i-2]->is_focused = false;
+		//kw->parent->widgets[i-1]->is_focused = false;
+		//kw->parent->widgets[i+1]->is_focused = false;
+
+		kw->parent->widgets[i-2]->is_focused = false;
+		kw->parent->widgets[i-1]->is_focused = true;
+		i = kw->parent->animation_start;
 		kw->parent->queue_draw();
+		return true;
+
 	}
+
+
+	if(kw->parent->widgets[i-2] && i >= 2)
+		kw->parent->widgets[i-2]->is_focused = false;
+
+	if(kw->parent->widgets[i-1])
+		kw->parent->widgets[i-1]->is_focused = true;
+
+	kw->parent->queue_draw();
+
+	i++;
+
+	if(!nextl)
+		return false;
 
 	return true;
 }
@@ -1624,6 +1630,7 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		{
 			cr->set_source_rgba(0, 0, 0, 1);
 			cr->arc(width/2, height/2, width/4, 0, 6.283);
+			cr->fill();
 		}
 		
 		if(is_animation_stop)
@@ -1636,7 +1643,6 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 			cr->set_source_rgba(.4, 0, 0, .75);
 			cr->rectangle(0, 0, width/4, height);
 		}
-		
 		
 		cr->fill();
 	
