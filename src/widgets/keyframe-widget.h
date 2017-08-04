@@ -25,6 +25,7 @@ public:
 	SPObject * layer;
 	bool is_empty;
 	bool is_focused;
+	bool is_dragging_over;
 	bool is_animation_stop;
 	bool is_animation_start;
 	int animation_start;

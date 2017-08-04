@@ -1335,8 +1335,15 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 
 bool KeyframeWidget::on_my_drag_motion_event(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time)
 {
+
 	int xx = x;
 	int yy = y;
+
+	for(int i=0;i<parent->widgets.size();i++)
+		parent->widgets[i]->is_dragging_over = false;
+
+	is_dragging_over = true;
+	parent->queue_draw();
 
 	return false;
 }
@@ -1356,10 +1363,16 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
 	const int length = selection_data.get_length();
 	if((length >= 0) && (selection_data.get_format() == 8))
 	{
-		int id = atoi(selection_data.get_data_as_string().c_str());
+		int idd = atoi(selection_data.get_data_as_string().c_str());
+
 		parent->widgets[id-1]->is_focused = true;
+
+		parent->widgets[id-1]->is_empty = parent->widgets[idd-1]->is_empty;
+		parent->widgets[idd-1]->is_empty = true;
 		parent->queue_draw();
 	}
+
+	is_dragging_over = false;
 
 	context->drag_finish(false, false, time);
 }
@@ -1407,6 +1420,8 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	animation_start = 1;
 	animation_stop = 10;
 	
+	is_dragging_over = false;
+
 	if(id == 1)
 		is_animation_start = true;
 	
@@ -1644,6 +1659,12 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 			cr->rectangle(0, 0, width/4, height);
 		}
 		
+		if(is_dragging_over)
+		{
+			cr->set_source_rgba(0, 0, 0, .75);
+			cr->rectangle(0, 0, width, height);
+		}
+
 		cr->fill();
 	
 		//add line to the bottom
