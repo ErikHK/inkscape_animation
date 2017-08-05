@@ -1364,15 +1364,40 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
 	if((length >= 0) && (selection_data.get_format() == 8))
 	{
 		int idd = atoi(selection_data.get_data_as_string().c_str());
+		KeyframeWidget * kw_src = parent->widgets[idd-1];
+		
+		if(idd == id)
+		{
+			is_dragging_over = false;
+			parent->queue_draw();
+			return;
+		}
 
 		parent->widgets[id-1]->is_focused = true;
 
 		parent->widgets[id-1]->is_empty = parent->widgets[idd-1]->is_empty;
-		parent->widgets[idd-1]->is_empty = true;
+		
 		parent->queue_draw();
+		
+		//copy contents of idd to this
+		while(kw_src->layer->getRepr()->childCount() > 0)
+		{
+			Inkscape::XML::Node * childn_copy = NULL;
+			Inkscape::XML::Node * childn = kw_src->layer->getRepr()->firstChild();
+			if(childn)
+				childn_copy = childn->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc());
+			
+			//Inkscape::XML::Node * n = kw_src->layer->getRepr()->firstChild();
+			layer->getRepr()->appendChild(childn_copy);
+			kw_src->layer->getRepr()->removeChild(childn);
+		}
+		
+		kw_src->is_empty = true;
 	}
 
 	is_dragging_over = false;
+	
+	
 
 	context->drag_finish(false, false, time);
 }
