@@ -1388,6 +1388,13 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
 				childn_copy = childn->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc());
 			
 			//Inkscape::XML::Node * n = kw_src->layer->getRepr()->firstChild();
+			if(!layer)
+			{
+				Inkscape::create_animation_keyframe(SP_ACTIVE_DESKTOP->currentRoot(), parent->layer, id);
+				layer = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(
+										Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
+			}
+
 			layer->getRepr()->appendChild(childn_copy);
 			kw_src->layer->getRepr()->removeChild(childn);
 		}
