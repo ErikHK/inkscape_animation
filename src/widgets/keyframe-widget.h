@@ -50,6 +50,7 @@ protected:
 	bool on_my_button_release_event(GdkEventButton* event);
 	bool on_my_button_press_event(GdkEventButton* event);
 	bool on_my_drag_motion_event(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time);
+	void on_my_drag_leave_event(const Glib::RefPtr<Gdk::DragContext>& context, guint time);
 	void on_my_drag_begin_event(const Glib::RefPtr<Gdk::DragContext>& context);
 	void on_my_drag_data_get(const Glib::RefPtr< Gdk::DragContext >&  	context,
 			Gtk::SelectionData&  	selection_data,

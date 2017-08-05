@@ -276,6 +276,7 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 		defocusAllKeyframes();
 	}
 
+	is_dragging_over = false;
 	parent->queue_draw();
 	return false;
 }
@@ -1333,6 +1334,12 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	return false;
 }
 
+void KeyframeWidget::on_my_drag_leave_event(const Glib::RefPtr<Gdk::DragContext>& context, guint time)
+{
+	is_dragging_over = false;
+	parent->queue_draw();
+}
+
 bool KeyframeWidget::on_my_drag_motion_event(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time)
 {
 
@@ -1600,6 +1607,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	gtk_drag_dest_set( GTK_WIDGET(this->gobj() ), GTK_DEST_DEFAULT_ALL, entries, entryCount, GdkDragAction(GDK_ACTION_MOVE | GDK_ACTION_COPY));
 
 	signal_drag_motion().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_motion_event));
+	signal_drag_leave().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_leave_event));
 	signal_drag_begin().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_begin_event));
 	signal_drag_data_get().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_data_get));
 	signal_drag_data_received().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_data_received));
@@ -1680,6 +1688,13 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 			cr->fill();
 		}
 		
+		//add line to the bottom
+		cr->set_source_rgba(.6,.6,.6,1);
+		cr->set_line_width(1.0);
+		cr->move_to(0, height-.5);
+		cr->line_to(width, height-.5);
+		cr->stroke();
+
 		if(is_animation_stop)
 		{
 			cr->set_source_rgba(.4, 0, 0, .75);
@@ -1699,12 +1714,7 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 
 		cr->fill();
 	
-		//add line to the bottom
-		cr->set_source_rgba(.6,.6,.6,1);
-		cr->set_line_width(1.0);
-		cr->move_to(0, height-.5);
-		cr->line_to(width, height-.5);
-		cr->stroke();
+
 	}
 	
 	if(height > 10)
