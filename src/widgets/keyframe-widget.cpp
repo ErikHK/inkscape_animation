@@ -1367,13 +1367,37 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
         const Gtk::SelectionData& selection_data, guint, guint time)
 {
 	
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	if(!desktop)
+		return;
+	
 	const int length = selection_data.get_length();
 	if((length >= 0) && (selection_data.get_format() == 8))
 	{
-		int idd = atoi(selection_data.get_data_as_string().c_str());
-		KeyframeWidget * kw_src = parent->widgets[idd-1];
+		//int idd = atoi(selection_data.get_data_as_string().c_str());
 		
-		if(idd == id)
+		//const char * str = selection_data.get_data_as_string().c_str();
+		
+		//const char * pch;
+		//pch = strtok(str, ",");
+		
+		//int parent_idd = atoi(pch);
+		//pch = strtok(str, ",");
+		//int idd = atoi(pch);
+		
+		std::vector<Glib::ustring> parts = Glib::Regex::split_simple(",", selection_data.get_data_as_string());
+		
+		int parent_idd = atoi(parts[0].c_str());
+		int idd = atoi(parts[1].c_str());
+		
+		//KeyframeWidget * kw_src = parent->widgets[idd-1];
+		SPObject * kw_src_layer = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(
+										Glib::ustring::format("animationlayer", parent_idd, "keyframe", idd));
+
+		if(!kw_src_layer)
+			return;
+		
+		if(idd == id && parent_idd == parent_id)
 		{
 			is_dragging_over = false;
 			parent->queue_draw();
@@ -1387,10 +1411,10 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
 		parent->queue_draw();
 		
 		//copy contents of idd to this
-		while(kw_src->layer->getRepr()->childCount() > 0)
+		while(kw_src_layer->getRepr()->childCount() > 0)
 		{
 			Inkscape::XML::Node * childn_copy = NULL;
-			Inkscape::XML::Node * childn = kw_src->layer->getRepr()->firstChild();
+			Inkscape::XML::Node * childn = kw_src_layer->getRepr()->firstChild();
 			if(childn)
 				childn_copy = childn->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc());
 			
@@ -1401,17 +1425,21 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
 				layer = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(
 										Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
 			}
+			
+			desktop->setCurrentLayer(layer);
 
 			layer->getRepr()->appendChild(childn_copy);
-			kw_src->layer->getRepr()->removeChild(childn);
+			kw_src_layer->getRepr()->removeChild(childn);
 		}
 		
-		kw_src->is_empty = true;
+		//kw_src.is_empty = true;
 	}
 
 	is_dragging_over = false;
 	
 	
+	//emit change
+	desktop->getSelection()->emit();
 
 	context->drag_finish(false, false, time);
 }
@@ -1422,12 +1450,14 @@ void KeyframeWidget::on_my_drag_data_get(const Glib::RefPtr< Gdk::DragContext >&
 		guint  	info,
 		guint  	time)
 {
-	std::string hehe = std::to_string(id);
+	//std::string hehe = std::to_string(id);
+	
+	Glib::ustring hehe = Glib::ustring::format(parent_id, ",", id);
 	
 	selection_data.set(selection_data.get_target(), 8 /* 8 bits format */,
           (const guchar*) hehe.c_str(),
           sizeof(hehe.c_str()));
-
+	
 }
 
 bool KeyframeWidget::on_my_drag_drop(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time)
