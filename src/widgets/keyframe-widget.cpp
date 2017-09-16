@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <string.h>
 #include <ctime>
 #include <cmath>
 #include <cairomm/context.h>
@@ -911,8 +913,10 @@ static void guidedTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 		if(!child)
 			break;
 
-		child->setAttribute("transform",
-				Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
+		//child->setAttribute("transform",
+		//		Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
+
+		SP_ITEM(child)->transform.setTranslation(Geom::Point(p[0], p[1]));
 
 		layer = nextLayer;
 		i++;
@@ -940,8 +944,10 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 		if(!child)
 			return;
 		
-		child->getRepr()->setAttribute("transform", 
-			Glib::ustring::format("translate(", start_x + j*inc_x, ",", start_y + j*inc_y, ")" ));
+		//child->getRepr()->setAttribute("transform",
+		//	Glib::ustring::format("translate(", start_x + j*inc_x, ",", start_y + j*inc_y, ")" ));
+
+		SP_ITEM(child)->transform.setTranslation(Geom::Point(start_x + j*inc_x, start_y + j*inc_y));
 
 		j++;
 	}
@@ -1011,6 +1017,12 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(!child)
 			return;
 		
+		//SP_ITEM(child)->setCenter(Geom::Point(0,0));
+		//SP_ITEM(child)->transform.setTranslation(Geom::Point(0,0));
+
+
+
+
 		//get end color
 		sp_color_get_rgb_floatv (&SP_ITEM(child)->style->fill.value.color, end_rgb);
 		
@@ -1039,6 +1051,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		{
 			end_x = std::stof(childn->attribute(xs.c_str()));
 			end_y = std::stof(childn->attribute(ys.c_str()));
+			childn->setAttribute(xs.c_str(), Glib::ustring::format(0));
+			childn->setAttribute(ys.c_str(), Glib::ustring::format(0));
 		}
 		
 		/*
@@ -1075,69 +1089,29 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		
 		if(!child)
 			return;
-		
+
 		sp_color_get_rgb_floatv (&SP_ITEM(child)->style->fill.value.color, start_rgb);
-		
+
 		//get opacity
 		start_opacity = SP_ITEM(child)->style->opacity.value;
 		
 		if(!is_group && !is_path)
 		{
+
 			start_x = std::stof(childn->attribute(xs.c_str()));
 			start_y = std::stof(childn->attribute(ys.c_str()));
+			SP_ITEM(child)->transform.setTranslation(Geom::Point(start_x, start_y));
+			childn->setAttribute(xs.c_str(), Glib::ustring::format(0));
+			childn->setAttribute(ys.c_str(), Glib::ustring::format(0));
+
 		}
 		
 		if(is_group)
 		{
 			start_x = SP_ITEM(child)->transform.translation()[0];
 			start_y = SP_ITEM(child)->transform.translation()[1];
+
 		}
-
-		/*
-		if(is_path)
-		{
-			Geom::Point p = SP_SHAPE(child)->desktopGeometricBounds()->midpoint();
-			//Geom::Point p = SP_SHAPE(child)->desktopVisualBounds()->midpoint();
-
-			start_x = p[0];
-			start_y = p[1];
-
-			start_x = Quantity::convert(start_x, "px", "mm");
-			start_y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(start_y, "px", "mm");
-		}
-		*/
-
-		/*
-		if(is_path)
-		{
-			
-			NodeTool *tool = get_node_tool();
-			
-			if(tool)
-			{
-				Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
-				cps->selectAll();
-				Node *n = dynamic_cast<Node *>(*cps->begin());
-				
-				if(n)
-				{
-					PathManipulator &pm = n->nodeList().subpathList().pm();
-					Geom::Point pos = n->position();
-					start_x = pos[0];
-					start_y = pos[1];
-				}
-				else
-				{
-					start_x = SP_ITEM(child)->getCenter()[0];
-					start_y = SP_ITEM(child)->getCenter()[1];
-				}
-			}
-			
-			//convert
-			//start_x = Quantity::convert(start_x, "px", "mm");
-			//start_y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(start_y, "px", "mm");
-		}
-		*/
 	}
 	
 	inc_x = (end_x - start_x)/(num_layers);
@@ -1222,7 +1196,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		guidedTween(kw, startLayer, endLayer);
 		
 	//is group, ellipse, rect etc etc
-	else if(startLayer->getRepr()->childCount() == 1 && startLayer->getRepr()->childCount() == 1)
+	else if(startLayer->getRepr()->childCount() == 1)
 		linearTween(kw, startLayer, endLayer, start_x, start_y, inc_x, inc_y);
 	
 	//check if a color/opacity tween is in order

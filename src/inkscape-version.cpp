@@ -1,1 +1,7 @@
-namespace Inkscape {  char const *version_string = "0.92.1 r";  }
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+namespace Inkscape {
+    char const *version_string = VERSION " " "r15371";
+}
