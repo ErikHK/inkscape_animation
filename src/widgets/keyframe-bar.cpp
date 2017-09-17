@@ -71,6 +71,7 @@ KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 	shift_held = false;
 	ctrl_held = false;
 	clear_tween = false;
+	unselect = false;
 	id = _id;
 	is_visible = true;
 	several_selected = false;

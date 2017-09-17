@@ -28,6 +28,7 @@ public:
 	
 	int num_keyframes;
 	bool clear_tween;
+	bool unselect;
 	KeyframeBar *next;
 	KeyframeBar *prev;
 

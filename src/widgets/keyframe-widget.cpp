@@ -62,7 +62,11 @@ bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus* event)
 {
 	//pMenu = 0;
 	selectLayer();
-	is_focused = true;
+
+	//if(parent->ctrl_held && is_focused)
+	//	is_focused = false;
+	//else
+	//	is_focused = true;
 
 	return false;
 }
@@ -147,6 +151,7 @@ bool KeyframeWidget::on_my_key_press_event(GdkEventKey * event)
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 
 
+	//handle animation
 	if(event->keyval == GDK_KEY_space)
 	{
 		guint delay = (guint)(1000/desktop->fps);
@@ -198,8 +203,8 @@ bool KeyframeWidget::on_my_key_press_event(GdkEventKey * event)
 	if(!(event->state & GDK_CONTROL_MASK) && !(event->state & GDK_SHIFT_MASK) && event->keyval != GDK_KEY_Delete)
 	{
 		parent->shift_held = false;
-		//parent->ctrl_held = false;
-		defocusAllKeyframes();
+		parent->ctrl_held = false;
+		//defocusAllKeyframes();
 	}
 
 	//queue_draw();
@@ -220,9 +225,8 @@ bool KeyframeWidget::on_my_key_release_event(GdkEventKey * event)
 
 bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 {
-
-	if(!parent->shift_held && !parent->ctrl_held)
-		is_focused = false;
+	//if(!parent->shift_held && !parent->ctrl_held)
+	//	is_focused = false;
 
 	//pMenu = 0;
 	//KeyframeWidget* kw = dynamic_cast<KeyframeWidget*>(event->window);
@@ -1045,6 +1049,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(!strcmp(childn->name(), "svg:g"))
 		{
 			is_group = true;
+			end_x = SP_ITEM(child)->transform.translation()[0];
+			end_y = SP_ITEM(child)->transform.translation()[1];
 		}
 		
 		if(!is_group && !is_path)
@@ -1110,7 +1116,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		{
 			start_x = SP_ITEM(child)->transform.translation()[0];
 			start_y = SP_ITEM(child)->transform.translation()[1];
-
 		}
 	}
 	
@@ -1230,9 +1235,13 @@ void KeyframeWidget::defocusAllKeyframes()
 
 bool KeyframeWidget::on_my_button_release_event(GdkEventButton* event)
 {
-	grab_focus();
-	//gtk_widget_grab_focus(GTK_WIDGET(this));
-	//gtk_widget_set_state( GTK_WIDGET(this), GTK_STATE_ACTIVE );
+
+	if(parent->unselect)
+	{
+		parent->unselect = false;
+		return false;
+	}
+	//grab_focus();
 	
 	//select layer that corresponds to this keyframe
 	//selectLayer();
@@ -1273,6 +1282,8 @@ bool KeyframeWidget::on_my_button_release_event(GdkEventButton* event)
 	}
 	*/
 	
+
+
 	if(event->state & (GDK_CONTROL_MASK))
 	{
 		parent->ctrl_held = true;
@@ -1280,13 +1291,19 @@ bool KeyframeWidget::on_my_button_release_event(GdkEventButton* event)
 	}
 	else
 	{
-		parent->ctrl_held = false;
+		//parent->ctrl_held = false;
 	}
 	
 	if(!(event->state & GDK_SHIFT_MASK) && !(event->state & GDK_CONTROL_MASK))
 	{
 		defocusAllKeyframes();
 	}
+
+	if(!is_focused)
+		grab_focus();
+
+	if(parent->ctrl_held && is_focused)
+		is_focused = false;
 
 	parent->queue_draw();
 	queue_draw();
@@ -1305,6 +1322,13 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 		pMenu->show_all();
 		pMenu->popup(event->button, event->time);
 	}
+
+	if(parent->ctrl_held && is_focused)
+	{
+		is_focused = false;
+		parent->unselect = true;
+	}
+
 	return false;
 }
 
@@ -1679,6 +1703,10 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 
 		if(has_focus())
 			is_focused = true;
+
+		//if(parent->ctrl_held && is_focused)
+		//	is_focused = !is_focused;
+
 
 		if(is_focused)
 			cr->set_source_rgba(.8, 0, 0, .75);
