@@ -27,6 +27,7 @@
 #include "ui/tools-switch.h"
 
 #include "style.h"
+#include "svg/svg.h"
 
 #include "keyframe-bar.h"
 #include "selection-chemistry.h"
@@ -585,10 +586,12 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		return;
 	
 	int i = 0;
+	nextLayer = layer;
 	while(layer != endLayer->next)
 	{
 		nextLayer = desktop->getDocument()->getObjectById(
 					std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
+		//nextLayer = nextLayer->next;
 					
 		//if it's not a tween, return
 		if(i > 0 && ( !nextLayer || !nextLayer->getRepr()->attribute("inkscape:tween")))
@@ -599,8 +602,10 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 			path = SP_PATH(startLayer->firstChild());
 		else if(startLayer->getRepr()->childCount() > 1 && SP_IS_PATH(startLayer->firstChild()->next))
 			path = SP_PATH(startLayer->firstChild()->next);
-		else
-			return;
+		else if(SP_IS_PATH(startLayer->parent->lastChild()))
+			path = SP_PATH(startLayer->parent->lastChild());
+		//else
+		//	return;
 		
 		bool is_along_path = false;
 		
@@ -611,8 +616,8 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 
 		Geom::PathVector pathv = curve->get_pathvector();
 
-		Geom::Point p = pathv.pointAt((i)*pathv.timeRange().max()/(num_keyframes + 1));
-
+		//Geom::Point p = pathv.pointAt((i)*pathv.timeRange().max()/(num_keyframes + 1));
+		Geom::Point p = Geom::Point(100*i,100*i);
 
 		nextLayer = desktop->getDocument()->getObjectById(
 		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
@@ -629,6 +634,7 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		if(is_along_path)
 			child->setAttribute("transform",
 					Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
+		//SP_ITEM(child)->transform.setTranslation(Geom::Point(p[0], p[1])); //does not update!!
 
 		layer = nextLayer;
 		i++;
@@ -928,26 +934,63 @@ static void guidedTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 	}
 }
 
-static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * endLayer, float start_x, float start_y, float inc_x, float inc_y)
+
+static void createGuide(float start_x, float start_y, float end_x, float end_y)
+{
+
+	SPCurve * c = new SPCurve();
+	c->moveto(Geom::Point(start_x,start_y));
+	c->lineto(Geom::Point(end_x,end_y));
+
+    Inkscape::XML::Document *xml_doc = SP_ACTIVE_DOCUMENT->getReprDoc();
+
+    Inkscape::XML::Node *repr;
+    if ( c && !c->is_empty() ) {
+        // We actually have something to write
+
+        //bool has_lpe = false;
+
+		repr = xml_doc->createElement("svg:path");
+		gchar *str = sp_svg_write_path( c->get_pathvector() );
+		g_assert( str != NULL );
+		//if (has_lpe)
+		//    repr->setAttribute("inkscape:original-d", str);
+		//else
+
+		repr->setAttribute("d", str);
+		repr->setAttribute("style", "stroke:#000000;fill:none");
+		repr->setAttribute("inkscape:tweenpath", "true");
+		g_free(str);
+
+		SPItem *item = SP_ITEM(SP_ACTIVE_DESKTOP->currentLayer()->parent->appendChildRepr(repr));
+		//SPItem *item = SP_ITEM(SP_ACTIVE_DESKTOP->currentLayer()->parent->appendChild(repr));
+    }
+
+}
+
+
+static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * endLayer, float start_x, float start_y, float end_x, float end_y, float inc_x, float inc_y)
 {
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	SPObject * layer = startLayer;
-	
+
 	int j = 1;
-	
+
+	createGuide(start_x, start_y, end_x, end_y);
+
 	while(layer->next)
 	{
 		//layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
 		layer = layer->next;
-		
+
 		if(!layer)
 			return;
-		
+
 		SPObject * child = layer->firstChild();
-		
+
 		if(!child)
 			return;
-		
+
 		//child->getRepr()->setAttribute("transform",
 		//	Glib::ustring::format("translate(", start_x + j*inc_x, ",", start_y + j*inc_y, ")" ));
 
@@ -955,7 +998,7 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 
 		j++;
 	}
-	
+
 }
 
 
@@ -1119,6 +1162,11 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		}
 	}
 	
+
+	//spdc_flush_white in freehand-base.cpp!
+	//FreehandBase *dc = new FreehandBase();
+
+
 	inc_x = (end_x - start_x)/(num_layers);
 	inc_y = (end_y - start_y)/(num_layers);
 	
@@ -1202,7 +1250,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		
 	//is group, ellipse, rect etc etc
 	else if(startLayer->getRepr()->childCount() == 1)
-		linearTween(kw, startLayer, endLayer, start_x, start_y, inc_x, inc_y);
+		linearTween(kw, startLayer, endLayer, start_x, start_y, end_x, end_y, inc_x, inc_y);
 	
 	//check if a color/opacity tween is in order
 	//if()

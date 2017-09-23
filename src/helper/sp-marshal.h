@@ -6,7 +6,7 @@
 
 G_BEGIN_DECLS
 
-/* NONE:POINTER,UINT (./helper/sp-marshal.list:2) */
+/* NONE:POINTER,UINT (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:2) */
 extern void sp_marshal_VOID__POINTER_UINT (GClosure     *closure,
                                            GValue       *return_value,
                                            guint         n_param_values,
@@ -15,7 +15,7 @@ extern void sp_marshal_VOID__POINTER_UINT (GClosure     *closure,
                                            gpointer      marshal_data);
 #define sp_marshal_NONE__POINTER_UINT	sp_marshal_VOID__POINTER_UINT
 
-/* BOOLEAN:POINTER (./helper/sp-marshal.list:3) */
+/* BOOLEAN:POINTER (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:3) */
 extern void sp_marshal_BOOLEAN__POINTER (GClosure     *closure,
                                          GValue       *return_value,
                                          guint         n_param_values,
@@ -23,7 +23,7 @@ extern void sp_marshal_BOOLEAN__POINTER (GClosure     *closure,
                                          gpointer      invocation_hint,
                                          gpointer      marshal_data);
 
-/* BOOLEAN:POINTER,UINT (./helper/sp-marshal.list:4) */
+/* BOOLEAN:POINTER,UINT (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:4) */
 extern void sp_marshal_BOOLEAN__POINTER_UINT (GClosure     *closure,
                                               GValue       *return_value,
                                               guint         n_param_values,
@@ -31,7 +31,7 @@ extern void sp_marshal_BOOLEAN__POINTER_UINT (GClosure     *closure,
                                               gpointer      invocation_hint,
                                               gpointer      marshal_data);
 
-/* BOOLEAN:POINTER,POINTER (./helper/sp-marshal.list:5) */
+/* BOOLEAN:POINTER,POINTER (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:5) */
 extern void sp_marshal_BOOLEAN__POINTER_POINTER (GClosure     *closure,
                                                  GValue       *return_value,
                                                  guint         n_param_values,
@@ -39,7 +39,7 @@ extern void sp_marshal_BOOLEAN__POINTER_POINTER (GClosure     *closure,
                                                  gpointer      invocation_hint,
                                                  gpointer      marshal_data);
 
-/* INT:POINTER,POINTER (./helper/sp-marshal.list:6) */
+/* INT:POINTER,POINTER (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:6) */
 extern void sp_marshal_INT__POINTER_POINTER (GClosure     *closure,
                                              GValue       *return_value,
                                              guint         n_param_values,
@@ -47,7 +47,7 @@ extern void sp_marshal_INT__POINTER_POINTER (GClosure     *closure,
                                              gpointer      invocation_hint,
                                              gpointer      marshal_data);
 
-/* DOUBLE:POINTER,UINT (./helper/sp-marshal.list:7) */
+/* DOUBLE:POINTER,UINT (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:7) */
 extern void sp_marshal_DOUBLE__POINTER_UINT (GClosure     *closure,
                                              GValue       *return_value,
                                              guint         n_param_values,
@@ -55,7 +55,7 @@ extern void sp_marshal_DOUBLE__POINTER_UINT (GClosure     *closure,
                                              gpointer      invocation_hint,
                                              gpointer      marshal_data);
 
-/* VOID:INT,INT (./helper/sp-marshal.list:8) */
+/* VOID:INT,INT (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:8) */
 extern void sp_marshal_VOID__INT_INT (GClosure     *closure,
                                       GValue       *return_value,
                                       guint         n_param_values,

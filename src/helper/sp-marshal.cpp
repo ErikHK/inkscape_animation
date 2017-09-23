@@ -1,4 +1,4 @@
-#include "helper/sp-marshal.h"
+#include "sp-marshal.h" 
 
 #include	<glib-object.h>
 
@@ -50,7 +50,7 @@
 #endif /* !G_ENABLE_DEBUG */
 
 
-/* NONE:POINTER,UINT (./helper/sp-marshal.list:2) */
+/* NONE:POINTER,UINT (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:2) */
 void
 sp_marshal_VOID__POINTER_UINT (GClosure     *closure,
                                GValue       *return_value G_GNUC_UNUSED,
@@ -87,7 +87,7 @@ sp_marshal_VOID__POINTER_UINT (GClosure     *closure,
             data2);
 }
 
-/* BOOLEAN:POINTER (./helper/sp-marshal.list:3) */
+/* BOOLEAN:POINTER (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:3) */
 void
 sp_marshal_BOOLEAN__POINTER (GClosure     *closure,
                              GValue       *return_value G_GNUC_UNUSED,
@@ -126,7 +126,7 @@ sp_marshal_BOOLEAN__POINTER (GClosure     *closure,
   g_value_set_boolean (return_value, v_return);
 }
 
-/* BOOLEAN:POINTER,UINT (./helper/sp-marshal.list:4) */
+/* BOOLEAN:POINTER,UINT (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:4) */
 void
 sp_marshal_BOOLEAN__POINTER_UINT (GClosure     *closure,
                                   GValue       *return_value G_GNUC_UNUSED,
@@ -167,7 +167,7 @@ sp_marshal_BOOLEAN__POINTER_UINT (GClosure     *closure,
   g_value_set_boolean (return_value, v_return);
 }
 
-/* BOOLEAN:POINTER,POINTER (./helper/sp-marshal.list:5) */
+/* BOOLEAN:POINTER,POINTER (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:5) */
 void
 sp_marshal_BOOLEAN__POINTER_POINTER (GClosure     *closure,
                                      GValue       *return_value G_GNUC_UNUSED,
@@ -208,7 +208,7 @@ sp_marshal_BOOLEAN__POINTER_POINTER (GClosure     *closure,
   g_value_set_boolean (return_value, v_return);
 }
 
-/* INT:POINTER,POINTER (./helper/sp-marshal.list:6) */
+/* INT:POINTER,POINTER (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:6) */
 void
 sp_marshal_INT__POINTER_POINTER (GClosure     *closure,
                                  GValue       *return_value G_GNUC_UNUSED,
@@ -249,7 +249,7 @@ sp_marshal_INT__POINTER_POINTER (GClosure     *closure,
   g_value_set_int (return_value, v_return);
 }
 
-/* DOUBLE:POINTER,UINT (./helper/sp-marshal.list:7) */
+/* DOUBLE:POINTER,UINT (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:7) */
 void
 sp_marshal_DOUBLE__POINTER_UINT (GClosure     *closure,
                                  GValue       *return_value G_GNUC_UNUSED,
@@ -290,7 +290,7 @@ sp_marshal_DOUBLE__POINTER_UINT (GClosure     *closure,
   g_value_set_double (return_value, v_return);
 }
 
-/* VOID:INT,INT (./helper/sp-marshal.list:8) */
+/* VOID:INT,INT (/home/erikhk/inkscape_animation/src/helper/sp-marshal.list:8) */
 void
 sp_marshal_VOID__INT_INT (GClosure     *closure,
                           GValue       *return_value G_GNUC_UNUSED,
