@@ -586,7 +586,6 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		return;
 	
 	int i = 0;
-	nextLayer = layer;
 	while(layer != endLayer->next)
 	{
 		nextLayer = desktop->getDocument()->getObjectById(
@@ -602,11 +601,11 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 			path = SP_PATH(startLayer->firstChild());
 		else if(startLayer->getRepr()->childCount() > 1 && SP_IS_PATH(startLayer->firstChild()->next))
 			path = SP_PATH(startLayer->firstChild()->next);
-		else if(SP_IS_PATH(startLayer->parent->lastChild()))
-			path = SP_PATH(startLayer->parent->lastChild());
-		//else
-		//	return;
-		
+		else if(SP_IS_PATH(startLayer->lastChild()))
+			path = SP_PATH(startLayer->lastChild());
+		else
+			return;
+
 		bool is_along_path = false;
 		
 		if(path->getRepr()->attribute("inkscape:tweenpath"))
@@ -616,8 +615,8 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 
 		Geom::PathVector pathv = curve->get_pathvector();
 
-		//Geom::Point p = pathv.pointAt((i)*pathv.timeRange().max()/(num_keyframes + 1));
-		Geom::Point p = Geom::Point(100*i,100*i);
+		Geom::Point p = pathv.pointAt((i)*pathv.timeRange().max()/(num_keyframes + 1));
+		//Geom::Point p = Geom::Point(100*i,100*i);
 
 		nextLayer = desktop->getDocument()->getObjectById(
 		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
@@ -634,7 +633,7 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		if(is_along_path)
 			child->setAttribute("transform",
 					Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
-		//SP_ITEM(child)->transform.setTranslation(Geom::Point(p[0], p[1])); //does not update!!
+			//SP_ITEM(child)->transform.setTranslation(Geom::Point(p[0], p[1])); //does not update!!
 
 		layer = nextLayer;
 		i++;
@@ -935,7 +934,7 @@ static void guidedTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 }
 
 
-static void createGuide(float start_x, float start_y, float end_x, float end_y)
+static void createGuide(KeyframeWidget * kw, float start_x, float start_y, float end_x, float end_y)
 {
 
 	SPCurve * c = new SPCurve();
@@ -962,7 +961,9 @@ static void createGuide(float start_x, float start_y, float end_x, float end_y)
 		repr->setAttribute("inkscape:tweenpath", "true");
 		g_free(str);
 
-		SPItem *item = SP_ITEM(SP_ACTIVE_DESKTOP->currentLayer()->parent->appendChildRepr(repr));
+		//store in ...
+		SPItem *item = SP_ITEM(kw->layer->appendChildRepr(repr));
+		//SPItem *item = SP_ITEM(SP_ACTIVE_DESKTOP->currentLayer()->parent->appendChildRepr(repr));
 		//SPItem *item = SP_ITEM(SP_ACTIVE_DESKTOP->currentLayer()->parent->appendChild(repr));
     }
 
@@ -976,7 +977,7 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 
 	int j = 1;
 
-	createGuide(start_x, start_y, end_x, end_y);
+	createGuide(kw, start_x, start_y, end_x, end_y);
 
 	while(layer->next)
 	{
@@ -1640,6 +1641,8 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 
 		_sel_changed_connection2 = desktop->connectToolSubselectionChanged(
 				sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_update_tween)));
+
+		//desktop->doc()->connectModified(sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_update_tween)));
 
 		//desktop->connectToolSubselectionChanged()
 
