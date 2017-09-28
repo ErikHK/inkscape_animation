@@ -397,7 +397,6 @@ void KeyframeWidget::selectLayer()
 	}
 }
 
-
 static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
@@ -407,15 +406,25 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 	if(!p)
 		return;
 
-
+	int id = kw->id-1;
 	while(p)
 	{
-		//break if a p with at least 1 child is found
+		//break if a previous with at least 1 child is found
 		if(p->layer && p->layer->getRepr()->childCount() >= 1)
 			break;
 		
+		if(!p->layer)
+		{
+			Inkscape::create_animation_keyframe(SP_ACTIVE_DESKTOP->currentRoot(), kw->parent->layer, id);
+			p->layer = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(
+										Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", id));
+		}
+		
 		p = p->prev;
+		id--;
 	}
+	
+	int new_id = p->id;
 	
 	if(!p)
 		return;
@@ -560,6 +569,11 @@ static int numKeyframes(KeyframeWidget * kw)
 	return num_layers;
 }
 
+static float easeIn(float t, float a)
+{
+	return pow(t,a)/(pow(t,a) + pow(1-t, a));
+}
+
 
 static void updateTween(KeyframeWidget * kww, gpointer user_data)
 {
@@ -570,59 +584,59 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		if(!desktop)
 			return;
 
-	int num_keyframes = kw->parent->num_keyframes;
+	//int num_keyframes = kw->parent->num_keyframes;
 
 	SPObject * layer = kw->layer;// = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id)));
+	if(!layer)
+		return;
+	
+	int num_frames = 10;
+	if(layer->getRepr()->attribute("inkscape:tweenlayers"))
+		num_frames = atoi(layer->getRepr()->attribute("inkscape:tweenlayers"));
+	
 	SPObject * startLayer = kw->layer;
-	SPObject * endLayer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", num_keyframes)));
+	//SPObject * endLayer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id+num_frames)));
+	//SPObject * endLayer = NULL;
 	SPObject * nextLayer = NULL;
 
 	layer = startLayer;
 	
-	if(!layer)
+	//if(!endLayer)
+	//	return;
+
+	SPPath * path = NULL;
+	if(SP_IS_PATH(startLayer->firstChild()))
+		path = SP_PATH(startLayer->firstChild());
+	else if(startLayer->getRepr()->childCount() > 1 && SP_IS_PATH(startLayer->firstChild()->next))
+		path = SP_PATH(startLayer->firstChild()->next);
+	else if(SP_IS_PATH(startLayer->lastChild()))
+		path = SP_PATH(startLayer->lastChild());
+	else
 		return;
 	
-	if(!endLayer)
+	if(!path->getRepr()->attribute("inkscape:tweenpath"))
 		return;
 	
 	int i = 0;
-	while(layer != endLayer->next)
+	while(layer)
 	{
-		nextLayer = desktop->getDocument()->getObjectById(
-					std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
-		//nextLayer = nextLayer->next;
-					
-		//if it's not a tween, return
-		if(i > 0 && ( !nextLayer || !nextLayer->getRepr()->attribute("inkscape:tween")))
-			return;
-
-		SPPath * path = NULL;
-		if(SP_IS_PATH(startLayer->firstChild()))
-			path = SP_PATH(startLayer->firstChild());
-		else if(startLayer->getRepr()->childCount() > 1 && SP_IS_PATH(startLayer->firstChild()->next))
-			path = SP_PATH(startLayer->firstChild()->next);
-		else if(SP_IS_PATH(startLayer->lastChild()))
-			path = SP_PATH(startLayer->lastChild());
-		else
-			return;
-
-		bool is_along_path = false;
+		//if(!layer->getRepr()->attribute("inkscape:tween") && !layer->getRepr()->attribute("inkscape:tweenstart"))
+		//	return;
 		
-		if(path->getRepr()->attribute("inkscape:tweenpath"))
-			is_along_path = true;
-
 		SPCurve * curve = path->_curve;
-
 		Geom::PathVector pathv = curve->get_pathvector();
 
-		Geom::Point p = pathv.pointAt((i)*pathv.timeRange().max()/(num_keyframes + 1));
+		//Geom::Point p = pathv.pointAt((i)*pathv.timeRange().max()/(num_keyframes + 1));
+		//Geom::Point p = pathv.pointAt(easeIn((i)*pathv.timeRange().max()/(num_frames + 1), 1.2));
+		Geom::Point p = pathv.pointAt(i*pathv.timeRange().max()/(num_frames + 1));
+		//Geom::Point p = pathv.pointAt((i)*pathv.timeRange().max()/(10 + 2));
 		//Geom::Point p = Geom::Point(100*i,100*i);
 
-		nextLayer = desktop->getDocument()->getObjectById(
-		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
+		//nextLayer = desktop->getDocument()->getObjectById(
+		//std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
 
-		if(!nextLayer)
-			break;
+		//if(!nextLayer)
+		//	break;
 
 		//SPObject * child = layer->firstChild();
 		SPObject * child = layer->firstChild();
@@ -630,16 +644,25 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		if(!child)
 			break;
 
-		if(is_along_path)
-			child->setAttribute("transform",
-					Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
-			//SP_ITEM(child)->transform.setTranslation(Geom::Point(p[0], p[1])); //does not update!!
+		//if(is_along_path)
+			//child->setAttribute("transform",
+			//		Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
+		SP_ITEM(child)->transform.setTranslation(p); //does not update immediately!!
+		SP_ITEM(child)->updateRepr();
+		SP_ITEM(layer)->updateRepr();
 
+		nextLayer = desktop->getDocument()->getObjectById(
+					std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
+
+		//if it's not a tween, return
+		//if(i > 0 && ( !nextLayer || !nextLayer->getRepr()->attribute("inkscape:tween")))
+		//	return;
+		
 		layer = nextLayer;
 		i++;
-
 	}
-
+	
+	SP_ITEM(layer->parent)->updateRepr();
 }
 
 static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * endLayer)
@@ -849,7 +872,9 @@ static void guidedTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 	SPObject * nextLayer = NULL;
 	int i = 0;
 	
-	int num_layers = kw->parent->num_keyframes;
+	int num_frames = 10;
+	if(layer->getRepr()->attribute("inkscape:tweenlayers"))
+		num_frames = atoi(layer->getRepr()->attribute("inkscape:tweenlayers"));
 	
 	if(SP_IS_PATH(layer->firstChild()))
 		layer->firstChild()->getRepr()->setAttribute("inkscape:tweenpath", "true");
@@ -875,7 +900,6 @@ static void guidedTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 	if(!tool)
 		return;
 	
-
 	Inkscape::UI::ControlPointSelection *cps = tool->_selected_nodes;
 	cps->selectAll();
 	int testttt = cps->size();
@@ -908,7 +932,7 @@ static void guidedTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 
 		Geom::PathVector pathv = curve->get_pathvector();
 
-		Geom::Point p = pathv.pointAt( i*pathv.timeRange().max()/(num_layers + 1));
+		Geom::Point p = pathv.pointAt( i*pathv.timeRange().max()/(num_frames + 1));
 
 		nextLayer = desktop->getDocument()->getObjectById(
 		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
@@ -925,7 +949,7 @@ static void guidedTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 		//child->setAttribute("transform",
 		//		Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
 
-		SP_ITEM(child)->transform.setTranslation(Geom::Point(p[0], p[1]));
+		SP_ITEM(child)->transform.setTranslation(p);
 
 		layer = nextLayer;
 		i++;
@@ -1029,13 +1053,19 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	int num_layers = 1;
 	int num_nodes = 0;
 
-
+	if(startLayer)
+		startLayer->getRepr()->setAttribute("inkscape:tweenstart", "true");
+	
 	while(layer)
 	{
 		layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
 		
 		if(!layer)
-			return;
+		{
+			Inkscape::create_animation_keyframe(desktop->currentRoot(), kw->parent->layer, i);
+			layer = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(
+										Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i));
+		}
 		
 		layer->getRepr()->setAttribute("inkscape:tween", "true");
 		
@@ -1048,8 +1078,10 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	}
 	endLayer = layer;
 	
-	kw->parent->num_keyframes = num_layers;
+	//set tweenend to end layer
+	endLayer->getRepr()->setAttribute("inkscape:tweenend", "true");
 	
+	startLayer->getRepr()->setAttribute("inkscape:tweenlayers", Glib::ustring::format(num_layers));
 	
 	if(endLayer)
 	{
@@ -1067,8 +1099,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		
 		//SP_ITEM(child)->setCenter(Geom::Point(0,0));
 		//SP_ITEM(child)->transform.setTranslation(Geom::Point(0,0));
-
-
 
 
 		//get end color
@@ -1101,6 +1131,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		{
 			end_x = std::stof(childn->attribute(xs.c_str()));
 			end_y = std::stof(childn->attribute(ys.c_str()));
+			end_x += SP_ITEM(child)->transform.translation()[0];
+			end_y += SP_ITEM(child)->transform.translation()[1];
 			childn->setAttribute(xs.c_str(), Glib::ustring::format(0));
 			childn->setAttribute(ys.c_str(), Glib::ustring::format(0));
 		}
@@ -1150,6 +1182,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 
 			start_x = std::stof(childn->attribute(xs.c_str()));
 			start_y = std::stof(childn->attribute(ys.c_str()));
+			start_x += SP_ITEM(child)->transform.translation()[0];
+			start_y += SP_ITEM(child)->transform.translation()[1];
 			SP_ITEM(child)->transform.setTranslation(Geom::Point(start_x, start_y));
 			childn->setAttribute(xs.c_str(), Glib::ustring::format(0));
 			childn->setAttribute(ys.c_str(), Glib::ustring::format(0));
@@ -1183,6 +1217,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	i = 1;
 	while(layer != endLayer)
 	{
+		//layer->getRepr()->setAttribute("inkscape:tweenlayers", Glib::ustring::format(num_layers));
+		
 		nextLayer = desktop->getDocument()->getObjectById(
 		std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
 		
@@ -1764,7 +1800,16 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		
 		cr->paint();
 		
-		if(!is_empty)
+		if(layer && layer->getRepr()->attribute("inkscape:tween") && !layer->getRepr()->attribute("inkscape:tweenend")
+			&& !layer->getRepr()->attribute("inkscape:tweenstart"))
+		{
+			cr->set_source_rgba(0, 0, 0, 1);
+			cr->set_line_width(1);
+			cr->move_to(0, height/2);
+			cr->line_to(width, height/2);
+			cr->stroke();
+		}
+		else if(!is_empty)
 		{
 			cr->set_source_rgba(0, 0, 0, 1);
 			cr->arc(width/2, height/2, width/4, 0, 6.283);
