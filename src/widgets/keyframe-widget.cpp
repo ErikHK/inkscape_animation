@@ -205,7 +205,7 @@ bool KeyframeWidget::on_my_key_press_event(GdkEventKey * event)
 	{
 		parent->shift_held = false;
 		parent->ctrl_held = false;
-		//defocusAllKeyframes();
+		defocusAllKeyframes();
 	}
 
 	//queue_draw();
@@ -226,8 +226,8 @@ bool KeyframeWidget::on_my_key_release_event(GdkEventKey * event)
 
 bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 {
-	//if(!parent->shift_held && !parent->ctrl_held)
-	//	is_focused = false;
+	if(!parent->shift_held && !parent->ctrl_held)
+		is_focused = false;
 
 	//pMenu = 0;
 	//KeyframeWidget* kw = dynamic_cast<KeyframeWidget*>(event->window);
@@ -287,7 +287,7 @@ bool KeyframeWidget::on_my_focus_out_event(GdkEventFocus* event)
 	parent->queue_draw();
 	return false;
 }
-
+ 
 void KeyframeWidget::selectLayer()
 {
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
