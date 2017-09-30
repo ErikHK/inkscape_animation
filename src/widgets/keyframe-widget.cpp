@@ -596,7 +596,7 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	
 	SPObject * startLayer = kw->layer;
 	//SPObject * endLayer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id+num_frames)));
-	//SPObject * endLayer = NULL;
+	SPObject * endLayer = NULL;
 	SPObject * nextLayer = NULL;
 
 	layer = startLayer;
@@ -617,18 +617,62 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	if(!path->getRepr()->attribute("inkscape:tweenpath"))
 		return;
 	
+	SPCurve * curve = path->_curve;
+	Geom::PathVector pathv = curve->get_pathvector();
+
+
+	SPObject * child = NULL;
+
+	child = startLayer->firstChild();
+	if(child)
+	{
+		Geom::Point p = pathv.initialPoint();
+		SP_ITEM(child)->transform.setTranslation(p);
+		child->setAttribute("transform",
+								Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
+	}
+
+	/*
+	SPObject * child = layer->firstChild();
+	if(!child)
+		return;
+
+	SP_ITEM(child)->transform.setTranslation(pathv.initialPoint());
+	*/
+
+	nextLayer = desktop->getDocument()->getObjectById(
+						std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id+1)));
+	if(!nextLayer)
+		return;
+
+	layer = nextLayer;
+
+
 	int i = 0;
 	while(layer)
 	{
 		//if(!layer->getRepr()->attribute("inkscape:tween") && !layer->getRepr()->attribute("inkscape:tweenstart"))
 		//	return;
 		
-		SPCurve * curve = path->_curve;
-		Geom::PathVector pathv = curve->get_pathvector();
+
+		if(layer->getRepr()->attribute("inkscape:tweenend"))
+		{
+			endLayer = layer;
+			child = endLayer->firstChild();
+			if(child)
+			{
+				Geom::Point p = pathv.finalPoint();
+				SP_ITEM(child)->transform.setTranslation(p);
+				child->setAttribute("transform",
+						Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
+			}
+			break;
+		}
+
 
 		//Geom::Point p = pathv.pointAt((i)*pathv.timeRange().max()/(num_keyframes + 1));
 		//Geom::Point p = pathv.pointAt(easeIn((i)*pathv.timeRange().max()/(num_frames + 1), 1.2));
-		Geom::Point p = pathv.pointAt(i*pathv.timeRange().max()/(num_frames + 1));
+		Geom::Point p = pathv.pointAt(i*pathv.timeRange().max()/(num_frames ));
 		//Geom::Point p = pathv.pointAt((i)*pathv.timeRange().max()/(10 + 2));
 		//Geom::Point p = Geom::Point(100*i,100*i);
 
@@ -639,30 +683,34 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		//	break;
 
 		//SPObject * child = layer->firstChild();
-		SPObject * child = layer->firstChild();
+		child = layer->firstChild();
 
-		if(!child)
-			break;
+		//if(!child)
+		//	break;
 
 		//if(is_along_path)
 			//child->setAttribute("transform",
 			//		Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
-		SP_ITEM(child)->transform.setTranslation(p); //does not update immediately!!
-		SP_ITEM(child)->updateRepr();
-		SP_ITEM(layer)->updateRepr();
+		if(child)
+			SP_ITEM(child)->transform.setTranslation(p); //does not update immediately!!
+
 
 		nextLayer = desktop->getDocument()->getObjectById(
-					std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
+					std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i+1)));
 
 		//if it's not a tween, return
 		//if(i > 0 && ( !nextLayer || !nextLayer->getRepr()->attribute("inkscape:tween")))
 		//	return;
 		
+
+
 		layer = nextLayer;
 		i++;
 	}
-	
-	SP_ITEM(layer->parent)->updateRepr();
+
+	if(layer && layer->parent)
+		layer->parent->updateRepr();
+
 }
 
 static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * endLayer)
@@ -1321,11 +1369,13 @@ void KeyframeWidget::defocusAllKeyframes()
 bool KeyframeWidget::on_my_button_release_event(GdkEventButton* event)
 {
 
+	/*
 	if(parent->unselect)
 	{
 		parent->unselect = false;
 		return false;
 	}
+	*/
 	//grab_focus();
 	
 	//select layer that corresponds to this keyframe
@@ -1411,7 +1461,7 @@ bool KeyframeWidget::on_my_button_press_event(GdkEventButton* event)
 	if(parent->ctrl_held && is_focused)
 	{
 		is_focused = false;
-		parent->unselect = true;
+		//parent->unselect = true;
 	}
 
 	return false;

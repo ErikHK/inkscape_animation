@@ -78,7 +78,7 @@ KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 	layer = _layer;
 	rebuildUi();
 	
-	g_signal_connect(GTK_WIDGET(this), "size-allocate", G_CALLBACK(my_getsize), this);
+	//g_signal_connect(GTK_WIDGET(this), "size-allocate", G_CALLBACK(my_getsize), this);
 
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	if(desktop)
