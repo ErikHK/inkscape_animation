@@ -574,52 +574,58 @@ static float easeIn(float t, float a)
 	return pow(t,a)/(pow(t,a) + pow(1-t, a));
 }
 
-
 static void updateTween(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget * kw = reinterpret_cast<KeyframeWidget*>(user_data);
 
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 
-		if(!desktop)
-			return;
+	if(!desktop)
+		return;
 
-	//int num_keyframes = kw->parent->num_keyframes;
+	SPObject * layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", 1)));
 
-	SPObject * layer = kw->layer;// = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id)));
 	if(!layer)
 		return;
-	
+
+	SPPath * path = NULL;
+	SPObject * tmpObj = layer->firstChild();
+	while(tmpObj)
+	{
+		if(SP_IS_PATH(tmpObj))
+		{
+			path = SP_PATH(tmpObj);
+			if(path->getRepr()->attribute("inkscape:tweenpath"))
+				break;
+		}
+
+		tmpObj = tmpObj->next;
+	}
+
+	if(!path)
+		return;
+
+	//layer = startLayer;
+
+	const char * tweenid = tmpObj->getRepr()->attribute("tweenid");
+	layer = desktop->getDocument()->getObjectById(tweenid);
+
+	if(!layer)
+		return;
+
 	int num_frames = 10;
 	if(layer->getRepr()->attribute("inkscape:tweenlayers"))
 		num_frames = atoi(layer->getRepr()->attribute("inkscape:tweenlayers"));
-	
-	SPObject * startLayer = kw->layer;
-	//SPObject * endLayer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id+num_frames)));
+
+	SPObject * startLayer = layer;
 	SPObject * endLayer = NULL;
 	SPObject * nextLayer = NULL;
 
-	layer = startLayer;
-	
-	//if(!endLayer)
+	//if(!path->getRepr()->attribute("inkscape:tweenpath"))
 	//	return;
-
-	SPPath * path = NULL;
-	if(SP_IS_PATH(startLayer->firstChild()))
-		path = SP_PATH(startLayer->firstChild());
-	else if(startLayer->getRepr()->childCount() > 1 && SP_IS_PATH(startLayer->firstChild()->next))
-		path = SP_PATH(startLayer->firstChild()->next);
-	else if(SP_IS_PATH(startLayer->lastChild()))
-		path = SP_PATH(startLayer->lastChild());
-	else
-		return;
-	
-	if(!path->getRepr()->attribute("inkscape:tweenpath"))
-		return;
 	
 	SPCurve * curve = path->_curve;
 	Geom::PathVector pathv = curve->get_pathvector();
-
 
 	SPObject * child = NULL;
 
@@ -628,33 +634,23 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	{
 		Geom::Point p = pathv.initialPoint();
 		SP_ITEM(child)->transform.setTranslation(p);
+		child->updateRepr();
+		layer->updateRepr();
 
 		///////////////////////////////////////////////////////////child->setAttribute("transform",
 		//						Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
 	}
 
-	/*
-	SPObject * child = layer->firstChild();
-	if(!child)
-		return;
+	layer = layer->next;
 
-	SP_ITEM(child)->transform.setTranslation(pathv.initialPoint());
-	*/
-
-	nextLayer = desktop->getDocument()->getObjectById(
-						std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id+1)));
-	if(!nextLayer)
-		return;
-
-	layer = nextLayer;
-
-
-	int i = 0;
+	int i = 1;
 	while(layer)
 	{
 		//if(!layer->getRepr()->attribute("inkscape:tween") && !layer->getRepr()->attribute("inkscape:tweenstart"))
 		//	return;
 		
+		if(!layer->getRepr()->attribute("inkscape:tween"))
+			return;
 
 		if(layer->getRepr()->attribute("inkscape:tweenend"))
 		{
@@ -667,52 +663,33 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 				//////////////////////////////child->setAttribute("transform",
 						//Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
 			}
+
+			layer->updateRepr();
 			break;
 		}
 
-
-		//Geom::Point p = pathv.pointAt((i)*pathv.timeRange().max()/(num_keyframes + 1));
 		//Geom::Point p = pathv.pointAt(easeIn((i)*pathv.timeRange().max()/(num_frames + 1), 1.2));
 		Geom::Point p = pathv.pointAt(i*pathv.timeRange().max()/(num_frames ));
-		//Geom::Point p = pathv.pointAt((i)*pathv.timeRange().max()/(10 + 2));
-		//Geom::Point p = Geom::Point(100*i,100*i);
 
-		//nextLayer = desktop->getDocument()->getObjectById(
-		//std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i)));
-
-		//if(!nextLayer)
-		//	break;
-
-		//SPObject * child = layer->firstChild();
 		child = layer->firstChild();
 
-		//if(!child)
-		//	break;
-
-		//if(is_along_path)
-			//child->setAttribute("transform",
-			//		Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
 		if(child)
 		{
-			SP_ITEM(child)->transform.setTranslation(p); //does not update immediately!!
-			//SP_ITEM(child)->scaleCenter(Geom::Scale(10, 10));
-			//SP_ITEM(child)->transform = SP_ITEM(child)->transform.inverse();
-			//SP_ITEM(child)->transform[0] = SP_ITEM(child)->transform[0]*3;
+			SP_ITEM(child)->transform.setTranslation(p); //does not update immediately for some objects!!
 		}
 
-
-		nextLayer = desktop->getDocument()->getObjectById(
-					std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id + i+1)));
+		nextLayer = layer->next;
 
 		//if it's not a tween, return
 		//if(i > 0 && ( !nextLayer || !nextLayer->getRepr()->attribute("inkscape:tween")))
 		//	return;
-		
 
-
+		layer->updateRepr();
 		layer = nextLayer;
 		i++;
 	}
+
+
 
 	if(layer && layer->parent)
 		layer->parent->updateRepr();
@@ -929,10 +906,17 @@ static void guidedTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 	if(layer->getRepr()->attribute("inkscape:tweenlayers"))
 		num_frames = atoi(layer->getRepr()->attribute("inkscape:tweenlayers"));
 	
+	/*
 	if(SP_IS_PATH(layer->firstChild()))
 		layer->firstChild()->getRepr()->setAttribute("inkscape:tweenpath", "true");
 	else if(SP_IS_PATH(layer->firstChild()->next))
 		layer->firstChild()->next->getRepr()->setAttribute("inkscape:tweenpath", "true");		
+		*/
+
+	if(SP_IS_PATH(layer->parent->firstChild()))
+		layer->parent->firstChild()->getRepr()->setAttribute("inkscape:tweenpath", "true");
+	else if(SP_IS_PATH(layer->parent->firstChild()->next))
+		layer->parent->firstChild()->next->getRepr()->setAttribute("inkscape:tweenpath", "true");
 
 	desktop->toggleHideAllLayers(true);
 	SP_ITEM(startLayer)->setHidden(false);
@@ -1034,14 +1018,18 @@ static void createGuide(KeyframeWidget * kw, float start_x, float start_y, float
 		//else
 
 		repr->setAttribute("d", str);
-		repr->setAttribute("style", "stroke:#000000;fill:none");
+		repr->setAttribute("style", "stroke:#303030;fill:none");
 		repr->setAttribute("inkscape:tweenpath", "true");
+		repr->setAttribute("tweenid", kw->layer->getRepr()->attribute("id"));
 		g_free(str);
 
 		//store in ...
-		SPItem *item = SP_ITEM(kw->layer->appendChildRepr(repr));
+		//SPItem *item = SP_ITEM(kw->layer->appendChildRepr(repr));
+		SPItem *item = SP_ITEM(kw->layer->parent->appendChildRepr(repr));
+
 		//SPItem *item = SP_ITEM(SP_ACTIVE_DESKTOP->currentLayer()->parent->appendChildRepr(repr));
 		//SPItem *item = SP_ITEM(SP_ACTIVE_DESKTOP->currentLayer()->parent->appendChild(repr));
+
     }
 
 }
@@ -1109,7 +1097,10 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	int num_nodes = 0;
 
 	if(startLayer)
+	{
 		startLayer->getRepr()->setAttribute("inkscape:tweenstart", "true");
+		startLayer->getRepr()->setAttribute("inkscape:tween", "true");
+	}
 	
 	while(layer)
 	{
@@ -1135,6 +1126,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	//set tweenend to end layer
 	endLayer->getRepr()->setAttribute("inkscape:tweenend", "true");
+	endLayer->getRepr()->setAttribute("inkscape:tween", "true");
 	
 	startLayer->getRepr()->setAttribute("inkscape:tweenlayers", Glib::ustring::format(num_layers));
 	
@@ -1300,8 +1292,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//SP_ITEM(child)->scaleCenter(Geom::Scale(i*inc_scale_x, i*inc_scale_y));
 		//SP_ITEM(child)->scaleCenter(Geom::Scale(10, 10));
 
-		SP_ITEM(child)->transform[0] = start_scale_x + i*inc_scale_x;
-		SP_ITEM(child)->transform[3] = start_scale_y + i*inc_scale_y;
+		SP_ITEM(child)->transform[0] = start_scale_x + (i-1)*inc_scale_x;
+		SP_ITEM(child)->transform[3] = start_scale_y + (i-1)*inc_scale_y;
 
 		Inkscape::XML::Node * childn = child->getRepr();
 		Inkscape::XML::Node * childn_copy = childn->duplicate(desktop->getDocument()->getReprDoc());
