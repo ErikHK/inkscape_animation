@@ -589,7 +589,8 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		return;
 
 	SPPath * path = NULL;
-	SPObject * tmpObj = layer->firstChild();
+	//SPObject * tmpObj = layer->firstChild();
+	SPObject * tmpObj = layer->lastChild();
 	while(tmpObj)
 	{
 		if(SP_IS_PATH(tmpObj))
@@ -634,8 +635,8 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	{
 		Geom::Point p = pathv.initialPoint();
 		SP_ITEM(child)->transform.setTranslation(p);
-		child->updateRepr();
-		layer->updateRepr();
+		//child->updateRepr();
+		//layer->updateRepr();
 
 		///////////////////////////////////////////////////////////child->setAttribute("transform",
 		//						Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
@@ -684,16 +685,23 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		//if(i > 0 && ( !nextLayer || !nextLayer->getRepr()->attribute("inkscape:tween")))
 		//	return;
 
-		layer->updateRepr();
+		//layer->updateRepr();
 		layer = nextLayer;
 		i++;
 	}
 
+	//FULHACK ALERT
+	if(child)
+	{
+		std::string test = std::string(child->getRepr()->attribute("transform"));
+		test = Glib::ustring::format(test, " ");
+		child->getRepr()->setAttribute("transform", test);
+	}
 
+	//if(layer && layer->parent)
+	//	layer->parent->updateRepr();
 
-	if(layer && layer->parent)
-		layer->parent->updateRepr();
-
+	desktop->getDocument()->ensureUpToDate();
 }
 
 static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * endLayer)
