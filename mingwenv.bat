@@ -10,7 +10,7 @@ if "%DEVLIBS_PATH%"=="" set DEVLIBS_PATH=c:\devlibs64
 
 REM Directory containing the MinGW instance used for compilation. Usually c:\mingw or c:\mingw64
 REM Note: Make sure there are no whitespaces in the path. MinGW doesn't like that.. ;)
-if "%MINGW_PATH%"=="" set MINGW_PATH=c:\mingw64
+if "%MINGW_PATH%"=="" set MINGW_PATH=C:\mingw64
 
 REM Directory containing the (optional) Ghostscript installation.
 if "%GS_PATH%"=="" set GS_PATH=C:\latex\gs\gs8.61

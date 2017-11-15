@@ -628,8 +628,9 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	{
 		Geom::Point p = pathv.initialPoint();
 		SP_ITEM(child)->transform.setTranslation(p);
-		child->setAttribute("transform",
-								Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
+
+		///////////////////////////////////////////////////////////child->setAttribute("transform",
+		//						Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
 	}
 
 	/*
@@ -663,8 +664,8 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 			{
 				Geom::Point p = pathv.finalPoint();
 				SP_ITEM(child)->transform.setTranslation(p);
-				child->setAttribute("transform",
-						Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
+				//////////////////////////////child->setAttribute("transform",
+						//Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
 			}
 			break;
 		}
@@ -692,7 +693,12 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 			//child->setAttribute("transform",
 			//		Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
 		if(child)
+		{
 			SP_ITEM(child)->transform.setTranslation(p); //does not update immediately!!
+			//SP_ITEM(child)->scaleCenter(Geom::Scale(10, 10));
+			//SP_ITEM(child)->transform = SP_ITEM(child)->transform.inverse();
+			//SP_ITEM(child)->transform[0] = SP_ITEM(child)->transform[0]*3;
+		}
 
 
 		nextLayer = desktop->getDocument()->getObjectById(
@@ -739,7 +745,6 @@ static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * en
 	std::vector<Geom::Point> end_nodes_back;
 	
 	num_nodes = SP_PATH(layer->firstChild())->_curve->nodes_in_path();
-	
 	
 	//kw->showAll->set_active(true);
 	//desktop->show_all_keyframes = true;
@@ -1090,6 +1095,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	SPObject * endLayer = NULL;
 	SPObject * nextLayer = NULL;
 	float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0, start_opacity=1, end_opacity=1, inc_opacity=0, inc_r=0, inc_g=0, inc_b=0;
+	float scale_x=1, scale_y=1, inc_scale_x=0, inc_scale_y=0;
+	float start_scale_x = 1, end_scale_x = 1, start_scale_y=1, end_scale_y=1;
 	gfloat start_rgb[3];
 	gfloat end_rgb[3];
 	std::string xs = "x";
@@ -1173,6 +1180,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			is_group = true;
 			end_x = SP_ITEM(child)->transform.translation()[0];
 			end_y = SP_ITEM(child)->transform.translation()[1];
+
+			end_scale_x = SP_ITEM(child)->transform[0];
+			end_scale_y = SP_ITEM(child)->transform[3];
 		}
 		
 		if(!is_group && !is_path)
@@ -1183,26 +1193,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			end_y += SP_ITEM(child)->transform.translation()[1];
 			childn->setAttribute(xs.c_str(), Glib::ustring::format(0));
 			childn->setAttribute(ys.c_str(), Glib::ustring::format(0));
-		}
-		
-		/*
-		if(is_path)
-		{
-			//end_x = SP_ITEM(child)->transform.translation()[0];
-			//end_y = SP_ITEM(child)->transform.translation()[1];
-			
-			Geom::Point p = SP_SHAPE(child)->desktopGeometricBounds()->midpoint();
-			end_x = p[0];
-			end_y = p[1];
-			//end_x = SP_ITEM(child)->getCenter()[0];
-			//end_y = SP_ITEM(child)->getCenter()[1];
 
-			//convert
-			end_x = Quantity::convert(end_x, "px", "mm");
-			//end_y = Quantity::convert(end_y, "px", "mm");
-			end_y = desktop->getDocument()->getHeight().value("mm") - Quantity::convert(end_y, "px", "mm");
 		}
-		*/
 
 	}
 	
@@ -1242,6 +1234,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		{
 			start_x = SP_ITEM(child)->transform.translation()[0];
 			start_y = SP_ITEM(child)->transform.translation()[1];
+
+			start_scale_x = SP_ITEM(child)->transform[0];
+			start_scale_y = SP_ITEM(child)->transform[3];
 		}
 	}
 	
@@ -1249,6 +1244,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	//spdc_flush_white in freehand-base.cpp!
 	//FreehandBase *dc = new FreehandBase();
 
+	inc_scale_x = (end_scale_x - start_scale_x)/num_layers;
+	inc_scale_y = (end_scale_y - start_scale_y)/num_layers;
 
 	inc_x = (end_x - start_x)/(num_layers);
 	inc_y = (end_y - start_y)/(num_layers);
@@ -1282,8 +1279,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		if(!child)
 			break;
 		
-		//tween color TODO: check if it already has color...
-        //paint_res->setColor(d[0], d[1], d[2]);
+		//TODO: check if it's a group, in that case loop through etc...
 		if(!SP_ITEM(child)->style->fill.isNone())
 		{
 			SP_ITEM(child)->style->fill.clear();
@@ -1300,9 +1296,17 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//tween opacity
 		SP_ITEM(child)->style->opacity.value = start_opacity + (i-1)*inc_opacity;
 
+		//scale
+		//SP_ITEM(child)->scaleCenter(Geom::Scale(i*inc_scale_x, i*inc_scale_y));
+		//SP_ITEM(child)->scaleCenter(Geom::Scale(10, 10));
+
+		SP_ITEM(child)->transform[0] = start_scale_x + i*inc_scale_x;
+		SP_ITEM(child)->transform[3] = start_scale_y + i*inc_scale_y;
+
 		Inkscape::XML::Node * childn = child->getRepr();
 		Inkscape::XML::Node * childn_copy = childn->duplicate(desktop->getDocument()->getReprDoc());
-		
+
+
 		/*
 		if(!is_group && !is_path)
 		{

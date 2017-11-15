@@ -8,7 +8,7 @@
 set(ENV_DEVLIBS_PATH C:/devlibs64)
 
 # Directory containing the MinGW instance used for compilation. Usually c:\mingw or c:\mingw64
-set(ENV_MINGW_PATH C:/mingw64)
+set(ENV_MINGW_PATH C:/msys64/mingw64)
 
 # Directory containing the (optional) Ghostscript installation.
 set(ENV_GS_PATH C:/latex/gs/gs8.61)
