@@ -195,6 +195,7 @@ bool KeyframeBar::on_mouse_(GdkEventMotion* event)
 	return false;
 }
 
+//also remove properties like tween things
 void KeyframeBar::deleteAllActiveKeyframes()
 {
 	for(int i=0; i < widgets.size(); i++)
@@ -202,7 +203,32 @@ void KeyframeBar::deleteAllActiveKeyframes()
 		KeyframeWidget * kw = widgets[i];
 		
 		while(kw->layer &&  kw->layer->getRepr()->childCount() > 0 && kw->is_focused)
-			kw->layer->getRepr()->removeChild(kw->layer->getRepr()->firstChild());
+		{
+			Inkscape::XML::Node * child = kw->layer->getRepr()->firstChild();
+			Inkscape::XML::Node * layer = kw->layer->getRepr();
+
+			if(layer->attribute("inkscape:tween"))
+			{
+				const char * test = layer->attribute("inkscape:tweenpathid");
+				SPObject * tweenpath = NULL;
+				if(test)
+					tweenpath = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(test);
+
+				if(tweenpath)
+					tweenpath->deleteObject();
+
+
+				layer->setAttribute("inkscape:tween", NULL);
+			}
+			if(layer->attribute("inkscape:tweenstart"))
+				layer->setAttribute("inkscape:tweenstart", NULL);
+			if(layer->attribute("inkscape:tweenlayers"))
+				layer->setAttribute("inkscape:tweenlayers", NULL);
+
+
+
+			kw->layer->getRepr()->removeChild(child);
+		}
 	}
 
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;

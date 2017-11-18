@@ -579,15 +579,36 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	KeyframeWidget * kw = reinterpret_cast<KeyframeWidget*>(user_data);
 
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	SPPath * path = NULL;
 
 	if(!desktop)
 		return;
 
-	SPObject * layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", 1)));
+	SPObject * selected = desktop->getSelection()->single();
+
+	//check if it's a path, if not, return
+	if(!SP_IS_PATH(selected))
+		return;
+
+	const char * layerid = NULL;
+
+	if(selected->getRepr()->attribute("inkscape:tweenpath"))
+	{
+		path = SP_PATH(selected);
+		layerid = selected->getRepr()->attribute("inkscape:tweenid");
+	}
+
+	//if there is no tween associated with this path, return
+	if(!layerid)
+		return;
+
+	//SPObject * layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", 1)));
+	SPObject * layer = desktop->getDocument()->getObjectById(layerid);
 
 	if(!layer)
 		return;
 
+	/*
 	SPPath * path = NULL;
 	//SPObject * tmpObj = layer->firstChild();
 	SPObject * tmpObj = layer->lastChild();
@@ -605,14 +626,14 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 
 	if(!path)
 		return;
-
+	*/
 	//layer = startLayer;
 
-	const char * tweenid = tmpObj->getRepr()->attribute("tweenid");
-	layer = desktop->getDocument()->getObjectById(tweenid);
-
-	if(!layer)
+	if(!path)
 		return;
+
+	//const char * tweenid = tmpObj->getRepr()->attribute("inkscape:tweenid");
+	//layer = desktop->getDocument()->getObjectById(tweenid);
 
 	int num_frames = 10;
 	if(layer->getRepr()->attribute("inkscape:tweenlayers"))
@@ -700,8 +721,9 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 
 	//if(layer && layer->parent)
 	//	layer->parent->updateRepr();
+	layer->updateRepr();
 
-	desktop->getDocument()->ensureUpToDate();
+	//desktop->getDocument()->ensureUpToDate();
 }
 
 static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * endLayer)
@@ -1001,7 +1023,7 @@ static void guidedTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 }
 
 
-static void createGuide(KeyframeWidget * kw, float start_x, float start_y, float end_x, float end_y)
+static SPItem * createGuide(KeyframeWidget * kw, float start_x, float start_y, float end_x, float end_y)
 {
 
 	SPCurve * c = new SPCurve();
@@ -1026,7 +1048,7 @@ static void createGuide(KeyframeWidget * kw, float start_x, float start_y, float
 		repr->setAttribute("d", str);
 		repr->setAttribute("style", "stroke:#303030;fill:none");
 		repr->setAttribute("inkscape:tweenpath", "true");
-		repr->setAttribute("tweenid", kw->layer->getRepr()->attribute("id"));
+		repr->setAttribute("inkscape:tweenid", kw->layer->getRepr()->attribute("id"));
 		g_free(str);
 
 		//store in ...
@@ -1048,7 +1070,7 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 
 	int j = 1;
 
-	createGuide(kw, start_x, start_y, end_x, end_y);
+	SPItem * item = createGuide(kw, start_x, start_y, end_x, end_y);
 
 	while(layer->next)
 	{
@@ -1065,6 +1087,7 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 
 		//child->getRepr()->setAttribute("transform",
 		//	Glib::ustring::format("translate(", start_x + j*inc_x, ",", start_y + j*inc_y, ")" ));
+		layer->getRepr()->setAttribute("inkscape:tweenpathid", item->getId());
 
 		SP_ITEM(child)->transform.setTranslation(Geom::Point(start_x + j*inc_x, start_y + j*inc_y));
 
@@ -1106,6 +1129,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	{
 		startLayer->getRepr()->setAttribute("inkscape:tweenstart", "true");
 		startLayer->getRepr()->setAttribute("inkscape:tween", "true");
+
 	}
 	
 	while(layer)
