@@ -933,8 +933,6 @@ static void guidedTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 	desktop->setCurrentLayer(startLayer);
 	
 	kw->parent->clear_tween = true;
-	
-	DocumentUndo::done(desktop->getDocument(), SP_VERB_CONTEXT_NODE, "Create tween");
 
 	tools_switch(desktop, TOOLS_SELECT);
 	Inkscape::SelectionHelper::selectAll(desktop); //select everything
@@ -1162,6 +1160,15 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//get opacity
 		end_opacity = SP_ITEM(child)->style->opacity.value;
 		
+
+		//if a circle or an ellipse, use cx and cy
+		if(!strcmp(childn->name(), "svg:rect"))
+		{
+			end_scale_x = std::stof(childn->attribute("width"));
+			end_scale_y = std::stof(childn->attribute("height"));
+		}
+
+
 		//if a circle or an ellipse, use cx and cy
 		if(!strcmp(childn->name(), "svg:circle") || !strcmp(childn->name(), "svg:ellipse"))
 		{
@@ -1217,6 +1224,14 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//get opacity
 		start_opacity = SP_ITEM(child)->style->opacity.value;
 		
+		//if a circle or an ellipse, use cx and cy
+		if(!strcmp(childn->name(), "svg:rect"))
+		{
+			end_scale_x = end_scale_x/std::stof(childn->attribute("width"));
+			end_scale_y = end_scale_y/std::stof(childn->attribute("height"));
+		}
+
+
 		if(!is_group && !is_path)
 		{
 
@@ -1288,7 +1303,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 												start_rgb[1] + (i-1)*inc_g,
 												start_rgb[2] + (i-1)*inc_b);
 			SP_ITEM(child)->style->fill.colorSet = TRUE;
-			SP_ITEM(child)->style->fill.set = TRUE;			
+			SP_ITEM(child)->style->fill.set = TRUE;
 		}
 		
 		//if(!SP_ITEM(child)->style->stroke.isNone()) etcetc
@@ -1347,6 +1362,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	//emit selection signal
 	desktop->getSelection()->emit();
 
+	DocumentUndo::done(desktop->getDocument(), SP_VERB_CONTEXT_NODE, "Create tween");
 
 	kw->showAll->set_active(false);
 	desktop->show_all_keyframes = false;
