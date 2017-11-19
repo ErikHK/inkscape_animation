@@ -1141,7 +1141,6 @@ void Export::onExport ()
     }
 	else if(current_key == SELECTION_ANIMATION)
 	{
-		
 		float const x0 = getValuePx(x0_adj);
         float const y0 = getValuePx(y0_adj);
         float const x1 = getValuePx(x1_adj);
@@ -1151,7 +1150,8 @@ void Export::onExport ()
         unsigned long int const width = int(getValue(bmwidth_adj) + 0.5);
         unsigned long int const height = int(getValue(bmheight_adj) + 0.5);
 		
-		gint num = 0;
+		const gint num = desktop->animation_stop-desktop->animation_start+1;
+		gint num_animation_layers = 0;
 		
 		//first hide all layers
 		desktop->toggleHideAllLayers(true);
@@ -1161,10 +1161,17 @@ void Export::onExport ()
 	
 		if(layer1)
 			SP_ITEM(layer1)->setHidden(false);
+
+		SPObject * tweenpath = NULL;
 	
-		SPObject * layers[20];
-		for(int i=0;i < 20; i++)
-			layers[i] = doc->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1, "keyframe1"))); //start with first layer
+		SPObject * layers[num];
+
+		for(int i=0;i < 100; i++)
+		{
+			layers[i] = doc->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1, "keyframe", desktop->animation_start))); //start with keyframe at start of animation
+			if(layers[i])
+				num_animation_layers++;
+		}
 		
 		int i=0;
 		prog_dlg = create_progress_dialog(Glib::ustring::compose(_("Exporting %1 files"), num));
@@ -1172,15 +1179,24 @@ void Export::onExport ()
 		setExporting(true, Glib::ustring::compose(_("Exporting %1 files"), num));
 
 		gint export_count = 0;
-		for(int j=0;j < 50; j++)
+		for(int j=0;j < num-1; j++)
 		{
-			for(int ii = 0; ii < 20; ii++)
+			for(int ii = 0; ii < num_animation_layers; ii++)
 			{
 				if(layers[ii])
 				{
 					SP_ITEM(layers[ii])->setHidden(false);
 					if(layers[ii]->parent)
 						SP_ITEM(layers[ii]->parent)->setHidden(false);
+
+					if(layers[ii]->getRepr()->attribute("inkscape:tween"))
+					{
+						const char * tweenpathid = layers[ii]->getRepr()->attribute("inkscape:tweenpathid");
+						tweenpath = doc->getObjectById(tweenpathid);
+						if(tweenpath && SP_IS_PATH(tweenpath))
+							SP_ITEM(tweenpath)->setHidden(true);
+					}
+
 				}
 			}
 			Glib::ustring filename = filename_entry.get_text();
@@ -1190,7 +1206,7 @@ void Export::onExport ()
 				sp_ui_error_dialog(_("You have to enter a filename"));
 				return;
 			} else {
-				Glib::ustring const filename_ext = filename_add_extension(filename, "png", Glib::ustring::format(j));
+				Glib::ustring const filename_ext = filename_add_extension(filename, "png", Glib::ustring::format(j+1));
 				path = absolutize_path_from_document_location(doc, filename_ext);
 				
 			}
@@ -1221,20 +1237,20 @@ void Export::onExport ()
 				++export_count;
 			}
 			
-			for(int ii = 0; ii < 20; ii++)
+			for(int ii = 0; ii < num-1; ii++)
 			{
 				if(layers[ii])
 					SP_ITEM(layers[ii])->setHidden(true);
 			}
 			
 			bool finished = true;
-			for(int ii = 0; ii < 20; ii++)
+			for(int ii = 0; ii < 100; ii++)
 			{
 				if(layers[ii])
 				{
 					finished = false;
 					layers[ii] = Inkscape::next_layer(desktop->currentRoot(), layers[ii]);
-					if(layers[ii])
+					if(layers[ii] && layers[ii]->getRepr()->childCount() > 0)
 						finished = false;
 				}
 			}
@@ -1253,6 +1269,9 @@ void Export::onExport ()
 		prog_dlg = NULL;
 		interrupted = false;
         exportSuccessful = (export_count > 0);
+
+        if(tweenpath && SP_IS_PATH(tweenpath))
+        	SP_ITEM(tweenpath)->setHidden(false);
 	}
 	else {
         Glib::ustring filename = filename_entry.get_text();
