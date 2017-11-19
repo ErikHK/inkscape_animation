@@ -76,12 +76,11 @@ bool KeyframeWidget::on_my_focus_in_event(GdkEventFocus* event)
 static gint playLoop(gpointer data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(data);
-
-	//SPDesktop * desktop = tb->desktop;
-	static int i = kw->parent->animation_start;
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	if(!desktop)
 		return false;
+
+	static int i = desktop->animation_start;
 
 	if(!desktop->is_playing)
 		return false;
@@ -92,13 +91,13 @@ static gint playLoop(gpointer data)
 	SPObject * thisl = desktop->getDocument()->getObjectById(
 			std::string(Glib::ustring::format("animationlayer", 1, "keyframe", i-1)));  //desktop->currentLayer();
 
-	if(kw->parent->animation_start == i)
+	if(desktop->animation_start == i)
 	{
 		thisl = desktop->getDocument()->getObjectById(
-						std::string(Glib::ustring::format("animationlayer", 1, "keyframe", kw->parent->animation_stop)));
+						std::string(Glib::ustring::format("animationlayer", 1, "keyframe", desktop->animation_stop)));
 
-		if(kw->parent->widgets[kw->parent->animation_stop-1])
-			kw->parent->widgets[kw->parent->animation_stop-1]->is_focused = false;
+		if(kw->parent->widgets[desktop->animation_stop-1])
+			kw->parent->widgets[desktop->animation_stop-1]->is_focused = false;
 
 		kw->parent->widgets[i-1]->is_focused = true;
 	}
@@ -109,7 +108,7 @@ static gint playLoop(gpointer data)
 	if(nextl)
 		SP_ITEM(nextl)->setHidden(false);
 
-	if(kw->parent->animation_stop == i)
+	if(desktop->animation_stop == i)
 	{
 		//nextl = desktop->getDocument()->getObjectById(
 		//		std::string(Glib::ustring::format("animationlayer", 1, "keyframe", kw->parent->animation_start)));
@@ -123,7 +122,7 @@ static gint playLoop(gpointer data)
 
 		kw->parent->widgets[i-2]->is_focused = false;
 		kw->parent->widgets[i-1]->is_focused = true;
-		i = kw->parent->animation_start;
+		i = desktop->animation_start;
 		kw->parent->queue_draw();
 		return true;
 
@@ -448,24 +447,45 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 static void animationStop(KeyframeWidget * kww, gpointer data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(data);
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	if(!desktop)
+		return;
 	
-	if(kw->id < kw->parent->animation_start)
+	if(kw->id < desktop->animation_start)
 		return;
 	
 	for(int i=0;i < kw->parent->widgets.size();i++)
 		kw->parent->widgets[i]->is_animation_stop = false;
 	
 	kw->is_animation_stop = true;
-	kw->parent->animation_stop = kw->id;
+	desktop->animation_stop = kw->id;
 	
+
+	KeyframeBar * n = kw->parent->next;
+	while(n)
+	{
+		n->queue_draw();
+		n = n->next;
+	}
+
+	KeyframeBar * p = kw->parent->prev;
+	while(p)
+	{
+		p->queue_draw();
+		p = p->prev;
+	}
+
 	kw->parent->queue_draw();
 }
 
 static void animationStart(KeyframeWidget * kww, gpointer data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(data);
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+		if(!desktop)
+			return;
 	
-	if(kw->id > kw->parent->animation_stop)
+	if(kw->id > desktop->animation_stop)
 		return;
 	
 	for(int i=0;i < kw->parent->widgets.size();i++)
@@ -473,8 +493,24 @@ static void animationStart(KeyframeWidget * kww, gpointer data)
 	
 
 	kw->is_animation_start = true;
-	kw->parent->animation_start = kw->id;
+	desktop->animation_start = kw->id;
 	
+
+
+	KeyframeBar * n = kw->parent->next;
+	while(n)
+	{
+		n->queue_draw();
+		n = n->next;
+	}
+
+	KeyframeBar * p = kw->parent->prev;
+	while(p)
+	{
+		p->queue_draw();
+		p = p->prev;
+	}
+
 	kw->parent->queue_draw();
 }
 
@@ -1917,12 +1953,14 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 		cr->line_to(width, height-.5);
 		cr->stroke();
 
-		if(is_animation_stop)
+		//if(is_animation_stop)
+		if(id == SP_ACTIVE_DESKTOP->animation_stop)
 		{
 			cr->set_source_rgba(.4, 0, 0, .75);
 			cr->rectangle(width*3/4, 0, width/4, height);
 		}
-		if(is_animation_start)
+		//if(is_animation_start)
+		if(id == SP_ACTIVE_DESKTOP->animation_start)
 		{
 			cr->set_source_rgba(.4, 0, 0, .75);
 			cr->rectangle(0, 0, width/4, height);

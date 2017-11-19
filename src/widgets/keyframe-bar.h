@@ -23,8 +23,8 @@ public:
 	bool ctrl_held;
 	bool several_selected;
 	
-	int animation_start;
-	int animation_stop;
+	//int animation_start;
+	//int animation_stop;
 	
 	int num_keyframes;
 	bool clear_tween;

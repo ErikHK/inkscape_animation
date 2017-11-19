@@ -65,8 +65,8 @@ KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 	next = NULL;
 	prev = NULL;
 	
-	animation_start = 1;
-	animation_stop = 10;
+	//animation_start = 1;
+	//animation_stop = 10;
 	
 	shift_held = false;
 	ctrl_held = false;

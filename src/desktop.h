@@ -197,8 +197,11 @@ public:
 	bool fade_previous_layers;
 	bool show_all_keyframes;
 	bool is_playing; //is the animation playing?
-	int start_loop_keyframe;
-	int end_loop_keyframe;
+	//int start_loop_keyframe;
+	//int end_loop_keyframe;
+	int animation_start;
+	int animation_stop;
+
 	
 	guint fps; //animation frames per second
 
