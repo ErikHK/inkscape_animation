@@ -1162,11 +1162,12 @@ void Export::onExport ()
 		if(layer1)
 			SP_ITEM(layer1)->setHidden(false);
 
-		SPObject * tweenpath = NULL;
-	
+		//SPObject * tweenpath = NULL;
+		std::vector<SPObject *> tweenpaths;
+
 		SPObject * layers[num];
 
-		for(int i=0;i < 100; i++)
+		for(int i=0;i < 10; i++)
 		{
 			layers[i] = doc->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1, "keyframe", desktop->animation_start))); //start with keyframe at start of animation
 			if(layers[i])
@@ -1179,7 +1180,7 @@ void Export::onExport ()
 		setExporting(true, Glib::ustring::compose(_("Exporting %1 files"), num));
 
 		gint export_count = 0;
-		for(int j=0;j < num-1; j++)
+		for(int j=0;j < num; j++)
 		{
 			for(int ii = 0; ii < num_animation_layers; ii++)
 			{
@@ -1192,9 +1193,13 @@ void Export::onExport ()
 					if(layers[ii]->getRepr()->attribute("inkscape:tween"))
 					{
 						const char * tweenpathid = layers[ii]->getRepr()->attribute("inkscape:tweenpathid");
-						tweenpath = doc->getObjectById(tweenpathid);
+						SPObject * tweenpath = doc->getObjectById(tweenpathid);
 						if(tweenpath && SP_IS_PATH(tweenpath))
+						{
 							SP_ITEM(tweenpath)->setHidden(true);
+							tweenpaths.push_back(tweenpath);
+						}
+
 					}
 
 				}
@@ -1237,16 +1242,16 @@ void Export::onExport ()
 				++export_count;
 			}
 			
-			for(int ii = 0; ii < num-1; ii++)
+			for(int ii = 0; ii < num_animation_layers; ii++)
 			{
 				if(layers[ii])
 					SP_ITEM(layers[ii])->setHidden(true);
 			}
 			
 			bool finished = true;
-			for(int ii = 0; ii < 100; ii++)
+			for(int ii = 0; ii < num_animation_layers; ii++)
 			{
-				if(layers[ii])
+				if(layers[ii] && layers[ii]->getRepr()->childCount() > 0)
 				{
 					finished = false;
 					layers[ii] = Inkscape::next_layer(desktop->currentRoot(), layers[ii]);
@@ -1270,8 +1275,10 @@ void Export::onExport ()
 		interrupted = false;
         exportSuccessful = (export_count > 0);
 
-        if(tweenpath && SP_IS_PATH(tweenpath))
-        	SP_ITEM(tweenpath)->setHidden(false);
+        //if(tweenpath && SP_IS_PATH(tweenpath))
+        //	SP_ITEM(tweenpath)->setHidden(false);
+        for(i=0; i < tweenpaths.size(); i++)
+        	SP_ITEM(tweenpaths[i])->setHidden(false);
 	}
 	else {
         Glib::ustring filename = filename_entry.get_text();

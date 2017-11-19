@@ -1104,14 +1104,13 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	SPObject * layer = startLayer;
 
-	int j = 1;
+	int j = 0;
 
 	SPItem * item = createGuide(kw, start_x, start_y, end_x, end_y);
 
 	while(layer->next)
 	{
 		//layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
-		layer = layer->next;
 
 		if(!layer)
 			return;
@@ -1126,7 +1125,10 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 		layer->getRepr()->setAttribute("inkscape:tweenpathid", item->getId());
 
 		SP_ITEM(child)->transform.setTranslation(Geom::Point(start_x + j*inc_x, start_y + j*inc_y));
+		child->getRepr()->setAttribute("x", 0);
+		child->getRepr()->setAttribute("y", 0);
 
+		layer = layer->next;
 		j++;
 	}
 
