@@ -44,11 +44,12 @@ class AnimationControl::ModelColumns : public Gtk::TreeModel::ColumnRecord
 {
 	public:
 		ModelColumns()
-		{ add(m_col_visible); add(m_col_locked); add(m_col_name); add(m_col_object);}
+		{ add(m_col_visible); add(m_col_locked); add(m_col_name); add(m_col_layer); add(m_col_object);}
 
 		Gtk::TreeModelColumn<bool> m_col_visible;
 		Gtk::TreeModelColumn<bool> m_col_locked;
 		Gtk::TreeModelColumn<Glib::ustring> m_col_name;
+		Gtk::TreeModelColumn<Glib::ustring> m_col_layer;
 		Gtk::TreeModelColumn<KeyframeBar*> m_col_object;
 };
 
@@ -427,10 +428,12 @@ static void duplicateLayer(AnimationControl * acc, gpointer user_data)
 
 void AnimationControl::on_document_changed()
 {
+
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	for(int i=0; i < kb_vec.size(); i++)
 	{
 		SPObject * test = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
+
 		//the layer is removed, also remove GUI parts for this animation layer!
 		if(!test)
 		{
@@ -453,7 +456,7 @@ void AnimationControl::on_document_changed()
 			{
 			    Gtk::TreeModel::Row row = *iter;
 			    //if (ii == i) {
-			    if(row[_model->m_col_name] == Glib::ustring::format("animationlayer", i+1))
+			    if(row[_model->m_col_layer] == Glib::ustring::format("animationlayer", i+1))
 			    {
 			    	_store->erase(iter);
 			    	break;
@@ -467,6 +470,7 @@ void AnimationControl::on_document_changed()
 
 		}
 	}
+
 }
 
 
@@ -831,7 +835,6 @@ void AnimationControl::_styleButton(Gtk::Button& btn, char const* iconName, char
     btn.set_tooltip_text (tooltip);
 }
 
-
 SPObject * AnimationControl::getAssociatedLayer()
 {
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
@@ -995,6 +998,9 @@ void AnimationControl::addLayer(bool addKeyframe)
 			else
 				row[_model->m_col_name] = Glib::ustring::format(child->getRepr()->attribute("id"));
 			
+
+			row[_model->m_col_layer] = Glib::ustring::format(child->getRepr()->attribute("id"));
+
 			Glib::ustring str = Glib::ustring::format(child->getRepr()->attribute("num"));
 			
 			int place = atoi(str.c_str());

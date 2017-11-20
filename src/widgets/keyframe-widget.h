@@ -61,6 +61,7 @@ protected:
 
 	bool on_my_drag_drop(const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time);
 	void on_selection_changed();
+	void on_document_changed();
 	void on_update_tween();
 	
 private:

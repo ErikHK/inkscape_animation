@@ -315,7 +315,6 @@ void KeyframeWidget::selectLayer()
 
 	desktop->setCurrentLayer(layer);
 
-				
 	if(LAYERS_TO_HIDE.size() > 0)
 	{
 		for(int i = 0; i < LAYERS_TO_HIDE.size(); i++)
@@ -323,7 +322,6 @@ void KeyframeWidget::selectLayer()
 			LAYERS_TO_HIDE[i]->getRepr()->setAttribute("style", "opacity:1.0");
 			if(!desktop->show_all_keyframes)
 				SP_ITEM(LAYERS_TO_HIDE[i])->setHidden(true);
-			
 		}
 		LAYERS_TO_HIDE.clear();
 	}
@@ -531,7 +529,6 @@ static void onionSkinning(KeyframeWidget * kww, gpointer user_data)
 static void settings(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
-	
 }
 
 static void showAllKeyframes(KeyframeWidget * kww, gpointer user_data)
@@ -555,7 +552,8 @@ static void showAllKeyframes(KeyframeWidget * kww, gpointer user_data)
 	if(layer)
 		SP_ITEM(layer)->setHidden(false);
 	
-	kw->layer->getRepr()->setAttribute("style", "opacity:1.0");
+	if(kw->layer)
+		kw->layer->getRepr()->setAttribute("style", "opacity:1.0");
 	if(kw->prev && kw->prev->layer)
 		kw->prev->layer->getRepr()->setAttribute("style", "opacity:1.0");
 }
@@ -1698,6 +1696,17 @@ bool KeyframeWidget::on_my_drag_drop(const Glib::RefPtr<Gdk::DragContext>& conte
 	return true;
 }
 
+void KeyframeWidget::on_document_changed()
+{
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	SPObject * test = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", parent->id, "keyframe", id)));
+	if(!test)
+	{
+		layer = NULL;
+		LAYERS_TO_HIDE.clear();
+	}
+}
+
 KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer, bool _is_empty)
 {
 	height = 0;
@@ -1815,6 +1824,10 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 
 		_sel_changed_connection2 = desktop->connectToolSubselectionChanged(
 				sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_update_tween)));
+
+
+		desktop->getDocument()->connectModified(
+						sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_document_changed)));
 
 		//desktop->doc()->connectModified(sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_update_tween)));
 
