@@ -775,7 +775,9 @@ static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * en
 	SPObject * layer = startLayer;
 	SPObject * nextLayer = NULL;
 	
-	int num_layers = kw->parent->num_keyframes+1;
+	//int num_layers = kw->parent->num_keyframes+1;
+	int num_layers = 1;
+	num_layers = atoi(layer->getRepr()->attribute("inkscape:tweenlayers"));
 	
 	std::vector<Node*> nodes;
 	
@@ -857,7 +859,7 @@ static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * en
 	}
 	
 	for (int i = 0; i < end_nodes_position.size(); i++) {
-		inc_node_pos.push_back( (end_nodes_position[i] - start_nodes_position[i])/(num_layers - 1)  );
+		inc_node_pos.push_back( (end_nodes_position[i] - start_nodes_position[i])/(num_layers)  );
 
 		Geom::Point end_front = end_nodes_front[i];
 		Geom::Point start_front = start_nodes_front[i];
@@ -870,9 +872,9 @@ static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * en
 		//if(!end_node->isDegenerate() && !start_node->isDegenerate())
 		{
 			inc_node_front_handle.push_back(
-					(end_nodes_front[i] - start_nodes_front[i]) / (num_layers - 1)  );
+					(end_nodes_front[i] - start_nodes_front[i]) / (num_layers)  );
 			inc_node_back_handle.push_back(
-					(end_nodes_back[i] - start_nodes_back[i]) / (num_layers - 1)  );
+					(end_nodes_back[i] - start_nodes_back[i]) / (num_layers)  );
 		}
 	}
 	
