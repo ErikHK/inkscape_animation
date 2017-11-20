@@ -44,6 +44,7 @@ protected:
     virtual bool on_expose_event(GtkWidget * widget, GdkEventExpose* event);
 	bool on_my_focus_in_event(GdkEventFocus* event);
 	bool on_my_button_press_event(GdkEventButton* event);
+	void on_document_changed();
 	bool handleKeyEvent(GdkEventKey *event);
 	bool on_mouse_(GdkEventMotion* event);
 	

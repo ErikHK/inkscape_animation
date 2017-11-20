@@ -423,8 +423,53 @@ static void duplicateLayer(AnimationControl * acc, gpointer user_data)
 	}
 	*/
 
-
 }
+
+void AnimationControl::on_document_changed()
+{
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	for(int i=0; i < kb_vec.size(); i++)
+	{
+		SPObject * test = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
+		//the layer is removed, also remove GUI parts for this animation layer!
+		if(!test)
+		{
+			Gtk::Widget * testa = kb_vec[i];
+			//remove next and prev for the neighbors!!! will crash otherwise!!
+			if(kb_vec[i]->prev)
+				kb_vec[i]->prev->next = NULL;
+			if(kb_vec[i]->next)
+				kb_vec[i]->next->prev = NULL;
+			_keyframe_table.remove(*testa);
+			//_tree.remove()
+			//_store->get_iter()
+
+			//Gtk::TreeModel::iterator iter = _tree.get_selection()->get_selected();
+			//_tree.get_
+			Gtk::TreeModel::Children children = _store->children();
+
+			for(Gtk::TreeModel::Children::iterator iter = children.begin(); iter
+			  != children.end(); ++iter)
+			{
+			    Gtk::TreeModel::Row row = *iter;
+			    //if (ii == i) {
+			    if(row[_model->m_col_name] == Glib::ustring::format("animationlayer", i+1))
+			    {
+			    	_store->erase(iter);
+			    	break;
+			    }
+			}
+
+			//_store->erase(iter);
+
+			//gtk_container_remove(_keyframe_table, GTK_WIDGET(*testa));
+			queue_draw();
+
+		}
+	}
+}
+
+
 AnimationControl::AnimationControl() : 
 _panes(), _keyframe_table(), _scroller(), _tree_scroller(),
 _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
@@ -432,6 +477,8 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
 	_new_layer_button.signal_clicked().connect(sigc::bind<bool>(sigc::mem_fun(*this, &AnimationControl::addLayer), true));
 	//signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
 	
+
+
 	//Create the tree model and store
 	Gtk::Label * lbl = new Gtk::Label("ID");
 	Gtk::Label * lbl2 = new Gtk::Label("Animation Layer");
@@ -554,7 +601,7 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
 	_tree_scroller.set_size_request(300);
 
 	_tree_scroller.set_shadow_type(Gtk::SHADOW_NONE);
-	_tree_scroller.add(_tree); //this fails!
+	_tree_scroller.add(_tree);
 	_tree_scroller.set_policy(Gtk::POLICY_ALWAYS, Gtk::POLICY_NEVER);
 
 	_panes.add1(_tree_scroller);
@@ -894,6 +941,14 @@ void AnimationControl::addLayer(bool addKeyframe)
 	//bool addKeyframe = true;
 	num_layers++;
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+
+	if(desktop)
+	{
+		desktop->getDocument()->connectModified(
+				sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
+	}
+
+
 	SPObject * prevLayer = NULL;
 	SPObject * lay = NULL;
 	//try to add a layer
@@ -956,7 +1011,7 @@ void AnimationControl::addLayer(bool addKeyframe)
 	rebuildUi();
 
 	if(addKeyframe)
-		DocumentUndo::done(desktop->getDocument(), SP_VERB_DIALOG_LAYERS, "Add animation layer");
+		DocumentUndo::done(desktop->getDocument(), SP_VERB_NONE, "Add animation layer");
 }
 
 void AnimationControl::moveLayer(int dir)
@@ -1064,12 +1119,19 @@ void AnimationControl::moveLayerDown()
 
 bool AnimationControl::on_expose_event(GtkWidget * widget, GdkEventExpose* event)
 {
+
 	//rebuildUi();
 	return false;
 }
 
 bool AnimationControl::on_my_button_press_event(GdkEventButton*)
 {
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+	if(desktop)
+	{
+		desktop->getDocument()->connectModified(
+				sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
+	}
 	return false;
 }
 

@@ -297,8 +297,14 @@ void KeyframeWidget::selectLayer()
 	if(!layer)
 		layer = desktop->namedview->document->getObjectById(
 				Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
-				
-	if(!layer)
+
+	if(!parent->layer || !SP_IS_OBJECT(parent->layer))
+	{
+		Inkscape::create_animation_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
+		parent->layer = desktop->getDocument()->getObjectById(Glib::ustring::format("animationlayer", parent_id));
+	}
+
+	if(!layer && parent->layer)
 		Inkscape::create_animation_keyframe(desktop->currentRoot(), parent->layer, id);
 
 	layer = desktop->namedview->document->getObjectById(
@@ -352,7 +358,7 @@ void KeyframeWidget::selectLayer()
 	
 	while(next_kb)
 	{
-		if(next_kb->is_visible && next_kb->layer)
+		if(next_kb->is_visible && next_kb->layer && SP_IS_ITEM(next_kb->layer))
 		{
 			SP_ITEM(next_kb->layer)->setHidden(false);
 			if(next_kb->widgets[id-1]->layer)
@@ -1424,7 +1430,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	//emit selection signal
 	desktop->getSelection()->emit();
 
-	DocumentUndo::done(desktop->getDocument(), SP_VERB_CONTEXT_NODE, "Create tween");
+	DocumentUndo::done(desktop->getDocument(), SP_VERB_NONE, "Create tween");
 
 	kw->showAll->set_active(false);
 	desktop->show_all_keyframes = false;
@@ -1813,6 +1819,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 		//desktop->doc()->connectModified(sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_update_tween)));
 
 		//desktop->connectToolSubselectionChanged()
+		//desktop->getDocument()->connectModified()
 
 	}
 	
