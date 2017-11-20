@@ -1248,20 +1248,12 @@ void Export::onExport ()
 					SP_ITEM(layers[ii])->setHidden(true);
 			}
 			
-			bool finished = true;
 			for(int ii = 0; ii < num_animation_layers; ii++)
 			{
-				if(layers[ii] && layers[ii]->getRepr()->childCount() > 0)
-				{
-					finished = false;
+				if(layers[ii])
 					layers[ii] = Inkscape::next_layer(desktop->currentRoot(), layers[ii]);
-					if(layers[ii] && layers[ii]->getRepr()->childCount() > 0)
-						finished = false;
-				}
+
 			}
-			
-			if(finished)
-				break;
 			
 			i++;
 		}

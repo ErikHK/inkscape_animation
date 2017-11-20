@@ -24,8 +24,9 @@ class AnimationControl : public Gtk::Table
 public:
     AnimationControl();
     virtual ~AnimationControl();
-	void addLayer();
+	void addLayer(bool addKeyframe);
 	void removeLayer();
+	SPObject * getAssociatedLayer();
 	void moveLayerUp();
 	void moveLayerDown();
 	void moveLayer(int dir);

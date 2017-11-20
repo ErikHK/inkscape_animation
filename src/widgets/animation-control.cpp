@@ -353,12 +353,83 @@ bool AnimationControl::_handleButtonEvent(GdkEventButton* event)
 	return false;
 }
 
+static void duplicateLayer(AnimationControl * acc, gpointer user_data)
+{
+	AnimationControl * ac = reinterpret_cast<AnimationControl*>(user_data);
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 
+	SPObject * layer = ac->getAssociatedLayer();
+
+	ac->addLayer(false);
+
+	int numm = ac->num_layers;
+	std::string testt = std::string(Glib::ustring::format("animationlayer", ac->num_layers));
+	SPObject * new_layer = desktop->getDocument()->getObjectById(testt);
+	//Inkscape::XML::Node * child = new_layer->getRepr()->firstChild();
+	//while(child)
+	//{
+	//	new_layer->getRepr()->removeChild(child);
+	//	child = new_layer->getRepr()->firstChild();
+	//}
+	//SPObject * new_animationlayerkeyframe = new_layer->getRepr()->firstChild();
+
+	//if(!new_layer)
+	//	return;
+
+	Inkscape::XML::Node * layer_copy = NULL;
+	//Inkscape::XML::Node * layerrepr = layer->getRepr();
+	int i=0;
+	while(layer->getRepr()->nthChild(i))
+	{
+		layer_copy = layer->getRepr()->nthChild(i)->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc());
+
+		if(layer_copy)
+			layer_copy->setAttribute("id", Glib::ustring::format("animationlayer", ac->num_layers, "keyframe", i+1).c_str());
+		//std::string new_layer_name = Glib::ustring::format("animationlayer", ac->num_layers);
+		//std::string new_layer_name = Glib::ustring("animationlayer5");
+		//layer_copy->setAttribute("id", new_layer_name.c_str());
+		if(layer_copy && new_layer)
+			new_layer->getRepr()->appendChild(layer_copy);
+		i++;
+	}
+
+	//layer->parent->getRepr()->appendChild(layer_copy);
+
+	/*
+	Inkscape::XML::Node * animationlayerkeyframe_obj_copy = NULL;
+	Inkscape::XML::Node * animationlayerkeyframe = layer->getRepr()->firstChild(); //animationlayerNkeyframe1
+
+	//loop through all animationlayerkeyframes in the current layer
+	while(animationlayerkeyframe)
+	{
+		int i = 0;
+
+		SPObject * new_keyframe = desktop->getDocument()->getObjectById(std::string(Glib::ustring::compose("animationlayer", ac->num_layers, "keyframe", i+1)));
+
+
+		Inkscape::XML::Node * obj = animationlayerkeyframe->nthChild(i);
+		//loop through and copy all the objects from the current keyframe to the new layer
+		while(obj)
+		{
+			int j = 0;
+			obj = animationlayerkeyframe->nthChild(j);
+
+			//this_childn_copy = animationlayerkeyframe->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc());
+			j++;
+		}
+
+
+		animationlayerkeyframe = layer->getRepr()->nthChild(i);
+	}
+	*/
+
+
+}
 AnimationControl::AnimationControl() : 
 _panes(), _keyframe_table(), _scroller(), _tree_scroller(),
 _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
 {
-	_new_layer_button.signal_clicked().connect(sigc::mem_fun(*this, &AnimationControl::addLayer));
+	_new_layer_button.signal_clicked().connect(sigc::bind<bool>(sigc::mem_fun(*this, &AnimationControl::addLayer), true));
 	//signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
 	
 	//Create the tree model and store
@@ -377,11 +448,16 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
 	
 	//_changed_signal.emit();
 	
-	
 	Gtk::MenuItem *rename = new Gtk::MenuItem("Rename");
 	_popupMenu.append(*rename);
 	Gtk::MenuItem *duplicate = new Gtk::MenuItem("Duplicate");
 	_popupMenu.append(*duplicate);
+
+	g_signal_connect( duplicate->gobj(),
+							  "activate",
+							  G_CALLBACK(duplicateLayer),
+							  this);
+
 	Gtk::MenuItem *neww = new Gtk::MenuItem("New");
 	_popupMenu.append(*neww);
 	
@@ -400,7 +476,7 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
     Gtk::Button* _add = Gtk::manage( new Gtk::Button() );
     _styleButton(*_add, INKSCAPE_ICON("list-add"), _("Add animation layer"));
     _add->set_relief(Gtk::RELIEF_NONE);
-    _add->signal_clicked().connect( sigc::mem_fun(*this, &AnimationControl::addLayer) );
+    _add->signal_clicked().connect(sigc::bind<bool>( sigc::mem_fun(*this, &AnimationControl::addLayer), true) );
     //_buttonsSecondary.pack_start(*btn, Gtk::PACK_SHRINK);
 	//attach(*btn, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
 	_buttons.pack_start(*_add, Gtk::PACK_SHRINK);
@@ -708,6 +784,47 @@ void AnimationControl::_styleButton(Gtk::Button& btn, char const* iconName, char
     btn.set_tooltip_text (tooltip);
 }
 
+
+SPObject * AnimationControl::getAssociatedLayer()
+{
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	if(!desktop)
+		return NULL;
+
+	Gtk::TreeModel::iterator iterr = _tree.get_selection()->get_selected();
+	if(!iterr)
+		return NULL;
+
+	Gtk::TreeModel::Path *path = new Gtk::TreeModel::Path(iterr);
+	if(!path)
+		return NULL;
+
+	//Glib::RefPtr<Gtk::TreeSelection> selection = _tree.get_selection();
+
+	//_tree.remove(_tree.get_selection());
+
+	Gtk::TreeModel::iterator iter = _store->get_iter(*path);
+
+	if(!iter)
+		return NULL;
+
+	//Gtk::TreeModel::iterator iter = _tree.get_model()->get_iter(path);
+	Gtk::TreeModel::Row row = *iter;
+
+	KeyframeBar* kb = row[_model->m_col_object];
+	if(!kb)
+		return NULL;
+
+	int id = kb->id;
+
+	//remove layer too
+	SPObject * lay = kb->layer;
+
+	return lay;
+
+}
+
+
 void AnimationControl::removeLayer()
 {
 	
@@ -715,6 +832,7 @@ void AnimationControl::removeLayer()
 	if(!desktop)
 		return;
 	
+
 	Gtk::TreeModel::iterator iterr = _tree.get_selection()->get_selected();
 	if(!iterr)
 		return;
@@ -743,6 +861,9 @@ void AnimationControl::removeLayer()
 
 	//remove layer too
 	SPObject * lay = kb->layer;
+
+
+	//SPObject * lay = getAssociatedLayer();
 	
 	if(lay)
 	{
@@ -768,8 +889,9 @@ void AnimationControl::removeLayer()
 	}
 }
 
-void AnimationControl::addLayer()
+void AnimationControl::addLayer(bool addKeyframe)
 {
+	//bool addKeyframe = true;
 	num_layers++;
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	SPObject * prevLayer = NULL;
@@ -787,15 +909,18 @@ void AnimationControl::addLayer()
 			lay = Inkscape::create_animation_layer(desktop->currentRoot(), desktop->currentRoot(), Inkscape::LPOS_BELOW);
 		if(!lay)
 			return;
-		
+
 		//lay->getRepr()->setAttribute("num", num_layers);
-		
+
 		desktop->setCurrentLayer(lay);
 		//SPObject * nextLayer = desktop->namedview->document->getObjectById(ids);
-		
+
 		//for(int i=0;i < 10;i++)
 		//create only first frame layer
-		Inkscape::create_animation_keyframe(desktop->currentRoot(), lay, 1);
+		if(addKeyframe)
+		{
+			Inkscape::create_animation_keyframe(desktop->currentRoot(), lay, 1);
+		}
 	}
 	
 	//if(kb_vec.size() < num_layers)
@@ -830,7 +955,8 @@ void AnimationControl::addLayer()
 	
 	rebuildUi();
 
-	DocumentUndo::done(desktop->getDocument(), SP_VERB_DIALOG_LAYERS, "Add animation layer");
+	if(addKeyframe)
+		DocumentUndo::done(desktop->getDocument(), SP_VERB_DIALOG_LAYERS, "Add animation layer");
 }
 
 void AnimationControl::moveLayer(int dir)
