@@ -433,6 +433,46 @@ void AnimationControl::on_document_changed()
 	for(int i=0; i < kb_vec.size(); i++)
 	{
 		SPObject * test = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
+		
+		//check if layer exists without GUI parts, e.g. when loading an svg file with animation layers
+		if(test)
+		{
+			//loop through kb_vec and look for one with the same id as i+1
+			bool found = false;
+			for(int jj=0; jj < kb_vec.size(); jj++)
+			{
+				if(kb_vec[jj]->id == i+1)
+					found = true;
+			}
+			
+			//if no-one is found, create it!
+			if(!found)
+			{
+				Gtk::TreeModel::iterator iter = _store->append();
+				Gtk::TreeModel::Row row = *iter;
+				row[_model->m_col_visible] = true;
+				row[_model->m_col_locked] = false;
+				
+				//row[_model->m_col_name] = Glib::ustring::format("animationlayer", num_layers);
+				if(test->getRepr()->attribute("name"))
+					row[_model->m_col_name] = Glib::ustring::format(test->getRepr()->attribute("name"));
+				else
+					row[_model->m_col_name] = Glib::ustring::format(test->getRepr()->attribute("id"));
+
+				Glib::ustring str = Glib::ustring::format(test->getRepr()->attribute("num"));
+			
+				int place = atoi(str.c_str());
+				
+				KeyframeBar* kb = new KeyframeBar(place, test);
+				row[_model->m_col_object] = kb;
+				_keyframe_table.attach(*kb, 0, 1, place-1, place, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
+				kb_vec.push_back(kb);
+				queue_draw();
+				kb->queue_draw();
+				rebuildUi();
+				//kb->rebuildUi();
+			}
+		}
 
 		//the layer is removed, also remove GUI parts for this animation layer!
 		if(!test)
@@ -949,6 +989,11 @@ void AnimationControl::addLayer(bool addKeyframe)
 	{
 		desktop->getDocument()->connectModified(
 				sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
+				
+		//desktop->getDocument()->connectResized(
+		//		sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
+				
+				
 	}
 
 
@@ -998,7 +1043,6 @@ void AnimationControl::addLayer(bool addKeyframe)
 			else
 				row[_model->m_col_name] = Glib::ustring::format(child->getRepr()->attribute("id"));
 			
-
 			row[_model->m_col_layer] = Glib::ustring::format(child->getRepr()->attribute("id"));
 
 			Glib::ustring str = Glib::ustring::format(child->getRepr()->attribute("num"));
