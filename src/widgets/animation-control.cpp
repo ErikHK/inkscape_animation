@@ -129,14 +129,14 @@ void AnimationControl::toggleVisible( Glib::ustring const& str )
 void AnimationControl::update_(SPDesktop * desktop)
 {
 
-	desktop->connectDocumentReplaced(
-			sigc::mem_fun(*this, &AnimationControl::on_document_replaced));
+	//desktop->connectDocumentReplaced(
+	//		sigc::mem_fun(*this, &AnimationControl::on_document_replaced));
 
 	desktop->connectCurrentLayerChanged(
 			sigc::mem_fun(*this, &AnimationControl::on_current_layer_changed));
 
-	desktop->getDocument()->connectModified(
-					sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
+	//desktop->getDocument()->connectModified(
+	//				sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
 	update();
 }
 
@@ -445,6 +445,8 @@ void AnimationControl::update()
 
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 
+
+	//check if layer exists without GUI parts, e.g. when loading an svg file with animation layers
 	for(int i=0; i < 20; i++)
 	{
 		SPObject * test = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
@@ -457,7 +459,7 @@ void AnimationControl::update()
 				if(kb_vec[jj]->id == i+1)
 					found = true;
 			}
-			
+
 			//if no-one is found, create it!
 			if(!found)
 			{
@@ -465,7 +467,7 @@ void AnimationControl::update()
 				Gtk::TreeModel::Row row = *iter;
 				row[_model->m_col_visible] = true;
 				row[_model->m_col_locked] = false;
-				
+
 				//row[_model->m_col_name] = Glib::ustring::format("animationlayer", num_layers);
 				if(test->getRepr()->attribute("name"))
 					row[_model->m_col_name] = Glib::ustring::format(test->getRepr()->attribute("name"));
@@ -473,9 +475,9 @@ void AnimationControl::update()
 					row[_model->m_col_name] = Glib::ustring::format(test->getRepr()->attribute("id"));
 
 				Glib::ustring str = Glib::ustring::format(test->getRepr()->attribute("num"));
-			
+
 				int place = atoi(str.c_str());
-				
+
 				KeyframeBar* kb = new KeyframeBar(place, test);
 				row[_model->m_col_object] = kb;
 				_keyframe_table.attach(*kb, 0, 1, place-1, place, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
@@ -489,13 +491,9 @@ void AnimationControl::update()
 		}
 	}
 
-
 	for(int i=kb_vec.size()-1; i >= 0; i--)
 	{
 		SPObject * test = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
-
-		//check if layer exists without GUI parts, e.g. when loading an svg file with animation layers
-
 
 		//the layer is removed, also remove GUI parts for this animation layer!
 		if(!test)
@@ -533,6 +531,8 @@ void AnimationControl::update()
 
 		}
 	}
+	rebuildUi();
+
 }
 
 void AnimationControl::on_document_replaced(SPDesktop * desktop, SPDocument * document)
@@ -554,16 +554,13 @@ AnimationControl::AnimationControl() :
 _panes(), _keyframe_table(), _scroller(), _tree_scroller(),
 _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
 {
-	_new_layer_button.signal_clicked().connect(sigc::bind<bool>(sigc::mem_fun(*this, &AnimationControl::addLayer), true));
+	//_new_layer_button.signal_clicked().connect(sigc::bind<bool>(sigc::mem_fun(*this, &AnimationControl::addLayer), true));
 	//signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
 	
 	//signal_expose_event().connect(sigc::mem_fun(*this, &AnimationControl::on_expose_event));
 
 	//signal_focus_in_event().connect(sigc::mem_fun(*this, &AnimationControl::on_my_focus_in_event));
 
-	INKSCAPE.signal_activate_desktop.connect(
-			sigc::mem_fun(*this, &AnimationControl::update_)
-	);
 
 	//Create the tree model and store
 	Gtk::Label * lbl = new Gtk::Label("ID");
@@ -656,8 +653,11 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
     //__buttonsPrimary.pack_end(*btn, Gtk::PACK_SHRINK);
 	//attach(*btn, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
 	_buttons.pack_start(*_top, Gtk::PACK_SHRINK);
-	
-	
+
+	INKSCAPE.signal_activate_desktop.connect(
+				sigc::mem_fun(*this, &AnimationControl::update_)
+		);
+
 	Gtk::TreeView m_TreeView;
 	
     ModelColumns *zoop = new ModelColumns();
@@ -768,50 +768,6 @@ void AnimationControl::rebuildUi()
 {
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	
-	//check if layers already exist (a saved svg has been opened)
-	/*
-	if(desktop)
-	{
-		int i = 1;
-		SPObject * child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i)));
-		while(child)
-		{
-			if(num_layers < i)
-				num_layers++;
-			i++;
-			//child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i)));
-			child = Inkscape::next_layer(desktop->currentRoot(), child);
-		}
-	}
-	*/
-	/*
-	for(int i = 0; i < kb_vec.size(); i++)
-	{
-		if(kb_vec.size() <= i)
-		{
-			SPObject * child = desktop->namedview->document->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
-			
-			if(child)
-			{
-				Gtk::TreeModel::iterator iter = _store->append();
-				Gtk::TreeModel::Row row = *iter;
-				row[_model->m_col_visible] = true;
-				row[_model->m_col_locked] = false;
-				row[_model->m_col_name] = Glib::ustring::format("animationlayer", i+1);
-				
-				KeyframeBar* kb = new KeyframeBar(i+1, child);
-				row[_model->m_col_object] = kb;
-				_keyframe_table.attach(*kb, 0, 1, i+1, i+2, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-				kb_vec.push_back(kb);
-			}
-		}
-	}
-	*/
-	
-
-	//TODO: iterate over keyframebars and set pointers to siblings
-
-
 	int s = kb_vec.size();
 
 	if(s>0)
@@ -831,79 +787,6 @@ void AnimationControl::rebuildUi()
 		kb_vec[s-1]->prev = kb_vec[s-2];
 		kb_vec[s-1]->next = NULL;
 	}
-
-
-	/*
-	if(kb_vec.size() > 0)
-	{
-		kb_vec[0]->prev = NULL;
-		kb_vec[0]->next = NULL;
-	}
-	if(kb_vec.size() > 1)
-	{
-		kb_vec[0]->next = kb_vec[1];
-		kb_vec[1]->prev = kb_vec[0];
-		kb_vec[1]->next = NULL;
-	}
-	if(kb_vec.size() > 2)
-	{
-		kb_vec[1]->next = kb_vec[2];
-		kb_vec[2]->prev = kb_vec[1];
-		kb_vec[2]->next = NULL;
-	}
-	
-	if(kb_vec.size() > 3)
-	{
-		kb_vec[2]->next = kb_vec[3];
-		kb_vec[3]->prev = kb_vec[2];
-		kb_vec[3]->next = NULL;
-	}
-	
-	if(kb_vec.size() > 4)
-	{
-		kb_vec[3]->next = kb_vec[4];
-		kb_vec[4]->prev = kb_vec[3];
-		kb_vec[4]->next = NULL;
-	}
-	
-	if(kb_vec.size() > 5)
-	{
-		//for(int i=0; i < kb_vec.size()-1; i++)
-		//{
-		//	kb_vec[i]->next = kb_vec[i+1];
-		//	kb_vec[i+1]->prev = kb_vec[i];
-		//}
-		kb_vec[4]->next = kb_vec[5];
-		kb_vec[5]->prev = kb_vec[4];
-		kb_vec[5]->next = NULL;
-	}
-	*/
-	
-	/*
-	_scroller.set_shadow_type(Gtk::SHADOW_NONE);
-	_scroller.add(_keyframe_table);
-	_scroller.set_policy(Gtk::POLICY_ALWAYS, Gtk::POLICY_NEVER);
-	
-	_tree_scroller.set_size_request(300);
-	
-	_tree_scroller.set_shadow_type(Gtk::SHADOW_NONE);
-	//_tree_scroller.add(_tree); //this fails!
-	_tree_scroller.set_policy(Gtk::POLICY_ALWAYS, Gtk::POLICY_NEVER);
-
-	//_panes.add1(_tree_scroller);
-	//_panes.add2(_scroller);
-	//add(_panes);
-	attach(_panes, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-	
-	//attach(_tree_scroller, 0, 1, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-	//attach(_scroller, 1, 2, 0, 1, Gtk::FILL|Gtk::EXPAND, Gtk::FILL|Gtk::EXPAND);
-	
-	//attach(_new_layer_button, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
-	
-	attach(_buttons, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK);
-	*/
-	
-	//_tree.set_size_request(-1, num_layers*22);
 
 	show_all_children();
 }
@@ -1028,13 +911,12 @@ void AnimationControl::addLayer(bool addKeyframe)
 
 	if(desktop)
 	{
-		desktop->getDocument()->connectModified(
-				sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
+		//desktop->getDocument()->connectModified(
+		//		sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
 
 				
 		//desktop->getDocument()->connectResized(
 		//		sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
-				
 				
 	}
 
@@ -1057,7 +939,7 @@ void AnimationControl::addLayer(bool addKeyframe)
 
 		//lay->getRepr()->setAttribute("num", num_layers);
 
-		desktop->setCurrentLayer(lay);
+
 		//SPObject * nextLayer = desktop->namedview->document->getObjectById(ids);
 
 		//for(int i=0;i < 10;i++)
@@ -1099,7 +981,7 @@ void AnimationControl::addLayer(bool addKeyframe)
 			kb_vec.push_back(kb);
 		}
 	//}
-	
+	desktop->setCurrentLayer(lay);
 	rebuildUi();
 
 	if(addKeyframe)
