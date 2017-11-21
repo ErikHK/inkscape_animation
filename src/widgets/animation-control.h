@@ -31,6 +31,8 @@ public:
 	void moveLayerDown();
 	void moveLayer(int dir);
 	void rebuildUi();
+	void update();
+	void update_(SPDesktop * desktop);
 	int num_layers;
 	void toggleVisible( Glib::ustring const& str );
 	void toggleLocked( Glib::ustring const& str );
@@ -41,10 +43,14 @@ public:
 	//    }
 	
 protected:
-    virtual bool on_expose_event(GtkWidget * widget, GdkEventExpose* event);
-	bool on_my_focus_in_event(GdkEventFocus* event);
+    //virtual bool on_expose_event(GdkEventExpose* event);
+	//virtual bool on_my_focus(GdkEventFocus* focus_event);
+
+	virtual bool on_my_focus_in_event(GdkEventFocus* event);
 	bool on_my_button_press_event(GdkEventButton* event);
 	void on_document_changed();
+	void on_document_replaced(SPDesktop * desktop, SPDocument * document);
+	void on_current_layer_changed(SPObject * object);
 	bool handleKeyEvent(GdkEventKey *event);
 	bool on_mouse_(GdkEventMotion* event);
 	

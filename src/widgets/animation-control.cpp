@@ -126,6 +126,20 @@ void AnimationControl::toggleVisible( Glib::ustring const& str )
     }
 }
 
+void AnimationControl::update_(SPDesktop * desktop)
+{
+
+	desktop->connectDocumentReplaced(
+			sigc::mem_fun(*this, &AnimationControl::on_document_replaced));
+
+	desktop->connectCurrentLayerChanged(
+			sigc::mem_fun(*this, &AnimationControl::on_current_layer_changed));
+
+	desktop->getDocument()->connectModified(
+					sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
+	update();
+}
+
 void AnimationControl::toggleLocked( Glib::ustring const& str )
 {
 	
@@ -426,15 +440,14 @@ static void duplicateLayer(AnimationControl * acc, gpointer user_data)
 
 }
 
-void AnimationControl::on_document_changed()
+void AnimationControl::update()
 {
 
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
-	for(int i=0; i < kb_vec.size(); i++)
+
+	for(int i=0; i < 20; i++)
 	{
 		SPObject * test = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
-		
-		//check if layer exists without GUI parts, e.g. when loading an svg file with animation layers
 		if(test)
 		{
 			//loop through kb_vec and look for one with the same id as i+1
@@ -470,9 +483,19 @@ void AnimationControl::on_document_changed()
 				queue_draw();
 				kb->queue_draw();
 				rebuildUi();
+
 				//kb->rebuildUi();
 			}
 		}
+	}
+
+
+	for(int i=kb_vec.size()-1; i >= 0; i--)
+	{
+		SPObject * test = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1)));
+
+		//check if layer exists without GUI parts, e.g. when loading an svg file with animation layers
+
 
 		//the layer is removed, also remove GUI parts for this animation layer!
 		if(!test)
@@ -510,9 +533,22 @@ void AnimationControl::on_document_changed()
 
 		}
 	}
-
 }
 
+void AnimationControl::on_document_replaced(SPDesktop * desktop, SPDocument * document)
+{
+	update();
+}
+
+void AnimationControl::on_current_layer_changed(SPObject * object)
+{
+	update();
+}
+
+void AnimationControl::on_document_changed()
+{
+	update();
+}
 
 AnimationControl::AnimationControl() : 
 _panes(), _keyframe_table(), _scroller(), _tree_scroller(),
@@ -521,7 +557,13 @@ _new_layer_button("New Layer"), num_layers(0), _toggleEvent(0)
 	_new_layer_button.signal_clicked().connect(sigc::bind<bool>(sigc::mem_fun(*this, &AnimationControl::addLayer), true));
 	//signal_key_press_event().connect( sigc::mem_fun(*this, &AnimationControl::handleKeyEvent), false );
 	
+	//signal_expose_event().connect(sigc::mem_fun(*this, &AnimationControl::on_expose_event));
 
+	//signal_focus_in_event().connect(sigc::mem_fun(*this, &AnimationControl::on_my_focus_in_event));
+
+	INKSCAPE.signal_activate_desktop.connect(
+			sigc::mem_fun(*this, &AnimationControl::update_)
+	);
 
 	//Create the tree model and store
 	Gtk::Label * lbl = new Gtk::Label("ID");
@@ -921,7 +963,6 @@ void AnimationControl::removeLayer()
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	if(!desktop)
 		return;
-	
 
 	Gtk::TreeModel::iterator iterr = _tree.get_selection()->get_selected();
 	if(!iterr)
@@ -989,6 +1030,7 @@ void AnimationControl::addLayer(bool addKeyframe)
 	{
 		desktop->getDocument()->connectModified(
 				sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
+
 				
 		//desktop->getDocument()->connectResized(
 		//		sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
@@ -1167,12 +1209,16 @@ void AnimationControl::moveLayerDown()
 }
 
 
-bool AnimationControl::on_expose_event(GtkWidget * widget, GdkEventExpose* event)
-{
+//bool AnimationControl::on_expose_event(GdkEventExpose* event)
+//{
 
+	//SP_ACTIVE_DESKTOP->getDocument()->connectModified(
+	//				sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
 	//rebuildUi();
-	return false;
-}
+	//return false;
+	//return false;
+//}
+
 
 bool AnimationControl::on_my_button_press_event(GdkEventButton*)
 {
@@ -1192,6 +1238,14 @@ bool AnimationControl::on_mouse_(GdkEventMotion* event)
 
 bool AnimationControl::on_my_focus_in_event(GdkEventFocus*)
 {
+	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+
+	if(desktop)
+	{
+		desktop->getDocument()->connectModified(
+				sigc::hide(sigc::mem_fun(*this, &AnimationControl::on_document_changed)));
+	}
+	update();
 	return false;
 }
 
