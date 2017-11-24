@@ -1938,7 +1938,7 @@ bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
 			cr->set_source_rgba(1, 1, 1, 1);
 		else
 			cr->set_source_rgba(.9, .9, .9, 1);
-		
+
 
 		cr->paint();
 
