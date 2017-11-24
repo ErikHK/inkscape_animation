@@ -919,6 +919,7 @@ static Glib::RefPtr<Gtk::ActionGroup> create_or_fetch_actions( SPDesktop* deskto
         //SP_VERB_EDIT_TILE,
         //SP_VERB_EDIT_UNTILE,
         SP_VERB_DIALOG_ALIGN_DISTRIBUTE,
+		SP_VERB_DIALOG_ANIMATION_DIALOG,
         SP_VERB_DIALOG_DISPLAY,
         SP_VERB_DIALOG_FILL_STROKE,
         SP_VERB_DIALOG_NAMEDVIEW,

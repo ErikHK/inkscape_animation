@@ -14038,6 +14038,36 @@ ui/dialog/xml-tree.cpp.s:
 	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/xml-tree.cpp.s
 .PHONY : ui/dialog/xml-tree.cpp.s
 
+
+ui/dialog/animation-dialog.o: ui/dialog/animation-dialog.cpp.o
+
+.PHONY : ui/dialog/animation-dialog.o
+
+# target to build an object file
+ui/dialog/animation-dialog.cpp.o:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/animation-dialog.cpp.o
+.PHONY : ui/dialog/animation-dialog.cpp.o
+
+ui/dialog/animation-dialog.i: ui/dialog/animation-dialog.cpp.i
+
+.PHONY : ui/dialog/animation-dialog.i
+
+# target to preprocess a source file
+ui/dialog/animation-dialog.cpp.i:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/animation-dialog.cpp.i
+.PHONY : ui/dialog/animation-dialog.cpp.i
+
+ui/dialog/animation-dialog.s: ui/dialog/animation-dialog.cpp.s
+
+.PHONY : ui/dialog/animation-dialog.s
+
+# target to generate assembly for a file
+ui/dialog/animation-dialog.cpp.s:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/animation-dialog.cpp.s
+.PHONY : ui/dialog/animation-dialog.cpp.s
+
+
+
 ui/draw-anchor.o: ui/draw-anchor.cpp.o
 
 .PHONY : ui/draw-anchor.o
@@ -20342,6 +20372,9 @@ help:
 	@echo "... ui/dialog/xml-tree.o"
 	@echo "... ui/dialog/xml-tree.i"
 	@echo "... ui/dialog/xml-tree.s"
+	@echo "... ui/dialog/animation-dialog.o"
+	@echo "... ui/dialog/animation-dialog.i"
+	@echo "... ui/dialog/animation-dialog.s"
 	@echo "... ui/draw-anchor.o"
 	@echo "... ui/draw-anchor.i"
 	@echo "... ui/draw-anchor.s"

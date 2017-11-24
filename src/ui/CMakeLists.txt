@@ -54,6 +54,7 @@ set(ui_SRC
 
 	dialog/aboutbox.cpp
 	dialog/align-and-distribute.cpp
+	dialog/animation-dialog.cpp
 	dialog/calligraphic-profile-rename.cpp
 	dialog/clonetiler.cpp
 	dialog/color-item.cpp
@@ -110,7 +111,7 @@ set(ui_SRC
 	dialog/transformation.cpp
 	dialog/undo-history.cpp
 	dialog/xml-tree.cpp
-	dialog/animation-dialog.cpp
+	
 
 	widget/addtoicon.cpp
 	widget/anchor-selector.cpp
@@ -192,6 +193,7 @@ set(ui_SRC
 
 	dialog/aboutbox.h
 	dialog/align-and-distribute.h
+	dialog/animation-dialog.h
 	dialog/arrange-tab.h
 	dialog/behavior.h
 	dialog/calligraphic-profile-rename.h
@@ -252,7 +254,6 @@ set(ui_SRC
 	dialog/transformation.h
 	dialog/undo-history.h
 	dialog/xml-tree.h
-	dialog/animation-dialog.h
 
 	tool/commit-events.h
 	tool/control-point-selection.h

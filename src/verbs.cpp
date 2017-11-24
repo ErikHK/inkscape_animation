@@ -2072,6 +2072,9 @@ void DialogVerb::perform(SPAction *action, void *data)
         case SP_VERB_DIALOG_ALIGN_DISTRIBUTE:
             dt->_dlg_mgr->showDialog("AlignAndDistribute");
             break;
+		case SP_VERB_DIALOG_ANIMATION_DIALOG:
+			dt->_dlg_mgr->showDialog("AnimationDialog");
+            break;
         case SP_VERB_DIALOG_SPRAY_OPTION:
             dt->_dlg_mgr->showDialog("SprayOptionClass");
             break;
@@ -2937,6 +2940,8 @@ Verb *Verb::_base_verbs[] = {
                    N_("Precisely control objects' transformations"), INKSCAPE_ICON("dialog-transform")),
     new DialogVerb(SP_VERB_DIALOG_ALIGN_DISTRIBUTE, "DialogAlignDistribute", N_("_Align and Distribute..."),
                    N_("Align and distribute objects"), INKSCAPE_ICON("dialog-align-and-distribute")),
+	new DialogVerb(SP_VERB_DIALOG_ANIMATION_DIALOG, "DialogAnimationDialog", N_("_Animation Dialog..."),
+                   N_("Animation dialog"), INKSCAPE_ICON("dialog-align-and-distribute")),
     new DialogVerb(SP_VERB_DIALOG_SPRAY_OPTION, "DialogSprayOption", N_("_Spray options..."),
                    N_("Some options for the spray"), INKSCAPE_ICON("dialog-spray-options")),
     new DialogVerb(SP_VERB_DIALOG_UNDO_HISTORY, "DialogUndoHistory", N_("Undo _History..."),

@@ -1217,6 +1217,7 @@ am__cxxtests_SOURCES_DIST = cxxtests.cpp $(srcdir)/MultiPrinter.h \
 	ui/dialog/transformation.cpp ui/dialog/transformation.h \
 	ui/dialog/undo-history.cpp ui/dialog/undo-history.h \
 	ui/dialog/xml-tree.cpp ui/dialog/xml-tree.h \
+	ui/dialog/animation-dialog.cpp ui/dialog/animation-dialog.h \
 	ui/dialog/lpe-powerstroke-properties.cpp \
 	ui/dialog/lpe-powerstroke-properties.h ui/dialog/objects.cpp \
 	ui/dialog/objects.h \
@@ -1771,6 +1772,7 @@ am__objects_12 = attributes.$(OBJEXT) attribute-rel-svg.$(OBJEXT) \
 	ui/dialog/pixelartdialog.$(OBJEXT) \
 	ui/dialog/transformation.$(OBJEXT) \
 	ui/dialog/undo-history.$(OBJEXT) ui/dialog/xml-tree.$(OBJEXT) \
+	ui/dialog/animation-dialog.$(OBJEXT) \
 	ui/dialog/lpe-powerstroke-properties.$(OBJEXT) \
 	ui/dialog/objects.$(OBJEXT) \
 	ui/dialog/lpe-fillet-chamfer-properties.$(OBJEXT) \
@@ -2522,6 +2524,7 @@ am__inkscape_SOURCES_DIST = main.cpp util/find-last-if.h \
 	ui/dialog/transformation.cpp ui/dialog/transformation.h \
 	ui/dialog/undo-history.cpp ui/dialog/undo-history.h \
 	ui/dialog/xml-tree.cpp ui/dialog/xml-tree.h \
+	ui/dialog/animation-dialog.cpp ui/dialog/animation-dialog.h \
 	ui/dialog/lpe-powerstroke-properties.cpp \
 	ui/dialog/lpe-powerstroke-properties.h ui/dialog/objects.cpp \
 	ui/dialog/objects.h \
@@ -3307,6 +3310,7 @@ am__inkview_SOURCES_DIST = inkview.cpp util/find-last-if.h \
 	ui/dialog/transformation.cpp ui/dialog/transformation.h \
 	ui/dialog/undo-history.cpp ui/dialog/undo-history.h \
 	ui/dialog/xml-tree.cpp ui/dialog/xml-tree.h \
+	ui/dialog/animation-dialog.cpp ui/dialog/animation-dialog.h \
 	ui/dialog/lpe-powerstroke-properties.cpp \
 	ui/dialog/lpe-powerstroke-properties.h ui/dialog/objects.cpp \
 	ui/dialog/objects.h \
@@ -4589,6 +4593,7 @@ ink_common_sources = util/find-last-if.h util/longest-common-suffix.h \
 	ui/dialog/transformation.cpp ui/dialog/transformation.h \
 	ui/dialog/undo-history.cpp ui/dialog/undo-history.h \
 	ui/dialog/xml-tree.cpp ui/dialog/xml-tree.h \
+	ui/dialog/animation-dialog.cpp ui/dialog/animation-dialog.h \
 	ui/dialog/lpe-powerstroke-properties.cpp \
 	ui/dialog/lpe-powerstroke-properties.h ui/dialog/objects.cpp \
 	ui/dialog/objects.h \
@@ -6980,6 +6985,8 @@ ui/dialog/undo-history.$(OBJEXT): ui/dialog/$(am__dirstamp) \
 	ui/dialog/$(DEPDIR)/$(am__dirstamp)
 ui/dialog/xml-tree.$(OBJEXT): ui/dialog/$(am__dirstamp) \
 	ui/dialog/$(DEPDIR)/$(am__dirstamp)
+ui/dialog/animation-dialog.$(OBJEXT): ui/dialog/$(am__dirstamp) \
+	ui/dialog/$(DEPDIR)/$(am__dirstamp)
 ui/dialog/lpe-powerstroke-properties.$(OBJEXT):  \
 	ui/dialog/$(am__dirstamp) ui/dialog/$(DEPDIR)/$(am__dirstamp)
 ui/dialog/objects.$(OBJEXT): ui/dialog/$(am__dirstamp) \
@@ -7988,6 +7995,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@ui/dialog/$(DEPDIR)/transformation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@ui/dialog/$(DEPDIR)/undo-history.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@ui/dialog/$(DEPDIR)/xml-tree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@ui/dialog/$(DEPDIR)/animation-dialog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@ui/tool/$(DEPDIR)/control-point-selection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@ui/tool/$(DEPDIR)/control-point.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@ui/tool/$(DEPDIR)/curve-drag-point.Po@am__quote@
