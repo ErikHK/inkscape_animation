@@ -56,11 +56,11 @@
 #include "ui/dialog/spellcheck.h"
 #include "ui/dialog/export.h"
 #include "ui/dialog/xml-tree.h"
-//#include "ui/dialog/animation-dialog.h"
 #include "ui/dialog/clonetiler.h"
 #include "ui/dialog/svg-fonts-dialog.h"
 #include "ui/dialog/objects.h"
 #include "ui/dialog/tags.h"
+#include "ui/dialog/animation-dialog.h"
 
 namespace Inkscape {
 namespace UI {
@@ -143,6 +143,7 @@ DialogManager::DialogManager() {
         registerFactory("Export",              &create<Export,               FloatingBehavior>);
         registerFactory("CloneTiler",          &create<CloneTiler,           FloatingBehavior>);
         registerFactory("XmlTree",             &create<XmlTree,              FloatingBehavior>);
+        registerFactory("AnimationDialog",     &create<AnimationDialog,      FloatingBehavior>);
 
 
     } else {

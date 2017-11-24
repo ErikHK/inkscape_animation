@@ -46,64 +46,203 @@
 namespace Inkscape {
 namespace UI {
 namespace Dialog {
+AnimationDialog::AnimationDialog() :
+    // UI::Widget::Panel("AnimationDialog Label", "/dialogs/AnimationDialog", SP_VERB_DIALOG_AnimationDialog,
+    //                "Prototype Apply Label", true),
+    UI::Widget::Panel("", "/dialogs/animation", SP_VERB_DIALOG_ANIMATION_DIALOG),
 
-AnimationDialog::AnimationDialog (void) :
-    UI::Widget::Panel ("", "/dialogs/animation/", SP_VERB_DIALOG_ANIMATION_DIALOG),
-    blocked (0),
-    _message_stack (NULL),
-    _message_context (NULL),
-    current_desktop (NULL),
-    current_document (NULL),
-    selected_attr (0),
-    selected_repr (NULL),
-    new_window(NULL)
+	_tweenFrame("Tween"),
+    desktopTracker() //,
+    // desktopChangedConnection()
 {
+    std::cout << "AnimationDialog::AnimationDialog()" << std::endl;
 
-    SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-    if (!desktop) {
-        return;
+    // A widget for demonstration that displays the current SVG's id.
+    //_getContents()->pack_start(label);  // Panel::_getContents()
+
+
+    // desktop is set by Panel constructor so this should never be NULL.
+    // Note, we need to use getDesktop() since _desktop is private in Panel.h.
+    // It should probably be protected instead... but need to verify in doesn't break anything.
+    if (getDesktop() == NULL) {
+        std::cerr << "AnimationDialog::AnimationDialog: desktop is NULL!" << std::endl;
     }
 
-    _message_stack = new Inkscape::MessageStack();
-    _message_context = new Inkscape::MessageContext(_message_stack);
-    //_message_changed_connection = _message_stack->connectChanged(
-    //        sigc::bind(sigc::ptr_fun(_set_status_message), GTK_WIDGET(status.gobj())));
+    connectionDesktopChanged = desktopTracker.connectDesktopChanged(
+        sigc::mem_fun(*this, &AnimationDialog::handleDesktopChanged) );
+    desktopTracker.connect(GTK_WIDGET(gobj()));
 
-    /* tree view */
-    //paned.pack1(left_box);
+    // This results in calling handleDocumentReplaced twice. Fix me!
+    connectionDocumentReplaced = getDesktop()->connectDocumentReplaced(
+        sigc::mem_fun(this, &AnimationDialog::handleDocumentReplaced));
 
-    /* initial show/hide */
-    show_all();
+    // Alternative mechanism but results in calling handleDocumentReplaced four times.
+    // signalDocumentReplaced().connect(
+    //    sigc::mem_fun(this, &AnimationDialog::handleDocumentReplaced));
 
-/*
-    // hide() doesn't seem to work in the constructor, so moved this to present()
-    text_container.hide();
-    attr_container.hide();
-*/
-    g_assert(desktop != NULL);
+    connectionSelectionChanged = getDesktop()->getSelection()->connectChanged(
+        sigc::hide(sigc::mem_fun(this, &AnimationDialog::handleSelectionChanged)));
+
+    getDesktop()->connectCurrentLayerChanged(
+    	sigc::hide(sigc::mem_fun(this, &AnimationDialog::handleCurrentLayerChanged)));
+
+
+    updateLabel();
+    Gtk::Label * ease = new Gtk::Label("Ease:");
+    scale = new Gtk::HScale(-100, 100, 1);
+    scale->set_size_request(100, -1);
+    scale->set_sensitive(false);
+
+    ease->set_size_request(50, -1);
+    ease->set_property("valign", Gtk::ALIGN_END);
+    _easeBox.set_property("valign", Gtk::ALIGN_END);
+
+    Gtk::Label * rotate = new Gtk::Label("Rotate:");
+    Gtk::Label * rotate2 = new Gtk::Label("revs +");
+    Gtk::Label * rotate3 = new Gtk::Label("°");
+
+    Gtk::Adjustment *adj = new Gtk::Adjustment(1.0, 1.0, 10000000, 1.0, 5.0, 0.0);
+    Gtk::Adjustment *adj2 = new Gtk::Adjustment(1.0, 1.0, 10000000, 1.0, 5.0, 0.0);
+	Gtk::SpinButton * spin_revolutions = new Gtk::SpinButton(*adj);
+	Gtk::SpinButton * spin_degrees = new Gtk::SpinButton(*adj2);
+
+	spin_revolutions->set_size_request(100, -1);
+	spin_degrees->set_size_request(100, -1);
+	spin_revolutions->set_sensitive(false);
+	spin_degrees->set_sensitive(false);
+
+	rotate->set_size_request(50, -1);
+	rotate->set_property("valign", Gtk::ALIGN_END);
+	_rotateBox.set_property("valign", Gtk::ALIGN_END);
+
+
+    //_tweenBox.add(lbl);
+    //_testBox.pack_start(lbl);
+	/*
+    _easeBox.add(*ease);
+    _easeBox.add(*scale);
+
+    _rotateBox.add(*rotate);
+	_rotateBox.add(*spin_revolutions);
+	_rotateBox.add(*rotate2);
+	_rotateBox.add(*spin_degrees);
+	_rotateBox.add(*rotate3);
+	*/
+
+	_easeRotateBox.attach(*ease, 0, 1, 0, 1);
+	_easeRotateBox.attach(*scale, 1, 5, 0, 1);
+	_easeRotateBox.attach(*rotate, 0, 1, 1, 2);
+	_easeRotateBox.attach(*spin_revolutions, 1, 2, 1, 2);
+	_easeRotateBox.attach(*rotate2, 2, 3, 1, 2);
+	_easeRotateBox.attach(*spin_degrees, 3, 4, 1, 2);
+	_easeRotateBox.attach(*rotate3, 4, 5, 1, 2);
+
+
+    //_testBox->add(label);
+    //_tweenBox.pack_start(_easeBox);
+    //_tweenBox.pack_start(_rotateBox);
+	_tweenBox.pack_start(_easeRotateBox);
+
+    _tweenFrame.add(_tweenBox);
+    _getContents()->pack_start(_tweenFrame);  // Panel::_getContents()
+
 }
 
-void AnimationDialog::present()
+AnimationDialog::~AnimationDialog()
 {
+    // Never actually called.
+    std::cout << "AnimationDialog::~AnimationDialog()" << std::endl;
+    connectionDesktopChanged.disconnect();
+    connectionDocumentReplaced.disconnect();
+    connectionSelectionChanged.disconnect();
+}
+
+/*
+ * Called when a dialog is displayed, including when a dialog is reopened.
+ * (When a dialog is closed, it is not destroyed so the contructor is not called.
+ * This function can handle any reinitialization needed.)
+ */
+void
+AnimationDialog::present()
+{
+    std::cout << "AnimationDialog::present()" << std::endl;
     UI::Widget::Panel::present();
 }
 
-AnimationDialog::~AnimationDialog (void)
+/*
+ * When Inkscape is first opened, a default document is shown. If another document is immediately
+ * opened, it will replace the default document in the same desktop. This function handles the
+ * change. Bug: This is called twice for some reason.
+ */
+void
+AnimationDialog::handleDocumentReplaced(SPDesktop *desktop, SPDocument * /* document */)
 {
+    if (getDesktop() != desktop) {
+        std::cerr << "AnimationDialog::handleDocumentReplaced(): Error: panel desktop not equal to existing desktop!" << std::endl;
+    }
 
-    _message_changed_connection.disconnect();
-    delete _message_context;
-    _message_context = NULL;
-    Inkscape::GC::release(_message_stack);
-    _message_stack = NULL;
-    _message_changed_connection.~connection();
+    connectionSelectionChanged.disconnect();
+
+    connectionSelectionChanged = desktop->getSelection()->connectChanged(
+        sigc::hide(sigc::mem_fun(this, &AnimationDialog::handleSelectionChanged)));
+
+    // Update demonstration widget.
+    updateLabel();
 }
 
-void AnimationDialog::_set_status_message(Inkscape::MessageType /*type*/, const gchar *message, GtkWidget *widget)
-{
-    if (widget) {
-        gtk_label_set_markup(GTK_LABEL(widget), message ? message : "");
+/*
+ * When a dialog is floating, it is connected to the active desktop.
+ */
+void
+AnimationDialog::handleDesktopChanged(SPDesktop* desktop) {
+
+    if (getDesktop() == desktop) {
+        // This will happen after construction of AnimationDialog. We've already
+        // set up signals so just return.
+        return;
     }
+
+    // Connections are disconnect safe.
+    connectionSelectionChanged.disconnect();
+    connectionDocumentReplaced.disconnect();
+
+    setDesktop( desktop );
+
+    connectionSelectionChanged = desktop->getSelection()->connectChanged(
+        sigc::hide(sigc::mem_fun(this, &AnimationDialog::handleSelectionChanged)));
+    connectionDocumentReplaced = desktop->connectDocumentReplaced(
+        sigc::mem_fun(this, &AnimationDialog::handleDocumentReplaced));
+
+    // Update demonstration widget.
+    updateLabel();
+}
+
+/*
+ * Handle a change in which objects are selected in a document.
+ */
+void
+AnimationDialog::handleSelectionChanged() {
+    std::cout << "AnimationDialog::handleSelectionChanged()" << std::endl;
+
+    // Update demonstration widget.
+    label.set_label("Selection Changed!");
+}
+
+void
+AnimationDialog::handleCurrentLayerChanged() {
+    scale->set_sensitive(!scale->get_sensitive());
+}
+
+/*
+ * Update label... just a utility function for this example.
+ */
+void
+AnimationDialog::updateLabel() {
+
+    const gchar* root_id = getDesktop()->getDocument()->getRoot()->getId();
+    Glib::ustring label_string("Document's SVG id: ");
+    label_string += (root_id?root_id:"null");
+    label.set_label(label_string);
 }
 
 }
