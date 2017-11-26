@@ -406,12 +406,12 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
 	
-	KeyframeWidget * p = kw->prev;
+	KeyframeWidget * p = kw;
 	
 	if(!p)
 		return;
 
-	int id = kw->id-1;
+	int id = kw->id;
 	while(p)
 	{
 		//break if a previous with at least 1 child is found
@@ -440,6 +440,7 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 		Inkscape::XML::Node * childn = p->layer->getRepr()->firstChild();
 		if(childn)
 			childn_copy = childn->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc());
+
 		if(childn_copy && kw->layer->getRepr()->childCount() == 0)
 			kw->layer->getRepr()->appendChild(childn_copy);
 	}
@@ -777,13 +778,13 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		}
 		else if(easein && easein != "0")
 		{
-			//float power = atoi(easein)+1;
-			//p = pathv.pointAt(easeIn((i)*pathv.timeRange().max()/(num_frames + 1), power));
+			float power = atoi(easein)+1;
+			p = pathv.pointAt(easeIn((i)*pathv.timeRange().max()/(num_frames), power));
 		}
 		else if(easeout && easeout != "0")
 		{
-			//float power = atoi(easein)+1;
-			//p = pathv.pointAt(easeOut((i)*pathv.timeRange().max()/(num_frames + 1), power));
+			float power = atoi(easein)+1;
+			p = pathv.pointAt(easeOut((i)*pathv.timeRange().max()/(num_frames), power));
 		}else
 			p = pathv.pointAt(i*pathv.timeRange().max()/(num_frames));
 
