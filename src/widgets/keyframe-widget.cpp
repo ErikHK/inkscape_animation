@@ -613,7 +613,26 @@ static int numKeyframes(KeyframeWidget * kw)
 
 static float easeInOut(float t, float a)
 {
-	return pow(t,a)/(pow(t,a) + pow(1-t, a));
+	float ret = pow(t,a)/(pow(t,a) + pow(1-t, a));
+	if (ret >= 1)
+		return .99;
+	return ret;
+}
+
+static float easeIn(float t, float a)
+{
+	float ret = pow(t, a);
+	if(ret >= 1)
+		return .99;
+	return ret;
+}
+
+static float easeOut(float t, float a)
+{
+	float ret = pow(t, 1/a);
+	if(ret >= 1)
+		return .99;
+	return ret;
 }
 
 static void updateTween(KeyframeWidget * kww, gpointer user_data)
@@ -758,11 +777,13 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		}
 		else if(easein && easein != "0")
 		{
-
+			//float power = atoi(easein)+1;
+			//p = pathv.pointAt(easeIn((i)*pathv.timeRange().max()/(num_frames + 1), power));
 		}
 		else if(easeout && easeout != "0")
 		{
-
+			//float power = atoi(easein)+1;
+			//p = pathv.pointAt(easeOut((i)*pathv.timeRange().max()/(num_frames + 1), power));
 		}else
 			p = pathv.pointAt(i*pathv.timeRange().max()/(num_frames));
 
