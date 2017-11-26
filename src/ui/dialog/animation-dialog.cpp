@@ -104,9 +104,13 @@ AnimationDialog::AnimationDialog() :
 
     updateLabel();
     Gtk::Label * ease = new Gtk::Label("Ease:");
-    scale = new Gtk::HScale(-10, 10.1, .1);
+    scale = new Gtk::HScale(0, 5, .1);
     scale->set_size_request(100, -1);
     scale->set_sensitive(false);
+    in = new Gtk::CheckButton("In");
+    out = new Gtk::CheckButton("Out");
+    in->set_sensitive(false);
+    out->set_sensitive(false);
 
     scale->set_update_policy(Gtk::UPDATE_DISCONTINUOUS);
 
@@ -126,13 +130,13 @@ AnimationDialog::AnimationDialog() :
     Gtk::Label * rotate2 = new Gtk::Label("revs +");
     Gtk::Label * rotate3 = new Gtk::Label("°");
 
-    Gtk::Adjustment *adj = new Gtk::Adjustment(1.0, 1.0, 10000000, 1.0, 5.0, 0.0);
-    Gtk::Adjustment *adj2 = new Gtk::Adjustment(1.0, 1.0, 10000000, 1.0, 5.0, 0.0);
-	Gtk::SpinButton * spin_revolutions = new Gtk::SpinButton(*adj);
-	Gtk::SpinButton * spin_degrees = new Gtk::SpinButton(*adj2);
+    Gtk::Adjustment *adj = new Gtk::Adjustment(0, 0, 10000000, 1.0, 5.0, 0.0);
+    Gtk::Adjustment *adj2 = new Gtk::Adjustment(0, 0, 10000000, 1.0, 5.0, 0.0);
+	spin_revolutions = new Gtk::SpinButton(*adj);
+	spin_degrees = new Gtk::SpinButton(*adj2);
 
-	spin_revolutions->set_size_request(100, -1);
-	spin_degrees->set_size_request(100, -1);
+	spin_revolutions->set_size_request(50, -1);
+	spin_degrees->set_size_request(50, -1);
 	spin_revolutions->set_sensitive(false);
 	spin_degrees->set_sensitive(false);
 
@@ -154,13 +158,16 @@ AnimationDialog::AnimationDialog() :
 	_rotateBox.add(*rotate3);
 	*/
 
-	_easeRotateBox.attach(*ease, 0, 1, 0, 1);
-	_easeRotateBox.attach(*scale, 1, 5, 0, 1);
-	_easeRotateBox.attach(*rotate, 0, 1, 1, 2);
-	_easeRotateBox.attach(*spin_revolutions, 1, 2, 1, 2);
-	_easeRotateBox.attach(*rotate2, 2, 3, 1, 2);
-	_easeRotateBox.attach(*spin_degrees, 3, 4, 1, 2);
-	_easeRotateBox.attach(*rotate3, 4, 5, 1, 2);
+	_easeRotateBox.attach(*ease, 0, 2, 0, 1);
+	_easeRotateBox.attach(*in, 2, 3, 0, 1);
+	_easeRotateBox.attach(*out, 3, 4, 0, 1);
+	_easeRotateBox.attach(*scale, 0, 5, 1, 2);
+
+	_easeRotateBox.attach(*rotate, 0, 1, 2, 3);
+	_easeRotateBox.attach(*spin_revolutions, 1, 2, 2, 3);
+	_easeRotateBox.attach(*rotate2, 2, 3, 2, 3);
+	_easeRotateBox.attach(*spin_degrees, 3, 4, 2, 3);
+	_easeRotateBox.attach(*rotate3, 4, 5, 2, 3);
 
 
     //_testBox->add(label);
@@ -274,7 +281,12 @@ void AnimationDialog::updateEaseValue()
 			scale->set_sensitive(true);
 
 			if(tween_start && tween_start->getRepr())
-				tween_start->getRepr()->setAttribute("inkscape:ease", Glib::ustring::format(scale->get_value()));
+			{
+				if(in->get_active())
+					tween_start->getRepr()->setAttribute("inkscape:easein", Glib::ustring::format(scale->get_value()));
+				if(out->get_active())
+					tween_start->getRepr()->setAttribute("inkscape:easeout", Glib::ustring::format(scale->get_value()));
+			}
 		}
 		else
 		{
@@ -297,9 +309,21 @@ AnimationDialog::handleCurrentLayerChanged() {
 	SPObject * obj = desktop->currentLayer();
 
 	if(obj->getRepr() && obj->getRepr()->attribute("inkscape:tween"))
+	{
 		scale->set_sensitive(true);
+		spin_degrees->set_sensitive(true);
+		spin_revolutions->set_sensitive(true);
+		in->set_sensitive(true);
+		out->set_sensitive(true);
+	}
 	else
+	{
 		scale->set_sensitive(false);
+		spin_degrees->set_sensitive(false);
+		spin_revolutions->set_sensitive(false);
+		in->set_sensitive(false);
+		out->set_sensitive(false);
+	}
 }
 
 /*

@@ -14,6 +14,7 @@
 #include <gtkmm/scale.h>
 #include <gtkmm/table.h>
 #include <gtkmm/spinbutton.h>
+#include <gtkmm/checkbutton.h>
 
 
 #include "ui/dialog/desktop-tracker.h"
@@ -39,6 +40,10 @@ public:
     Gtk::HBox _easeBox;
     Gtk::HBox _rotateBox;
     Gtk::Scale * scale;
+    Gtk::SpinButton * spin_revolutions;
+    Gtk::SpinButton * spin_degrees;
+    Gtk::CheckButton * in;
+    Gtk::CheckButton * out;
 
     static AnimationDialog& getInstance() { return *new AnimationDialog(); };
 

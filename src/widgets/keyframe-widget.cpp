@@ -611,7 +611,7 @@ static int numKeyframes(KeyframeWidget * kw)
 	return num_layers;
 }
 
-static float easeIn(float t, float a)
+static float easeInOut(float t, float a)
 {
 	return pow(t,a)/(pow(t,a) + pow(1-t, a));
 }
@@ -748,14 +748,22 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		//Geom::Point p = pathv.pointAt(easeIn((i)*pathv.timeRange().max()/(num_frames + 1), 1.2));
 
 		Geom::Point p(0,0);
-		const char * ease = startLayer->getRepr()->attribute("inkscape:ease");
+		const char * easein = startLayer->getRepr()->attribute("inkscape:easein");
+		const char * easeout = startLayer->getRepr()->attribute("inkscape:easeout");
 
-		if(ease && ease != "0")
+		if(easein && easein != "0" && easeout && easeout != "0")
 		{
-			float power = atoi(ease)+1;
-			p = pathv.pointAt(easeIn((i)*pathv.timeRange().max()/(num_frames), power));
+			float power = atoi(easein)+1;
+			p = pathv.pointAt(easeInOut((i)*pathv.timeRange().max()/(num_frames), power));
 		}
-		else
+		else if(easein && easein != "0")
+		{
+
+		}
+		else if(easeout && easeout != "0")
+		{
+
+		}else
 			p = pathv.pointAt(i*pathv.timeRange().max()/(num_frames));
 
 		child = layer->firstChild();
