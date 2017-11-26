@@ -60,6 +60,40 @@ static void handleEaseChanged(AnimationDialog * add, gpointer user_data)
 
 }
 
+static void handleRotationChanged(AnimationDialog * add, gpointer user_data)
+{
+	AnimationDialog* ad = reinterpret_cast<AnimationDialog*>(user_data);
+
+	SPDesktop * desktop = ad->getDesktop();
+
+	float deg = ad->spin_degrees->get_value();
+	deg += 360*ad->spin_revolutions->get_value();
+
+	//if(deg != 0)
+
+
+	SPObject * obj = desktop->currentLayer();
+
+	if(obj->getRepr() && obj->getRepr()->attribute("inkscape:tween"))
+	{
+		//while(!obj->getRepr()->attribute("inkscape:tweenstart"))
+		SPObject * tween_start = NULL;
+		const char * id = obj->getRepr()->attribute("inkscape:tweenstartid");
+
+		if(id)
+			tween_start = desktop->getDocument()->getObjectById(id);
+
+		if(tween_start && tween_start->getRepr())
+		{
+			if(deg != 0)
+				tween_start->getRepr()->setAttribute("inkscape:rotation", Glib::ustring::format(deg));
+		}
+	}
+
+	desktop->emitToolSubselectionChanged(NULL);
+
+}
+
 
 AnimationDialog::AnimationDialog() :
     // UI::Widget::Panel("AnimationDialog Label", "/dialogs/AnimationDialog", SP_VERB_DIALOG_AnimationDialog,
@@ -122,6 +156,8 @@ AnimationDialog::AnimationDialog() :
     						  G_CALLBACK(handleEaseChanged),
     						  this);
 
+
+
     ease->set_size_request(50, -1);
     ease->set_property("valign", Gtk::ALIGN_END);
     _easeBox.set_property("valign", Gtk::ALIGN_END);
@@ -143,6 +179,17 @@ AnimationDialog::AnimationDialog() :
 	rotate->set_size_request(50, -1);
 	rotate->set_property("valign", Gtk::ALIGN_END);
 	_rotateBox.set_property("valign", Gtk::ALIGN_END);
+
+
+	g_signal_connect( spin_revolutions->gobj(),
+	        						  "value-changed",
+	        						  G_CALLBACK(handleRotationChanged),
+	        						  this);
+
+	g_signal_connect( spin_degrees->gobj(),
+		        						  "value-changed",
+		        						  G_CALLBACK(handleRotationChanged),
+		        						  this);
 
 
     //_tweenBox.add(lbl);

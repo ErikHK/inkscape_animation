@@ -756,7 +756,7 @@ bool ToolBase::root_handler(GdkEvent* event) {
             break;
 
         case GDK_KEY_space:
-			/*
+
             within_tolerance = true;
             xp = yp = 0;
             if (!allow_panning) break;
@@ -766,7 +766,8 @@ bool ToolBase::root_handler(GdkEvent* event) {
                     _("<b>Space+mouse move</b> to pan canvas"));
 
             ret = TRUE;
-			*/
+
+        	/*
 			{
 				int delay = (guint)(1000/desktop->fps);
 				
@@ -781,6 +782,7 @@ bool ToolBase::root_handler(GdkEvent* event) {
 				}
 				
 			}
+			*/
             break;
         case GDK_KEY_z:
         case GDK_KEY_Z:

@@ -43,6 +43,8 @@
 #include "ui/tools/node-tool.h"
 #include "ui/tool/control-point-selection.h"
 
+#include "2geom/transforms.h"
+
 using Inkscape::UI::Tools::NodeTool;
 using Inkscape::Util::Quantity;
 using Inkscape::UI::Node;
@@ -668,32 +670,10 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	if(!layerid)
 		return;
 
-	//SPObject * layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", 1)));
 	SPObject * layer = desktop->getDocument()->getObjectById(layerid);
 
 	if(!layer)
 		return;
-
-	/*
-	SPPath * path = NULL;
-	//SPObject * tmpObj = layer->firstChild();
-	SPObject * tmpObj = layer->lastChild();
-	while(tmpObj)
-	{
-		if(SP_IS_PATH(tmpObj))
-		{
-			path = SP_PATH(tmpObj);
-			if(path->getRepr()->attribute("inkscape:tweenpath"))
-				break;
-		}
-
-		tmpObj = tmpObj->next;
-	}
-
-	if(!path)
-		return;
-	*/
-	//layer = startLayer;
 
 	if(!path)
 	{
@@ -716,21 +696,28 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	SPObject * startLayer = layer;
 	SPObject * endLayer = NULL;
 	SPObject * nextLayer = NULL;
-
-	//if(!path->getRepr()->attribute("inkscape:tweenpath"))
-	//	return;
 	
 	SPCurve * curve = path->_curve;
 	Geom::PathVector pathv = curve->get_pathvector();
 
 	SPObject * child = NULL;
 
+	float rotation = 0;
+
+	Geom::Point p2(0,0);
+
 	child = startLayer->firstChild();
+	if(layer->getRepr()->attribute("inkscape:rotation"))
+		rotation = atoi(layer->getRepr()->attribute("inkscape:rotation"));
+
 	if(child)
 	{
 		Geom::Point p = pathv.initialPoint();
 		SP_ITEM(child)->transform.setTranslation(p);
 		child->updateRepr();
+
+		p2 = SP_ITEM(child)->getCenter() - Geom::Point(0, desktop->getDocument()->getHeight().value("px"));
+
 		//layer->updateRepr();
 
 		///////////////////////////////////////////////////////////child->setAttribute("transform",
@@ -756,6 +743,11 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 			{
 				Geom::Point p = pathv.finalPoint();
 				SP_ITEM(child)->transform.setTranslation(p);
+
+				Geom::Affine test = Geom::Rotate::around(p, rotation*M_PI/180);
+
+				SP_ITEM(child)->transform *= test;
+
 				child->updateRepr();
 				//////////////////////////////child->setAttribute("transform",
 						//Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
@@ -792,7 +784,18 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 
 		if(child)
 		{
-			SP_ITEM(child)->transform.setTranslation(p); //does not update immediately for some objects!!
+			Geom::Affine aff = Geom::Translate(p);
+			//SP_ITEM(child)->transform.setTranslation(p); //does not update immediately for some objects!!
+
+			//Geom::Point p2 = SP_ITEM(child)->getCenter() - SP_ITEM(child)->transform.translation();
+
+			//Geom::Affine test = Geom::Rotate::around(p + p2, i*rotation*M_PI/180/(num_frames));
+			Geom::Affine test = Geom::Rotate::around(p, i*rotation*M_PI/180/(num_frames));
+			Geom::Affine res = aff*test;
+			SP_ITEM(child)->transform = res;
+
+
+
 			child->updateRepr();
 		}
 
