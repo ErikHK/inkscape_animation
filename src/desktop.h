@@ -222,6 +222,8 @@ public:
     sigc::signal<bool, const SPCSSAttr *>::accumulated<StopOnTrue> _set_style_signal;
     sigc::signal<int, SPStyle *, int>::accumulated<StopOnNonZero> _query_style_signal;
     
+    sigc::signal<void, int>	_ease_changed;
+
     /// Emitted when the zoom factor changes (not emitted when scrolling).
     /// The parameter is the new zoom factor
     sigc::signal<void, double> signal_zoom_changed;
@@ -256,6 +258,11 @@ public:
     sigc::connection connectCurrentLayerChanged(const sigc::slot<void, SPObject *> & slot) {
         return _layer_changed_signal.connect(slot);
     }
+
+    sigc::connection connectEaseChanged(const sigc::slot<void, int> & slot) {
+            return _ease_changed.connect(slot);
+        }
+
 
     /**
      * Return new desktop object.

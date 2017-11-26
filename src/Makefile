@@ -12337,6 +12337,195 @@ timeline-item.cpp.s:
 	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/timeline-item.cpp.s
 .PHONY : timeline-item.cpp.s
 
+trace/filterset.o: trace/filterset.cpp.o
+
+.PHONY : trace/filterset.o
+
+# target to build an object file
+trace/filterset.cpp.o:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/filterset.cpp.o
+.PHONY : trace/filterset.cpp.o
+
+trace/filterset.i: trace/filterset.cpp.i
+
+.PHONY : trace/filterset.i
+
+# target to preprocess a source file
+trace/filterset.cpp.i:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/filterset.cpp.i
+.PHONY : trace/filterset.cpp.i
+
+trace/filterset.s: trace/filterset.cpp.s
+
+.PHONY : trace/filterset.s
+
+# target to generate assembly for a file
+trace/filterset.cpp.s:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/filterset.cpp.s
+.PHONY : trace/filterset.cpp.s
+
+trace/imagemap-gdk.o: trace/imagemap-gdk.cpp.o
+
+.PHONY : trace/imagemap-gdk.o
+
+# target to build an object file
+trace/imagemap-gdk.cpp.o:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/imagemap-gdk.cpp.o
+.PHONY : trace/imagemap-gdk.cpp.o
+
+trace/imagemap-gdk.i: trace/imagemap-gdk.cpp.i
+
+.PHONY : trace/imagemap-gdk.i
+
+# target to preprocess a source file
+trace/imagemap-gdk.cpp.i:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/imagemap-gdk.cpp.i
+.PHONY : trace/imagemap-gdk.cpp.i
+
+trace/imagemap-gdk.s: trace/imagemap-gdk.cpp.s
+
+.PHONY : trace/imagemap-gdk.s
+
+# target to generate assembly for a file
+trace/imagemap-gdk.cpp.s:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/imagemap-gdk.cpp.s
+.PHONY : trace/imagemap-gdk.cpp.s
+
+trace/imagemap.o: trace/imagemap.cpp.o
+
+.PHONY : trace/imagemap.o
+
+# target to build an object file
+trace/imagemap.cpp.o:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/imagemap.cpp.o
+.PHONY : trace/imagemap.cpp.o
+
+trace/imagemap.i: trace/imagemap.cpp.i
+
+.PHONY : trace/imagemap.i
+
+# target to preprocess a source file
+trace/imagemap.cpp.i:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/imagemap.cpp.i
+.PHONY : trace/imagemap.cpp.i
+
+trace/imagemap.s: trace/imagemap.cpp.s
+
+.PHONY : trace/imagemap.s
+
+# target to generate assembly for a file
+trace/imagemap.cpp.s:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/imagemap.cpp.s
+.PHONY : trace/imagemap.cpp.s
+
+trace/potrace/inkscape-potrace.o: trace/potrace/inkscape-potrace.cpp.o
+
+.PHONY : trace/potrace/inkscape-potrace.o
+
+# target to build an object file
+trace/potrace/inkscape-potrace.cpp.o:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/potrace/inkscape-potrace.cpp.o
+.PHONY : trace/potrace/inkscape-potrace.cpp.o
+
+trace/potrace/inkscape-potrace.i: trace/potrace/inkscape-potrace.cpp.i
+
+.PHONY : trace/potrace/inkscape-potrace.i
+
+# target to preprocess a source file
+trace/potrace/inkscape-potrace.cpp.i:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/potrace/inkscape-potrace.cpp.i
+.PHONY : trace/potrace/inkscape-potrace.cpp.i
+
+trace/potrace/inkscape-potrace.s: trace/potrace/inkscape-potrace.cpp.s
+
+.PHONY : trace/potrace/inkscape-potrace.s
+
+# target to generate assembly for a file
+trace/potrace/inkscape-potrace.cpp.s:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/potrace/inkscape-potrace.cpp.s
+.PHONY : trace/potrace/inkscape-potrace.cpp.s
+
+trace/quantize.o: trace/quantize.cpp.o
+
+.PHONY : trace/quantize.o
+
+# target to build an object file
+trace/quantize.cpp.o:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/quantize.cpp.o
+.PHONY : trace/quantize.cpp.o
+
+trace/quantize.i: trace/quantize.cpp.i
+
+.PHONY : trace/quantize.i
+
+# target to preprocess a source file
+trace/quantize.cpp.i:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/quantize.cpp.i
+.PHONY : trace/quantize.cpp.i
+
+trace/quantize.s: trace/quantize.cpp.s
+
+.PHONY : trace/quantize.s
+
+# target to generate assembly for a file
+trace/quantize.cpp.s:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/quantize.cpp.s
+.PHONY : trace/quantize.cpp.s
+
+trace/siox.o: trace/siox.cpp.o
+
+.PHONY : trace/siox.o
+
+# target to build an object file
+trace/siox.cpp.o:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/siox.cpp.o
+.PHONY : trace/siox.cpp.o
+
+trace/siox.i: trace/siox.cpp.i
+
+.PHONY : trace/siox.i
+
+# target to preprocess a source file
+trace/siox.cpp.i:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/siox.cpp.i
+.PHONY : trace/siox.cpp.i
+
+trace/siox.s: trace/siox.cpp.s
+
+.PHONY : trace/siox.s
+
+# target to generate assembly for a file
+trace/siox.cpp.s:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/siox.cpp.s
+.PHONY : trace/siox.cpp.s
+
+trace/trace.o: trace/trace.cpp.o
+
+.PHONY : trace/trace.o
+
+# target to build an object file
+trace/trace.cpp.o:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/trace.cpp.o
+.PHONY : trace/trace.cpp.o
+
+trace/trace.i: trace/trace.cpp.i
+
+.PHONY : trace/trace.i
+
+# target to preprocess a source file
+trace/trace.cpp.i:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/trace.cpp.i
+.PHONY : trace/trace.cpp.i
+
+trace/trace.s: trace/trace.cpp.s
+
+.PHONY : trace/trace.s
+
+# target to generate assembly for a file
+trace/trace.cpp.s:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/trace/trace.cpp.s
+.PHONY : trace/trace.cpp.s
+
 transf_mat_3x4.o: transf_mat_3x4.cpp.o
 
 .PHONY : transf_mat_3x4.o
@@ -12525,6 +12714,33 @@ ui/dialog/align-and-distribute.s: ui/dialog/align-and-distribute.cpp.s
 ui/dialog/align-and-distribute.cpp.s:
 	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/align-and-distribute.cpp.s
 .PHONY : ui/dialog/align-and-distribute.cpp.s
+
+ui/dialog/animation-dialog.o: ui/dialog/animation-dialog.cpp.o
+
+.PHONY : ui/dialog/animation-dialog.o
+
+# target to build an object file
+ui/dialog/animation-dialog.cpp.o:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/animation-dialog.cpp.o
+.PHONY : ui/dialog/animation-dialog.cpp.o
+
+ui/dialog/animation-dialog.i: ui/dialog/animation-dialog.cpp.i
+
+.PHONY : ui/dialog/animation-dialog.i
+
+# target to preprocess a source file
+ui/dialog/animation-dialog.cpp.i:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/animation-dialog.cpp.i
+.PHONY : ui/dialog/animation-dialog.cpp.i
+
+ui/dialog/animation-dialog.s: ui/dialog/animation-dialog.cpp.s
+
+.PHONY : ui/dialog/animation-dialog.s
+
+# target to generate assembly for a file
+ui/dialog/animation-dialog.cpp.s:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/animation-dialog.cpp.s
+.PHONY : ui/dialog/animation-dialog.cpp.s
 
 ui/dialog/calligraphic-profile-rename.o: ui/dialog/calligraphic-profile-rename.cpp.o
 
@@ -13957,6 +14173,33 @@ ui/dialog/tile.cpp.s:
 	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/tile.cpp.s
 .PHONY : ui/dialog/tile.cpp.s
 
+ui/dialog/tracedialog.o: ui/dialog/tracedialog.cpp.o
+
+.PHONY : ui/dialog/tracedialog.o
+
+# target to build an object file
+ui/dialog/tracedialog.cpp.o:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/tracedialog.cpp.o
+.PHONY : ui/dialog/tracedialog.cpp.o
+
+ui/dialog/tracedialog.i: ui/dialog/tracedialog.cpp.i
+
+.PHONY : ui/dialog/tracedialog.i
+
+# target to preprocess a source file
+ui/dialog/tracedialog.cpp.i:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/tracedialog.cpp.i
+.PHONY : ui/dialog/tracedialog.cpp.i
+
+ui/dialog/tracedialog.s: ui/dialog/tracedialog.cpp.s
+
+.PHONY : ui/dialog/tracedialog.s
+
+# target to generate assembly for a file
+ui/dialog/tracedialog.cpp.s:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/tracedialog.cpp.s
+.PHONY : ui/dialog/tracedialog.cpp.s
+
 ui/dialog/transformation.o: ui/dialog/transformation.cpp.o
 
 .PHONY : ui/dialog/transformation.o
@@ -14037,36 +14280,6 @@ ui/dialog/xml-tree.s: ui/dialog/xml-tree.cpp.s
 ui/dialog/xml-tree.cpp.s:
 	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/xml-tree.cpp.s
 .PHONY : ui/dialog/xml-tree.cpp.s
-
-
-ui/dialog/animation-dialog.o: ui/dialog/animation-dialog.cpp.o
-
-.PHONY : ui/dialog/animation-dialog.o
-
-# target to build an object file
-ui/dialog/animation-dialog.cpp.o:
-	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/animation-dialog.cpp.o
-.PHONY : ui/dialog/animation-dialog.cpp.o
-
-ui/dialog/animation-dialog.i: ui/dialog/animation-dialog.cpp.i
-
-.PHONY : ui/dialog/animation-dialog.i
-
-# target to preprocess a source file
-ui/dialog/animation-dialog.cpp.i:
-	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/animation-dialog.cpp.i
-.PHONY : ui/dialog/animation-dialog.cpp.i
-
-ui/dialog/animation-dialog.s: ui/dialog/animation-dialog.cpp.s
-
-.PHONY : ui/dialog/animation-dialog.s
-
-# target to generate assembly for a file
-ui/dialog/animation-dialog.cpp.s:
-	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/dialog/animation-dialog.cpp.s
-.PHONY : ui/dialog/animation-dialog.cpp.s
-
-
 
 ui/draw-anchor.o: ui/draw-anchor.cpp.o
 
@@ -14796,6 +15009,33 @@ ui/tools/eraser-tool.s: ui/tools/eraser-tool.cpp.s
 ui/tools/eraser-tool.cpp.s:
 	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/tools/eraser-tool.cpp.s
 .PHONY : ui/tools/eraser-tool.cpp.s
+
+ui/tools/flood-tool.o: ui/tools/flood-tool.cpp.o
+
+.PHONY : ui/tools/flood-tool.o
+
+# target to build an object file
+ui/tools/flood-tool.cpp.o:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/tools/flood-tool.cpp.o
+.PHONY : ui/tools/flood-tool.cpp.o
+
+ui/tools/flood-tool.i: ui/tools/flood-tool.cpp.i
+
+.PHONY : ui/tools/flood-tool.i
+
+# target to preprocess a source file
+ui/tools/flood-tool.cpp.i:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/tools/flood-tool.cpp.i
+.PHONY : ui/tools/flood-tool.cpp.i
+
+ui/tools/flood-tool.s: ui/tools/flood-tool.cpp.s
+
+.PHONY : ui/tools/flood-tool.s
+
+# target to generate assembly for a file
+ui/tools/flood-tool.cpp.s:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/ui/tools/flood-tool.cpp.s
+.PHONY : ui/tools/flood-tool.cpp.s
 
 ui/tools/freehand-base.o: ui/tools/freehand-base.cpp.o
 
@@ -17794,6 +18034,33 @@ widgets/paint-selector.cpp.s:
 	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/widgets/paint-selector.cpp.s
 .PHONY : widgets/paint-selector.cpp.s
 
+widgets/paintbucket-toolbar.o: widgets/paintbucket-toolbar.cpp.o
+
+.PHONY : widgets/paintbucket-toolbar.o
+
+# target to build an object file
+widgets/paintbucket-toolbar.cpp.o:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/widgets/paintbucket-toolbar.cpp.o
+.PHONY : widgets/paintbucket-toolbar.cpp.o
+
+widgets/paintbucket-toolbar.i: widgets/paintbucket-toolbar.cpp.i
+
+.PHONY : widgets/paintbucket-toolbar.i
+
+# target to preprocess a source file
+widgets/paintbucket-toolbar.cpp.i:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/widgets/paintbucket-toolbar.cpp.i
+.PHONY : widgets/paintbucket-toolbar.cpp.i
+
+widgets/paintbucket-toolbar.s: widgets/paintbucket-toolbar.cpp.s
+
+.PHONY : widgets/paintbucket-toolbar.s
+
+# target to generate assembly for a file
+widgets/paintbucket-toolbar.cpp.s:
+	cd /home/erikhk/inkscape_animation && $(MAKE) -f src/CMakeFiles/inkscape_base.dir/build.make src/CMakeFiles/inkscape_base.dir/widgets/paintbucket-toolbar.cpp.s
+.PHONY : widgets/paintbucket-toolbar.cpp.s
+
 widgets/pencil-toolbar.o: widgets/pencil-toolbar.cpp.o
 
 .PHONY : widgets/pencil-toolbar.o
@@ -20183,6 +20450,27 @@ help:
 	@echo "... timeline-item.o"
 	@echo "... timeline-item.i"
 	@echo "... timeline-item.s"
+	@echo "... trace/filterset.o"
+	@echo "... trace/filterset.i"
+	@echo "... trace/filterset.s"
+	@echo "... trace/imagemap-gdk.o"
+	@echo "... trace/imagemap-gdk.i"
+	@echo "... trace/imagemap-gdk.s"
+	@echo "... trace/imagemap.o"
+	@echo "... trace/imagemap.i"
+	@echo "... trace/imagemap.s"
+	@echo "... trace/potrace/inkscape-potrace.o"
+	@echo "... trace/potrace/inkscape-potrace.i"
+	@echo "... trace/potrace/inkscape-potrace.s"
+	@echo "... trace/quantize.o"
+	@echo "... trace/quantize.i"
+	@echo "... trace/quantize.s"
+	@echo "... trace/siox.o"
+	@echo "... trace/siox.i"
+	@echo "... trace/siox.s"
+	@echo "... trace/trace.o"
+	@echo "... trace/trace.i"
+	@echo "... trace/trace.s"
 	@echo "... transf_mat_3x4.o"
 	@echo "... transf_mat_3x4.i"
 	@echo "... transf_mat_3x4.s"
@@ -20204,6 +20492,9 @@ help:
 	@echo "... ui/dialog/align-and-distribute.o"
 	@echo "... ui/dialog/align-and-distribute.i"
 	@echo "... ui/dialog/align-and-distribute.s"
+	@echo "... ui/dialog/animation-dialog.o"
+	@echo "... ui/dialog/animation-dialog.i"
+	@echo "... ui/dialog/animation-dialog.s"
 	@echo "... ui/dialog/calligraphic-profile-rename.o"
 	@echo "... ui/dialog/calligraphic-profile-rename.i"
 	@echo "... ui/dialog/calligraphic-profile-rename.s"
@@ -20363,6 +20654,9 @@ help:
 	@echo "... ui/dialog/tile.o"
 	@echo "... ui/dialog/tile.i"
 	@echo "... ui/dialog/tile.s"
+	@echo "... ui/dialog/tracedialog.o"
+	@echo "... ui/dialog/tracedialog.i"
+	@echo "... ui/dialog/tracedialog.s"
 	@echo "... ui/dialog/transformation.o"
 	@echo "... ui/dialog/transformation.i"
 	@echo "... ui/dialog/transformation.s"
@@ -20372,9 +20666,6 @@ help:
 	@echo "... ui/dialog/xml-tree.o"
 	@echo "... ui/dialog/xml-tree.i"
 	@echo "... ui/dialog/xml-tree.s"
-	@echo "... ui/dialog/animation-dialog.o"
-	@echo "... ui/dialog/animation-dialog.i"
-	@echo "... ui/dialog/animation-dialog.s"
 	@echo "... ui/draw-anchor.o"
 	@echo "... ui/draw-anchor.i"
 	@echo "... ui/draw-anchor.s"
@@ -20456,6 +20747,9 @@ help:
 	@echo "... ui/tools/eraser-tool.o"
 	@echo "... ui/tools/eraser-tool.i"
 	@echo "... ui/tools/eraser-tool.s"
+	@echo "... ui/tools/flood-tool.o"
+	@echo "... ui/tools/flood-tool.i"
+	@echo "... ui/tools/flood-tool.s"
 	@echo "... ui/tools/freehand-base.o"
 	@echo "... ui/tools/freehand-base.i"
 	@echo "... ui/tools/freehand-base.s"
@@ -20789,6 +21083,9 @@ help:
 	@echo "... widgets/paint-selector.o"
 	@echo "... widgets/paint-selector.i"
 	@echo "... widgets/paint-selector.s"
+	@echo "... widgets/paintbucket-toolbar.o"
+	@echo "... widgets/paintbucket-toolbar.i"
+	@echo "... widgets/paintbucket-toolbar.s"
 	@echo "... widgets/pencil-toolbar.o"
 	@echo "... widgets/pencil-toolbar.i"
 	@echo "... widgets/pencil-toolbar.s"

@@ -46,6 +46,21 @@
 namespace Inkscape {
 namespace UI {
 namespace Dialog {
+
+
+static void handleEaseChanged(AnimationDialog * add, gpointer user_data)
+{
+	AnimationDialog* ad = reinterpret_cast<AnimationDialog*>(user_data);
+
+	SPDesktop * desktop = ad->getDesktop();
+
+	ad->updateEaseValue();
+	desktop->emitToolSubselectionChanged(NULL);
+
+
+}
+
+
 AnimationDialog::AnimationDialog() :
     // UI::Widget::Panel("AnimationDialog Label", "/dialogs/AnimationDialog", SP_VERB_DIALOG_AnimationDialog,
     //                "Prototype Apply Label", true),
@@ -89,9 +104,19 @@ AnimationDialog::AnimationDialog() :
 
     updateLabel();
     Gtk::Label * ease = new Gtk::Label("Ease:");
-    scale = new Gtk::HScale(-100, 100, 1);
+    scale = new Gtk::HScale(-10, 10.1, .1);
     scale->set_size_request(100, -1);
     scale->set_sensitive(false);
+
+    scale->set_update_policy(Gtk::UPDATE_DISCONTINUOUS);
+
+    //scale->connect_property_changed("value", sigc::mem_fun(&AnimationDialog::handleEaseChanged));
+
+
+    g_signal_connect( scale->gobj(),
+    						  "value-changed",
+    						  G_CALLBACK(handleEaseChanged),
+    						  this);
 
     ease->set_size_request(50, -1);
     ease->set_property("valign", Gtk::ALIGN_END);
@@ -228,9 +253,53 @@ AnimationDialog::handleSelectionChanged() {
     label.set_label("Selection Changed!");
 }
 
+void AnimationDialog::updateEaseValue()
+{
+	SPDesktop * desktop = getDesktop();
+		if(!desktop)
+			return;
+
+		//desktop->getDocument()->
+		SPObject * obj = desktop->currentLayer();
+
+		if(obj->getRepr() && obj->getRepr()->attribute("inkscape:tween"))
+		{
+			//while(!obj->getRepr()->attribute("inkscape:tweenstart"))
+			SPObject * tween_start = NULL;
+			const char * id = obj->getRepr()->attribute("inkscape:tweenstartid");
+
+			if(id)
+				tween_start = desktop->getDocument()->getObjectById(id);
+
+			scale->set_sensitive(true);
+
+			if(tween_start && tween_start->getRepr())
+				tween_start->getRepr()->setAttribute("inkscape:ease", Glib::ustring::format(scale->get_value()));
+		}
+		else
+		{
+			scale->set_sensitive(false);
+		}
+}
+
+//bool AnimationDialog::handleEaseChanged() {
+//	updateEaseValue();
+//	return true;
+//}
+
+
 void
 AnimationDialog::handleCurrentLayerChanged() {
-    scale->set_sensitive(!scale->get_sensitive());
+	SPDesktop * desktop = getDesktop();
+	if(!desktop)
+		return;
+
+	SPObject * obj = desktop->currentLayer();
+
+	if(obj->getRepr() && obj->getRepr()->attribute("inkscape:tween"))
+		scale->set_sensitive(true);
+	else
+		scale->set_sensitive(false);
 }
 
 /*

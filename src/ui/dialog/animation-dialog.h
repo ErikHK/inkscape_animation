@@ -43,6 +43,7 @@ public:
     static AnimationDialog& getInstance() { return *new AnimationDialog(); };
 
     virtual void present();
+    void updateEaseValue();
 
 private:
 
@@ -60,6 +61,8 @@ private:
     void handleDesktopChanged(SPDesktop* desktop);
     void handleSelectionChanged();
     void handleCurrentLayerChanged();
+    //bool handleEaseChanged();
+
 
     DesktopTracker desktopTracker;
 

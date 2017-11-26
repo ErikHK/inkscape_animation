@@ -628,19 +628,23 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 
 	SPObject * selected = desktop->getSelection()->single();
 
-	//check if it's a path, if not, return
-	if(!SP_IS_PATH(selected))
-		return;
-
 	const char * layerid = NULL;
 
-	if(selected->getRepr()->attribute("inkscape:tweenpath"))
+	//check if it's a path
+	if(SP_IS_PATH(selected) && selected->getRepr()->attribute("inkscape:tweenpath"))
 	{
 		path = SP_PATH(selected);
 		layerid = selected->getRepr()->attribute("inkscape:tweenid");
 	}
+	else
+	{
+		SPObject * obj = desktop->currentLayer();
 
-	//if there is no tween associated with this path, return
+		if(obj && obj->getRepr())
+			layerid = obj->getRepr()->attribute("inkscape:tweenstartid");
+	}
+
+	//if there is no tween associated with this path or layer, return
 	if(!layerid)
 		return;
 
@@ -672,6 +676,14 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	//layer = startLayer;
 
 	if(!path)
+	{
+		const char * tweenpathid = layer->getRepr()->attribute("inkscape:tweenpathid");
+		if(tweenpathid)
+			path = SP_PATH(desktop->getDocument()->getObjectById(tweenpathid));
+
+	}
+
+	if(!path)
 		return;
 
 	//const char * tweenid = tmpObj->getRepr()->attribute("inkscape:tweenid");
@@ -698,7 +710,7 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	{
 		Geom::Point p = pathv.initialPoint();
 		SP_ITEM(child)->transform.setTranslation(p);
-		//child->updateRepr();
+		child->updateRepr();
 		//layer->updateRepr();
 
 		///////////////////////////////////////////////////////////child->setAttribute("transform",
@@ -724,22 +736,34 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 			{
 				Geom::Point p = pathv.finalPoint();
 				SP_ITEM(child)->transform.setTranslation(p);
+				child->updateRepr();
 				//////////////////////////////child->setAttribute("transform",
 						//Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
 			}
 
-			layer->updateRepr();
+			//layer->updateRepr();
 			break;
 		}
 
 		//Geom::Point p = pathv.pointAt(easeIn((i)*pathv.timeRange().max()/(num_frames + 1), 1.2));
-		Geom::Point p = pathv.pointAt(i*pathv.timeRange().max()/(num_frames ));
+
+		Geom::Point p(0,0);
+		const char * ease = startLayer->getRepr()->attribute("inkscape:ease");
+
+		if(ease && ease != "0")
+		{
+			float power = atoi(ease)+1;
+			p = pathv.pointAt(easeIn((i)*pathv.timeRange().max()/(num_frames), power));
+		}
+		else
+			p = pathv.pointAt(i*pathv.timeRange().max()/(num_frames));
 
 		child = layer->firstChild();
 
 		if(child)
 		{
 			SP_ITEM(child)->transform.setTranslation(p); //does not update immediately for some objects!!
+			child->updateRepr();
 		}
 
 		nextLayer = layer->next;
@@ -754,16 +778,16 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	}
 
 	//FULHACK ALERT
-	if(child)
-	{
-		std::string test = std::string(child->getRepr()->attribute("transform"));
-		test = Glib::ustring::format(test, " ");
-		child->getRepr()->setAttribute("transform", test);
-	}
+	//if(child)
+	//{
+	//	std::string test = std::string(child->getRepr()->attribute("transform"));
+	//	test = Glib::ustring::format(test, " ");
+	//	child->getRepr()->setAttribute("transform", test);
+	//}
 
 	//if(layer && layer->parent)
 	//	layer->parent->updateRepr();
-	layer->updateRepr();
+	//layer->updateRepr();
 
 	//desktop->getDocument()->ensureUpToDate();
 }
@@ -1131,6 +1155,8 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 		//child->getRepr()->setAttribute("transform",
 		//	Glib::ustring::format("translate(", start_x + j*inc_x, ",", start_y + j*inc_y, ")" ));
 		layer->getRepr()->setAttribute("inkscape:tweenpathid", item->getId());
+
+		layer->getRepr()->setAttribute("inkscape:tweenstartid", startLayer->getId());
 
 		SP_ITEM(child)->transform.setTranslation(Geom::Point(start_x + j*inc_x, start_y + j*inc_y));
 		child->getRepr()->setAttribute("x", 0);
