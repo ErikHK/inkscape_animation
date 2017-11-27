@@ -705,6 +705,9 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	float rotation = 0;
 
 	Geom::Point p2(0,0);
+	Geom::Point origp(0,0);
+	Geom::Point rotp(0,0);
+	Geom::OptRect test2(0,0);
 
 	child = startLayer->firstChild();
 	if(layer->getRepr()->attribute("inkscape:rotation"))
@@ -717,6 +720,11 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		child->updateRepr();
 
 		p2 = SP_ITEM(child)->getCenter() - Geom::Point(0, desktop->getDocument()->getHeight().value("px"));
+
+		origp = SP_ITEM(child)->transform.translation();
+		rotp = SP_ITEM(child)->transform.rotationCenter();
+
+		test2 = SP_ITEM(child)->documentVisualBounds();
 
 		//layer->updateRepr();
 
@@ -787,13 +795,21 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 			Geom::Affine aff = Geom::Translate(p);
 			//SP_ITEM(child)->transform.setTranslation(p); //does not update immediately for some objects!!
 
-			//Geom::Point p2 = SP_ITEM(child)->getCenter() - SP_ITEM(child)->transform.translation();
+			Geom::Point p2 = SP_ITEM(child)->getCenter() - Geom::Point(0, desktop->getDocument()->getHeight().value("px"));
+
+
+			origp = SP_ITEM(child)->transform.translation();
+
+			test2 = SP_ITEM(child)->visualBounds();
+
+
+			Geom::Point rot2p = Geom::Point(SP_ITEM(child)->transform_center_x, SP_ITEM(child)->transform_center_y);
 
 			//Geom::Affine test = Geom::Rotate::around(p + p2, i*rotation*M_PI/180/(num_frames));
-			Geom::Affine test = Geom::Rotate::around(p, i*rotation*M_PI/180/(num_frames));
+			Geom::Affine test = Geom::Rotate::around(p + Geom::Point(test2->width()/2, test2->height()/2), i*rotation*M_PI/180/(num_frames));
 			Geom::Affine res = aff*test;
 			SP_ITEM(child)->transform = res;
-
+			std::cout<<test2->width()<<std::endl;
 
 
 			child->updateRepr();
