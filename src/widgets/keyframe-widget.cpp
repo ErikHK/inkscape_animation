@@ -1238,6 +1238,12 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 
 static void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
 {
+	
+	int id = atoi(start_layer->getRepr()->attribute("inkscape:keyframe"));
+	int parent_id = atoi(start_layer->parent->getRepr()->attribute("num"));
+	
+	
+	
 	int i = 0;
 	Inkscape::XML::Node * obj_to_copy = start_layer->getRepr()->nthChild(i);
 	SPObject * layer = start_layer;
@@ -1252,12 +1258,35 @@ static void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
 		//desktop->setCurrentLayer(layer);
 
 		//start_layer->getRepr()->appendChild(childn_copy);
-		while(layer || !layer->getRepr()->attribute("inkscape:tweenend"))
+		
+		
+		while(layer)
 		{
 			
-			layer->getRepr()->appendChild(obj_to_copy_copy);
-			layer = layer->next;
+			id++;
+			
+			//only copy if the layer has no children
+			if(layer->getRepr()->childCount() == 0)
+			{
+				layer->getRepr()->appendChild(obj_to_copy->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc()));
+				layer->getRepr()->setAttribute("inkscape:tween", "true");
+			}
+			//layer = layer->next;
+			
+			layer = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", parent_id, "keyframe", id)));
+			
+			if(!layer)
+			break;
 		}
+		
+		
+		//this works:
+		/*
+		if(layer)
+		{
+			layer->getRepr()->appendChild(obj_to_copy_copy);
+		}
+		*/
 		
 
 	}
@@ -1784,14 +1813,15 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
 				}
 				
 				layer->getRepr()->setAttribute("inkscape:tweenstartid", tweenstartid);
-				copyObjectToKeyframes(tweenstart, layer);
 				
+				
+				layer->getRepr()->setAttribute("inkscape:tweenend", "true");
+				layer->getRepr()->setAttribute("inkscape:tween", "true");
+				copyObjectToKeyframes(tweenstart, layer);
 			}
 			
-			layer->getRepr()->setAttribute("inkscape:tweenend", "true");
-			layer->getRepr()->setAttribute("inkscape:tween", "true");
+			kw_src_layer->getRepr()->setAttribute("inkscape:tweenend", NULL);
 		}
-		
 		
 		parent->widgets[id-1]->is_focused = true;
 
