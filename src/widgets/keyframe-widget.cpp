@@ -675,13 +675,19 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	if(!layer)
 		return;
 
+	/*
 	if(!path)
 	{
 		const char * tweenpathid = layer->getRepr()->attribute("inkscape:tweenpathid");
 		if(tweenpathid)
-			path = SP_PATH(desktop->getDocument()->getObjectById(tweenpathid));
+		{
+			SPObject * p = desktop->getDocument()->getObjectById(tweenpathid);
+			if(p)
+				path = SP_PATH(p);
+		}
 
 	}
+	*/
 
 	if(!path)
 		return;
@@ -712,6 +718,9 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	child = startLayer->firstChild();
 	if(layer->getRepr()->attribute("inkscape:rotation"))
 		rotation = atoi(layer->getRepr()->attribute("inkscape:rotation"));
+	
+	//if(!rotation)
+	//	rotation = SP_ITEM(child)->transform.
 
 	if(child)
 	{
@@ -1150,7 +1159,7 @@ static SPItem * createGuide(KeyframeWidget * kw, float start_x, float start_y, f
     Inkscape::XML::Document *xml_doc = SP_ACTIVE_DOCUMENT->getReprDoc();
 
     Inkscape::XML::Node *repr;
-    if ( c && !c->is_empty() ) {
+    if ( c && !c->is_empty() && xml_doc) {
         // We actually have something to write
 
         //bool has_lpe = false;
@@ -1170,13 +1179,18 @@ static SPItem * createGuide(KeyframeWidget * kw, float start_x, float start_y, f
 
 		//store in ...
 		//SPItem *item = SP_ITEM(kw->layer->appendChildRepr(repr));
-		SPItem *item = SP_ITEM(kw->layer->parent->appendChildRepr(repr));
+		if(kw->layer->parent)
+		{
+			SPItem *item = SP_ITEM(kw->layer->parent->appendChildRepr(repr));
+			return item;
+		}
 
 		//SPItem *item = SP_ITEM(SP_ACTIVE_DESKTOP->currentLayer()->parent->appendChildRepr(repr));
 		//SPItem *item = SP_ITEM(SP_ACTIVE_DESKTOP->currentLayer()->parent->appendChild(repr));
 
     }
 
+	return NULL;
 }
 
 
@@ -1203,7 +1217,11 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 
 		//child->getRepr()->setAttribute("transform",
 		//	Glib::ustring::format("translate(", start_x + j*inc_x, ",", start_y + j*inc_y, ")" ));
-		layer->getRepr()->setAttribute("inkscape:tweenpathid", item->getId());
+		
+		
+		if(item)
+			layer->getRepr()->setAttribute("inkscape:tweenpathid", item->getId());
+		//slayer->getRepr()->setAttribute("inkscape:tweenpathid", "hmmtest");
 
 		layer->getRepr()->setAttribute("inkscape:tweenstartid", startLayer->getId());
 
@@ -1216,6 +1234,36 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 	}
 
 }
+
+
+static void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
+{
+	int i = 0;
+	Inkscape::XML::Node * obj_to_copy = start_layer->getRepr()->nthChild(i);
+	SPObject * layer = start_layer;
+	if(obj_to_copy)
+	{
+		Inkscape::XML::Node * obj_to_copy_copy = NULL;
+
+		obj_to_copy_copy = obj_to_copy->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc());
+			
+		//Inkscape::XML::Node * n = kw_src->layer->getRepr()->firstChild();
+		
+		//desktop->setCurrentLayer(layer);
+
+		//start_layer->getRepr()->appendChild(childn_copy);
+		while(layer || !layer->getRepr()->attribute("inkscape:tweenend"))
+		{
+			
+			layer->getRepr()->appendChild(obj_to_copy_copy);
+			layer = layer->next;
+		}
+		
+
+	}
+	
+}
+
 
 
 static void createTween(KeyframeWidget * kww, gpointer user_data)
@@ -1672,16 +1720,6 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
 	const int length = selection_data.get_length();
 	if((length >= 0) && (selection_data.get_format() == 8))
 	{
-		//int idd = atoi(selection_data.get_data_as_string().c_str());
-		
-		//const char * str = selection_data.get_data_as_string().c_str();
-		
-		//const char * pch;
-		//pch = strtok(str, ",");
-		
-		//int parent_idd = atoi(pch);
-		//pch = strtok(str, ",");
-		//int idd = atoi(pch);
 		
 		std::vector<Glib::ustring> parts = Glib::Regex::split_simple(",", selection_data.get_data_as_string());
 		
@@ -1701,14 +1739,8 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
 			parent->queue_draw();
 			return;
 		}
-
-		parent->widgets[id-1]->is_focused = true;
-
-		parent->widgets[id-1]->is_empty = parent->widgets[idd-1]->is_empty;
 		
-		parent->queue_draw();
-		
-		//copy contents of idd to this
+		//move contents of idd to this
 		while(kw_src_layer->getRepr()->childCount() > 0)
 		{
 			Inkscape::XML::Node * childn_copy = NULL;
@@ -1724,21 +1756,58 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
 										Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
 			}
 			
+			if(!layer)
+				return;
+			
 			desktop->setCurrentLayer(layer);
 
 			layer->getRepr()->appendChild(childn_copy);
 			kw_src_layer->getRepr()->removeChild(childn);
 		}
 		
+		bool tweenend = false;
+		//check if it's a tween end, in that case, createTween all over again?
+		if(kw_src_layer->getRepr()->attribute("inkscape:tweenend"))
+		{
+			tweenend = true;
+			const char * tweenstartid = kw_src_layer->getRepr()->attribute("inkscape:tweenstartid");
+			SPObject * tweenstart = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(tweenstartid);
+			if(tweenstart)
+			{
+				const char * tweenlayers = tweenstart->getRepr()->attribute("inkscape:tweenlayers");
+				if(tweenlayers)
+				{
+					int tweenlays = atoi(tweenlayers);
+					tweenlays += id-idd;
+					tweenstart->getRepr()->setAttribute("inkscape:tweenlayers", Glib::ustring::format(tweenlays));
+					
+				}
+				
+				layer->getRepr()->setAttribute("inkscape:tweenstartid", tweenstartid);
+				copyObjectToKeyframes(tweenstart, layer);
+				
+			}
+			
+			layer->getRepr()->setAttribute("inkscape:tweenend", "true");
+			layer->getRepr()->setAttribute("inkscape:tween", "true");
+		}
+		
+		
+		parent->widgets[id-1]->is_focused = true;
+
+		parent->widgets[id-1]->is_empty = parent->widgets[idd-1]->is_empty;
+		
+		parent->queue_draw();
+		
+		
+		
 		//kw_src.is_empty = true;
 	}
 
 	is_dragging_over = false;
 	
-	
 	//emit change
 	desktop->getSelection()->emit();
-
 	context->drag_finish(false, false, time);
 }
 
@@ -1784,6 +1853,7 @@ void KeyframeWidget::on_document_changed()
 		layer = NULL;
 		LAYERS_TO_HIDE.clear();
 	}
+	
 }
 
 KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer, bool _is_empty)
@@ -1892,8 +1962,10 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	if(desktop)
 	{
 		Inkscape::Selection * selection = desktop->getSelection();
+		
 		sigc::connection _sel_changed_connection;
 		sigc::connection _sel_changed_connection2;
+		
 		//_sel_changed_connection = selection->connectChanged(
 		//	sigc::bind(
 		//		sigc::ptr_fun(&KeyframeWidget::on_selection_changed),
@@ -1903,8 +1975,8 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 		sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_selection_changed)));
 
 
-		_sel_changed_connection2 = desktop->connectToolSubselectionChanged(
-				sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_update_tween)));
+		//_sel_changed_connection2 = desktop->connectToolSubselectionChanged(
+		//		sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_update_tween)));
 
 
 		desktop->getDocument()->connectModified(
@@ -1997,6 +2069,8 @@ void KeyframeWidget::on_selection_changed()
 		//SP_ACTIVE_DESKTOP->toggleHideAllLayers(true);
 		//parent->clear_tween = false;
 	}
+	
+	updateTween(this, this);
 }
 
 bool KeyframeWidget::on_expose_event(GdkEventExpose* event)
