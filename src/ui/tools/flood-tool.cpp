@@ -74,6 +74,7 @@ using Inkscape::Display::ExtractARGB32;
 using Inkscape::Display::ExtractRGB32;
 using Inkscape::Display::AssembleARGB32;
 
+
 namespace Inkscape {
 namespace UI {
 namespace Tools {
@@ -232,13 +233,13 @@ static bool compare_pixels(guint32 check, guint32 orig, guint32 merged_orig_pixe
     
     switch (method) {
         case FLOOD_CHANNELS_ALPHA:
-            return abs(static_cast<int>(ac) - ao) <= threshold;
+            return std::abs(static_cast<long long int>((ac) - ao)) <= threshold;
         case FLOOD_CHANNELS_R:
-            return abs(static_cast<int>(ac ? unpremul_alpha(rc, ac) : 0) - (ao ? unpremul_alpha(ro, ao) : 0)) <= threshold;
+            return std::abs(static_cast<int>((ac ? unpremul_alpha(rc, ac) : 0) - (ao ? unpremul_alpha(ro, ao) : 0))) <= threshold;
         case FLOOD_CHANNELS_G:
-            return abs(static_cast<int>(ac ? unpremul_alpha(gc, ac) : 0) - (ao ? unpremul_alpha(go, ao) : 0)) <= threshold;
+            return std::abs(static_cast<int>((ac ? unpremul_alpha(gc, ac) : 0) - (ao ? unpremul_alpha(go, ao) : 0))) <= threshold;
         case FLOOD_CHANNELS_B:
-            return abs(static_cast<int>(ac ? unpremul_alpha(bc, ac) : 0) - (ao ? unpremul_alpha(bo, ao) : 0)) <= threshold;
+            return std::abs(static_cast<int>((ac ? unpremul_alpha(bc, ac) : 0) - (ao ? unpremul_alpha(bo, ao) : 0))) <= threshold;
         case FLOOD_CHANNELS_RGB:
             guint32 amc, rmc, bmc, gmc;
             //amc = 255*255 - (255-ac)*(255-ad); amc = (amc + 127) / 255;
@@ -248,9 +249,9 @@ static bool compare_pixels(guint32 check, guint32 orig, guint32 merged_orig_pixe
             gmc = (255-ac)*gd + 255*gc; gmc = (gmc + 127) / 255;
             bmc = (255-ac)*bd + 255*bc; bmc = (bmc + 127) / 255;
 
-            diff += abs(static_cast<int>(amc ? unpremul_alpha(rmc, amc) : 0) - (amop ? unpremul_alpha(rmop, amop) : 0));
-            diff += abs(static_cast<int>(amc ? unpremul_alpha(gmc, amc) : 0) - (amop ? unpremul_alpha(gmop, amop) : 0));
-            diff += abs(static_cast<int>(amc ? unpremul_alpha(bmc, amc) : 0) - (amop ? unpremul_alpha(bmop, amop) : 0));
+            diff += std::abs(static_cast<int>((amc ? unpremul_alpha(rmc, amc) : 0) - (amop ? unpremul_alpha(rmop, amop) : 0)));
+            diff += std::abs(static_cast<int>((amc ? unpremul_alpha(gmc, amc) : 0) - (amop ? unpremul_alpha(gmop, amop) : 0)));
+            diff += std::abs(static_cast<int>((amc ? unpremul_alpha(bmc, amc) : 0) - (amop ? unpremul_alpha(bmop, amop) : 0)));
             return ((diff / 3) <= ((threshold * 3) / 4));
         
         case FLOOD_CHANNELS_H:
@@ -1124,8 +1125,8 @@ bool FloodTool::root_handler(GdkEvent* event) {
     case GDK_MOTION_NOTIFY:
         if ( dragging && ( event->motion.state & GDK_BUTTON1_MASK ) && !this->space_panning) {
             if ( this->within_tolerance
-                 && ( abs( (gint) event->motion.x - this->xp ) < this->tolerance )
-                 && ( abs( (gint) event->motion.y - this->yp ) < this->tolerance ) ) {
+                 && ( std::abs( (gint) event->motion.x - this->xp ) < this->tolerance )
+                 && ( std::abs( (gint) event->motion.y - this->yp ) < this->tolerance ) ) {
                 break; // do not drag if we're within tolerance from origin
             }
             

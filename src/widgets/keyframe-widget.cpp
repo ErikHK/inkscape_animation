@@ -1276,7 +1276,15 @@ static void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
 			layer = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", parent_id, "keyframe", id)));
 			
 			if(!layer)
-			break;
+			{
+				Inkscape::create_animation_keyframe(SP_ACTIVE_DESKTOP->currentRoot(), layer->parent, id);
+				layer = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(
+										Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
+			}
+			
+			if(!layer)
+				break;
+			
 		}
 		
 		
