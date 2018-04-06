@@ -3,7 +3,7 @@ x hide tweened layers after creation AND changed selection
 x insert keyframe option
 x onion skinning
 x show all keyframes
-- enable editing of tween path
+x enable editing of tween path
 / enable opening of saved animation svgs (half fixed, must create a new layer to update)
 x stop tweening from crashing
 x export any amount of layers
@@ -12,6 +12,10 @@ x layers in correct order
 - clear animation layers when opening a new file/loading another
 - notifyContentChanged instead of selection_changed?
 - implement undo
+- moving of middle keyframes, i.e. between two tweens
+- fix the god damn bug where it wont update the position..... HOW?
+- tweening of all attributes, check with SP_IS_RECT etc!
+
 
 medium priority:
 x restore color swatches

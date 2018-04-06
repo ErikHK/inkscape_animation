@@ -450,7 +450,10 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 		//emit change
 		if(desktop)
+		{
 			desktop->getSelection()->emit();
+			desktop->getSelection()->emit();
+		}
 }
 
 static void animationStop(KeyframeWidget * kww, gpointer data)
@@ -1260,7 +1263,7 @@ static void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
 		//start_layer->getRepr()->appendChild(childn_copy);
 		
 		
-		while(layer)
+		while(layer && layer != end_layer)
 		{
 			
 			id++;
@@ -1277,13 +1280,13 @@ static void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
 			
 			if(!layer)
 			{
-				Inkscape::create_animation_keyframe(SP_ACTIVE_DESKTOP->currentRoot(), layer->parent, id);
+				Inkscape::create_animation_keyframe(SP_ACTIVE_DESKTOP->currentRoot(), start_layer->parent, id);
 				layer = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(
 										Glib::ustring::format("animationlayer", parent_id, "keyframe", id));
 			}
 			
-			if(!layer)
-				break;
+			//if(!layer)
+			//	break;
 			
 		}
 		
@@ -1298,6 +1301,9 @@ static void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
 		
 
 	}
+	
+	SP_ACTIVE_DESKTOP->getSelection()->emit();
+	SP_ACTIVE_DESKTOP->getSelection()->emit();
 	
 }
 
@@ -1591,6 +1597,7 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	//emit selection signal
 	desktop->getSelection()->emit();
+	desktop->getSelection()->emit();
 
 	DocumentUndo::done(desktop->getDocument(), SP_VERB_NONE, "Create tween");
 
@@ -1837,14 +1844,13 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
 		
 		parent->queue_draw();
 		
-		
-		
 		//kw_src.is_empty = true;
 	}
 
 	is_dragging_over = false;
 	
 	//emit change
+	desktop->getSelection()->clear();
 	desktop->getSelection()->emit();
 	context->drag_finish(false, false, time);
 }
