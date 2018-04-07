@@ -15,7 +15,10 @@
 #include "sp-namedview.h"
 #include "ui/tool/event-utils.h"
 
-//#include "sp-path.h"
+#include "sp-path.h"
+#include "sp-rect.h"
+#include "sp-ellipse.h"
+#include "sp-star.h"
 
 #include "display/curve.h"
 #include <2geom/pathvector.h>
@@ -641,6 +644,49 @@ static float easeOut(float t, float a)
 	return ret;
 }
 
+static void setScale(SPObject * child, double width, double height)
+{
+	if(SP_IS_RECT(child))
+	{
+		SPRect * rect = SP_RECT(child);
+		rect->setPosition(rect->x.value, rect->y.value, width, height);
+	}
+
+	if(SP_IS_GENERICELLIPSE(child))
+	{
+		SPGenericEllipse * ellipse = SP_GENERICELLIPSE(child);
+		ellipse->position_set(ellipse->cx.value, ellipse->cy.value, width, height);
+	}
+
+	if(SP_IS_STAR(child))
+	{
+		SPStar * star = SP_STAR(child);
+	}
+}
+
+static void setPosition(SPObject * child, Geom::Point p)
+{
+	if(SP_IS_RECT(child))
+	{
+		SPRect * rect = SP_RECT(child);
+		rect->setPosition(p[0], p[1], rect->width.value, rect->height.value);
+	}
+
+	if(SP_IS_GENERICELLIPSE(child))
+	{
+		SPGenericEllipse * ellipse = SP_GENERICELLIPSE(child);
+		ellipse->position_set(p[0], p[1], ellipse->rx.value, ellipse->ry.value);
+	}
+
+	if(SP_IS_STAR(child))
+	{
+		SPStar * star = SP_STAR(child);
+		star->center = p;
+		star->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+	}
+}
+
+
 static void updateTween(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget * kw = reinterpret_cast<KeyframeWidget*>(user_data);
@@ -678,25 +724,8 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	if(!layer)
 		return;
 
-	/*
-	if(!path)
-	{
-		const char * tweenpathid = layer->getRepr()->attribute("inkscape:tweenpathid");
-		if(tweenpathid)
-		{
-			SPObject * p = desktop->getDocument()->getObjectById(tweenpathid);
-			if(p)
-				path = SP_PATH(p);
-		}
-
-	}
-	*/
-
 	if(!path)
 		return;
-
-	//const char * tweenid = tmpObj->getRepr()->attribute("inkscape:tweenid");
-	//layer = desktop->getDocument()->getObjectById(tweenid);
 
 	int num_frames = 10;
 	if(layer->getRepr()->attribute("inkscape:tweenlayers"))
@@ -728,17 +757,19 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 	if(child)
 	{
 		Geom::Point p = pathv.initialPoint();
-		SP_ITEM(child)->transform.setTranslation(p);
-		child->updateRepr();
+		
+		
+		//SP_ITEM(child)->transform.setTranslation(p);
+		
+		setPosition(child, p);
+		
 
-		p2 = SP_ITEM(child)->getCenter() - Geom::Point(0, desktop->getDocument()->getHeight().value("px"));
+		//p2 = SP_ITEM(child)->getCenter() - Geom::Point(0, desktop->getDocument()->getHeight().value("px"));
 
-		origp = SP_ITEM(child)->transform.translation();
-		rotp = SP_ITEM(child)->transform.rotationCenter();
+		//origp = SP_ITEM(child)->transform.translation();
+		//rotp = SP_ITEM(child)->transform.rotationCenter();
 
-		test2 = SP_ITEM(child)->documentVisualBounds();
-
-		//layer->updateRepr();
+		//test2 = SP_ITEM(child)->documentVisualBounds();
 
 		///////////////////////////////////////////////////////////child->setAttribute("transform",
 		//						Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
@@ -762,13 +793,15 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 			if(child)
 			{
 				Geom::Point p = pathv.finalPoint();
-				SP_ITEM(child)->transform.setTranslation(p);
+				//SP_ITEM(child)->transform.setTranslation(p);
+				
+				setPosition(child, p);
 
 				Geom::Affine test = Geom::Rotate::around(p, rotation*M_PI/180);
 
-				SP_ITEM(child)->transform *= test;
+				//SP_ITEM(child)->transform *= test;
 
-				child->updateRepr();
+				//child->updateRepr();
 				//////////////////////////////child->setAttribute("transform",
 						//Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
 			}
@@ -806,12 +839,11 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		{
 			Geom::Affine aff = Geom::Translate(p);
 			//SP_ITEM(child)->transform.setTranslation(p); //does not update immediately for some objects!!
-
-			Geom::Point p2 = SP_ITEM(child)->getCenter() - Geom::Point(0, desktop->getDocument()->getHeight().value("px"));
-
-
+			
+			
+			setPosition(child, p);
+			
 			origp = SP_ITEM(child)->transform.translation();
-
 			test2 = SP_ITEM(child)->visualBounds();
 
 
@@ -820,7 +852,7 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 			//Geom::Affine test = Geom::Rotate::around(p + p2, i*rotation*M_PI/180/(num_frames));
 			Geom::Affine test = Geom::Rotate::around(p + Geom::Point(test2->width()/2, test2->height()/2), i*rotation*M_PI/180/(num_frames));
 			Geom::Affine res = aff*test;
-			SP_ITEM(child)->transform = res;
+			//SP_ITEM(child)->transform = res;
 			std::cout<<test2->width()<<std::endl;
 
 
@@ -828,29 +860,10 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		}
 
 		nextLayer = layer->next;
-
-		//if it's not a tween, return
-		//if(i > 0 && ( !nextLayer || !nextLayer->getRepr()->attribute("inkscape:tween")))
-		//	return;
-
-		//layer->updateRepr();
 		layer = nextLayer;
 		i++;
 	}
 
-	//FULHACK ALERT
-	//if(child)
-	//{
-	//	std::string test = std::string(child->getRepr()->attribute("transform"));
-	//	test = Glib::ustring::format(test, " ");
-	//	child->getRepr()->setAttribute("transform", test);
-	//}
-
-	//if(layer && layer->parent)
-	//	layer->parent->updateRepr();
-	//layer->updateRepr();
-
-	//desktop->getDocument()->ensureUpToDate();
 }
 
 static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * endLayer)
@@ -1143,7 +1156,7 @@ static void guidedTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 		//child->setAttribute("transform",
 		//		Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
 
-		SP_ITEM(child)->transform.setTranslation(p);
+		//SP_ITEM(child)->transform.setTranslation(p);
 
 		layer = nextLayer;
 		i++;
@@ -1175,7 +1188,9 @@ static SPItem * createGuide(KeyframeWidget * kw, float start_x, float start_y, f
 		//else
 
 		repr->setAttribute("d", str);
-		repr->setAttribute("style", "stroke:#303030;fill:none");
+		repr->setAttribute("style", "stroke:#303030;fill:none;fill-rule:evenodd;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:1,2;stroke-dashoffset:0;stroke-opacity:1");
+		
+		
 		repr->setAttribute("inkscape:tweenpath", "true");
 		repr->setAttribute("inkscape:tweenid", kw->layer->getRepr()->attribute("id"));
 		g_free(str);
@@ -1227,11 +1242,11 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 		//slayer->getRepr()->setAttribute("inkscape:tweenpathid", "hmmtest");
 
 		layer->getRepr()->setAttribute("inkscape:tweenstartid", startLayer->getId());
-
-		SP_ITEM(child)->transform.setTranslation(Geom::Point(start_x + j*inc_x, start_y + j*inc_y));
-		child->getRepr()->setAttribute("x", 0);
-		child->getRepr()->setAttribute("y", 0);
-
+		
+		Geom::Point p(start_x + j*inc_x, start_y + j*inc_y);
+		
+		setPosition(child, p);
+		
 		layer = layer->next;
 		j++;
 	}
@@ -1308,6 +1323,9 @@ static void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
 }
 
 
+static SPObject * getStartLayer(KeyframeWidget * kw){
+	SPObject * layer = kw->layer;	
+}
 
 static void createTween(KeyframeWidget * kww, gpointer user_data)
 {
@@ -1318,6 +1336,8 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	
 	if(!desktop)
 		return;
+	
+	
 	
 	SPObject * layer = kw->layer;// = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", kw->id)));
 	SPObject * startLayer = kw->layer;
@@ -1397,22 +1417,30 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		end_opacity = SP_ITEM(child)->style->opacity.value;
 		
 
-		//if a circle or an ellipse, use cx and cy
-		if(!strcmp(childn->name(), "svg:rect"))
+		//if ellipse
+		if(SP_IS_GENERICELLIPSE(child))
 		{
-			end_scale_x = std::stof(childn->attribute("width"));
-			end_scale_y = std::stof(childn->attribute("height"));
+			SPGenericEllipse * ellipse = SP_GENERICELLIPSE(child);
+			
+			end_scale_x = ellipse->rx.value;
+			end_scale_y = ellipse->ry.value;
+			end_x = ellipse->cx.value;
+			end_y = ellipse->cy.value;
 		}
 
 
-		//if a circle or an ellipse, use cx and cy
-		if(!strcmp(childn->name(), "svg:circle") || !strcmp(childn->name(), "svg:ellipse"))
+		//if rect
+		if(SP_IS_RECT(child))
 		{
-			xs = "cx";
-			ys = "cy";
+			SPRect * rect = SP_RECT(child);
+			
+			end_scale_x = rect->width.value;
+			end_scale_y = rect->height.value;
+			end_x = rect->x.value;
+			end_y = rect->y.value;
 		}
 		
-		if(!strcmp(childn->name(), "svg:path"))
+		if(SP_IS_PATH(child))
 		{
 			is_path = true;
 		}
@@ -1427,26 +1455,10 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 			end_scale_x = SP_ITEM(child)->transform[0];
 			end_scale_y = SP_ITEM(child)->transform[3];
 		}
-		
-		if(!is_group && !is_path)
-		{
-			end_x = std::stof(childn->attribute(xs.c_str()));
-			end_y = std::stof(childn->attribute(ys.c_str()));
-			end_x += SP_ITEM(child)->transform.translation()[0];
-			end_y += SP_ITEM(child)->transform.translation()[1];
-			childn->setAttribute(xs.c_str(), Glib::ustring::format(0));
-			childn->setAttribute(ys.c_str(), Glib::ustring::format(0));
-
-		}
-
 	}
 	
-	//SP_ITEM(startLayer)->setLocked(false);
-
 	if(startLayer)
 	{
-		//SP_ITEM(startLayer)->setHidden(false);
-
 		SPObject * child = startLayer->firstChild();
 		Inkscape::XML::Node * childn = startLayer->getRepr()->firstChild();
 		if(!childn)
@@ -1460,38 +1472,37 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//get opacity
 		start_opacity = SP_ITEM(child)->style->opacity.value;
 		
-		//if a circle or an ellipse, use cx and cy
-		if(!strcmp(childn->name(), "svg:rect"))
-		{
-			end_scale_x = end_scale_x/std::stof(childn->attribute("width"));
-			end_scale_y = end_scale_y/std::stof(childn->attribute("height"));
-		}
-
-
-		if(!is_group && !is_path)
-		{
-
-			start_x = std::stof(childn->attribute(xs.c_str()));
-			start_y = std::stof(childn->attribute(ys.c_str()));
-			start_x += SP_ITEM(child)->transform.translation()[0];
-			start_y += SP_ITEM(child)->transform.translation()[1];
-			SP_ITEM(child)->transform.setTranslation(Geom::Point(start_x, start_y));
-			childn->setAttribute(xs.c_str(), Glib::ustring::format(0));
-			childn->setAttribute(ys.c_str(), Glib::ustring::format(0));
-
-		}
-		
 		if(is_group)
 		{
 			start_x = SP_ITEM(child)->transform.translation()[0];
 			start_y = SP_ITEM(child)->transform.translation()[1];
-
 			start_scale_x = SP_ITEM(child)->transform[0];
 			start_scale_y = SP_ITEM(child)->transform[3];
 		}
+		
+		//if ellipse
+		if(SP_IS_GENERICELLIPSE(child))
+		{
+			SPGenericEllipse * ellipse = SP_GENERICELLIPSE(child);
+			
+			start_scale_x = ellipse->rx.value;
+			start_scale_y = ellipse->ry.value;
+			start_x = ellipse->cx.value;
+			start_y = ellipse->cy.value;
+		}
+
+		//if rect
+		if(SP_IS_RECT(child))
+		{
+			SPRect * rect = SP_RECT(child);
+			
+			start_scale_x = rect->width.value;
+			start_scale_y = rect->height.value;
+			start_x = rect->x.value;
+			start_y = rect->y.value;
+		}
 	}
 	
-
 	//spdc_flush_white in freehand-base.cpp!
 	//FreehandBase *dc = new FreehandBase();
 
@@ -1550,26 +1561,19 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 		//scale
 		//SP_ITEM(child)->scaleCenter(Geom::Scale(i*inc_scale_x, i*inc_scale_y));
 		//SP_ITEM(child)->scaleCenter(Geom::Scale(10, 10));
+		
+		if(SP_IS_RECT(child))
+		{
+			SPRect * rect = SP_RECT(child);
+		}
 
-		SP_ITEM(child)->transform[0] = start_scale_x + (i-1)*inc_scale_x;
-		SP_ITEM(child)->transform[3] = start_scale_y + (i-1)*inc_scale_y;
+		setScale(child, start_scale_x + (i-1)*inc_scale_x, start_scale_y + (i-1)*inc_scale_y);
+		//SP_ITEM(child)->transform[0] = start_scale_x + (i-1)*inc_scale_x;
+		//SP_ITEM(child)->transform[3] = start_scale_y + (i-1)*inc_scale_y;
 
 		Inkscape::XML::Node * childn = child->getRepr();
 		Inkscape::XML::Node * childn_copy = childn->duplicate(desktop->getDocument()->getReprDoc());
 
-
-		/*
-		if(!is_group && !is_path)
-		{
-			childn_copy->setAttribute(xs.c_str(), Glib::ustring::format(start_x + i*inc_x));
-			childn_copy->setAttribute(ys.c_str(), Glib::ustring::format(start_y + i*inc_y));
-		}
-		else if(is_group && !is_path)
-		{
-			childn_copy->setAttribute("transform", 
-			Glib::ustring::format("translate(", start_x + i*inc_x, ",", start_y + i*inc_y, ")" ));
-		}
-		*/
 		//copy layer childn to nextLayer
 		if(childn && childn_copy && nextLayer != endLayer)
 		{
@@ -1596,7 +1600,6 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	//if()
 	
 	//emit selection signal
-	desktop->getSelection()->emit();
 	desktop->getSelection()->emit();
 
 	DocumentUndo::done(desktop->getDocument(), SP_VERB_NONE, "Create tween");
