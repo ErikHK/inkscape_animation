@@ -22,7 +22,9 @@
 class SPCurve;
 
 #define SP_PATH(obj) (dynamic_cast<SPPath*>((SPObject*)obj))
+#define SP_TWEENPATH(obj) (dynamic_cast<SPPath*>((SPObject*)obj))
 #define SP_IS_PATH(obj) (dynamic_cast<const SPPath*>((SPObject*)obj) != NULL)
+#define SP_IS_TWEENPATH(obj) (dynamic_cast<const SPPath*>((SPObject*)obj) != NULL && dynamic_cast<const SPPath*>((SPObject*)obj)->tweenId)
 
 /**
  * SVG <path> implementation
@@ -31,6 +33,7 @@ class SPPath : public SPShape {
 public:
 	SPPath();
 	virtual ~SPPath();
+	const char * tweenId;
 
     int nodesInPath() const;
 

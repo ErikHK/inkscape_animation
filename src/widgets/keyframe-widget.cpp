@@ -19,6 +19,7 @@
 #include "sp-rect.h"
 #include "sp-ellipse.h"
 #include "sp-star.h"
+#include "tween.h"
 
 #include "display/curve.h"
 #include <2geom/pathvector.h>
@@ -701,11 +702,11 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 
 	const char * layerid = NULL;
 
-	//check if it's a path
-	if(SP_IS_PATH(selected) && selected->getRepr()->attribute("inkscape:tweenpath"))
+	//check if it's a tween path
+	if(SP_IS_TWEENPATH(selected))
 	{
 		path = SP_PATH(selected);
-		layerid = selected->getRepr()->attribute("inkscape:tweenid");
+		layerid = path->tweenId;
 	}
 	else
 	{
@@ -856,7 +857,7 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 			std::cout<<test2->width()<<std::endl;
 
 
-			child->updateRepr();
+			//child->updateRepr();
 		}
 
 		nextLayer = layer->next;
@@ -1164,10 +1165,8 @@ static void guidedTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 	}
 }
 
-
 static SPItem * createGuide(KeyframeWidget * kw, float start_x, float start_y, float end_x, float end_y)
 {
-
 	SPCurve * c = new SPCurve();
 	c->moveto(Geom::Point(start_x,start_y));
 	c->lineto(Geom::Point(end_x,end_y));
@@ -1200,6 +1199,11 @@ static SPItem * createGuide(KeyframeWidget * kw, float start_x, float start_y, f
 		if(kw->layer->parent)
 		{
 			SPItem *item = SP_ITEM(kw->layer->parent->appendChildRepr(repr));
+			SP_PATH(item)->tweenId = kw->layer->getRepr()->attribute("id");
+			//SPTweenPath * sptp = reinterpret_cast<SPTweenPath *>(item);
+			//SPTweenPath * sptp = new SPTweenPath(kw->layer->getRepr()->attribute("id"));
+			//sptp->set_original_curve();
+			//sptp->tweenId = ;
 			return item;
 		}
 
@@ -1331,6 +1335,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 {
 	KeyframeWidget* kw = reinterpret_cast<KeyframeWidget*>(user_data);
 	
+	Tween * t = new Tween(kw);
+	
+	/*
 	//pMenu = 0;
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	
@@ -1607,7 +1614,9 @@ static void createTween(KeyframeWidget * kww, gpointer user_data)
 	kw->showAll->set_active(false);
 	desktop->show_all_keyframes = false;
 	showAllKeyframes(kw, kw);
+	*/
 }
+
 
 void KeyframeWidget::defocusAllKeyframes()
 {
@@ -2096,7 +2105,7 @@ KeyframeWidget::~KeyframeWidget()
 void KeyframeWidget::on_update_tween()
 {
 	//is_empty = false;
-	updateTween(this, this);
+	//updateTween(this, this);
 }
 
 void KeyframeWidget::on_selection_changed()
@@ -2117,7 +2126,7 @@ void KeyframeWidget::on_selection_changed()
 		//parent->clear_tween = false;
 	}
 	
-	updateTween(this, this);
+	//updateTween(this, this);
 }
 
 bool KeyframeWidget::on_expose_event(GdkEventExpose* event)

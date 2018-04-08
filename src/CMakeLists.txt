@@ -267,6 +267,7 @@ set(inkscape_SRC
   text-chemistry.cpp
   text-editing.cpp
   transf_mat_3x4.cpp
+  tween.cpp
   unclump.cpp
   unicoderange.cpp
   uri-references.cpp
@@ -410,6 +411,7 @@ set(inkscape_SRC
   text-editing.h
   text-tag-attributes.h
   transf_mat_3x4.h
+  tween.h
   unclump.h
   undo-stack-observer.h
   unicoderange.h
