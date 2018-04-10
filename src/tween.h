@@ -28,6 +28,11 @@ public:
 	KeyframeWidget * start;
 	KeyframeWidget * end;
 	
+	SPObject * endLayer;
+	SPObject * startLayer;
+
+	std::vector<SPObject *> objects;
+
 	int numFrames;
 	
 	void createGuide(float start_x, float start_y, float end_x, float end_y);

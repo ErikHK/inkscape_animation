@@ -13,6 +13,8 @@
 
 #include <glibmm/i18n.h>
 
+#include <vector>
+
 #include "xml/repr.h"
 
 #include "display/curve.h"
@@ -360,12 +362,8 @@ void Tween::update()
 	if(!path)
 		return;
 
-	int num_frames = 10;
-	if(layer->getRepr()->attribute("inkscape:tweenlayers"))
-		num_frames = atoi(layer->getRepr()->attribute("inkscape:tweenlayers"));
+	int num_frames = numFrames;
 
-	SPObject * startLayer = layer;
-	SPObject * endLayer = NULL;
 	SPObject * nextLayer = NULL;
 	
 	SPCurve * curve = path->_curve;
@@ -375,125 +373,31 @@ void Tween::update()
 
 	float rotation = 0;
 
-	Geom::Point p2(0,0);
-	Geom::Point origp(0,0);
-	Geom::Point rotp(0,0);
-	Geom::OptRect test2(0,0);
+	Geom::Point p(0,0);
 
-	child = startLayer->firstChild();
-	if(layer->getRepr()->attribute("inkscape:rotation"))
-		rotation = atoi(layer->getRepr()->attribute("inkscape:rotation"));
-	
-	//if(!rotation)
-	//	rotation = SP_ITEM(child)->transform.
+	//child = startLayer->firstChild();
+	child = objects[0];
 
 	if(child)
 	{
 		Geom::Point p = pathv.initialPoint();
-		
-		
-		//SP_ITEM(child)->transform.setTranslation(p);
-		
 		setPosition(child, p);
-
-		//p2 = SP_ITEM(child)->getCenter() - Geom::Point(0, desktop->getDocument()->getHeight().value("px"));
-
-		//origp = SP_ITEM(child)->transform.translation();
-		//rotp = SP_ITEM(child)->transform.rotationCenter();
-
-		//test2 = SP_ITEM(child)->documentVisualBounds();
-
-		///////////////////////////////////////////////////////////child->setAttribute("transform",
-		//						Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
 	}
 
-	layer = layer->next;
 
-	int i = 1;
-	while(layer)
-	{
-		//if(!layer->getRepr()->attribute("inkscape:tween") && !layer->getRepr()->attribute("inkscape:tweenstart"))
-		//	return;
+	for(int i=1; i < objects.size()-1; i++){
+		p = pathv.pointAt(i*pathv.timeRange().max()/(num_frames));
 		
-		if(!layer->getRepr()->attribute("inkscape:tween"))
-			return;
+		setPosition(objects[i], p);
+	}
 
-		if(layer->getRepr()->attribute("inkscape:tweenend"))
-		{
-			endLayer = layer;
-			child = endLayer->firstChild();
-			if(child)
-			{
-				Geom::Point p = pathv.finalPoint();
-				//SP_ITEM(child)->transform.setTranslation(p);
-				
-				setPosition(child, p);
+	//set child to last
+	child = objects[objects.size()-1];
 
-				Geom::Affine test = Geom::Rotate::around(p, rotation*M_PI/180);
-
-				//SP_ITEM(child)->transform *= test;
-
-				//child->updateRepr();
-				//////////////////////////////child->setAttribute("transform",
-						//Glib::ustring::format("translate(", p[0], ",", p[1], ")" ));
-			}
-
-			//layer->updateRepr();
-			break;
-		}
-
-		//Geom::Point p = pathv.pointAt(easeIn((i)*pathv.timeRange().max()/(num_frames + 1), 1.2));
-
-		Geom::Point p(0,0);
-		const char * easein = startLayer->getRepr()->attribute("inkscape:easein");
-		const char * easeout = startLayer->getRepr()->attribute("inkscape:easeout");
-
-		if(easein && easein != "0" && easeout && easeout != "0")
-		{
-			float power = atoi(easein)+1;
-			p = pathv.pointAt(easeInOut((i)*pathv.timeRange().max()/(num_frames), power));
-		}
-		else if(easein && easein != "0")
-		{
-			float power = atoi(easein)+1;
-			p = pathv.pointAt(easeIn((i)*pathv.timeRange().max()/(num_frames), power));
-		}
-		else if(easeout && easeout != "0")
-		{
-			float power = atoi(easein)+1;
-			p = pathv.pointAt(easeOut((i)*pathv.timeRange().max()/(num_frames), power));
-		}else
-			p = pathv.pointAt(i*pathv.timeRange().max()/(num_frames));
-
-		child = layer->firstChild();
-
-		if(child)
-		{
-			Geom::Affine aff = Geom::Translate(p);
-			//SP_ITEM(child)->transform.setTranslation(p); //does not update immediately for some objects!!
-			
-			
-			setPosition(child, p);
-			
-			origp = SP_ITEM(child)->transform.translation();
-			test2 = SP_ITEM(child)->visualBounds();
-
-
-			Geom::Point rot2p = Geom::Point(SP_ITEM(child)->transform_center_x, SP_ITEM(child)->transform_center_y);
-
-			//Geom::Affine test = Geom::Rotate::around(p + p2, i*rotation*M_PI/180/(num_frames));
-			Geom::Affine test = Geom::Rotate::around(p + Geom::Point(test2->width()/2, test2->height()/2), i*rotation*M_PI/180/(num_frames));
-			Geom::Affine res = aff*test;
-			//SP_ITEM(child)->transform = res;
-			std::cout<<test2->width()<<std::endl;
-
-
-			//child->updateRepr();
-		}
-
-		nextLayer = layer->next;
-		layer = nextLayer;
-		i++;
+	if(child)
+	{
+		Geom::Point p = pathv.finalPoint();
+		setPosition(child, p);
 	}
 
 }
@@ -501,8 +405,10 @@ void Tween::update()
 Tween::Tween(KeyframeWidget * start) {
 	
 	SPObject * layer = start->layer;
-	SPObject * startLayer = start->layer;
-	SPObject * endLayer = NULL;
+
+	startLayer = start->layer;
+	endLayer = NULL;
+
 	SPObject * nextLayer = NULL;
 	float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0, start_opacity=1, end_opacity=1, inc_opacity=0, inc_r=0, inc_g=0, inc_b=0;
 	float scale_x=1, scale_y=1, inc_scale_x=0, inc_scale_y=0;
@@ -522,6 +428,7 @@ Tween::Tween(KeyframeWidget * start) {
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	
 	tweenId = NULL;
+	numFrames = 0;
 
 	if(desktop)
 	{
@@ -568,6 +475,7 @@ Tween::Tween(KeyframeWidget * start) {
 	endLayer->getRepr()->setAttribute("inkscape:tweenend", "true");
 	endLayer->getRepr()->setAttribute("inkscape:tween", "true");
 	startLayer->getRepr()->setAttribute("inkscape:tweenlayers", Glib::ustring::format(num_layers));
+	numFrames = num_layers;
 	
 	if(endLayer)
 	{
@@ -576,12 +484,13 @@ Tween::Tween(KeyframeWidget * start) {
 
 		Inkscape::XML::Node * childn = endLayer->getRepr()->firstChild();
 		SPObject * child = endLayer->firstChild();
-		
+
 		if(!childn)
 			return;
 		
 		if(!child)
 			return;
+
 
 		//get end color
 		sp_color_get_rgb_floatv (&SP_ITEM(child)->style->fill.value.color, end_rgb);
@@ -714,6 +623,8 @@ Tween::Tween(KeyframeWidget * start) {
 		if(!child)
 			break;
 		
+		objects.push_back(child);
+
 		//TODO: check if it's a group, in that case loop through etc...
 		if(!SP_ITEM(child)->style->fill.isNone())
 		{
