@@ -146,6 +146,8 @@ void Tween::linearTween(SPObject * startLayer, SPObject * endLayer, float start_
 
 		layer->getRepr()->setAttribute("inkscape:tweenstartid", startLayer->getId());
 		
+		tweenId = startLayer->getId();
+
 		Geom::Point p(start_x + j*inc_x, start_y + j*inc_y);
 		
 		setPosition(child, p);
@@ -336,6 +338,7 @@ void Tween::update()
 		path = SP_PATH(selected);
 		//layerid = path->tweenId;
 		layerid = tweenId;
+		std::cout << layerid;
 	}
 	else
 	{
@@ -515,15 +518,17 @@ Tween::Tween(KeyframeWidget * start) {
 	int num_layers = 1;
 	int num_nodes = 0;
 	
-	//sigc::connection _sel_changed_connection;
+	sigc::connection _sel_changed_connection;
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
 	
+	tweenId = NULL;
+
 	if(desktop)
 	{
-		//Inkscape::Selection * selection = desktop->getSelection();
+		Inkscape::Selection * selection = desktop->getSelection();
 		
-		//_sel_changed_connection = selection->connectChangedFirst(
-		//		sigc::hide(sigc::mem_fun(*this, &Tween::update)));
+		_sel_changed_connection = selection->connectChangedFirst(
+				sigc::hide(sigc::mem_fun(*this, &Tween::update)));
 	}
 	
 	if(!desktop)
