@@ -30,6 +30,8 @@
 #include "sp-rect.h"
 #include "sp-ellipse.h"
 #include "sp-star.h"
+#include "sp-item-group.h"
+
 #include "tween.h"
 #include "widgets/keyframe-widget.h"
 #include "widgets/keyframe-bar.h"
@@ -298,6 +300,13 @@ void Tween::setScale(SPObject * child, double width, double height)
 	{
 		SPStar * star = SP_STAR(child);
 	}
+
+	if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
+	{
+		SPGroup * group = SP_GROUP(child);
+		group->transform.setExpansionX(width);
+		group->transform.setExpansionY(height);
+	}
 }
 
 void Tween::setPosition(SPObject * child, Geom::Point p)
@@ -319,6 +328,13 @@ void Tween::setPosition(SPObject * child, Geom::Point p)
 		SPStar * star = SP_STAR(child);
 		star->center = p;
 		star->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+	}
+
+	if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
+	{
+		SPGroup * group = SP_GROUP(child);
+		group->transform.setTranslation(p);
+		group->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
 	}
 }
 
@@ -431,7 +447,6 @@ Tween::Tween(KeyframeWidget * start) {
 	gfloat end_rgb[3];
 	std::string xs = "x";
 	std::string ys = "y";
-	bool is_group = false;
 	bool is_path = false;
 	bool is_along_path = false;
 	int i = start->id+1;
@@ -453,7 +468,6 @@ Tween::Tween(KeyframeWidget * start) {
 
 		sigc::connection connect_tween_expansion = desktop->connectTweenExpansion(
 				sigc::mem_fun(*this, &Tween::addToTween));
-
 	}
 	
 	if(!desktop)
@@ -486,6 +500,9 @@ Tween::Tween(KeyframeWidget * start) {
 		i++;
 	}
 	
+	if(!layer)
+		return;
+
 	endLayer = layer;
 	//end = endLayer;
 	
@@ -510,8 +527,6 @@ Tween::Tween(KeyframeWidget * start) {
 			return;
 
 
-
-
 		//get end color
 		sp_color_get_rgb_floatv (&SP_ITEM(child)->style->fill.value.color, end_rgb);
 		
@@ -529,7 +544,6 @@ Tween::Tween(KeyframeWidget * start) {
 			end_y = ellipse->cy.value;
 		}
 
-
 		//if rect
 		if(SP_IS_RECT(child))
 		{
@@ -543,21 +557,20 @@ Tween::Tween(KeyframeWidget * start) {
 		
 		if(SP_IS_PATH(child))
 		{
+			SPPath * path = SP_PATH(child);
 			is_path = true;
 		}
 		
 		//else if a group, take special care later!
-		if(!strcmp(childn->name(), "svg:g"))
+		if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
 		{
-			is_group = true;
-			end_x = SP_ITEM(child)->transform.translation()[0];
-			end_y = SP_ITEM(child)->transform.translation()[1];
+			end_x = SP_GROUP(child)->transform.translation()[0];
+			end_y = SP_GROUP(child)->transform.translation()[1];
 
-			end_scale_x = SP_ITEM(child)->transform[0];
-			end_scale_y = SP_ITEM(child)->transform[3];
+			end_scale_x = SP_GROUP(child)->transform.expansionX();
+			end_scale_y = SP_GROUP(child)->transform.expansionY();
 		}
 	}
-	
 	
 	if(startLayer)
 	{
@@ -574,12 +587,12 @@ Tween::Tween(KeyframeWidget * start) {
 		//get opacity
 		start_opacity = SP_ITEM(child)->style->opacity.value;
 		
-		if(is_group)
+		if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
 		{
-			start_x = SP_ITEM(child)->transform.translation()[0];
-			start_y = SP_ITEM(child)->transform.translation()[1];
-			start_scale_x = SP_ITEM(child)->transform[0];
-			start_scale_y = SP_ITEM(child)->transform[3];
+			start_x = SP_GROUP(child)->transform.translation()[0];
+			start_y = SP_GROUP(child)->transform.translation()[1];
+			start_scale_x = SP_GROUP(child)->transform.expansionX();
+			start_scale_y = SP_GROUP(child)->transform.expansionY();
 		}
 		
 		//if ellipse
@@ -605,9 +618,6 @@ Tween::Tween(KeyframeWidget * start) {
 		}
 	}
 	
-	//spdc_flush_white in freehand-base.cpp!
-	//FreehandBase *dc = new FreehandBase();
-
 	inc_scale_x = (end_scale_x - start_scale_x)/num_layers;
 	inc_scale_y = (end_scale_y - start_scale_y)/num_layers;
 
@@ -637,7 +647,6 @@ Tween::Tween(KeyframeWidget * start) {
 		if(!nextLayer)
 			break;
 		
-		//SPObject * child = layer->firstChild();
 		SPObject * child = layer->firstChild();
 		
 		if(!child)
@@ -657,23 +666,15 @@ Tween::Tween(KeyframeWidget * start) {
 			SP_ITEM(child)->style->fill.set = TRUE;
 		}
 		
-		//if(!SP_ITEM(child)->style->stroke.isNone()) etcetc
-		
 		//tween opacity
 		SP_ITEM(child)->style->opacity.value = start_opacity + (i-1)*inc_opacity;
 
-		//scale
-		//SP_ITEM(child)->scaleCenter(Geom::Scale(i*inc_scale_x, i*inc_scale_y));
-		//SP_ITEM(child)->scaleCenter(Geom::Scale(10, 10));
-		
 		if(SP_IS_RECT(child))
 		{
 			SPRect * rect = SP_RECT(child);
 		}
 
 		setScale(child, start_scale_x + (i-1)*inc_scale_x, start_scale_y + (i-1)*inc_scale_y);
-		//SP_ITEM(child)->transform[0] = start_scale_x + (i-1)*inc_scale_x;
-		//SP_ITEM(child)->transform[3] = start_scale_y + (i-1)*inc_scale_y;
 
 		Inkscape::XML::Node * childn = child->getRepr();
 		Inkscape::XML::Node * childn_copy = childn->duplicate(desktop->getDocument()->getReprDoc());
@@ -687,11 +688,6 @@ Tween::Tween(KeyframeWidget * start) {
 		i++;
 	}
 
-	//don't forget to add last child!
-	//if(endLayer && endLayer->firstChild())
-	//	objects.push_back(endLayer->firstChild());
-
-	
 	//is group, ellipse, rect etc etc
 	if(startLayer->getRepr()->childCount() == 1)
 		linearTween(startLayer, endLayer, start_x, start_y, end_x, end_y, inc_x, inc_y);
