@@ -1437,6 +1437,12 @@ SPDesktop::emitToolSubselectionChanged(gpointer data)
     INKSCAPE.subselection_changed (this);
 }
 
+void
+SPDesktop::emitTweenExpansion(SPObject * obj)
+{
+	_tween_expansion_signal.emit(obj);
+}
+
 void SPDesktop::updateNow()
 {
     canvas->updateNow();

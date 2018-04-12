@@ -362,7 +362,8 @@ void Tween::update()
 	if(!path)
 		return;
 
-	int num_frames = numFrames;
+	//int num_frames = numFrames;
+	numFrames = objects.size();
 
 	SPObject * nextLayer = NULL;
 	
@@ -375,7 +376,12 @@ void Tween::update()
 
 	Geom::Point p(0,0);
 
+	//if there are no objects, return
+	if(objects.empty())
+		return;
+
 	//child = startLayer->firstChild();
+	/*
 	child = objects[0];
 
 	if(child)
@@ -383,16 +389,18 @@ void Tween::update()
 		Geom::Point p = pathv.initialPoint();
 		setPosition(child, p);
 	}
+	 */
 
-
-	for(int i=1; i < objects.size()-1; i++){
-		p = pathv.pointAt(i*pathv.timeRange().max()/(num_frames));
+	for(int i=0; i < numFrames-1; i++){
+		auto test = pathv.timeRange().max();
+		auto tot = i*test/(numFrames-1);
+		p = pathv.pointAt(tot);
 		
 		setPosition(objects[i], p);
 	}
 
 	//set child to last
-	child = objects[objects.size()-1];
+	child = objects.back();
 
 	if(child)
 	{
@@ -400,6 +408,12 @@ void Tween::update()
 		setPosition(child, p);
 	}
 
+}
+
+void Tween::addToTween(SPObject * obj)
+{
+	if(obj)
+		objects.push_back(obj);
 }
 
 Tween::Tween(KeyframeWidget * start) {
@@ -436,6 +450,10 @@ Tween::Tween(KeyframeWidget * start) {
 		
 		_sel_changed_connection = selection->connectChangedFirst(
 				sigc::hide(sigc::mem_fun(*this, &Tween::update)));
+
+		sigc::connection connect_tween_expansion = desktop->connectTweenExpansion(
+				sigc::mem_fun(*this, &Tween::addToTween));
+
 	}
 	
 	if(!desktop)
@@ -490,6 +508,8 @@ Tween::Tween(KeyframeWidget * start) {
 		
 		if(!child)
 			return;
+
+
 
 
 		//get end color
@@ -666,6 +686,10 @@ Tween::Tween(KeyframeWidget * start) {
 		layer = nextLayer;
 		i++;
 	}
+
+	//don't forget to add last child!
+	//if(endLayer && endLayer->firstChild())
+	//	objects.push_back(endLayer->firstChild());
 
 	
 	//is group, ellipse, rect etc etc

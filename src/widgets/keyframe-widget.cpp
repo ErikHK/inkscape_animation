@@ -1292,6 +1292,8 @@ static void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
 			{
 				layer->getRepr()->appendChild(obj_to_copy->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc()));
 				layer->getRepr()->setAttribute("inkscape:tween", "true");
+
+				SP_ACTIVE_DESKTOP->emitTweenExpansion(layer->firstChild());
 			}
 			//layer = layer->next;
 			
@@ -1310,6 +1312,10 @@ static void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
 		}
 		
 		
+		if(end_layer && end_layer->firstChild())
+			SP_ACTIVE_DESKTOP->emitTweenExpansion(end_layer->firstChild());
+
+
 		//this works:
 		/*
 		if(layer)
@@ -1769,6 +1775,7 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
         const Gtk::SelectionData& selection_data, guint, guint time)
 {
 	
+
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	if(!desktop)
 		return;
@@ -1789,6 +1796,10 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
 		if(!kw_src_layer)
 			return;
 		
+
+		//desktop->emitTweenExpansion(kw_src_layer->firstChild());
+
+
 		if(idd == id && parent_idd == parent_id)
 		{
 			is_dragging_over = false;
@@ -1819,10 +1830,13 @@ void KeyframeWidget::on_my_drag_data_received(const Glib::RefPtr<Gdk::DragContex
 
 			layer->getRepr()->appendChild(childn_copy);
 			kw_src_layer->getRepr()->removeChild(childn);
+
+			//emit change so that tween.cpp can add the new object to its object list
+
 		}
 		
 		bool tweenend = false;
-		//check if it's a tween end, in that case, createTween all over again?
+		//check if it's a tween end
 		if(kw_src_layer->getRepr()->attribute("inkscape:tweenend"))
 		{
 			tweenend = true;
@@ -2021,6 +2035,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 		
 		sigc::connection _sel_changed_connection;
 		sigc::connection _sel_changed_connection2;
+		//sigc::connection update_tween_expansion_connection;
 		
 		//_sel_changed_connection = selection->connectChanged(
 		//	sigc::bind(
@@ -2033,6 +2048,8 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 
 		//_sel_changed_connection2 = desktop->connectToolSubselectionChanged(
 		//		sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_update_tween)));
+
+		//update_tween_connection = desktop->connectTweenExpansion();
 
 
 		desktop->getDocument()->connectModified(

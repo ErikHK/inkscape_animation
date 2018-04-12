@@ -219,6 +219,7 @@ public:
 
     sigc::signal<void, sp_verb_t>      _tool_changed;
     sigc::signal<void, SPObject *>     _layer_changed_signal;
+    sigc::signal<void, SPObject *>     _tween_expansion_signal;
     sigc::signal<bool, const SPCSSAttr *>::accumulated<StopOnTrue> _set_style_signal;
     sigc::signal<int, SPStyle *, int>::accumulated<StopOnNonZero> _query_style_signal;
     
@@ -246,6 +247,10 @@ public:
     {
         return _set_style_signal.connect (slot);
     }
+    sigc::connection connectTweenExpansion(const sigc::slot<void, SPObject *> & slot)
+    {
+    	_tween_expansion_signal.connect(slot);
+    }
     sigc::connection connectQueryStyle (const sigc::slot<int, SPStyle *, int> & slot)
     {
         return _query_style_signal.connect (slot);
@@ -258,6 +263,8 @@ public:
     sigc::connection connectCurrentLayerChanged(const sigc::slot<void, SPObject *> & slot) {
         return _layer_changed_signal.connect(slot);
     }
+
+    void emitTweenExpansion(SPObject * obj);
 
     sigc::connection connectEaseChanged(const sigc::slot<void, int> & slot) {
             return _ease_changed.connect(slot);

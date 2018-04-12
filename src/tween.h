@@ -40,6 +40,7 @@ public:
 	void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer);
 	void showAllKeyframes();
 	void update();
+	void addToTween(SPObject * obj);
 	float easeInOut(float t, float a);
 	float easeIn(float t, float a);
 	float easeOut(float t, float a);
