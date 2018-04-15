@@ -69,7 +69,7 @@ void CompositeNodeObserver::notifyChildOrderChanged(Node &node, Node &child,
 
 void CompositeNodeObserver::notifyContentChanged(
     Node &node,
-    Util::ptr_shared<char> old_content, Util::ptr_shared<char> new_content
+    Util::ptr_shared old_content, Util::ptr_shared new_content
 ) {
     _startIteration();
     for ( ObserverRecordList::iterator iter=_active.begin() ;
@@ -84,7 +84,7 @@ void CompositeNodeObserver::notifyContentChanged(
 
 void CompositeNodeObserver::notifyAttributeChanged(
     Node &node, GQuark name,
-    Util::ptr_shared<char> old_value, Util::ptr_shared<char> new_value
+    Util::ptr_shared old_value, Util::ptr_shared new_value
 ) {
     _startIteration();
     for ( ObserverRecordList::iterator iter=_active.begin() ;
@@ -133,13 +133,13 @@ public:
         }
     }
 
-    void notifyContentChanged(Node &node, Util::ptr_shared<char> old_content, Util::ptr_shared<char> new_content) {
+    void notifyContentChanged(Node &node, Util::ptr_shared old_content, Util::ptr_shared new_content) {
         if (vector.content_changed) {
             vector.content_changed(&node, old_content, new_content, data);
         }
     }
 
-    void notifyAttributeChanged(Node &node, GQuark name, Util::ptr_shared<char> old_value, Util::ptr_shared<char> new_value) {
+    void notifyAttributeChanged(Node &node, GQuark name, Util::ptr_shared old_value, Util::ptr_shared new_value) {
         if (vector.attr_changed) {
             vector.attr_changed(&node, g_quark_to_string(name), old_value, new_value, false, data);
         }

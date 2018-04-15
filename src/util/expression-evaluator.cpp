@@ -274,7 +274,7 @@ void ExpressionEvaluator::parseNextToken()
         // We're all done
         current_token.type = TOKEN_END;
     } else if ( s[0] == '+' || s[0] == '-' ) {
-        // Snatch these before the g_strtod() does, othewise they might
+        // Snatch these before the g_strtod() does, otherwise they might
         // be used in a numeric conversion.
         acceptTokenCount(1, s[0]);
     } else {

@@ -12,7 +12,7 @@
 #include <cstdio>
 #include <cassert>
 
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "object-hierarchy.h"
 
 #include <sigc++/functors/mem_fun.h>

@@ -42,7 +42,7 @@
 #include "inkscape.h"
 #include "preferences.h"
 #include "selection.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-path.h"
 #include "toolbox.h"
 #include "ui/icon-names.h"

@@ -12,7 +12,7 @@
 #include "style.h"
 #include "font-instance.h"
 #include "svg/svg-length.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "Layout-TNG-Scanline-Maker.h"
 #include <limits>
 

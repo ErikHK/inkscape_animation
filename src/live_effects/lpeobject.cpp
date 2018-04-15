@@ -11,12 +11,11 @@
 
 #include "xml/repr.h"
 #include "xml/node-event-vector.h"
-#include "sp-object.h"
 #include "attributes.h"
 #include "document.h"
 #include "document-private.h"
 
-#include <glibmm/i18n.h>
+#include "object/sp-defs.h"
 
 //#define LIVEPATHEFFECT_VERBOSE
 
@@ -115,6 +114,7 @@ void LivePathEffectObject::set(unsigned key, gchar const *value) {
                 this->effecttype_set = true;
             } else {
                 this->effecttype = Inkscape::LivePathEffect::INVALID_LPE;
+                this->lpe = NULL;
                 this->effecttype_set = false;
             }
 

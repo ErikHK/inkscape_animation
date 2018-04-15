@@ -13,7 +13,7 @@
 #ifndef INKSCAPE_LPE_KNOT_H
 #define INKSCAPE_LPE_KNOT_H
 
-#include "sp-item-group.h"
+
 #include "live_effects/effect.h"
 #include "live_effects/lpegroupbbox.h"
 #include "live_effects/parameter/parameter.h"
@@ -21,6 +21,8 @@
 //#include "live_effects/parameter/path.h"
 #include "live_effects/parameter/bool.h"
 #include "2geom/crossing.h"
+
+class SPLPEItem;
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -61,7 +63,7 @@ public:
   
   /* the knotholder entity classes must be declared friends */
   friend class KnotHolderEntityCrossingSwitcher;
-  void addKnotHolderEntities(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item);
+  void addKnotHolderEntities(KnotHolder *knotholder, SPItem *item);
 
 protected:
   virtual void addCanvasIndicators(SPLPEItem const *lpeitem, std::vector<Geom::PathVector> &hp_vec);

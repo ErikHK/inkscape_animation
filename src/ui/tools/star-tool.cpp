@@ -28,7 +28,7 @@
 #include "sp-star.h"
 #include "document.h"
 #include "document-undo.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "selection.h"
 
 #include "snap.h"

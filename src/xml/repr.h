@@ -80,6 +80,7 @@ void sp_repr_css_attr_unref(SPCSSAttr *css);
 SPCSSAttr *sp_repr_css_attr(Inkscape::XML::Node *repr, char const *attr);
 SPCSSAttr *sp_repr_css_attr_parse_color_to_fill(const Glib::ustring &text);
 SPCSSAttr *sp_repr_css_attr_inherited(Inkscape::XML::Node *repr, char const *attr);
+SPCSSAttr *sp_repr_css_attr_unset_all(SPCSSAttr *css);
 
 char const *sp_repr_css_property(SPCSSAttr *css, char const *name, char const *defval);
 void sp_repr_css_set_property(SPCSSAttr *css, char const *name, char const *value);
@@ -93,7 +94,6 @@ void sp_repr_css_merge(SPCSSAttr *dst, SPCSSAttr *src);
 void sp_repr_css_attr_add_from_string(SPCSSAttr *css, const char *data);
 void sp_repr_css_change(Inkscape::XML::Node *repr, SPCSSAttr *css, char const *key);
 void sp_repr_css_change_recursive(Inkscape::XML::Node *repr, SPCSSAttr *css, char const *key);
-
 void sp_repr_css_print(SPCSSAttr *css);
 
 /* Utility finctions */

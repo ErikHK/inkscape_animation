@@ -8,12 +8,11 @@
 //#define LPE_ENABLE_TEST_EFFECTS //uncomment for toy effects
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include <config.h>
 #endif
 
 // include effects:
 #include "live_effects/lpe-patternalongpath.h"
-#include "live_effects/effect.h"
 #include "live_effects/lpe-angle_bisector.h"
 #include "live_effects/lpe-attach-path.h"
 #include "live_effects/lpe-bendpath.h"
@@ -25,6 +24,7 @@
 #include "live_effects/lpe-constructgrid.h"
 #include "live_effects/lpe-copy_rotate.h"
 #include "live_effects/lpe-curvestitch.h"
+#include "live_effects/lpe-dash-stroke.h"
 #include "live_effects/lpe-dynastroke.h"
 #include "live_effects/lpe-ellipse_5pts.h"
 #include "live_effects/lpe-envelope.h"
@@ -40,6 +40,7 @@
 #include "live_effects/lpe-lattice2.h"
 #include "live_effects/lpe-lattice.h"
 #include "live_effects/lpe-line_segment.h"
+#include "live_effects/lpe-measure-segments.h"
 #include "live_effects/lpe-mirror_symmetry.h"
 #include "live_effects/lpe-offset.h"
 #include "live_effects/lpe-parallel.h"
@@ -47,6 +48,8 @@
 #include "live_effects/lpe-perp_bisector.h"
 #include "live_effects/lpe-perspective-envelope.h"
 #include "live_effects/lpe-perspective_path.h"
+#include "live_effects/lpe-powerclip.h"
+#include "live_effects/lpe-powermask.h"
 #include "live_effects/lpe-powerstroke.h"
 #include "live_effects/lpe-recursiveskeleton.h"
 #include "live_effects/lpe-roughen.h"
@@ -62,33 +65,31 @@
 #include "live_effects/lpe-test-doEffect-stack.h"
 #include "live_effects/lpe-text_label.h"
 #include "live_effects/lpe-vonkoch.h"
+#include "live_effects/lpe-embrodery-stitch.h"
+#include "live_effects/lpe-bool.h"
+#include "live_effects/lpe-pts2ellipse.h"
+
+#include "live_effects/lpeobject.h"
 
 #include "xml/node-event-vector.h"
-#include "sp-object.h"
-#include "attributes.h"
+#include "xml/sp-css-attr.h"
+
 #include "message-stack.h"
-#include "desktop.h"
-#include "inkscape.h"
-#include "document.h"
 #include "document-private.h"
-#include "xml/document.h"
-#include <glibmm/i18n.h>
 #include "ui/tools/pen-tool.h"
 #include "ui/tools/node-tool.h"
 #include "ui/tools-switch.h"
 #include "knotholder.h"
-#include "sp-lpe-item.h"
-#include "live_effects/lpeobject.h"
-#include "live_effects/parameter/parameter.h"
-#include <glibmm/ustring.h>
+#include "path-chemistry.h"
 #include "display/curve.h"
 
-#include <exception>
+#include "object/sp-defs.h"
+#include "object/sp-shape.h"
 
-#include <2geom/sbasis-to-bezier.h>
-#include <2geom/affine.h>
-#include <2geom/pathvector.h>
-
+#include <stdio.h>
+#include <string.h>
+#include <pangomm/layout.h>
+#include <gtkmm/expander.h>
 
 namespace Inkscape {
 
@@ -96,62 +97,71 @@ namespace LivePathEffect {
 
 const Util::EnumData<EffectType> LPETypeData[] = {
     // {constant defined in effect-enum.h, N_("name of your effect"), "name of your effect in SVG"}
-#ifdef LPE_ENABLE_TEST_EFFECTS
-    {DOEFFECTSTACK_TEST,    N_("doEffect stack test"),     "doeffectstacktest"},
-    {ANGLE_BISECTOR,        N_("Angle bisector"),          "angle_bisector"},
-    {CIRCLE_WITH_RADIUS,    N_("Circle (by center and radius)"),   "circle_with_radius"},
-    {CIRCLE_3PTS,           N_("Circle by 3 points"),      "circle_3pts"},
-    {DYNASTROKE,            N_("Dynamic stroke"),          "dynastroke"},
-    {EXTRUDE,               N_("Extrude"),                 "extrude"},
-    {LATTICE,               N_("Lattice Deformation"),     "lattice"},
-    {LINE_SEGMENT,          N_("Line Segment"),            "line_segment"},
-    {OFFSET,                N_("Offset"),                  "offset"},
-    {PARALLEL,              N_("Parallel"),                "parallel"},
-    {PATH_LENGTH,           N_("Path length"),             "path_length"},
-    {PERP_BISECTOR,         N_("Perpendicular bisector"),  "perp_bisector"},
-    {PERSPECTIVE_PATH,      N_("Perspective path"),        "perspective_path"},
-    {RECURSIVE_SKELETON,    N_("Recursive skeleton"),      "recursive_skeleton"},
-    {TANGENT_TO_CURVE,      N_("Tangent to curve"),        "tangent_to_curve"},
-    {TEXT_LABEL,            N_("Text label"),              "text_label"},
-    {FILLET_CHAMFER,        N_("Fillet/Chamfer"),          "fillet-chamfer"},
-#endif
 /* 0.46 */
-    {BEND_PATH,             N_("Bend"),                    "bend_path"},
-    {GEARS,                 N_("Gears"),                   "gears"},
-    {PATTERN_ALONG_PATH,    N_("Pattern Along Path"),      "skeletal"},   // for historic reasons, this effect is called skeletal(strokes) in Inkscape:SVG
-    {CURVE_STITCH,          N_("Stitch Sub-Paths"),        "curvestitching"},
+    {BEND_PATH,             N_("Bend"),                            "bend_path"},
+    {GEARS,                 N_("Gears"),                           "gears"},
+    {PATTERN_ALONG_PATH,    N_("Pattern Along Path"),              "skeletal"},   // for historic reasons, this effect is called skeletal(strokes) in Inkscape:SVG
+    {CURVE_STITCH,          N_("Stitch Sub-Paths"),                "curvestitching"},
 /* 0.47 */
-    {VONKOCH,               N_("VonKoch"),                 "vonkoch"},
-    {KNOT,                  N_("Knot"),                    "knot"},
-    {CONSTRUCT_GRID,        N_("Construct grid"),          "construct_grid"},
-    {SPIRO,                 N_("Spiro spline"),            "spiro"},
-    {ENVELOPE,              N_("Envelope Deformation"),    "envelope"},
-    {INTERPOLATE,           N_("Interpolate Sub-Paths"),   "interpolate"},
-    {ROUGH_HATCHES,         N_("Hatches (rough)"),         "rough_hatches"},
-    {SKETCH,                N_("Sketch"),                  "sketch"},
-    {RULER,                 N_("Ruler"),                   "ruler"},
+    {VONKOCH,               N_("VonKoch"),                         "vonkoch"},
+    {KNOT,                  N_("Knot"),                            "knot"},
+    {CONSTRUCT_GRID,        N_("Construct grid"),                  "construct_grid"},
+    {SPIRO,                 N_("Spiro spline"),                    "spiro"},
+    {ENVELOPE,              N_("Envelope Deformation"),            "envelope"},
+    {INTERPOLATE,           N_("Interpolate Sub-Paths"),           "interpolate"},
+    {ROUGH_HATCHES,         N_("Hatches (rough)"),                 "rough_hatches"},
+    {SKETCH,                N_("Sketch"),                          "sketch"},
+    {RULER,                 N_("Ruler"),                           "ruler"},
 /* 0.91 */
-    {POWERSTROKE,           N_("Power stroke"),            "powerstroke"},
-    {CLONE_ORIGINAL,        N_("Clone original path"),     "clone_original"},
+    {POWERSTROKE,           N_("Power stroke"),                    "powerstroke"},
+    {CLONE_ORIGINAL,        N_("Clone original"),                  "clone_original"},
 /* 0.92 */
-    {SIMPLIFY,              N_("Simplify"),                "simplify"},
-    {LATTICE2,              N_("Lattice Deformation 2"),   "lattice2"},
-    {PERSPECTIVE_ENVELOPE,  N_("Perspective/Envelope"),    "perspective-envelope"},
-    {INTERPOLATE_POINTS,    N_("Interpolate points"),      "interpolate_points"},
-    {TRANSFORM_2PTS,        N_("Transform by 2 points"),   "transform_2pts"},
-    {SHOW_HANDLES,          N_("Show handles"),            "show_handles"},
-    {ROUGHEN,               N_("Roughen"),                 "roughen"},
-    {BSPLINE,               N_("BSpline"),                 "bspline"},
-    {JOIN_TYPE,             N_("Join type"),               "join_type"},
-    {TAPER_STROKE,          N_("Taper stroke"),            "taper_stroke"},
-    {MIRROR_SYMMETRY,       N_("Mirror symmetry"),         "mirror_symmetry"},
-    {COPY_ROTATE,           N_("Rotate copies"),           "copy_rotate"},
+    {SIMPLIFY,              N_("Simplify"),                        "simplify"},
+    {LATTICE2,              N_("Lattice Deformation 2"),           "lattice2"},
+    {PERSPECTIVE_ENVELOPE,  N_("Perspective/Envelope"),            "perspective-envelope"}, //TODO:Wrong name with "-"
+    {INTERPOLATE_POINTS,    N_("Interpolate points"),              "interpolate_points"},
+    {TRANSFORM_2PTS,        N_("Transform by 2 points"),           "transform_2pts"},
+    {SHOW_HANDLES,          N_("Show handles"),                    "show_handles"},
+    {ROUGHEN,               N_("Roughen"),                         "roughen"},
+    {BSPLINE,               N_("BSpline"),                         "bspline"},
+    {JOIN_TYPE,             N_("Join type"),                       "join_type"},
+    {TAPER_STROKE,          N_("Taper stroke"),                    "taper_stroke"},
+    {MIRROR_SYMMETRY,       N_("Mirror symmetry"),                 "mirror_symmetry"},
+    {COPY_ROTATE,           N_("Rotate copies"),                   "copy_rotate"},
 /* Ponyscape -> Inkscape 0.92*/
-    {ATTACH_PATH,           N_("Attach path"),             "attach_path"},
-    {FILL_BETWEEN_STROKES,  N_("Fill between strokes"),    "fill_between_strokes"},
-    {FILL_BETWEEN_MANY,     N_("Fill between many"),       "fill_between_many"},
-    {ELLIPSE_5PTS,          N_("Ellipse by 5 points"),     "ellipse_5pts"},
-    {BOUNDING_BOX,          N_("Bounding Box"),            "bounding_box"},
+    {ATTACH_PATH,           N_("Attach path"),                     "attach_path"},
+    {FILL_BETWEEN_STROKES,  N_("Fill between strokes"),            "fill_between_strokes"},
+    {FILL_BETWEEN_MANY,     N_("Fill between many"),               "fill_between_many"},
+    {ELLIPSE_5PTS,          N_("Ellipse by 5 points"),             "ellipse_5pts"},
+    {BOUNDING_BOX,          N_("Bounding Box"),                    "bounding_box"},
+/* 0.93 */
+    {MEASURE_SEGMENTS,      N_("Measure Segments"),                "measure_segments"},
+    {FILLET_CHAMFER,        N_("Fillet/Chamfer"),                  "fillet_chamfer"},
+    {BOOL_OP,               N_("Boolean operation"),               "bool_op"},
+    {EMBRODERY_STITCH,      N_("Embroidery stitch"),               "embrodery_stitch"},
+    {POWERCLIP,             N_("Power clip"),                      "powerclip"},
+    {POWERMASK,             N_("Power mask"),                      "powermask"},
+    {PTS2ELLIPSE,           N_("Ellipse from points"),             "pts2ellipse"},
+    {OFFSET,                N_("Offset"),                          "offset"},
+    {DASH_STROKE,           N_("Dash Stroke"),                     "dash_stroke"},
+#ifdef LPE_ENABLE_TEST_EFFECTS
+    {DOEFFECTSTACK_TEST,    N_("doEffect stack test"),             "doeffectstacktest"},
+    {ANGLE_BISECTOR,        N_("Angle bisector"),                  "angle_bisector"},
+    {CIRCLE_WITH_RADIUS,    N_("Circle (by center and radius)"),   "circle_with_radius"},
+    {CIRCLE_3PTS,           N_("Circle by 3 points"),              "circle_3pts"},
+    {DYNASTROKE,            N_("Dynamic stroke"),                  "dynastroke"},
+    {EXTRUDE,               N_("Extrude"),                         "extrude"},
+    {LATTICE,               N_("Lattice Deformation"),             "lattice"},
+    {LINE_SEGMENT,          N_("Line Segment"),                    "line_segment"},
+    {PARALLEL,              N_("Parallel"),                        "parallel"},
+    {PATH_LENGTH,           N_("Path length"),                     "path_length"},
+    {PERP_BISECTOR,         N_("Perpendicular bisector"),          "perp_bisector"},
+    {PERSPECTIVE_PATH,      N_("Perspective path"),                "perspective_path"},
+    {RECURSIVE_SKELETON,    N_("Recursive skeleton"),              "recursive_skeleton"},
+    {TANGENT_TO_CURVE,      N_("Tangent to curve"),                "tangent_to_curve"},
+    {TEXT_LABEL,            N_("Text label"),                      "text_label"},
+#endif
+
 };
 const Util::EnumDataConverter<EffectType> LPETypeConverter(LPETypeData, sizeof(LPETypeData)/sizeof(*LPETypeData));
 
@@ -173,6 +183,12 @@ Effect::New(EffectType lpenr, LivePathEffectObject *lpeobj)
 {
     Effect* neweffect = NULL;
     switch (lpenr) {
+        case EMBRODERY_STITCH:
+            neweffect = static_cast<Effect*> ( new LPEEmbroderyStitch(lpeobj) );
+            break;
+        case BOOL_OP:
+            neweffect = static_cast<Effect*> ( new LPEBool(lpeobj) );
+            break;
         case PATTERN_ALONG_PATH:
             neweffect = static_cast<Effect*> ( new LPEPatternAlongPath(lpeobj) );
             break;
@@ -311,6 +327,12 @@ Effect::New(EffectType lpenr, LivePathEffectObject *lpeobj)
         case FILLET_CHAMFER:
             neweffect = static_cast<Effect*> ( new LPEFilletChamfer(lpeobj) );
             break;
+        case POWERCLIP:
+            neweffect = static_cast<Effect*> ( new LPEPowerClip(lpeobj) );
+            break;
+        case POWERMASK:
+            neweffect = static_cast<Effect*> ( new LPEPowerMask(lpeobj) );
+            break;
         case ROUGHEN:
             neweffect = static_cast<Effect*> ( new LPERoughen(lpeobj) );
             break;
@@ -319,6 +341,15 @@ Effect::New(EffectType lpenr, LivePathEffectObject *lpeobj)
             break;
         case TRANSFORM_2PTS:
             neweffect = static_cast<Effect*> ( new LPETransform2Pts(lpeobj) );
+            break;
+        case MEASURE_SEGMENTS:
+            neweffect = static_cast<Effect*> ( new LPEMeasureSegments(lpeobj) );
+            break;
+        case PTS2ELLIPSE:
+            neweffect = static_cast<Effect*> ( new LPEPts2Ellipse(lpeobj) );
+            break;
+        case DASH_STROKE:
+            neweffect = static_cast<Effect*> ( new LPEDashStroke(lpeobj) );
             break;
         default:
             g_warning("LivePathEffect::Effect::New called with invalid patheffect type (%d)", lpenr);
@@ -361,12 +392,16 @@ Effect::Effect(LivePathEffectObject *lpeobject)
       oncanvasedit_it(0),
       is_visible(_("Is visible?"), _("If unchecked, the effect remains applied to the object but is temporarily disabled on canvas"), "is_visible", &wr, this, true),
       show_orig_path(false),
+      keep_paths(false),
+      is_load(true),
       lpeobj(lpeobject),
       concatenate_before_pwd2(false),
       sp_lpe_item(NULL),
       current_zoom(1),
-      sp_curve(NULL),
+      upd_params(true),
+      current_shape(NULL),
       provides_own_flash_paths(true), // is automatically set to false if providesOwnFlashPaths() is not overridden
+      defaultsopen(false),
       is_ready(false) // is automatically set to false if providesOwnFlashPaths() is not overridden
 {
     registerParameter( dynamic_cast<Parameter *>(&is_visible) );
@@ -401,15 +436,15 @@ Effect::doOnApply (SPLPEItem const*/*lpeitem*/)
 }
 
 void
-Effect::setSelectedNodePoints(std::vector<Geom::Point> sNP)
-{
-    selectedNodesPoints = sNP;
-}
-
-void
 Effect::setCurrentZoom(double cZ)
 {
     current_zoom = cZ;
+}
+
+void
+Effect::setSelectedNodePoints(std::vector<Geom::Point> sNP)
+{
+    selectedNodesPoints = sNP;
 }
 
 bool
@@ -432,6 +467,67 @@ Effect::isNodePointSelected(Geom::Point const &nodePoint) const
     return false;
 }
 
+void 
+Effect::processObjects(LpeAction lpe_action)
+{
+    SPDocument * document = SP_ACTIVE_DOCUMENT;
+    if (!document) {
+        return;
+    }
+    for (std::vector<Glib::ustring>::iterator el_it = items.begin(); 
+         el_it != items.end(); ++el_it) {
+        Glib::ustring id = *el_it;
+        if (id.empty()) {
+            return;
+        }
+        SPObject *elemref = NULL;
+        if ((elemref = document->getObjectById(id.c_str()))) {
+            Inkscape::XML::Node * elemnode = elemref->getRepr();
+            std::vector<SPItem*> item_list;
+            item_list.push_back(SP_ITEM(elemref));
+            std::vector<Inkscape::XML::Node*> item_to_select;
+            std::vector<SPItem*> item_selected;
+            SPCSSAttr *css;
+            Glib::ustring css_str;
+            SPItem *item = SP_ITEM(elemref);
+            switch (lpe_action){
+            case LPE_TO_OBJECTS:
+                if (item->isHidden()) {
+                    item->deleteObject(true);
+                } else {
+                    if (elemnode->attribute("inkscape:path-effect")) {
+                        sp_item_list_to_curves(item_list, item_selected, item_to_select);
+                    }
+                    elemnode->setAttribute("sodipodi:insensitive", NULL);
+                }
+                break;
+
+            case LPE_ERASE:
+                item->deleteObject(true);
+                break;
+
+            case LPE_VISIBILITY:
+                css = sp_repr_css_attr_new();
+                sp_repr_css_attr_add_from_string(css, elemref->getRepr()->attribute("style"));
+                if (!this->isVisible()/* && std::strcmp(elemref->getId(),sp_lpe_item->getId()) != 0*/) {
+                    css->setAttribute("display", "none");
+                } else {
+                    css->setAttribute("display", NULL);
+                }
+                sp_repr_css_write_string(css,css_str);
+                elemnode->setAttribute("style", css_str.c_str());
+                break;
+
+            default:
+                break;
+            }
+        }
+    }
+    if (lpe_action == LPE_ERASE || lpe_action == LPE_TO_OBJECTS) {
+        items.clear();
+    }
+}
+
 /**
  * Is performed each time before the effect is updated.
  */
@@ -443,35 +539,26 @@ Effect::doBeforeEffect (SPLPEItem const*/*lpeitem*/)
 
 void Effect::doAfterEffect (SPLPEItem const* /*lpeitem*/)
 {
+    is_load = false;
 }
 
 void Effect::doOnRemove (SPLPEItem const* /*lpeitem*/)
 {
 }
-
+void Effect::doOnVisibilityToggled(SPLPEItem const* /*lpeitem*/)
+{
+}
 //secret impl methods (shhhh!)
 void Effect::doOnApply_impl(SPLPEItem const* lpeitem)
 {
     sp_lpe_item = const_cast<SPLPEItem *>(lpeitem);
-    /*sp_curve = SP_SHAPE(sp_lpe_item)->getCurve();
-    pathvector_before_effect = sp_curve->get_pathvector();*/
     doOnApply(lpeitem);
 }
 
 void Effect::doBeforeEffect_impl(SPLPEItem const* lpeitem)
 {
     sp_lpe_item = const_cast<SPLPEItem *>(lpeitem);
-    //printf("(SPLPEITEM*) %p\n", sp_lpe_item);
-    SPShape * shape = dynamic_cast<SPShape *>(sp_lpe_item);
-    if(shape){
-        sp_curve = shape->getCurve();
-        pathvector_before_effect = sp_curve->get_pathvector();
-    }
     doBeforeEffect(lpeitem);
-    if (apply_to_clippath_and_mask && SP_IS_GROUP(sp_lpe_item)) {
-        sp_lpe_item->apply_to_clippath(sp_lpe_item);
-        sp_lpe_item->apply_to_mask(sp_lpe_item);
-    }
     update_helperpath();
 }
 
@@ -572,6 +659,7 @@ void
 Effect::readallParameters(Inkscape::XML::Node const* repr)
 {
     std::vector<Parameter *>::iterator it = param_vector.begin();
+    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
     while (it != param_vector.end()) {
         Parameter * param = *it;
         const gchar * key = param->param_key.c_str();
@@ -582,10 +670,17 @@ Effect::readallParameters(Inkscape::XML::Node const* repr)
                 g_warning("Effect::readallParameters - '%s' not accepted for %s", value, key);
             }
         } else {
-            // set default value
-            param->param_set_default();
+            Glib::ustring pref_path = (Glib::ustring)"/live_effects/" +
+                                       (Glib::ustring)LPETypeConverter.get_key(effectType()).c_str() +
+                                       (Glib::ustring)"/" + 
+                                       (Glib::ustring)key;
+            bool valid = prefs->getEntry(pref_path).isValid();
+            if(valid){
+                param->param_update_default(prefs->getString(pref_path).c_str());
+            } else {
+                param->param_set_default();
+            }
         }
-
         ++it;
     }
 }
@@ -619,15 +714,15 @@ Effect::registerParameter(Parameter * param)
  * Add all registered LPE knotholder handles to the knotholder
  */
 void
-Effect::addHandles(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item) {
+Effect::addHandles(KnotHolder *knotholder, SPItem *item) {
     using namespace Inkscape::LivePathEffect;
 
     // add handles provided by the effect itself
-    addKnotHolderEntities(knotholder, desktop, item);
+    addKnotHolderEntities(knotholder, item);
 
     // add handles provided by the effect's parameters (if any)
     for (std::vector<Parameter *>::iterator p = param_vector.begin(); p != param_vector.end(); ++p) {
-        (*p)->addKnotHolderEntities(knotholder, desktop, item);
+        (*p)->addKnotHolderEntities(knotholder, item);
     }
 }
 
@@ -654,21 +749,6 @@ Effect::getCanvasIndicators(SPLPEItem const* lpeitem)
 }
 
 /**
- * Call to a method on nodetool to update the helper path from the effect
- */
-void
-Effect::update_helperpath() {
-    using namespace Inkscape::UI;
-    SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-    if (desktop) {
-        if (tools_isactive(desktop, TOOLS_NODES)) {
-            Inkscape::UI::Tools::NodeTool *nt = static_cast<Inkscape::UI::Tools::NodeTool*>(desktop->event_context);
-            nt->update_helperpath();
-        }
-    }
-}
-
-/**
  * Add possible canvas indicators (i.e., helperpaths other than the original path) to \a hp_vec
  * This function should be overwritten by derived effects if they want to provide their own helperpaths.
  */
@@ -677,6 +757,13 @@ Effect::addCanvasIndicators(SPLPEItem const*/*lpeitem*/, std::vector<Geom::PathV
 {
 }
 
+/**
+ * Call to a method on nodetool to update the helper path from the effect
+ */
+void
+Effect::update_helperpath() {
+    Inkscape::UI::Tools::sp_update_helperpath();
+}
 
 /**
  * This *creates* a new widget, management of deletion should be done by the caller
@@ -708,10 +795,124 @@ Effect::newWidget()
 
         ++it;
     }
-
+    if(Gtk::Widget* widg = defaultParamSet()) {
+        vbox->pack_start(*widg, true, true, 2);
+    }
     return dynamic_cast<Gtk::Widget *>(vbox);
 }
 
+/**
+ * This *creates* a new widget, with default values setter
+ */
+Gtk::Widget *
+Effect::defaultParamSet()
+{
+    // use manage here, because after deletion of Effect object, others might still be pointing to this widget.
+    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    Gtk::VBox * vbox_expander = Gtk::manage( new Gtk::VBox() );
+    Glib::ustring effectname = (Glib::ustring)Inkscape::LivePathEffect::LPETypeConverter.get_label(effectType());
+    Glib::ustring effectkey = (Glib::ustring)Inkscape::LivePathEffect::LPETypeConverter.get_key(effectType());
+    std::vector<Parameter *>::iterator it = param_vector.begin();
+    Inkscape::UI::Widget::Registry * wr;
+    bool has_params = false;
+    while (it != param_vector.end()) {
+        if ((*it)->widget_is_visible) {
+            has_params = true;
+            Parameter * param = *it;
+            Glib::ustring * tip = param->param_getTooltip();
+            const gchar * key   = param->param_key.c_str();
+            const gchar * label = param->param_label.c_str();
+            Glib::ustring value = param->param_getSVGValue();
+            Glib::ustring defvalue  = param->param_getDefaultSVGValue();
+            Glib::ustring pref_path = "/live_effects/";
+            pref_path += effectkey;
+            pref_path +="/";
+            pref_path += key;
+            bool valid = prefs->getEntry(pref_path).isValid();
+            const gchar * set_or_upd;
+            Glib::ustring def = Glib::ustring(_("<b>Default value:</b> ")) + defvalue + Glib::ustring("\n");
+            Glib::ustring ove = Glib::ustring(_("<b>Default value overridden:</b> ")) + Glib::ustring(prefs->getString(pref_path)) + Glib::ustring("\n");
+            if (valid) {
+                set_or_upd = _("Update");
+                def = Glib::ustring(_("<b>Default value:</b> <s>")) + defvalue + Glib::ustring("</s>\n");
+            } else {
+                set_or_upd = _("Set");
+                ove = Glib::ustring(_("<b>Default value overridden:</b> None\n"));
+            }
+            Glib::ustring cur = Glib::ustring(_("<b>Current parameter value:</b> ")) + value;
+            Gtk::HBox * vbox_param = Gtk::manage( new Gtk::HBox(true) );
+            Gtk::Label *parameter_label = Gtk::manage(new Gtk::Label(label, Gtk::ALIGN_START));
+            parameter_label->set_use_markup(true);
+            parameter_label->set_use_underline(true);
+            Glib::ustring tooltip = Glib::ustring("<b>") + parameter_label->get_text () + Glib::ustring("</b>\n") + param->param_tooltip + Glib::ustring("\n\n");
+            parameter_label->set_ellipsize(Pango::ELLIPSIZE_END);
+            parameter_label->set_tooltip_markup((tooltip + def + ove + cur).c_str());
+            vbox_param->pack_start(*parameter_label, true, true, 2);
+            Gtk::Button *set = Gtk::manage(new Gtk::Button((Glib::ustring)set_or_upd));
+            Gtk::Button *unset = Gtk::manage(new Gtk::Button(Glib::ustring(_("Unset"))));
+            unset->signal_clicked().connect(sigc::bind<Glib::ustring, Glib::ustring, Glib::ustring, Glib::ustring, Gtk::Label *,Gtk::Button *, Gtk::Button *>(sigc::mem_fun(*this, &Effect::unsetDefaultParam), pref_path, tooltip, value, defvalue, parameter_label, set, unset));
+            
+            set->signal_clicked().connect(sigc::bind<Glib::ustring, Glib::ustring, Glib::ustring, Glib::ustring, Gtk::Label *,Gtk::Button *, Gtk::Button *>(sigc::mem_fun(*this, &Effect::setDefaultParam), pref_path, tooltip, value, defvalue, parameter_label, set, unset));
+            if (!valid) {
+                unset->set_sensitive(false);
+            }
+            vbox_param->pack_start(*set, true, true, 2);
+            vbox_param->pack_start(*unset, true, true, 2);
+
+            vbox_expander->pack_start(*vbox_param, true, true, 2);
+        }
+        ++it;
+    }
+    Glib::ustring tip = "<b>" + effectname + (Glib::ustring)_("</b>: Set default parameters");
+    Gtk::Expander * expander = Gtk::manage(new Gtk::Expander(tip));
+    expander->set_use_markup(true);
+    expander->add(*vbox_expander);
+    expander->set_expanded(defaultsopen);
+    //expander->set_size_request(-1, 90);
+    expander->property_expanded().signal_changed().connect(sigc::bind<0>(sigc::mem_fun(*this, &Effect::onDefaultsExpanderChanged), expander ));
+    if (has_params) {
+        Gtk::Widget *vboxwidg = dynamic_cast<Gtk::Widget *>(expander);
+        vboxwidg->set_margin_bottom(5);
+        vboxwidg->set_margin_top(5);
+        return vboxwidg;
+    } else {
+        return NULL;
+    }
+}
+
+void
+Effect::onDefaultsExpanderChanged(Gtk::Expander * expander)
+{
+    defaultsopen = expander->get_expanded();
+}
+
+void
+Effect::setDefaultParam(Glib::ustring pref_path, Glib::ustring tooltip, Glib::ustring value, Glib::ustring defvalue, Gtk::Label *parameter_label, Gtk::Button *set , Gtk::Button *unset)
+{
+    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    prefs->setString(pref_path, value);
+    gchar * label = _("Update");
+    set->set_label((Glib::ustring)label);
+    unset->set_sensitive(true);
+    Glib::ustring def = Glib::ustring(_("<b>Default value:</b> <s>")) + defvalue + Glib::ustring("</s>\n");
+    Glib::ustring ove = Glib::ustring(_("<b>Default value overridden:</b> ")) + value + Glib::ustring("\n");
+    Glib::ustring cur = Glib::ustring(_("<b>Current parameter value:</b> ")) + value;
+    parameter_label->set_tooltip_markup((tooltip + def + ove + cur).c_str());
+}
+
+void
+Effect::unsetDefaultParam(Glib::ustring pref_path, Glib::ustring tooltip, Glib::ustring value, Glib::ustring defvalue, Gtk::Label *parameter_label, Gtk::Button *set , Gtk::Button *unset)
+{
+    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    prefs->remove(pref_path);
+    gchar * label = _("Set");
+    set->set_label((Glib::ustring)label);
+    unset->set_sensitive(false);
+    Glib::ustring def = Glib::ustring(_("<b>Default value:</b> ")) + defvalue + Glib::ustring("\n");
+    Glib::ustring ove = Glib::ustring(_("<b>Default value overridden:</b> None\n"));
+    Glib::ustring cur = Glib::ustring(_("<b>Current parameter value:</b> ")) +value;
+    parameter_label->set_tooltip_markup((tooltip + def + ove + cur).c_str());
+}
 
 Inkscape::XML::Node *Effect::getRepr()
 {
@@ -802,6 +1003,7 @@ Effect::resetDefaults(SPItem const* /*item*/)
     }
 }
 
+//Activate handle your transform filling your effect on SPPath.cpp
 void
 Effect::transform_multiply(Geom::Affine const& postmul, bool set)
 {

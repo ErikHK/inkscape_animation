@@ -3,7 +3,7 @@
  *
  * libavoid - Fast, Incremental, Object-avoiding Line Router
  *
- * Copyright (C) 2005-2009  Monash University
+ * Copyright (C) 2005-2014  Monash University
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,33 +19,66 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Tim Dwyer  <Tim.Dwyer@csse.monash.edu.au>
+ * Author(s):   Tim Dwyer
+ *              Michael Wybrow
  *
  * --------------
  *
- * This file contains a slightly modified version of Solver() from libvpsc:
+ * This file contains a slightly modified version of IncSolver() from libvpsc:
  * A solver for the problem of Variable Placement with Separation Constraints.
  * It has the following changes from the Adaptagrams VPSC version:
  *  -  The required VPSC code has been consolidated into a single file.
  *  -  Unnecessary code (like Solver) has been removed.
  *  -  The PairingHeap code has been replaced by a STL priority_queue.
  *
- * Modifications:  Michael Wybrow  <mjwybrow@users.sourceforge.net>
+ * Modifications:  Michael Wybrow
  *
 */
 
 #ifndef LIBAVOID_VPSC_H
 #define LIBAVOID_VPSC_H
 
+
+#ifdef USELIBVPSC
+
+// By default, libavoid will use it's own version of VPSC defined in this file.
+//
+// Alternatively, you can directly use IncSolver from libvpsc.  This
+// introduces a dependency on libvpsc but it can be preferable in cases 
+// where you are building all of Adaptagrams together and want to work
+// with a set of CompoundConstraints or other classes built upon the 
+// base libvpsc Constraint classes.
+
+// Include necessary headers from libvpsc.
+#include "libvpsc/variable.h"
+#include "libvpsc/constraint.h"
+#include "libvpsc/rectangle.h"
+#include "libvpsc/solve_VPSC.h"
+
+// Use the libvpsc versions of things needed by libavoid.
+using vpsc::Variable;
+using vpsc::Variables;
+using vpsc::Constraint;
+using vpsc::Constraints;
+using vpsc::IncSolver;
+using vpsc::delete_object;
+
+#else
+
 #include <vector>
 #include <list>
 #include <set>
 #include <queue>
+#include <iostream>
+#include <cfloat>
+
+#include "libavoid/assertions.h"
 
 namespace Avoid {
 
 class Variable;
 class Constraint;
+class Blocks;
 typedef std::vector<Variable*> Variables;
 typedef std::vector<Constraint*> Constraints;
 class CompareConstraints {
@@ -77,7 +110,7 @@ public:
     //double weight;
     //double wposn;
     PositionStats ps;
-    Block(Variable* const v=NULL);
+    Block(Blocks *blocks, Variable* const v=NULL);
     ~Block(void);
     Constraint* findMinLM();
     Constraint* findMinLMBetween(Variable* const lv, Variable* const rv);
@@ -118,6 +151,9 @@ private:
     void populateSplitBlock(Block *b, Variable* v, Variable const* u);
     void addVariable(Variable* v);
     void setUpConstraintHeap(Heap* &h,bool in);
+
+    // Parent container, that holds the blockTimeCtr.
+    Blocks *blocks;
 };
 
 
@@ -142,7 +178,6 @@ public:
     bool fixedDesiredPosition;
     Constraints in;
     Constraints out;
-    char *toString();
     inline Variable(const int id, const double desiredPos=-1.0, 
             const double weight=1.0, const double scale=1.0)
         : id(id)
@@ -155,41 +190,61 @@ public:
         , fixedDesiredPosition(false)
     {
     }
-    double dfdv() const {
+    double dfdv(void) const {
         return 2. * weight * ( position() - desiredPosition );
     }
 private:
-    double position() const {
+    inline double position(void) const {
         return (block->ps.scale*block->posn+offset)/scale;
+    }
+    inline double unscaledPosition(void) const {
+        COLA_ASSERT(block->ps.scale == 1);
+        COLA_ASSERT(scale == 1);
+        return block->posn + offset;
     }
 };
 
 
 class Constraint
 {
-    friend std::ostream& operator <<(std::ostream &os,const Constraint &c);
 public:
+    Constraint(Variable *left, Variable *right, double gap, bool equality=false);
+    ~Constraint();
+    inline double slack(void) const 
+    { 
+        if (unsatisfiable)
+        {
+            return DBL_MAX;
+        }
+        if (needsScaling)
+        {
+            return right->scale * right->position() - gap - 
+                    left->scale * left->position();
+        }
+        COLA_ASSERT(left->scale == 1);
+        COLA_ASSERT(right->scale == 1);
+        return right->unscaledPosition() - gap - left->unscaledPosition(); 
+    }
+    std::string toString(void) const;
+
+    friend std::ostream& operator <<(std::ostream &os,const Constraint &c);
     Variable *left;
     Variable *right;
     double gap;
     double lm;
-    Constraint(Variable *left, Variable *right, double gap, bool equality=false);
-    ~Constraint();
-    double slack() const;
     long timeStamp;
     bool active;
     const bool equality;
     bool unsatisfiable;
+    bool needsScaling;
+    void *creator;
 };
-
-/**
+/*
  * A block structure defined over the variables such that each block contains
  * 1 or more variables, with the invariant that all constraints inside a block
- * are satisfied by keeping the variables fixed relative to one another.
- *
- * @todo check on this class being copy-n-paste duplicated.
+ * are satisfied by keeping the variables fixed relative to one another
  */
-class Blocks : public std::set<Block*>
+class Blocks
 {
 public:
     Blocks(Variables const &vs);
@@ -200,14 +255,35 @@ public:
     std::list<Variable*> *totalOrder();
     void cleanup();
     double cost();
+    
+    size_t size() const;
+    Block *at(size_t index) const;
+    void insert(Block *block);
+
+    long blockTimeCtr;
 private:
     void dfsVisit(Variable *v, std::list<Variable*> *order);
     void removeBlock(Block *doomed);
+
+    std::vector<Block *> m_blocks;
     Variables const &vs;
-    int nvs;
+    size_t nvs;
 };
 
-extern long blockTimeCtr;
+inline size_t Blocks::size() const
+{
+    return m_blocks.size();
+}
+
+inline Block *Blocks::at(size_t index) const
+{
+    return m_blocks[index];
+}
+
+inline void Blocks::insert(Block *block)
+{
+    m_blocks.push_back(block);
+}
 
 struct UnsatisfiableException {
     Constraints path;
@@ -226,16 +302,19 @@ public:
     bool solve();
     void moveBlocks();
     void splitBlocks();
-    IncSolver(Variables const &vs, Constraints const &cs);
+    IncSolver(Variables const &vs, Constraints const &cs); 
 
     ~IncSolver();
+    void addConstraint(Constraint *constraint);
     Variables const & getVariables() { return vs; }
 protected:
     Blocks *bs;
-    unsigned m;
+    size_t m;
     Constraints const &cs;
-    unsigned n;
+    size_t n;
     Variables const &vs;
+    bool needsScaling;
+
     void printBlocks();
     void copyResult();
 private:
@@ -252,7 +331,12 @@ struct delete_object
     void operator()(T *ptr){ delete ptr;}
 };
 
+extern Constraints constraintsRemovingRedundantEqualities(
+        Variables const &vars, Constraints const &constraints);
 
 }
 
+#endif // ! USELIBVPSC
+
 #endif // AVOID_VPSC_H
+

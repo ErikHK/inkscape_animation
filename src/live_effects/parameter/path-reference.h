@@ -9,7 +9,7 @@
  * Released under GNU GPL, read the file 'COPYING' for more information.
  */
 
-#include <uri-references.h>
+#include "object/uri-references.h"
 
 class SPItem;
 namespace Inkscape {

@@ -3,7 +3,7 @@
  *
  * libavoid - Fast, Incremental, Object-avoiding Line Router
  *
- * Copyright (C) 2004-2009  Monash University
+ * Copyright (C) 2004-2014  Monash University
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Michael Wybrow <mjwybrow@users.sourceforge.net>
+ * Author(s):  Michael Wybrow
 */
 
 
@@ -73,6 +73,16 @@ bool Point::operator!=(const Point& rhs) const
 }
 
 
+bool Point::equals(const Point& rhs, double epsilon) const
+{
+    if ( (fabs(x - rhs.x) < epsilon) && (fabs(y - rhs.y) < epsilon) )
+    {
+        return true;
+    }
+    return false;
+}
+
+
 // Just defined to allow std::set<Point>.  Not particularly meaningful!
 bool Point::operator<(const Point& rhs) const
 {
@@ -84,41 +94,63 @@ bool Point::operator<(const Point& rhs) const
 }
 
 
-double& Point::operator[](const unsigned int dimension)
+double& Point::operator[](const size_t dimension)
 {
     COLA_ASSERT((dimension == 0) || (dimension == 1));
     return ((dimension == 0) ? x : y);
 }
 
 
-const double& Point::operator[](const unsigned int dimension) const
+const double& Point::operator[](const size_t dimension) const
 {
     COLA_ASSERT((dimension == 0) || (dimension == 1));
     return ((dimension == 0) ? x : y);
+}
+
+Point Point::operator+(const Point& rhs) const
+{
+    return Point(x + rhs.x, y + rhs.y);
+}
+
+
+Point Point::operator-(const Point& rhs) const
+{
+    return Point(x - rhs.x, y - rhs.y);
 }
 
 
 ReferencingPolygon::ReferencingPolygon(const Polygon& poly, const Router *router)
     : PolygonInterface(),
       _id(poly._id),
-      ps(poly.size())
+      psRef(poly.size()),
+      psPoints(poly.size())
 {
     COLA_ASSERT(router != NULL);
     for (size_t i = 0; i < poly.size(); ++i)
     {
-        const Polygon *polyPtr = NULL;
-        for (ShapeRefList::const_iterator sh = router->shapeRefs.begin();
-                sh != router->shapeRefs.end(); ++sh) 
+        if (poly.ps[i].id == 0)
         {
-            if ((*sh)->id() == poly.ps[i].id)
-            {
-                const Polygon& poly = (*sh)->polygon();
-                polyPtr = &poly;
-                break;
-            }
+            // Can't be referenced, so just make a copy of the point.
+            psRef[i] = std::make_pair((Polygon *) NULL, 
+                    kUnassignedVertexNumber);
+            psPoints[i] = poly.ps[i];
         }
-        COLA_ASSERT(polyPtr != NULL);
-        ps[i] = std::make_pair(polyPtr, poly.ps[i].vn);
+        else
+        {
+            const Polygon *polyPtr = NULL;
+            for (ObstacleList::const_iterator sh = router->m_obstacles.begin();
+                    sh != router->m_obstacles.end(); ++sh) 
+            {
+                if ((*sh)->id() == poly.ps[i].id)
+                {
+                    const Polygon& poly = (*sh)->polygon();
+                    polyPtr = &poly;
+                    break;
+                }
+            }
+            COLA_ASSERT(polyPtr != NULL);
+            psRef[i] = std::make_pair(polyPtr, poly.ps[i].vn);
+        }
     }
 }
 
@@ -132,19 +164,20 @@ ReferencingPolygon::ReferencingPolygon()
 
 void ReferencingPolygon::clear(void)
 {
-    ps.clear();
+    psRef.clear();
+    psPoints.clear();
 }
 
 
 bool ReferencingPolygon::empty(void) const
 {
-    return ps.empty();
+    return psRef.empty();
 }
 
 
 size_t ReferencingPolygon::size(void) const
 {
-    return ps.size();
+    return psRef.size();
 }
 
 
@@ -157,51 +190,69 @@ int ReferencingPolygon::id(void) const
 const Point& ReferencingPolygon::at(size_t index) const 
 {
     COLA_ASSERT(index < size());
-    const Polygon& poly = *(ps[index].first);
-    unsigned short poly_index = ps[index].second;
-    COLA_ASSERT(poly_index < poly.size());
+    
+    if (psRef[index].first != NULL)
+    {
+        const Polygon& poly = *(psRef[index].first);
+        unsigned short poly_index = psRef[index].second;
+        COLA_ASSERT(poly_index < poly.size());
 
-    return poly.ps[poly_index];
+        return poly.ps[poly_index];
+    }
+    else
+    {
+        return psPoints[index];
+    }
 }
 
 
-void PolygonInterface::getBoundingRect(double *minX, double *minY,
-        double *maxX, double *maxY) const
+Box PolygonInterface::offsetBoundingBox(double offset) const
 {
-    double progressiveMinX = DBL_MAX;
-    double progressiveMinY = DBL_MAX;
-    double progressiveMaxX = -DBL_MAX;
-    double progressiveMaxY = -DBL_MAX;
+    Box bBox;
+    bBox.min.x = DBL_MAX;
+    bBox.min.y = DBL_MAX;
+    bBox.max.x = -DBL_MAX;
+    bBox.max.y = -DBL_MAX;
 
     for (size_t i = 0; i < size(); ++i)
     {
-        progressiveMinX = std::min(progressiveMinX, at(i).x);
-        progressiveMinY = std::min(progressiveMinY, at(i).y);
-        progressiveMaxX = std::max(progressiveMaxX, at(i).x);
-        progressiveMaxY = std::max(progressiveMaxY, at(i).y);
+        bBox.min.x = std::min(bBox.min.x, at(i).x);
+        bBox.min.y = std::min(bBox.min.y, at(i).y);
+        bBox.max.x = std::max(bBox.max.x, at(i).x);
+        bBox.max.y = std::max(bBox.max.y, at(i).y);
     }
 
-    if (minX)
-    {
-        *minX = progressiveMinX;
-    }
-    if (maxX)
-    {
-        *maxX = progressiveMaxX;
-    }
-    if (minY)
-    {
-        *minY = progressiveMinY;
-    }
-    if (maxY)
-    {
-        *maxY = progressiveMaxY;
-    }
+    // Add buffer space.
+    bBox.min.x -= offset;
+    bBox.min.y -= offset;
+    bBox.max.x += offset;
+    bBox.max.y += offset;
+
+    return bBox;
 }
 
+double Box::length(size_t dimension) const
+{
+    if (dimension == 0)
+    {
+        return (max.x - min.x);
+    }
+    return (max.y - min.y);
+}
+
+double Box::width(void) const
+{
+    return (max.x - min.x);
+}
+
+double Box::height(void) const
+{
+    return (max.y - min.y);
+}
 
 Polygon::Polygon()
-    : PolygonInterface()
+    : PolygonInterface(),
+      _id(0)
 {
     clear();
 }
@@ -209,6 +260,7 @@ Polygon::Polygon()
 
 Polygon::Polygon(const int pn)
     : PolygonInterface(),
+      _id(0),
       ps(pn)
 {
 }
@@ -225,6 +277,89 @@ Polygon::Polygon(const PolygonInterface& poly)
     }
 }
 
+
+Polygon PolygonInterface::boundingRectPolygon(void) const
+{
+    Box boundingBox = offsetBoundingBox(0.0);
+    
+    return Rectangle(boundingBox.min, boundingBox.max);
+}
+
+static Point unitNormalForEdge(const Point &pt1, const Point &pt2)
+{
+    if (pt2 == pt1)
+    {
+        return Point(0, 0);
+    }
+    double dx = pt2.x - pt1.x;
+    double dy = pt2.y - pt1.y;
+    double f = 1.0 / std::sqrt((dx * dx) + (dy * dy));
+    dx *= f;
+    dy *= f;
+    return Point(dy, -dx);
+}
+
+Polygon PolygonInterface::offsetPolygon(double offset) const
+{
+    Polygon newPoly;
+    newPoly._id = id();
+    if (offset == 0)
+    {
+        for (size_t i = 0; i < size(); ++i)
+        {
+            newPoly.ps.push_back(at(i));
+        }
+        return newPoly;
+    }
+
+    size_t numOfEdges = size();
+    std::vector<Vector> normals(numOfEdges);
+    for (size_t i = 0; i < numOfEdges; ++i)
+    {
+        normals[i] = unitNormalForEdge(at(i), at((i + 1) % numOfEdges));
+    }
+
+    size_t j = numOfEdges - 1;
+    for (size_t i = 0; i < numOfEdges; ++i)
+    {
+        double R = 1 + ((normals[i].x * normals[j].x) + 
+                (normals[i].y * normals[j].y));
+        if (((normals[j].x * normals[i].y) - (normals[i].x * normals[j].y)) *
+                offset >= 0)
+        {
+            double q = offset / R;
+            Point pt = Point(at(i).x + (normals[j].x + normals[i].x) * q,
+                    at(i).y + (normals[j].y + normals[i].y) * q);
+
+            pt.id = id();
+            pt.vn = newPoly.size();
+            newPoly.ps.push_back(pt);
+        }
+        else
+        {
+            Point pt1 = Point(at(i).x + normals[j].x * offset, 
+                    at(i).y + normals[j].y * offset);
+            Point pt2 = at(i);
+            Point pt3 = Point(at(i).x + normals[i].x * offset,
+                    at(i).y + normals[i].y * offset);
+
+            pt1.id = id();
+            pt1.vn = newPoly.size();
+            newPoly.ps.push_back(pt1);
+
+            pt2.id = id();
+            pt2.vn = newPoly.size();
+            newPoly.ps.push_back(pt2);
+
+            pt3.id = id();
+            pt3.vn = newPoly.size();
+            newPoly.ps.push_back(pt3);
+        }
+        j = i;
+    }
+
+    return newPoly;
+}
 
 void Polygon::clear(void)
 {
@@ -256,6 +391,13 @@ const Point& Polygon::at(size_t index) const
     COLA_ASSERT(index < size());
 
     return ps[index];
+}
+
+void Polygon::setPoint(size_t index, const Point& point)
+{
+    COLA_ASSERT(index < size());
+
+    ps[index] = point;
 }
 
 
@@ -388,7 +530,13 @@ void Polygon::translate(const double xDist, const double yDist)
 
 Polygon Polygon::simplify(void) const
 {
+    // Copy the PolyLine.
     Polygon simplified = *this;
+    
+    std::vector<std::pair<size_t, Point> >& checkpoints = 
+            simplified.checkpointsOnRoute;
+    bool hasCheckpointInfo = !(checkpoints.empty());
+
     std::vector<Point>::iterator it = simplified.ps.begin();
     if (it != simplified.ps.end()) ++it;
 
@@ -399,8 +547,38 @@ Polygon Polygon::simplify(void) const
                 simplified.ps[j]) == 0)
         {
             // These three points make up two collinear segments, so just
-            // compine them into a single segment.
+            // combine them into a single segment.
             it = simplified.ps.erase(it);
+
+            if (hasCheckpointInfo)
+            {
+                // 0     1     2     3     4   <- vertices on path
+                // +-----+-----+-----+-----+
+                // 0  1  2  3  4  5  6  7  8   <- checkpoints on points & edges
+                //             |
+                //             \_ deletedPointValue = 4
+                //
+                // If 1-2-3 is collinear then we want to end up with
+                //
+                // 0     1           2     3
+                // +-----+-----------+-----+
+                // 0  1  2  3  3  3  4  5  6
+                //
+                //
+                //
+                size_t deletedPointValue = (j - 1) - 1;
+                for (size_t i = 0; i < checkpoints.size(); ++i)
+                {
+                    if (checkpoints[i].first == deletedPointValue)
+                    {
+                        checkpoints[i].first -= 1;
+                    }
+                    else if (checkpoints[i].first > deletedPointValue)
+                    {
+                        checkpoints[i].first -= 2;
+                    }
+                }
+            }
         }
         else
         {
@@ -410,6 +588,39 @@ Polygon Polygon::simplify(void) const
     }
 
     return simplified;
+}
+
+std::vector<Point> Polygon::checkpointsOnSegment(size_t segmentLowerIndex,
+        int indexModifier) const
+{
+    std::vector<Point> checkpoints;
+    // 0     1     2     3     4   <- vertices on path
+    // +-----+-----+-----+-----+
+    // 0  1  2  3  4  5  6  7  8   <- checkpoints on points & edges
+ 
+    size_t checkpointLowerValue = 2 * segmentLowerIndex;
+    size_t checkpointUpperValue = checkpointLowerValue + 2;
+    size_t index = 0;
+
+    if (indexModifier > 0)
+    {
+        checkpointLowerValue++;
+    }
+    else if (indexModifier < 0)
+    {
+        checkpointUpperValue--;
+    }
+
+    while (index < checkpointsOnRoute.size())
+    {
+        if ((checkpointsOnRoute[index].first >= checkpointLowerValue) &&
+                (checkpointsOnRoute[index].first <= checkpointUpperValue))
+        {
+            checkpoints.push_back(checkpointsOnRoute[index].second);
+        }
+        ++index;
+    }
+    return checkpoints;
 }
 
 
@@ -529,6 +740,7 @@ Rectangle::Rectangle(const Point& topLeft, const Point& bottomRight)
 
 Rectangle::Rectangle(const Point& centre, const double width, 
         const double height)
+    : Polygon(4)
 {
     double halfWidth  = width / 2.0;
     double halfHeight = height / 2.0;

@@ -39,7 +39,7 @@
 #include "sp-clippath.h"
 #include "sp-mask.h"
 #include "sp-item.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "sp-root.h"
 #include "sp-shape.h"
 #include "style.h"

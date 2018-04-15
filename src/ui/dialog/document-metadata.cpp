@@ -23,7 +23,7 @@
 
 #include "inkscape.h"
 #include "rdf.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "ui/widget/entity-entry.h"
 #include "verbs.h"
 #include "xml/node-event-vector.h"

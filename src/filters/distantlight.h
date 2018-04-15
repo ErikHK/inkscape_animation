@@ -15,7 +15,7 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include "sp-object.h"
+#include "object/sp-object.h"
 
 #define SP_FEDISTANTLIGHT(obj) (dynamic_cast<SPFeDistantLight*>((SPObject*)obj))
 #define SP_IS_FEDISTANTLIGHT(obj) (dynamic_cast<const SPFeDistantLight*>((SPObject*)obj) != NULL)

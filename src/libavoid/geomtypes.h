@@ -3,7 +3,7 @@
  *
  * libavoid - Fast, Incremental, Object-avoiding Line Router
  *
- * Copyright (C) 2004-2009  Monash University
+ * Copyright (C) 2004-2014  Monash University
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Michael Wybrow <mjwybrow@users.sourceforge.net>
+ * Author(s):   Michael Wybrow
 */
 
 //! @file  geomtypes.h
@@ -29,21 +29,27 @@
 #ifndef AVOID_GEOMTYPES_H
 #define AVOID_GEOMTYPES_H
 
-#include <cstddef>
+#include <cstdlib>
 #include <vector>
 #include <utility>
+
+#include "libavoid/dllexport.h"
 
 
 namespace Avoid
 {
 
+static const size_t XDIM = 0;
+static const size_t YDIM = 1;
+
+class Polygon;
 
 //! @brief  The Point class defines a point in the plane.
 //!
 //! Points consist of an x and y value.  They may also have an ID and vertex
 //! number associated with them.
 //!
-class Point
+class AVOID_EXPORT Point
 {
     public:
         //! @brief  Default constructor.
@@ -60,8 +66,17 @@ class Point
         //!
         //! @param[in]  rhs  The point to compare with this one.
         //! @return          The result of the comparison.
-        //!
+        //! @sa         equals()
         bool operator==(const Point& rhs) const;
+        //! @brief  Comparison operator. Returns true if at same position,
+        //!         or at effectively the same position for a given value of
+        //!         epsilson.
+        //!
+        //! @param[in]  rhs      The point to compare with this one.
+        //! @param[in]  epsilon  Value of epsilon to use during comparison.
+        //! @return              The result of the comparison.
+        //! @sa         operator==()
+        bool equals(const Point& rhs, double epsilon = 0.0001) const;
         //! @brief  Comparison operator. Returns true if at different positions.
         //!
         //! @param[in]  rhs  The point to compare with this one.
@@ -82,9 +97,12 @@ class Point
         //!
         //! @param[in]  dimension  The dimension:  0 for x, 1 for y.
         //! @return                The component of the point in that dimension.
-        double& operator[](const unsigned int dimension);
-        const double& operator[](const unsigned int dimension) const;
-        
+        double& operator[](const size_t dimension);
+        const double& operator[](const size_t dimension) const;
+
+        Point operator+(const Point& rhs) const;
+        Point operator-(const Point& rhs) const;
+
         //! The x position.
         double x;
         //! The y position.
@@ -101,15 +119,35 @@ class Point
 //!
 static const unsigned short kUnassignedVertexNumber = 8;
 
+//! Constant value representing a ShapeConnectionPin.
+static const unsigned short kShapeConnectionPin = 9;
+
 
 //! @brief  A vector, represented by the Point class.
 //!
 typedef Point Vector;
 
+//! @brief  A bounding box, represented by the top-left and
+//!         bottom-right corners.
+//!
+class AVOID_EXPORT Box
+{
+    public:
+        //! The top-left point.
+        Point min;
+        //! The bottom-right point.
+        Point max;
+
+        double length(size_t dimension) const;
+        double width(void) const;
+        double height(void) const;
+};
+
+
 
 //! @brief  A common interface used by the Polygon classes.
 //!
-class PolygonInterface
+class AVOID_EXPORT PolygonInterface
 {
     public:
         //! @brief  Constructor.
@@ -127,23 +165,27 @@ class PolygonInterface
         //! @brief  Returns a specific point in the polygon.
         //! @param[in]  index  The array index of the point to be returned.
         virtual const Point& at(size_t index) const = 0;
-        //! @brief  Returns the bounding rectangle that contains this polygon.
+        //! @brief  Returns the bounding rectangle for this polygon.
         //!
-        //! If a NULL pointer is passed for any of the arguments, then that
-        //! value is ignored and not returned.
+        //! @return A new Rectangle representing the bounding box.
+        Polygon boundingRectPolygon(void) const;
+        //! @brief  Returns the bounding rectangle that contains this polygon
+        //!         with optionally some buffer space around it for routing.
         //!
-        //! @param[out]  minX  The left hand side of the bounding box.
-        //! @param[out]  minY  The top of the bounding box.
-        //! @param[out]  maxX  The right hand side of the bounding box.
-        //! @param[out]  maxY  The bottom of the bounding box.
-        void getBoundingRect(double *minX, double *minY,
-                double *maxX, double *maxY) const;
+        //! If a buffer distance of zero is given, then this method returns
+        //! the bounding rectangle for the shape's polygon.
+        //!
+        //! @param     offset  Extra distance to pad each side of the rect.
+        //! @return    The bounding box for the polygon.
+        Box offsetBoundingBox(double offset) const;
+
+        Polygon offsetPolygon(double offset) const;
 };
 
 
 //! @brief  A line between two points. 
 //!
-class Edge
+class AVOID_EXPORT Edge
 {
     public:
         //! The first point.
@@ -151,12 +193,6 @@ class Edge
         //! The second point.
         Point b;
 };
-
-
-//! @brief  A bounding box, represented with an Edge between top-left and
-//!         bottom-right corners.
-//!
-typedef Edge BBox;
 
 
 class Router;
@@ -168,7 +204,7 @@ class ReferencingPolygon;
 //! @note The Rectangle class can be used as an easy way of constructing a
 //!       square or rectangular polygon.
 //!
-class Polygon : public PolygonInterface
+class AVOID_EXPORT Polygon : public PolygonInterface
 {
     public:
         //! @brief  Constructs an empty polygon (with zero points). 
@@ -181,6 +217,9 @@ class Polygon : public PolygonInterface
         //! on whether it is a Polygon or Polyline.  Shape polygons are always
         //! considered to be closed, meaning the last point joins back to the
         //! first point.
+        //!
+        //! The values for points can be set by setting the Polygon:ps vector,
+        //! or via the Polygon::setPoint() method.
         //!
         //! @param[in]  n  Number of points in the polygon.
         //!
@@ -201,6 +240,10 @@ class Polygon : public PolygonInterface
         //! @brief  Returns a specific point in the polygon.
         //! @param[in]  index  The array index of the point to be returned.
         const Point& at(size_t index) const;
+        //! @brief  Sets a position for a particular point in the polygon..
+        //! @param[in]  index  The array index of the point to be set.
+        //! @param[in]  point  The point value to be assigned..
+        void setPoint(size_t index, const Point& point);
         //! @brief  Returns a simplified Polyline, where all collinear line
         //!         segments have been collapsed down into single line 
         //!         segments.
@@ -256,6 +299,27 @@ class Polygon : public PolygonInterface
         //! @note   This vector will currently only be populated for polygons 
         //!         returned by curvedPolyline().  
         std::vector<char> ts;
+
+        // @brief  If used, denotes checkpoints through which the route travels
+        //         and the relevant segment of the route.
+        //
+        // Set and used by the orthogonal routing code. Note the first value
+        // in the pair doesn't correspond to the segment index containing the 
+        // checkpoint, but rather the segment or bendpoint on which it lies.
+        //    0 if on ps[0]
+        //    1 if on line ps[0]-ps[1]
+        //    2 if on ps[1]
+        //    3 if on line ps[1]-ps[2]
+        //    etc.
+        std::vector<std::pair<size_t, Point> > checkpointsOnRoute;
+
+        // Returns true if at least one checkpoint lies on the line segment
+        // or at either end of it.  An indexModifier of +1 will cause it to
+        // ignore a checkpoint on the corner at the start of the segment and
+        // -1 will cause it to do the same for the corner at the end of the
+        // segment.
+        std::vector<Point> checkpointsOnSegment(size_t segmentLowerIndex,
+                int indexModifier = 0) const;
 };
 
 
@@ -269,7 +333,7 @@ typedef Polygon PolyLine;
 //! This type of Polygon is used to accurately represent cluster boundaries 
 //! made up from the corner points of shapes.
 //!
-class ReferencingPolygon : public PolygonInterface
+class AVOID_EXPORT ReferencingPolygon : public PolygonInterface
 {
     public:
         ReferencingPolygon();
@@ -281,14 +345,15 @@ class ReferencingPolygon : public PolygonInterface
         const Point& at(size_t index) const;
 
         int _id;
-        std::vector<std::pair<const Polygon *, unsigned short> > ps;
+        std::vector<std::pair<const Polygon *, unsigned short> > psRef;
+        std::vector<Point> psPoints;
 };
 
 
 //! @brief  A Rectangle, a simpler way to define the polygon for square or
 //!         rectangular shapes.
 //!
-class Rectangle : public Polygon
+class AVOID_EXPORT Rectangle : public Polygon
 {
     public:
         //! @brief  Constructs a rectangular polygon given two opposing 

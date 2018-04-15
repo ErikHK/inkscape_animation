@@ -13,17 +13,15 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include <glibmm/i18n.h>
-
 #include "live_effects/lpe-tangent_to_curve.h"
-#include "sp-path.h"
 #include "display/curve.h"
-
-#include <2geom/path.h>
-#include <2geom/transforms.h>
-
-#include "knot-holder-entity.h"
 #include "knotholder.h"
+
+#include "object/sp-shape.h"
+#include "object/sp-object-group.h"
+
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -64,10 +62,10 @@ LPETangentToCurve::LPETangentToCurve(LivePathEffectObject *lpeobject) :
     show_orig_path = true;
     _provides_knotholder_entities = true;
 
-    registerParameter( dynamic_cast<Parameter *>(&angle) );
-    registerParameter( dynamic_cast<Parameter *>(&t_attach) );
-    registerParameter( dynamic_cast<Parameter *>(&length_left) );
-    registerParameter( dynamic_cast<Parameter *>(&length_right) );
+    registerParameter(&angle);
+    registerParameter(&t_attach);
+    registerParameter(&length_left);
+    registerParameter(&length_right);
 }
 
 LPETangentToCurve::~LPETangentToCurve()
@@ -96,22 +94,22 @@ LPETangentToCurve::doEffect_pwd2 (Geom::Piecewise<Geom::D2<Geom::SBasis> > const
 }
 
 void
-LPETangentToCurve::addKnotHolderEntities(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item) {
+LPETangentToCurve::addKnotHolderEntities(KnotHolder *knotholder, SPItem *item) {
     {
         KnotHolderEntity *e = new TtC::KnotHolderEntityAttachPt(this);
-        e->create( desktop, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN,
+        e->create( NULL, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN,
                    _("Adjust the point of attachment of the tangent") );
         knotholder->add(e);
     }
     {
         KnotHolderEntity *e = new TtC::KnotHolderEntityLeftEnd(this);
-        e->create( desktop, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN,
+        e->create( NULL, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN,
                     _("Adjust the <b>left</b> end of the tangent") );
         knotholder->add(e);
     }
     {
         KnotHolderEntity *e = new TtC::KnotHolderEntityRightEnd(this);
-        e->create( desktop, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN,
+        e->create( NULL, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN,
                    _("Adjust the <b>right</b> end of the tangent") );
         knotholder->add(e);
     }

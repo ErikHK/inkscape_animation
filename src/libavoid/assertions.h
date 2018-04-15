@@ -19,11 +19,13 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Michael Wybrow <mjwybrow@users.sourceforge.net>
+ * Author(s):   Michael Wybrow
 */
 
 #ifndef AVOID_ASSERTIONS_H
 #define AVOID_ASSERTIONS_H
+
+#define COLA_UNUSED(expr) do { (void)(expr); } while (0)
 
 #ifdef NDEBUG 
 
@@ -31,7 +33,16 @@
 
 #else // Not NDEBUG
 
-  #if defined(USE_ASSERT_EXCEPTIONS)
+  #ifdef _MSC_VER
+    // Compiling with Microsoft Visual C++ compiler
+
+    // Prevent inclusion of min and max macros.
+    #define NOMINMAX
+
+    #include <afx.h>
+    #define COLA_ASSERT(expr) ASSERT(expr)
+
+  #elif defined(USE_ASSERT_EXCEPTIONS)
 
     #include "libvpsc/assertions.h"
 

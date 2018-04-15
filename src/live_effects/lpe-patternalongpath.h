@@ -43,7 +43,7 @@ public:
 
     void addCanvasIndicators(SPLPEItem const */*lpeitem*/, std::vector<Geom::PathVector> &hp_vec);
     
-    virtual void addKnotHolderEntities(KnotHolder * knotholder, SPDesktop * desktop, SPItem * item);
+    virtual void addKnotHolderEntities(KnotHolder * knotholder, SPItem * item);
 
     PathParam  pattern;
 
@@ -60,7 +60,10 @@ private:
     ScalarParam  tang_offset;
     BoolParam    prop_units;
     BoolParam    vertical_pattern;
+    BoolParam    hide_knot;
     ScalarParam  fuse_tolerance;
+    KnotHolderEntity * _knot_entity;
+    Geom::PathVector helper_path;
     void on_pattern_pasted();
 
     LPEPatternAlongPath(const LPEPatternAlongPath&);

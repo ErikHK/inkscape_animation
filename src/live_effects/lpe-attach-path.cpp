@@ -4,22 +4,12 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include <glibmm/i18n.h>
 #include <math.h>
-
 #include "live_effects/lpe-attach-path.h"
-
 #include "display/curve.h"
-#include "sp-item.h"
-#include "2geom/path.h"
-#include "sp-shape.h"
-#include "sp-text.h"
-#include "2geom/bezier-curve.h"
 #include "2geom/path-sink.h"
-#include "parameter/parameter.h"
-#include "live_effects/parameter/point.h"
-#include "parameter/originalpath.h"
-#include "2geom/affine.h"
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
 namespace Inkscape {
 namespace LivePathEffect {

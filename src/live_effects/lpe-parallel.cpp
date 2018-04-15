@@ -11,17 +11,14 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include <glibmm/i18n.h>
-
 #include "live_effects/lpe-parallel.h"
-#include "sp-shape.h"
+#include "object/sp-shape.h"
 #include "display/curve.h"
 
-#include <2geom/path.h>
-#include <2geom/transforms.h>
-
-#include "knot-holder-entity.h"
 #include "knotholder.h"
+
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -54,9 +51,9 @@ LPEParallel::LPEParallel(LivePathEffectObject *lpeobject) :
     show_orig_path = true;
     _provides_knotholder_entities = true;
 
-    registerParameter(dynamic_cast<Parameter *>(&offset_pt));
-    registerParameter( dynamic_cast<Parameter *>(&length_left) );
-    registerParameter( dynamic_cast<Parameter *>(&length_right) );
+    registerParameter(&offset_pt);
+    registerParameter(&length_left);
+    registerParameter(&length_right);
 }
 
 LPEParallel::~LPEParallel()

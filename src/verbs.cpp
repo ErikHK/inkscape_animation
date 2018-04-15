@@ -67,7 +67,7 @@
 #include "sp-flowtext.h"
 #include "sp-guide.h"
 #include "splivarot.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "text-chemistry.h"
 #include "ui/tools-switch.h"
 #include "ui/dialog/align-and-distribute.h"

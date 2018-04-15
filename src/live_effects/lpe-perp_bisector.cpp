@@ -11,18 +11,16 @@
  *
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
-
-#include <glibmm/i18n.h>
-
 #include "live_effects/lpe-perp_bisector.h"
 #include "display/curve.h"
-#include "sp-path.h"
 #include "line-geometry.h"
-#include "sp-lpe-item.h"
-#include <2geom/path.h>
 
-#include "knot-holder-entity.h"
+#include "object/sp-path.h"
+
 #include "knotholder.h"
+
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -102,8 +100,8 @@ LPEPerpBisector::LPEPerpBisector(LivePathEffectObject *lpeobject) :
     _provides_knotholder_entities = true;
 
     // register all your parameters here, so Inkscape knows which parameters this effect has:
-    registerParameter( dynamic_cast<Parameter *>(&length_left) );
-    registerParameter( dynamic_cast<Parameter *>(&length_right) );
+    registerParameter(&length_left);
+    registerParameter(&length_right);
 }
 
 LPEPerpBisector::~LPEPerpBisector()
@@ -115,7 +113,7 @@ LPEPerpBisector::doOnApply (SPLPEItem const*/*lpeitem*/)
 {
     /* make the path a straight line */
     /**
-    SPCurve* curve = sp_path_get_curve_for_edit (SP_PATH(lpeitem)); // TODO: Should we use sp_shape_get_curve()?
+    SPCurve* curve = sp_path_getCurveForEdit (SP_PATH(lpeitem)); // TODO: Should we use sp_shape_get_curve()?
 
     Geom::Point A(curve->first_point());
     Geom::Point B(curve->last_point());
@@ -123,7 +121,7 @@ LPEPerpBisector::doOnApply (SPLPEItem const*/*lpeitem*/)
     SPCurve *c = new SPCurve();
     c->moveto(A);
     c->lineto(B);
-    // TODO: Why doesn't sp_path_set_original_curve(SP_PATH(lpeitem), c, TRUE, true) work?
+    // TODO: Why doesn't sp_path_set_curve_before_LPE(SP_PATH(lpeitem), c, TRUE, true) work?
     SP_PATH(lpeitem)->original_curve = c->ref();
     c->unref();
     **/

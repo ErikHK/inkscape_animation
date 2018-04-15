@@ -12,33 +12,29 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include "sp-shape.h"
-#include "sp-path.h"
 #include "display/curve.h"
 #include "live_effects/lpe-knot.h"
-#include "svg/svg.h"
-#include "style.h"
 #include "knot-holder-entity.h"
 #include "knotholder.h"
 
-#include <glibmm/i18n.h>
 #include <gdk/gdk.h>
 
 #include <2geom/sbasis-to-bezier.h>
-#include <2geom/sbasis.h>
-#include <2geom/d2.h>
-#include <2geom/path.h>
 #include <2geom/bezier-to-sbasis.h>
 #include <2geom/basic-intersection.h>
-#include <2geom/exception.h>
 #include "helper/geom.h"
+
+#include "object/sp-shape.h"
+#include "object/sp-path.h"
+#include "style.h"
 
 // for change crossing undo
 #include "verbs.h"
 #include "document.h"
 #include "document-undo.h"
 
-#include <exception>
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -102,7 +98,7 @@ findShadowedTime(Geom::Path const &patha, std::vector<Geom::Point> const &pt_and
 
     Affine mat = from_basis( T, N, pt_and_dir[0] );
     mat = mat.inverse();
-    Path p = patha * mat;
+    Geom::Path p = patha * mat;
     
     std::vector<double> times;
     
@@ -204,7 +200,7 @@ CrossingPoints::CrossingPoints(Geom::PathVector const &paths) : std::vector<Cros
                             cp.tj = times[k].second + jj;
                             push_back(cp);
                         }else{
-                            std::cout<<"ooops: find_(self)_intersections returned NaN:";
+                            std::cout<<"ooops: find_(self)_intersections returned NaN:" << std::endl;
                             //std::cout<<"intersection "<<i<<"["<<ii<<"](NaN)= "<<j<<"["<<jj<<"](NaN)\n";
                         }
                     }
@@ -361,12 +357,12 @@ LPEKnot::LPEKnot(LivePathEffectObject *lpeobject) :
     switcher(0.,0.)
 {
     // register all your parameters here, so Inkscape knows which parameters this effect has:
-    registerParameter( dynamic_cast<Parameter *>(&interruption_width) );
-    registerParameter( dynamic_cast<Parameter *>(&prop_to_stroke_width) );
-    registerParameter( dynamic_cast<Parameter *>(&add_stroke_width) );
-    registerParameter( dynamic_cast<Parameter *>(&add_other_stroke_width) );
-    registerParameter( dynamic_cast<Parameter *>(&switcher_size) );
-    registerParameter( dynamic_cast<Parameter *>(&crossing_points_vector) );
+    registerParameter(&interruption_width);
+    registerParameter(&prop_to_stroke_width);
+    registerParameter(&add_stroke_width);
+    registerParameter(&add_other_stroke_width);
+    registerParameter(&switcher_size);
+    registerParameter(&crossing_points_vector);
 
     _provides_knotholder_entities = true;
 }
@@ -485,7 +481,7 @@ LPEKnot::doEffect_path (Geom::PathVector const &path_in)
 //                std::cout<<"fusing first and last component\n";
                 ++beg_comp;
                 --end_comp;
-                Path first = gpaths[i0].portion(dom.back());
+                Geom::Path first = gpaths[i0].portion(dom.back());
                 //FIXME: stitching should not be necessary (?!?)
                 first.setStitching(true);
                 first.append(gpaths[i0].portion(dom.front()));
@@ -515,20 +511,16 @@ collectPathsAndWidths (SPLPEItem const *lpeitem, Geom::PathVector &paths, std::v
         }
     }
     else if (SP_IS_SHAPE(lpeitem)) {
-        SPCurve * c = NULL;
-        if (SP_IS_PATH(lpeitem)) {
-            c = SP_PATH(lpeitem)->get_curve_for_edit();
-        } else {
-            c = SP_SHAPE(lpeitem)->getCurve();
-        }
+        SPCurve * c = SP_SHAPE(lpeitem)->getCurve();
         if (c) {
             Geom::PathVector subpaths = pathv_to_linear_and_cubic_beziers(c->get_pathvector());
             for (unsigned i=0; i<subpaths.size(); i++){
                 paths.push_back(subpaths[i]);
-                //FIXME: do we have to be more carefull when trying to access stroke width?
+                //FIXME: do we have to be more careful when trying to access stroke width?
                 stroke_widths.push_back(lpeitem->style->stroke_width.computed);
             }
         }
+        c->unref();
     }
 }
 
@@ -620,10 +612,10 @@ LPEKnot::addCanvasIndicators(SPLPEItem const */*lpeitem*/, std::vector<Geom::Pat
     hp_vec.push_back(pathv);
 }
 
-void LPEKnot::addKnotHolderEntities(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item)
+void LPEKnot::addKnotHolderEntities(KnotHolder *knotholder, SPItem *item)
 {
     KnotHolderEntity *e = new KnotHolderEntityCrossingSwitcher(this);
-    e->create( desktop, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN,
+    e->create( NULL, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN,
                _("Drag to select a crossing, click to flip it") );
     knotholder->add(e);
 };

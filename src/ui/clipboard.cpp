@@ -70,7 +70,7 @@
 #include "sp-rect.h"
 #include "sp-use.h"
 #include "sp-symbol.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "live_effects/lpeobject.h"
 #include "live_effects/lpeobject-reference.h"
 #include "live_effects/parameter/path.h"
@@ -83,7 +83,7 @@
 #include "util/units.h"
 #include "helper/png-write.h"
 #include "svg/svg-color.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "snap.h"
 #include "persp3d.h"
 #include "preferences.h"
@@ -654,6 +654,57 @@ Glib::ustring ClipboardManagerImpl::getShapeOrTextObjectId(SPDesktop *desktop)
     gchar const *svgd = repr->attribute("id");
     return svgd;
 }
+
+/**
+ * Get all objects id  from the clipboard.
+ * @return A vector containing all IDs or empty if no shape or text item was found.
+ * type. Set to "*" to retrieve all elements of the types vector inside, feel free to populate more
+ */
+std::vector<Glib::ustring> ClipboardManagerImpl::getElementsOfType(SPDesktop *desktop, gchar const* type)
+{
+    std::vector<Glib::ustring> result;
+    SPDocument *tempdoc = _retrieveClipboard(); // any target will do here
+    if ( tempdoc == NULL ) {
+        _userWarn(desktop, _("Nothing on the clipboard."));
+        return result;
+    }
+    Inkscape::XML::Node *root = tempdoc->getReprRoot();
+
+    // 1293979: strip out the defs of the document
+    root->removeChild(tempdoc->getDefs()->getRepr());
+    std::vector<Inkscape::XML::Node const *> reprs;
+    if (strcmp(type, "*") == 0){
+        //TODO:Fill vector with all possible elements
+        std::vector<Glib::ustring> types;
+        types.push_back((Glib::ustring)"svg:path");
+        types.push_back((Glib::ustring)"svg:circle");
+        types.push_back((Glib::ustring)"svg:rect");
+        types.push_back((Glib::ustring)"svg:ellipse");
+        types.push_back((Glib::ustring)"svg:text");
+        types.push_back((Glib::ustring)"svg:g");
+        types.push_back((Glib::ustring)"svg:image");
+        for (auto i=types.begin();i!=types.end();++i) {
+            Glib::ustring type_elem = *i;
+            std::vector<Inkscape::XML::Node const *> reprs_found = sp_repr_lookup_name_many(root, type_elem.c_str(), -1); // unlimited search depth
+            reprs.insert(reprs.end(), reprs_found.begin(), reprs_found.end());
+        }
+    } else {
+        reprs = sp_repr_lookup_name_many(root, type, -1); // unlimited search depth
+    }
+    for (auto i=reprs.begin();i!=reprs.end();++i) {
+        Inkscape::XML::Node const * node = *i;
+        result.push_back(node->attribute("id"));
+    }
+    if ( result.empty() ) {
+        _userWarn(desktop, ((Glib::ustring)_("Clipboard does not contain any.") + (Glib::ustring)type).c_str());
+        tempdoc->doUnref();
+        return result;
+    }
+    return result;
+}
+
+
+
 
 /**
  * Iterate over a list of items and copy them to the clipboard.

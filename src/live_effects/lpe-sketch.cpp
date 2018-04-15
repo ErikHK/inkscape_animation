@@ -13,20 +13,13 @@
 
 #include "live_effects/lpe-sketch.h"
 
-#include <glibmm/i18n.h>
-
 // You might need to include other 2geom files. You can add them here:
-#include <2geom/path.h>
-#include <2geom/sbasis.h>
-#include <2geom/sbasis-geometric.h>
 #include <2geom/sbasis-math.h>
 #include <2geom/bezier-to-sbasis.h>
-#include <2geom/sbasis-to-bezier.h>
-#include <2geom/d2.h>
-#include <2geom/sbasis-math.h>
-#include <2geom/piecewise.h>
-#include <2geom/crossing.h>
 #include <2geom/path-intersection.h>
+
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -69,25 +62,25 @@ LPESketch::LPESketch(LivePathEffectObject *lpeobject) :
     // register all your parameters here, so Inkscape knows which parameters this effect has:
     //Add some comment in the UI:  *warning* the precise output of this effect might change in future releases!
     //convert to path if you want to keep exact output unchanged in future releases...
-    //registerParameter( dynamic_cast<Parameter *>(&testpointA) );
-    registerParameter( dynamic_cast<Parameter *>(&nbiter_approxstrokes) );
-    registerParameter( dynamic_cast<Parameter *>(&strokelength) );
-    registerParameter( dynamic_cast<Parameter *>(&strokelength_rdm) );
-    registerParameter( dynamic_cast<Parameter *>(&strokeoverlap) );
-    registerParameter( dynamic_cast<Parameter *>(&strokeoverlap_rdm) );
-    registerParameter( dynamic_cast<Parameter *>(&ends_tolerance) );
-    registerParameter( dynamic_cast<Parameter *>(&parallel_offset) );
-    registerParameter( dynamic_cast<Parameter *>(&tremble_size) );
-    registerParameter( dynamic_cast<Parameter *>(&tremble_frequency) );
+    //registerParameter(&testpointA) );
+    registerParameter(&nbiter_approxstrokes);
+    registerParameter(&strokelength);
+    registerParameter(&strokelength_rdm);
+    registerParameter(&strokeoverlap);
+    registerParameter(&strokeoverlap_rdm);
+    registerParameter(&ends_tolerance);
+    registerParameter(&parallel_offset);
+    registerParameter(&tremble_size);
+    registerParameter(&tremble_frequency);
 #ifdef LPE_SKETCH_USE_CONSTRUCTION_LINES
-    registerParameter( dynamic_cast<Parameter *>(&nbtangents) );
-    registerParameter( dynamic_cast<Parameter *>(&tgt_places_rdmness) );
-    registerParameter( dynamic_cast<Parameter *>(&tgtscale) );
-    registerParameter( dynamic_cast<Parameter *>(&tgtlength) );
-    registerParameter( dynamic_cast<Parameter *>(&tgtlength_rdm) );
+    registerParameter(&nbtangents);
+    registerParameter(&tgt_places_rdmness);
+    registerParameter(&tgtscale);
+    registerParameter(&tgtlength);
+    registerParameter(&tgtlength_rdm);
 #ifdef LPE_SKETCH_USE_CURVATURE
-    registerParameter( dynamic_cast<Parameter *>(&min_curvature) );
-    registerParameter( dynamic_cast<Parameter *>(&max_curvature) );
+    registerParameter(&min_curvature);
+    registerParameter(&max_curvature);
 #endif
 #endif
 
@@ -114,7 +107,7 @@ LPESketch::LPESketch(LivePathEffectObject *lpeobject) :
     tgtlength_rdm.param_set_range(0, 1.);
     tgt_places_rdmness.param_set_range(0, 1.);
     //this is not very smart, but required to avoid having lot of tangents stacked on short components.
-    //Nota: we could specify a density instead of an absolute number, but this would be scale dependant.
+    //Note: we could specify a density instead of an absolute number, but this would be scale dependent.
     concatenate_before_pwd2 = true;
 #endif
 }

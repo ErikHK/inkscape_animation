@@ -86,11 +86,6 @@ cr_pseudo_to_string (CRPseudo const * a_this)
                 name = (guchar *) g_strndup (a_this->name->stryng->str, 
                                   a_this->name->stryng->len);
 
-                if (a_this->extra) {
-                        arg = (guchar *) g_strndup (a_this->extra->stryng->str,
-                                         a_this->extra->stryng->len);
-                }
-
                 if (name) {
                         g_string_append_printf (str_buf, "%s(", name);
                         g_free (name);
@@ -158,9 +153,14 @@ cr_pseudo_destroy (CRPseudo * a_this)
                 a_this->name = NULL;
         }
 
-        if (a_this->extra) {
-                cr_string_destroy (a_this->extra);
-                a_this->extra = NULL;
+        if (a_this->sel_name) {
+                cr_string_destroy (a_this->sel_name);
+                a_this->sel_name = NULL;
+        }
+
+        if (a_this->term) {
+                cr_term_destroy (a_this->term);
+                a_this->term = NULL;
         }
 
         g_free (a_this);

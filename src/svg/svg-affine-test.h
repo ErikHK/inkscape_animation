@@ -67,7 +67,9 @@ public:
 
     void testWriteIdentity()
     {
-        TS_ASSERT_EQUALS(sp_svg_transform_write(Geom::identity()) , (void*)0)
+        gchar str = sp_svg_transform_write(Geom::identity());
+        TS_ASSERT_EQUALS(str, NULL);
+        g_free(str);
     }
 
     void testReadMatrix()

@@ -50,7 +50,7 @@ MangleCache mangle_cache;
 
 }
 
-Util::ptr_shared<char> demangle(char const *name) {
+Util::ptr_shared demangle(char const *name) {
     MangleCache::iterator found=mangle_cache.find(name);
 
     char const *result;

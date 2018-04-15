@@ -31,7 +31,7 @@
 #include "document.h"
 #include "util/units.h"
 #include "ui/shape-editor.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "document-undo.h"
 #include "inkscape.h"
 #include "preferences.h"

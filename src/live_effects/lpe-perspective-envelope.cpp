@@ -18,8 +18,8 @@
 #include "live_effects/lpe-perspective-envelope.h"
 #include "helper/geom.h"
 #include "display/curve.h"
-#include "svg/svg.h"
 #include <gsl/gsl_linalg.h>
+
 // TODO due to internal breakage in glibmm headers, this must be last:
 #include <glibmm/i18n.h>
 
@@ -110,15 +110,15 @@ void LPEPerspectiveEnvelope::doEffect(SPCurve *curve)
             int position_c = Geom::sgn(Geom::cross(handles[2] - handles[3], handles[0] - handles[3]));
             if (position_a != 1 && move0) {
                 Geom::Point point_a = line_a.pointAt(line_a.nearestTime(handles[0]));
-                down_left_point.param_setValue(point_a, true);
+                down_left_point.param_setValue(point_a);
             }
             if (position_b == 1 && move0) {
                 Geom::Point point_b = line_b.pointAt(line_b.nearestTime(handles[0]));
-                down_left_point.param_setValue(point_b, true);
+                down_left_point.param_setValue(point_b);
             }
             if (position_c == 1 && move0) {
                 Geom::Point point_c = line_c.pointAt(line_c.nearestTime(handles[0]));
-                down_left_point.param_setValue(point_c, true);
+                down_left_point.param_setValue(point_c);
             }
             line_a.setPoints(handles[0],handles[2]);
             line_b.setPoints(handles[2],handles[3]);
@@ -128,15 +128,15 @@ void LPEPerspectiveEnvelope::doEffect(SPCurve *curve)
             position_c = Geom::sgn(Geom::cross(handles[3] - handles[0], handles[1] - handles[0]));
             if (position_a != 1 && move1) {
                 Geom::Point point_a = line_a.pointAt(line_a.nearestTime(handles[1]));
-                up_left_point.param_setValue(point_a, true);
+                up_left_point.param_setValue(point_a);
             }
             if (position_b == 1 && move1) {
                 Geom::Point point_b = line_b.pointAt(line_b.nearestTime(handles[1]));
-                up_left_point.param_setValue(point_b, true);
+                up_left_point.param_setValue(point_b);
             }
             if (position_c == 1 && move1) {
                 Geom::Point point_c = line_c.pointAt(line_c.nearestTime(handles[1]));
-                up_left_point.param_setValue(point_c, true);
+                up_left_point.param_setValue(point_c);
             }
             line_a.setPoints(handles[1],handles[3]);
             line_b.setPoints(handles[3],handles[0]);
@@ -146,15 +146,15 @@ void LPEPerspectiveEnvelope::doEffect(SPCurve *curve)
             position_c = Geom::sgn(Geom::cross(handles[0] - handles[1], handles[2] - handles[1]));
             if (position_a != 1 && move2) {
                 Geom::Point point_a = line_a.pointAt(line_a.nearestTime(handles[2]));
-                up_right_point.param_setValue(point_a, true);
+                up_right_point.param_setValue(point_a);
             }
             if (position_b == 1 && move2) {
                 Geom::Point point_b = line_b.pointAt(line_b.nearestTime(handles[2]));
-                up_right_point.param_setValue(point_b, true);
+                up_right_point.param_setValue(point_b);
             }
             if (position_c == 1 && move2) {
                 Geom::Point point_c = line_c.pointAt(line_c.nearestTime(handles[2]));
-                up_right_point.param_setValue(point_c, true);
+                up_right_point.param_setValue(point_c);
             }
             line_a.setPoints(handles[2],handles[0]);
             line_b.setPoints(handles[0],handles[1]);
@@ -164,15 +164,15 @@ void LPEPerspectiveEnvelope::doEffect(SPCurve *curve)
             position_c = Geom::sgn(Geom::cross(handles[1] - handles[2], handles[3] - handles[2]));
             if (position_a != 1 && move3) {
                 Geom::Point point_a = line_a.pointAt(line_a.nearestTime(handles[3]));
-                down_right_point.param_setValue(point_a, true);
+                down_right_point.param_setValue(point_a);
             }
             if (position_b == 1 && move3) {
                 Geom::Point point_b = line_b.pointAt(line_b.nearestTime(handles[3]));
-                down_right_point.param_setValue(point_b, true);
+                down_right_point.param_setValue(point_b);
             }
             if (position_c == 1 && move3) {
                 Geom::Point point_c = line_c.pointAt(line_c.nearestTime(handles[3]));
-                down_right_point.param_setValue(point_c, true);
+                down_right_point.param_setValue(point_c);
             }
         } else {
             handles.resize(4);
@@ -369,12 +369,12 @@ LPEPerspectiveEnvelope::newWidget()
                         Gtk::Label* handles = Gtk::manage(new Gtk::Label(Glib::ustring(_("Handles:")),Gtk::ALIGN_START));
                         vbox->pack_start(*handles, false, false, 2);
                         hbox_up_handles->pack_start(*widg, true, true, 2);
-                        hbox_up_handles->pack_start(*Gtk::manage(new Gtk::VSeparator()), Gtk::PACK_EXPAND_WIDGET);
+                        hbox_up_handles->pack_start(*Gtk::manage(new Gtk::Separator(Gtk::ORIENTATION_VERTICAL)), Gtk::PACK_EXPAND_WIDGET);
                     } else if(param->param_key == "up_right_point") {
                         hbox_up_handles->pack_start(*widg, true, true, 2);
                     } else if(param->param_key == "down_left_point") {
                         hbox_down_handles->pack_start(*widg, true, true, 2);
-                        hbox_down_handles->pack_start(*Gtk::manage(new Gtk::VSeparator()), Gtk::PACK_EXPAND_WIDGET);
+                        hbox_down_handles->pack_start(*Gtk::manage(new Gtk::Separator(Gtk::ORIENTATION_VERTICAL)), Gtk::PACK_EXPAND_WIDGET);
                     } else {
                         hbox_down_handles->pack_start(*widg, true, true, 2);
                     }
@@ -403,16 +403,20 @@ LPEPerspectiveEnvelope::newWidget()
     }
     vbox->pack_start(*hbox_up_handles,true, true, 2);
     Gtk::HBox * hbox_middle = Gtk::manage(new Gtk::HBox(true,2));
-    hbox_middle->pack_start(*Gtk::manage(new Gtk::HSeparator()), Gtk::PACK_EXPAND_WIDGET);
-    hbox_middle->pack_start(*Gtk::manage(new Gtk::HSeparator()), Gtk::PACK_EXPAND_WIDGET);
+    hbox_middle->pack_start(*Gtk::manage(new Gtk::Separator(Gtk::ORIENTATION_HORIZONTAL)), Gtk::PACK_EXPAND_WIDGET);
+    hbox_middle->pack_start(*Gtk::manage(new Gtk::Separator(Gtk::ORIENTATION_HORIZONTAL)), Gtk::PACK_EXPAND_WIDGET);
     vbox->pack_start(*hbox_middle, false, true, 2);
     vbox->pack_start(*hbox_down_handles, true, true, 2);
     Gtk::HBox * hbox = Gtk::manage(new Gtk::HBox(false,0));
-    Gtk::Button* reset_button = Gtk::manage(new Gtk::Button(Gtk::Stock::CLEAR));
+    Gtk::Button* reset_button = Gtk::manage(new Gtk::Button(_("_Clear"), true));
+    reset_button->set_image_from_icon_name("edit-clear");
     reset_button->signal_clicked().connect(sigc::mem_fun (*this,&LPEPerspectiveEnvelope::resetGrid));
     reset_button->set_size_request(140,30);
     vbox->pack_start(*hbox, true,true,2);
     hbox->pack_start(*reset_button, false, false,2);
+    if(Gtk::Widget* widg = defaultParamSet()) {
+        vbox->pack_start(*widg, true, true, 2);
+    }
     return dynamic_cast<Gtk::Widget *>(vbox);
 }
 
@@ -433,8 +437,8 @@ LPEPerspectiveEnvelope::vertical(PointParam &param_one, PointParam &param_two, G
     }
     A[Geom::X] = nearest[Geom::X] - distance_middle;
     B[Geom::X] = nearest[Geom::X] + distance_middle;
-    param_one.param_setValue(A, true);
-    param_two.param_setValue(B, true);
+    param_one.param_setValue(A);
+    param_two.param_setValue(B);
 }
 
 void
@@ -454,14 +458,14 @@ LPEPerspectiveEnvelope::horizontal(PointParam &param_one, PointParam &param_two,
     }
     A[Geom::Y] = nearest[Geom::Y] - distance_middle;
     B[Geom::Y] = nearest[Geom::Y] + distance_middle;
-    param_one.param_setValue(A, true);
-    param_two.param_setValue(B, true);
+    param_one.param_setValue(A);
+    param_two.param_setValue(B);
 }
 
 void
 LPEPerspectiveEnvelope::doBeforeEffect (SPLPEItem const* lpeitem)
 {
-    original_bbox(lpeitem);
+    original_bbox(lpeitem, false, true);
     Geom::Line vert(Geom::Point(boundingbox_X.middle(),boundingbox_Y.max()), Geom::Point(boundingbox_X.middle(), boundingbox_Y.min()));
     Geom::Line horiz(Geom::Point(boundingbox_X.min(),boundingbox_Y.middle()), Geom::Point(boundingbox_X.max(), boundingbox_Y.middle()));
     if(vertical_mirror) {
@@ -502,7 +506,7 @@ void
 LPEPerspectiveEnvelope::resetDefaults(SPItem const* item)
 {
     Effect::resetDefaults(item);
-    original_bbox(SP_LPE_ITEM(item));
+    original_bbox(SP_LPE_ITEM(item), false, true);
     setDefaults();
     resetGrid();
 }
@@ -540,4 +544,4 @@ LPEPerspectiveEnvelope::addCanvasIndicators(SPLPEItem const */*lpeitem*/, std::v
   fill-column:99
   End:
 */
-// vim: file_type=cpp:expandtab:shiftwidth=4:tabstop=8:softtabstop=4 :
+// vim: filetype=cpp:expandtab:shiftwidth=4:tabstop=8:softtabstop=4 :

@@ -3,7 +3,7 @@
  *
  * libavoid - Fast, Incremental, Object-avoiding Line Router
  *
- * Copyright (C) 2004-2009  Monash University
+ * Copyright (C) 2004-2011  Monash University
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Michael Wybrow <mjwybrow@users.sourceforge.net>
+ * Author(s):   Michael Wybrow
 */
 
 
@@ -50,7 +50,7 @@ class EdgeInf
         ~EdgeInf();
         inline double getDist(void)
         {
-            return _dist;
+            return m_dist;
         }
         void setDist(double dist);
         void alertConns(void);
@@ -59,36 +59,50 @@ class EdgeInf
         void addBlocker(int b);
         bool added(void);
         bool isOrthogonal(void) const;
+        bool isDummyConnection(void) const;
+        bool isDisabled(void) const;
+        void setDisabled(const bool disabled);
         bool rotationLessThan(const VertInf* last, const EdgeInf *rhs) const;
-
-        std::pair<VertID, VertID> ids(void);
-        std::pair<Point, Point> points(void);
+        std::pair<VertID, VertID> ids(void) const;
+        std::pair<Point, Point> points(void) const;
         void db_print(void);
         void checkVis(void);
-        VertInf *otherVert(VertInf *vert);
+        VertInf *otherVert(const VertInf *vert) const;
         static EdgeInf *checkEdgeVisibility(VertInf *i, VertInf *j,
                 bool knownNew = false);
         static EdgeInf *existingEdge(VertInf *i, VertInf *j);
+        int blocker(void) const;
+        
+        bool isHyperedgeSegment(void) const;
+        void setHyperedgeSegment(const bool hyperedge);
+        double mtstDist(void) const;
+        void setMtstDist(const double joinCost);
 
         EdgeInf *lstPrev;
         EdgeInf *lstNext;
-        int _blocker;
     private:
-        Router *_router;
-        bool _added;
-        bool _visible;
-        bool _orthogonal;
-        VertInf *_v1;
-        VertInf *_v2;
-        EdgeInfList::iterator _pos1;
-        EdgeInfList::iterator _pos2;
-        FlagList  _conns;
-        double  _dist;
+        friend class MinimumTerminalSpanningTree;
+        friend class VertInf;
 
         void makeActive(void);
         void makeInactive(void);
         int firstBlocker(void);
         bool isBetween(VertInf *i, VertInf *j);
+
+        Router *m_router;
+        int m_blocker;
+        bool m_added;
+        bool m_visible;
+        bool m_orthogonal;
+        bool m_isHyperedgeSegment;
+        bool m_disabled;
+        VertInf *m_vert1;
+        VertInf *m_vert2;
+        EdgeInfList::iterator m_pos1;
+        EdgeInfList::iterator m_pos2;
+        FlagList  m_conns;
+        double  m_dist;
+        double  m_mtst_dist;
 };
 
 
@@ -105,10 +119,11 @@ class EdgeList
     private:
         void addEdge(EdgeInf *edge);
         void removeEdge(EdgeInf *edge);
-        bool _orthogonal;
-        EdgeInf *_firstEdge;
-        EdgeInf *_lastEdge;
-        unsigned int _count;
+
+        bool m_orthogonal;
+        EdgeInf *m_first_edge;
+        EdgeInf *m_last_edge;
+        unsigned int m_count;
 };
 
 

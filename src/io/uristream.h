@@ -15,13 +15,16 @@
  */
 
 
-#include <uri.h>
+#include "object/uri.h"
 
 #include "inkscapestream.h"
 
 
 namespace Inkscape
 {
+
+class URI;
+
 namespace IO
 {
 

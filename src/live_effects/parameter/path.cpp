@@ -5,10 +5,16 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include "ui/widget/point.h"
+#include "live_effects/parameter/path.h"
+
 #include <glibmm/i18n.h>
 
-#include "live_effects/parameter/path.h"
+#include <gtkmm/button.h>
+#include <gtkmm/label.h>
+
+#include "bad-uri-exception.h"
+#include "ui/widget/point.h"
+
 #include "live_effects/effect.h"
 #include "svg/svg.h"
 #include <2geom/svg-path-parser.h>
@@ -16,8 +22,6 @@
 #include <2geom/pathvector.h>
 #include <2geom/d2.h>
 
-#include "widgets/icon.h"
-#include <gtk/gtk.h>
 #include "selection-chemistry.h"
 #include "xml/repr.h"
 #include "desktop.h"
@@ -27,7 +31,7 @@
 #include "document.h"
 #include "document-undo.h"
 
-// needed for on-canvas editting:
+// needed for on-canvas editing:
 #include "ui/tools-switch.h"
 #include "ui/shape-editor.h"
 
@@ -35,17 +39,17 @@
 // clipboard support
 #include "ui/clipboard.h"
 // required for linking to other paths
-#include "uri.h"
-#include "sp-shape.h"
-#include "sp-text.h"
+
+#include "object/uri.h"
+#include "object/sp-shape.h"
+#include "object/sp-text.h"
+
 #include "display/curve.h"
 
 #include "ui/tools/node-tool.h"
 #include "ui/tool/multi-path-manipulator.h"
 #include "ui/tool/shape-record.h"
 
-#include <gtkmm/button.h>
-#include <gtkmm/label.h>
 #include "ui/icon-names.h"
 
 namespace Inkscape {
@@ -66,28 +70,35 @@ PathParam::PathParam( const Glib::ustring& label, const Glib::ustring& tip,
     defvalue = g_strdup(default_value);
     param_readSVGValue(defvalue);
     oncanvas_editable = true;
-
+    _from_original_d = false;
+    _edit_button  = true;
+    _copy_button  = true;
+    _paste_button = true;
+    _link_button  = true;
     ref_changed_connection = ref.changedSignal().connect(sigc::mem_fun(*this, &PathParam::ref_changed));
 }
 
 PathParam::~PathParam()
 {
     remove_link();
-    using namespace Inkscape::UI;
-    SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-    if (desktop) {
-        if (tools_isactive(desktop, TOOLS_NODES)) {
-            SPItem * item = SP_ACTIVE_DESKTOP->getSelection()->singleItem();
-            if (item != NULL) {
-                Inkscape::UI::Tools::NodeTool *nt = static_cast<Inkscape::UI::Tools::NodeTool*>(desktop->event_context);
-                std::set<ShapeRecord> shapes;
-                ShapeRecord r;
-                r.item = item;
-                shapes.insert(r);
-                nt->_multipath->setItems(shapes);
-            }
-        }
-    }
+//TODO: Removed to fix a bug https://bugs.launchpad.net/inkscape/+bug/1716926
+//      Maybe wee need to resurrect, not know when this code is added, but seems also not working now in a few test I do.
+//      in the future and do a deeper fix in multi-path-manipulator
+//    using namespace Inkscape::UI;
+//    SPDesktop *desktop = SP_ACTIVE_DESKTOP;
+//    if (desktop) {
+//        if (tools_isactive(desktop, TOOLS_NODES)) {
+//            SPItem * item = SP_ACTIVE_DESKTOP->getSelection()->singleItem();
+//            if (item) {
+//                Inkscape::UI::Tools::NodeTool *nt = static_cast<Inkscape::UI::Tools::NodeTool*>(desktop->event_context);
+//                std::set<ShapeRecord> shapes;
+//                ShapeRecord r;
+//                r.item = item;
+//                shapes.insert(r);
+//                nt->_multipath->setItems(shapes);
+//            }
+//        }
+//    }
     g_free(defvalue);
 }
 
@@ -164,6 +175,21 @@ PathParam::param_getSVGValue() const
     }
 }
 
+gchar *
+PathParam::param_getDefaultSVGValue() const
+{
+    return g_strdup(defvalue);
+}
+
+void
+PathParam::set_buttons(bool edit_button, bool copy_button, bool paste_button, bool link_button)
+{
+    _edit_button  = edit_button;
+    _copy_button  = copy_button;
+    _paste_button = paste_button;
+    _link_button  = link_button;
+}
+
 Gtk::Widget *
 PathParam::param_newWidget()
 {
@@ -172,47 +198,59 @@ PathParam::param_newWidget()
     Gtk::Label* pLabel = Gtk::manage(new Gtk::Label(param_label));
     static_cast<Gtk::HBox*>(_widget)->pack_start(*pLabel, true, true);
     pLabel->set_tooltip_text(param_tooltip);
-
-    Gtk::Widget*  pIcon = Gtk::manage( sp_icon_get_icon( INKSCAPE_ICON("tool-node-editor"), Inkscape::ICON_SIZE_BUTTON) );
-    Gtk::Button * pButton = Gtk::manage(new Gtk::Button());
-    pButton->set_relief(Gtk::RELIEF_NONE);
-    pIcon->show();
-    pButton->add(*pIcon);
-    pButton->show();
-    pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_edit_button_click));
-    static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
-    pButton->set_tooltip_text(_("Edit on-canvas"));
-
-    pIcon = Gtk::manage( sp_icon_get_icon( INKSCAPE_ICON("edit-copy"), Inkscape::ICON_SIZE_BUTTON) );
-    pButton = Gtk::manage(new Gtk::Button());
-    pButton->set_relief(Gtk::RELIEF_NONE);
-    pIcon->show();
-    pButton->add(*pIcon);
-    pButton->show();
-    pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_copy_button_click));
-    static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
-    pButton->set_tooltip_text(_("Copy path"));
-
-    pIcon = Gtk::manage( sp_icon_get_icon( INKSCAPE_ICON("edit-paste"), Inkscape::ICON_SIZE_BUTTON) );
-    pButton = Gtk::manage(new Gtk::Button());
-    pButton->set_relief(Gtk::RELIEF_NONE);
-    pIcon->show();
-    pButton->add(*pIcon);
-    pButton->show();
-    pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_paste_button_click));
-    static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
-    pButton->set_tooltip_text(_("Paste path"));
-
-    pIcon = Gtk::manage( sp_icon_get_icon( INKSCAPE_ICON("edit-clone"), Inkscape::ICON_SIZE_BUTTON) );
-    pButton = Gtk::manage(new Gtk::Button());
-    pButton->set_relief(Gtk::RELIEF_NONE);
-    pIcon->show();
-    pButton->add(*pIcon);
-    pButton->show();
-    pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_link_button_click));
-    static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
-    pButton->set_tooltip_text(_("Link to path on clipboard"));
-
+    Gtk::Image * pIcon = NULL;
+    Gtk::Button * pButton = NULL;
+    if (_edit_button) {
+        pIcon = Gtk::manage(new Gtk::Image());
+        pIcon->set_from_icon_name( INKSCAPE_ICON("tool-node-editor"), Gtk::ICON_SIZE_BUTTON);
+        pButton = Gtk::manage(new Gtk::Button());
+        pButton->set_relief(Gtk::RELIEF_NONE);
+        pIcon->show();
+        pButton->add(*pIcon);
+        pButton->show();
+        pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_edit_button_click));
+        static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
+        pButton->set_tooltip_text(_("Edit on-canvas"));
+    }
+    
+    if (_copy_button) {
+        pIcon = Gtk::manage(new Gtk::Image());
+        pIcon->set_from_icon_name( INKSCAPE_ICON("edit-copy"), Gtk::ICON_SIZE_BUTTON);
+        pButton = Gtk::manage(new Gtk::Button());
+        pButton->set_relief(Gtk::RELIEF_NONE);
+        pIcon->show();
+        pButton->add(*pIcon);
+        pButton->show();
+        pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_copy_button_click));
+        static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
+        pButton->set_tooltip_text(_("Copy path"));
+    }
+    
+    if (_paste_button) {
+        pIcon = Gtk::manage(new Gtk::Image());
+        pIcon->set_from_icon_name( INKSCAPE_ICON("edit-paste"), Gtk::ICON_SIZE_BUTTON);
+        pButton = Gtk::manage(new Gtk::Button());
+        pButton->set_relief(Gtk::RELIEF_NONE);
+        pIcon->show();
+        pButton->add(*pIcon);
+        pButton->show();
+        pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_paste_button_click));
+        static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
+        pButton->set_tooltip_text(_("Paste path"));
+    }
+    if (_link_button) {
+        pIcon = Gtk::manage(new Gtk::Image());
+        pIcon->set_from_icon_name( INKSCAPE_ICON("edit-clone"), Gtk::ICON_SIZE_BUTTON);
+        pButton = Gtk::manage(new Gtk::Button());
+        pButton->set_relief(Gtk::RELIEF_NONE);
+        pIcon->show();
+        pButton->add(*pIcon);
+        pButton->show();
+        pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_link_button_click));
+        static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
+        pButton->set_tooltip_text(_("Link to path on clipboard"));
+    }
+    
     static_cast<Gtk::HBox*>(_widget)->show_all_children();
 
     return dynamic_cast<Gtk::Widget *> (_widget);
@@ -241,9 +279,13 @@ PathParam::param_editOncanvas(SPItem *item, SPDesktop * dt)
         r.item = reinterpret_cast<SPItem*>(param_effect->getLPEObj());
         r.lpe_key = param_key;
         Geom::PathVector stored_pv =  _pathvector;
-        param_write_to_repr("M0,0 L1,0");
-        const char *svgd = sp_svg_write_path(stored_pv);
-        param_write_to_repr(svgd);
+        if (_pathvector.empty()) {
+            param_write_to_repr("M0,0 L1,0");
+        } else {
+            gchar *svgd = sp_svg_write_path(stored_pv);
+            param_write_to_repr(svgd);
+            g_free(svgd);
+        }
     } else {
         r.item = ref.getObject();
     }
@@ -306,7 +348,7 @@ PathParam::set_new_value (Geom::Piecewise<Geom::D2<Geom::SBasis> > const & newpa
  *
  * If write_to_svg = true :
  *          The new path data is written to SVG. In this case the signal_path_changed signal
- *          is not directly emited in this method, because writing to SVG
+ *          is not directly emitted in this method, because writing to SVG
  *          triggers the LPEObject to which this belongs to call Effect::setParameter which calls
  *          PathParam::readSVGValue, which finally emits the signal_path_changed signal.
  * If write_to_svg = false :
@@ -417,7 +459,11 @@ PathParam::linked_modified_callback(SPObject *linked_obj, guint /*flags*/)
 {
     SPCurve *curve = NULL;
     if (SP_IS_SHAPE(linked_obj)) {
-        curve = SP_SHAPE(linked_obj)->getCurve();
+        if (_from_original_d) {
+            curve = SP_SHAPE(linked_obj)->getCurveForEdit();
+        } else {
+            curve = SP_SHAPE(linked_obj)->getCurve();
+        }
     }
     if (SP_IS_TEXT(linked_obj)) {
         curve = SP_TEXT(linked_obj)->getNormalizedBpath();
@@ -436,6 +482,10 @@ PathParam::linked_modified_callback(SPObject *linked_obj, guint /*flags*/)
     SP_OBJECT(param_effect->getLPEObj())->requestModified(SP_OBJECT_MODIFIED_FLAG);
 }
 
+void
+PathParam::param_update_default(const gchar * default_value){
+    defvalue = strdup(default_value);
+}
 
 /* CALLBACK FUNCTIONS FOR THE BUTTONS */
 void

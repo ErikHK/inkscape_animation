@@ -55,7 +55,7 @@ public:
 
     virtual void doBeforeEffect(SPLPEItem const* item);
 
-    //Usefull??
+    //Useful??
     //    protected: 
     //virtual void addCanvasIndicators(SPLPEItem const *lpeitem, std::vector<Geom::PathVector> &hp_vec); 
 

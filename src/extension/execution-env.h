@@ -69,7 +69,7 @@ private:
     bool _show_errors;
 public:
 
-    /** \brief  Create a new context for exection of an effect
+    /** \brief  Create a new context for execution of an effect
         \param effect  The effect to execute
         \param doc     The document to execute the effect on
         \param docCache  The implementation cache of the document.  May be
@@ -98,15 +98,13 @@ public:
     /** \brief Wait for the effect to complete if it hasn't. */
     bool wait (void);
 
+    /** \brief Return reference to working dialog (if any) */
+    Gtk::Dialog *get_working_dialog (void) { return _visibleDialog; };
+
 private:
     void runComplete (void);
-    void createPrefsDialog (Gtk::Widget * controls);
     void createWorkingDialog (void);
     void workingCanceled (const int resp);
-    void processingCancel (void);
-    void processingComplete(void);
-    void documentCancel (void);
-    void documentCommit (void);
     void reselect (void);
     void genDocCache (void);
     void killDocCache (void);

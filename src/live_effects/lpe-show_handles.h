@@ -8,7 +8,6 @@
 * Copyright (C) Jabier Arraiza Cenoz 2014 <jabier.arraiza@marker.es>
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
-
 #include "helper/geom-nodetype.h"
 #include "live_effects/effect.h"
 #include "live_effects/lpegroupbbox.h"
@@ -44,6 +43,8 @@ private:
     BoolParam nodes;
     BoolParam handles;
     BoolParam original_path;
+    BoolParam original_d;
+    BoolParam show_center_node;
     ScalarParam scale_nodes_and_handles;
     double stroke_width;
     static bool alerts_off;

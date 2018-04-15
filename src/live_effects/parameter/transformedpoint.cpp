@@ -6,7 +6,7 @@
 
 #include "ui/widget/registered-widget.h"
 #include "live_effects/parameter/transformedpoint.h"
-#include "sp-lpe-item.h"
+
 #include "knotholder.h"
 #include "svg/svg.h"
 #include "svg/stringstream.h"
@@ -78,8 +78,34 @@ TransformedPointParam::param_getSVGValue() const
 {
     Inkscape::SVGOStringStream os;
     os << origin << " , " << vector;
-    gchar * str = g_strdup(os.str().c_str());
-    return str;
+    return g_strdup(os.str().c_str());
+}
+
+gchar *
+TransformedPointParam::param_getDefaultSVGValue() const
+{
+    Inkscape::SVGOStringStream os;
+    os << defvalue;
+    return g_strdup(os.str().c_str());
+}
+
+void
+TransformedPointParam::param_update_default(Geom::Point default_point)
+{
+    defvalue = default_point;
+}
+
+void
+TransformedPointParam::param_update_default(const gchar * default_point)
+{
+    gchar ** strarray = g_strsplit(default_point, ",", 2);
+    double newx, newy;
+    unsigned int success = sp_svg_number_read_d(strarray[0], &newx);
+    success += sp_svg_number_read_d(strarray[1], &newy);
+    g_strfreev (strarray);
+    if (success == 2) {
+        param_update_default( Geom::Point(newx, newy) );
+    }
 }
 
 Gtk::Widget *

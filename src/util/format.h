@@ -20,20 +20,20 @@ namespace Inkscape {
 
 namespace Util {
 
-inline ptr_shared<char> vformat(char const *format, va_list args) {
+inline ptr_shared vformat(char const *format, va_list args) {
     char *temp=g_strdup_vprintf(format, args);
-    ptr_shared<char> result=share_string(temp);
+    ptr_shared result=share_string(temp);
     g_free(temp);
     return result;
 }
 
        // needed since G_GNUC_PRINTF can only be used on a declaration
-       ptr_shared<char> format(char const *format, ...) G_GNUC_PRINTF(1,2);
-inline ptr_shared<char> format(char const *format, ...) {
+       ptr_shared format(char const *format, ...) G_GNUC_PRINTF(1,2);
+inline ptr_shared format(char const *format, ...) {
     va_list args;
 
     va_start(args, format);
-    ptr_shared<char> result=vformat(format, args);
+    ptr_shared result=vformat(format, args);
     va_end(args);
 
     return result;

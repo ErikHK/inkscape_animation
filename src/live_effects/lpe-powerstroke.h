@@ -27,7 +27,7 @@ public:
 
     
     virtual Geom::PathVector doEffect_path (Geom::PathVector const & path_in);
-
+    virtual void doBeforeEffect(SPLPEItem const *lpeItem);
     virtual void doOnApply(SPLPEItem const* lpeitem);
     virtual void doOnRemove(SPLPEItem const* lpeitem);
 
@@ -40,11 +40,11 @@ private:
     BoolParam sort_points;
     EnumParam<unsigned> interpolator_type;
     ScalarParam interpolator_beta;
+    ScalarParam scale_width;
     EnumParam<unsigned> start_linecap_type;
     EnumParam<unsigned> linejoin_type;
     ScalarParam miter_limit;
     EnumParam<unsigned> end_linecap_type;
-
     LPEPowerStroke(const LPEPowerStroke&);
     LPEPowerStroke& operator=(const LPEPowerStroke&);
 };

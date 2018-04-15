@@ -15,8 +15,6 @@
 #include <memory>
 #include <2geom/pathvector.h>
 #include <2geom/affine.h>
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
 #include "ui/tool/node.h"
 #include "ui/tool/manipulator.h"
 #include "live_effects/lpe-bspline.h"
@@ -105,7 +103,7 @@ public:
     static bool is_item_type(void *item);
 private:
     typedef NodeList Subpath;
-    typedef boost::shared_ptr<NodeList> SubpathPtr;
+    typedef std::shared_ptr<NodeList> SubpathPtr;
 
     void _createControlPointsFromGeometry();
 

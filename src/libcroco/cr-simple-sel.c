@@ -125,6 +125,10 @@ cr_simple_sel_to_string (CRSimpleSel const * a_this)
                                         g_string_append (str_buf, "+");
                                         break;
 
+                                case COMB_TILDE:
+                                        g_string_append (str_buf, "~");
+                                        break;
+
                                 case COMB_GT:
                                         g_string_append (str_buf, ">");
                                         break;

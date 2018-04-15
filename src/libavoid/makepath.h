@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Michael Wybrow <mjwybrow@users.sourceforge.net>
+ * Author(s):   Michael Wybrow
 */
 
 
@@ -30,12 +30,22 @@
 namespace Avoid {
 
 class ConnRef;
+class AStarPathPrivate;
+class ANode;
+class VertInf;
 
-extern void makePath(ConnRef *lineRef, bool *flag);
-
+class AStarPath
+{
+    public:
+        AStarPath();
+        ~AStarPath();
+        void search(ConnRef *lineRef, VertInf *src, VertInf *tar, 
+                VertInf *start);
+    private:
+        AStarPathPrivate *m_private;        
+};
 
 }
-
 
 #endif
 

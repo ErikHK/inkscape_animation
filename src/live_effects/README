@@ -1,0 +1,8 @@
+
+
+This directory contains our "Live Path Effects" which create new paths from an existing path, storing the original path for reuse.
+
+To do:
+
+* Move to a suitable subdirectory.
+

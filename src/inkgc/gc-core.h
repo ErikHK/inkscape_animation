@@ -18,12 +18,8 @@
 
 #include <new>
 #include <cstdlib>
-#include <cstddef>
-#ifdef HAVE_GC_GC_H
-# include <gc/gc.h>
-#else
+
 # include <gc.h>
-#endif
 
 namespace Inkscape {
 namespace GC {
@@ -137,7 +133,6 @@ inline void *operator new(std::size_t size,
                           Inkscape::GC::CollectionPolicy collect,
                           Inkscape::GC::CleanupFunc cleanup=NULL,
                           void *data=NULL)
-throw(std::bad_alloc)
 {
     using namespace Inkscape::GC;
 
@@ -168,7 +163,6 @@ inline void *operator new(std::size_t size,
                           Inkscape::GC::ScanPolicy scan,
                           Inkscape::GC::CleanupFunc cleanup=NULL,
                           void *data=NULL)
-throw(std::bad_alloc)
 {
     return operator new(size, scan, Inkscape::GC::AUTO, cleanup, data);
 }
@@ -178,7 +172,6 @@ inline void *operator new[](std::size_t size,
                             Inkscape::GC::CollectionPolicy collect,
                             Inkscape::GC::CleanupFunc cleanup=NULL,
                             void *data=NULL)
-throw(std::bad_alloc)
 {
     return operator new(size, scan, collect, cleanup, data);
 }
@@ -187,7 +180,6 @@ inline void *operator new[](std::size_t size,
                             Inkscape::GC::ScanPolicy scan,
                             Inkscape::GC::CleanupFunc cleanup=NULL,
                             void *data=NULL)
-throw(std::bad_alloc)
 {
     return operator new[](size, scan, Inkscape::GC::AUTO, cleanup, data);
 }

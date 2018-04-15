@@ -36,7 +36,7 @@
 #include <2geom/angle.h>
 #include <2geom/transforms.h>
 #include "ui/dialog/knot-properties.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-shape.h"
 #include "sp-text.h"
 #include "sp-flowtext.h"

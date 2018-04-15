@@ -169,7 +169,7 @@ if ((status) != CR_OK) \
  *@a_is_exception: in case of error, if is TRUE, the status
  *is set to CR_PARSING_ERROR before goto error. If is false, the
  *real low level status is kept and will be returned by the
- *upper level function that called this macro. Usally,this must
+ *upper level function that called this macro. Usually, this must
  *be set to FALSE.
  *
  *same as CHECK_PARSING_STATUS() but this one pushes an error
@@ -557,7 +557,7 @@ cr_parser_push_error (CRParser * a_this,
  *@param a_this the current instance of #CRParser.
  *@param a_clear_errs whether to clear the error stack
  *after the dump or not.
- *@return CR_OK upon successfull completion, an error code
+ *@return CR_OK upon successful completion, an error code
  *otherwise.
  */
 static enum CRStatus
@@ -615,7 +615,7 @@ cr_parser_clear_errors (CRParser * a_this)
  *Same as cr_parser_try_to_skip_spaces() but this one skips
  *spaces and comments.
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_try_to_skip_spaces_and_comments (CRParser * a_this)
@@ -752,7 +752,7 @@ cr_parser_parse_stylesheet_core (CRParser * a_this)
  *in chapter 4.1 in the css2 spec.
  *at-rule     : ATKEYWORD S* any* [ block | ';' S* ];
  *@param a_this the current instance of #CRParser.
- *@return CR_OK upon successfull completion, an error code
+ *@return CR_OK upon successful completion, an error code
  *otherwise.
  */
 static enum CRStatus
@@ -828,7 +828,7 @@ cr_parser_parse_atrule_core (CRParser * a_this)
  *4.1 of the css2 spec.
  *ruleset ::= selector? '{' S* declaration? [ ';' S* declaration? ]* '}' S*;
  *@param a_this the current instance of #CRParser.
- *@return CR_OK upon successfull completion, an error code otherwise.
+ *@return CR_OK upon successful completion, an error code otherwise.
  */
 static enum CRStatus
 cr_parser_parse_ruleset_core (CRParser * a_this)
@@ -916,7 +916,7 @@ cr_parser_parse_ruleset_core (CRParser * a_this)
  *grammar.
  *selector    : any+;
  *@param a_this the current instance of #CRParser.
- *@return CR_OK upon successfull completion, an error code
+ *@return CR_OK upon successful completion, an error code
  *otherwise.
  */
 static enum CRStatus
@@ -1081,7 +1081,7 @@ cr_parser_parse_declaration_core (CRParser * a_this)
  *in chapter 4.1.
  *value ::= [ any | block | ATKEYWORD S* ]+;
  *@param a_this the current instance of #CRParser.
- *@return CR_OK upon successfull completion, an error code otherwise.
+ *@return CR_OK upon successful completion, an error code otherwise.
  */
 static enum CRStatus
 cr_parser_parse_value_core (CRParser * a_this)
@@ -1162,7 +1162,7 @@ cr_parser_parse_value_core (CRParser * a_this)
  *        | FUNCTION | DASHMATCH | '(' any* ')' | '[' any* ']' ] S*;
  *
  *@param a_this the current instance of #CRParser.
- *@return CR_OK upon successfull completion, an error code otherwise.
+ *@return CR_OK upon successful completion, an error code otherwise.
  */
 static enum CRStatus
 cr_parser_parse_any_core (CRParser * a_this)
@@ -1319,7 +1319,7 @@ cr_parser_parse_any_core (CRParser * a_this)
  *@param a_this the "this pointer" of the current instance of
  *#CRParser .
  *@param a_sel out parameter. The successfully parsed attribute selector.
- *@return CR_OK upon successfull completion, an error code otherwise.
+ *@return CR_OK upon successful completion, an error code otherwise.
  */
 static enum CRStatus
 cr_parser_parse_attribute_selector (CRParser * a_this, 
@@ -1458,7 +1458,7 @@ cr_parser_parse_attribute_selector (CRParser * a_this,
  *new instance of GString and set it content to the parsed property.
  *If not, the property is just appended to a_property's previous content.
  *In both cases, it is up to the caller to free a_property.
- *@return CR_OK upon successfull completion, CR_PARSING_ERROR if the
+ *@return CR_OK upon successful completion, CR_PARSING_ERROR if the
  *next construction was not a "property", or an error code.
  */
 static enum CRStatus
@@ -1499,9 +1499,12 @@ cr_parser_parse_property (CRParser * a_this,
  *EMS S* | EXS S* | ANGLE S* | TIME S* | FREQ S* | function ] |
  *STRING S* | IDENT S* | URI S* | RGB S* | UNICODERANGE S* | hexcolor
  *
+ * As a special case for 'an+b', parse integer followed immediately by 'n'.
+ * The 'an' is parsed as a DIMEN.
+ *
  *TODO: handle parsing of 'RGB'
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_parse_term (CRParser * a_this, CRTerm ** a_term)
@@ -1595,6 +1598,13 @@ cr_parser_parse_term (CRParser * a_this, CRTerm ** a_term)
                 status = cr_term_set_hash (result, token->u.str);
                 CHECK_PARSING_STATUS (status, TRUE);
                 token->u.str = NULL;
+        } else if (token && token->type == DIMEN_TK) {
+                gboolean n = !strcmp(token->dimen->stryng->str, "n");
+                status = cr_term_set_number (result, token->u.num);
+                result->n = n; // For nth-child (an+b)
+                CHECK_PARSING_STATUS (status, TRUE);
+                token->u.num = NULL;
+                status = CR_OK;
         } else {
                 status = CR_PARSING_ERROR;
         }
@@ -1656,7 +1666,7 @@ cr_parser_parse_term (CRParser * a_this, CRTerm ** a_term)
  *and where pseudo is:
  *pseudo ::=  ':' [ IDENT | FUNCTION S* IDENT S* ')' ]
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 static enum CRStatus
 cr_parser_parse_simple_selector (CRParser * a_this, CRSimpleSel ** a_sel)
@@ -1819,22 +1829,21 @@ cr_parser_parse_simple_selector (CRParser * a_this, CRSimpleSel ** a_sel)
                                 (&pseudo->location, 
                                  &token->location) ;
 
+                        /* Save selector name for use by 'type' pseudo selectors */
+                        if (sel->name)
+                                        pseudo->sel_name = cr_string_dup (sel->name);
+
                         if (token->type == IDENT_TK) {
                                 pseudo->type = IDENT_PSEUDO;
                                 pseudo->name = token->u.str;
                                 token->u.str = NULL;
                                 found_sel = TRUE;
                         } else if (token->type == FUNCTION_TK) {
-                                pseudo->name = token->u.str;
-                                token->u.str = NULL;
-                                cr_parser_try_to_skip_spaces_and_comments
-                                        (a_this);
-                                status = cr_parser_parse_ident
-                                        (a_this, &pseudo->extra);
-
+                                status = cr_tknzr_unget_token (PRIVATE (a_this)->tknzr, token);
+                                token = NULL;
+                                status = cr_parser_parse_function (a_this, &pseudo->name, &pseudo->term);
                                 ENSURE_PARSING_COND (status == CR_OK);
-                                READ_NEXT_CHAR (a_this, &cur_char);
-                                ENSURE_PARSING_COND (cur_char == ')');
+
                                 pseudo->type = FUNCTION_PSEUDO;
                                 found_sel = TRUE;
                         } else {
@@ -1863,7 +1872,7 @@ cr_parser_parse_simple_selector (CRParser * a_this, CRSimpleSel ** a_sel)
                         token = NULL;
                         break;
                 }
-        }
+        } // for loop
 
         if (status == CR_OK && found_sel == TRUE) {
                 cr_parser_try_to_skip_spaces_and_comments (a_this);
@@ -1925,7 +1934,7 @@ cr_parser_parse_simple_selector (CRParser * a_this, CRSimpleSel ** a_sel)
  *Parses a "selector" as defined by the css2 spec in appendix D.1:
  *selector ::=  simple_selector [ combinator simple_selector ]*
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 static enum CRStatus
 cr_parser_parse_simple_sels (CRParser * a_this, 
@@ -1959,6 +1968,10 @@ cr_parser_parse_simple_sels (CRParser * a_this,
                 if (next_char == '+') {
                         READ_NEXT_CHAR (a_this, &cur_char);
                         comb = COMB_PLUS;
+                        cr_parser_try_to_skip_spaces_and_comments (a_this);
+                } else if (next_char == '~') {
+                        READ_NEXT_CHAR (a_this, &cur_char);
+                        comb = COMB_TILDE;
                         cr_parser_try_to_skip_spaces_and_comments (a_this);
                 } else if (next_char == '>') {
                         READ_NEXT_CHAR (a_this, &cur_char);
@@ -2002,7 +2015,7 @@ cr_parser_parse_simple_sels (CRParser * a_this,
  *Returns CR_OK upon successful completion, an error
  *code otherwise.
  */
-static enum CRStatus
+enum CRStatus
 cr_parser_parse_selector (CRParser * a_this, 
                           CRSelector ** a_selector)
 {
@@ -2123,7 +2136,7 @@ cr_parser_parse_selector (CRParser * a_this,
  *function ::= FUNCTION S* expr ')' S*
  *FUNCTION ::= ident'('
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 static enum CRStatus
 cr_parser_parse_function (CRParser * a_this,
@@ -2209,7 +2222,7 @@ cr_parser_parse_function (CRParser * a_this,
  * URI ::= url\({w}{string}{w}\)
  *         |url\({w}([!#$%&*-~]|{nonascii}|{escape})*{w}\)
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 static enum CRStatus
 cr_parser_parse_uri (CRParser * a_this, CRString ** a_str)
@@ -2228,10 +2241,10 @@ cr_parser_parse_uri (CRParser * a_this, CRString ** a_str)
 /**
  * cr_parser_parse_string:
  *@a_this: the current instance of #CRParser.
- *@a_start: out parameter. Upon successfull completion, 
+ *@a_start: out parameter. Upon successful completion, 
  *points to the beginning of the string, points to an undefined value
  *otherwise.
- *@a_end: out parameter. Upon successfull completion, points to
+ *@a_end: out parameter. Upon successful completion, points to
  *the beginning of the string, points to an undefined value otherwise.
  *
  *Parses a string type as defined in css spec [4.1.1]:
@@ -2240,7 +2253,7 @@ cr_parser_parse_uri (CRParser * a_this, CRString ** a_str)
  *string1 ::= \"([\t !#$%&(-~]|\\{nl}|\'|{nonascii}|{escape})*\"
  *string2 ::= \'([\t !#$%&(-~]|\\{nl}|\"|{nonascii}|{escape})*\'
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 static enum CRStatus
 cr_parser_parse_string (CRParser * a_this, CRString ** a_str)
@@ -2267,7 +2280,7 @@ cr_parser_parse_string (CRParser * a_this, CRString ** a_str)
  *the function just appends the parsed string to the one passed.
  *In both cases it is up to the caller to free *a_str.
  *
- *@return CR_OK upon successfull completion, an error code 
+ *@return CR_OK upon successful completion, an error code 
  *otherwise.
  */
 static enum CRStatus
@@ -2300,7 +2313,7 @@ cr_parser_parse_ident (CRParser * a_this, CRString ** a_str)
  *@param a_end out parameter. A pointer to the first character of
  *the successfully parsed string.
  *
- *@return CR_OK upon successfull completion, an error code otherwise.
+ *@return CR_OK upon successful completion, an error code otherwise.
  */
 static enum CRStatus
 cr_parser_parse_stylesheet (CRParser * a_this)
@@ -2747,7 +2760,7 @@ cr_parser_parse_stylesheet (CRParser * a_this)
  *coming the input stream given in parameter.
  *
  *Returns the newly created instance of #CRParser,
- *or NULL if an error occured.
+ *or NULL if an error occurred.
  */
 CRParser *
 cr_parser_new (CRTknzr * a_tknzr)
@@ -2859,7 +2872,7 @@ cr_parser_new_from_file (const guchar * a_file_uri, enum CREncoding a_enc)
  *
  *Sets a SAC document handler to the parser.
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_set_sac_handler (CRParser * a_this, CRDocHandler * a_handler)
@@ -2884,7 +2897,7 @@ cr_parser_set_sac_handler (CRParser * a_this, CRDocHandler * a_handler)
  *
  *Gets the SAC document handler.
  *
- *Returns CR_OK upon successfull completion, an error code
+ *Returns CR_OK upon successful completion, an error code
  *otherwise.
  */
 enum CRStatus
@@ -2904,7 +2917,7 @@ cr_parser_get_sac_handler (CRParser * a_this, CRDocHandler ** a_handler)
  *Sets the SAC handler associated to the current instance
  *of #CRParser to the default SAC handler.
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_set_default_sac_handler (CRParser * a_this)
@@ -2933,7 +2946,7 @@ cr_parser_set_default_sac_handler (CRParser * a_this)
  * @a_this: the current instance of #CRParser.
  * @a_use_core_grammar: where to parse against the css core grammar.
  *
- * Returns CR_OK upon succesful completion, an error code otherwise.
+ * Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_set_use_core_grammar (CRParser * a_this,
@@ -2949,9 +2962,9 @@ cr_parser_set_use_core_grammar (CRParser * a_this,
 /**
  * cr_parser_get_use_core_grammar:
  * @a_this: the current instance of #CRParser.
- * @a_use_core_grammar: wether to use the core grammar or not.
+ * @a_use_core_grammar: whether to use the core grammar or not.
  *
- * Returns CR_OK upon succesful completion, an error code otherwise.
+ * Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_get_use_core_grammar (CRParser const * a_this,
@@ -2973,7 +2986,7 @@ cr_parser_get_use_core_grammar (CRParser const * a_this,
  *
  *Parses a the given in parameter.
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_parse_file (CRParser * a_this,
@@ -3165,7 +3178,7 @@ cr_parser_parse_prio (CRParser * a_this, CRString ** a_prio)
  *Parses a "declaration" as defined by the css2 spec in appendix D.1:
  *declaration ::= [property ':' S* expr prio?]?
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_parse_declaration (CRParser * a_this,
@@ -3259,7 +3272,7 @@ cr_parser_parse_declaration (CRParser * a_this,
  *chapter 4.1 of the css2 spec.
  *statement   : ruleset | at-rule;
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_parse_statement_core (CRParser * a_this)
@@ -3323,7 +3336,7 @@ cr_parser_parse_statement_core (CRParser * a_this)
  *See the documentation of #CRDocHandler (the SAC handler) to know
  *when which SAC handler is called.
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_parse_ruleset (CRParser * a_this)
@@ -3539,7 +3552,7 @@ cr_parser_parse_ruleset (CRParser * a_this)
  *import ::=
  *\@import [STRING|URI] S* [ medium [ ',' S* medium]* ]? ';' S*
  *
- *Returns CR_OK upon sucessfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_parse_import (CRParser * a_this,
@@ -3700,7 +3713,7 @@ cr_parser_parse_import (CRParser * a_this,
  *to notify media productions. See #CRDocHandler to know the callback called
  *during \@media parsing.
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_parse_media (CRParser * a_this)
@@ -3870,7 +3883,7 @@ cr_parser_parse_media (CRParser * a_this)
  *encounters a construction that must 
  *be reported to the calling application.
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_parse_page (CRParser * a_this)
@@ -4121,7 +4134,7 @@ cr_parser_parse_page (CRParser * a_this)
  *appendix D.1:
  *charset ::= CHARSET_SYM S* STRING S* ';'
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_parse_charset (CRParser * a_this, CRString ** a_value,
@@ -4212,7 +4225,7 @@ cr_parser_parse_charset (CRParser * a_this, CRString ** a_value,
  *
  *This function will call SAC handlers whenever it is necessary.
  *
- *Returns CR_OK upon successfull completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_parse_font_face (CRParser * a_this)
@@ -4369,7 +4382,7 @@ cr_parser_parse_font_face (CRParser * a_this)
  *input previously associated to the current instance of
  *#CRParser.
  *
- *Returns CR_OK upon succesful completion, an error code otherwise.
+ *Returns CR_OK upon successful completion, an error code otherwise.
  */
 enum CRStatus
 cr_parser_parse (CRParser * a_this)
@@ -4419,7 +4432,7 @@ cr_parser_set_tknzr (CRParser * a_this, CRTknzr * a_tknzr)
  *
  *Getter of the parser's underlying tokenizer
  * 
- *Returns CR_OK upon succesful completion, an error code
+ *Returns CR_OK upon successful completion, an error code
  *otherwise
  */
 enum CRStatus
@@ -4439,7 +4452,7 @@ cr_parser_get_tknzr (CRParser * a_this, CRTknzr ** a_tknzr)
  *
  *Gets the current parsing location.
  *
- *Returns CR_OK upon succesful completion, an error code
+ *Returns CR_OK upon successful completion, an error code
  *otherwise.
  */
 enum CRStatus 

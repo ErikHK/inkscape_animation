@@ -2,7 +2,7 @@
 #include "desktop.h"
 #include "sp-guide.h"
 #include "sp-guide-constraint.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "satisfied-guide-cns.h"
 
 void satisfied_guide_cns(SPDesktop const &desktop,

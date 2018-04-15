@@ -37,9 +37,9 @@
 #include <gtkmm/togglebutton.h>
 #include <gtkmm/widget.h>
 
-#ifdef WITH_GNOME_VFS
-# include <libgnomevfs/gnome-vfs-init.h>  // gnome_vfs_initialized
-#endif
+//#ifdef WITH_GNOME_VFS
+//# include <libgnomevfs/gnome-vfs-init.h>  // gnome_vfs_initialized
+//#endif
 
 #include <glibmm/i18n.h>
 #include <glibmm/miscutils.h>
@@ -55,7 +55,7 @@
 #include "selection.h"
 #include "file.h"
 #include "macros.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "selection-chemistry.h"
 
 #include "ui/dialog-events.h"
@@ -1479,11 +1479,11 @@ void Export::onBrowse ()
                                       _("_Save"),   GTK_RESPONSE_ACCEPT,
                                       NULL );
 
-#ifdef WITH_GNOME_VFS
-    if (gnome_vfs_initialized()) {
-        gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(fs), false);
-    }
-#endif
+//#ifdef WITH_GNOME_VFS
+//    if (gnome_vfs_initialized()) {
+//        gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(fs), false);
+//    }
+//#endif
 
     sp_transientize (fs);
 

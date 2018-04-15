@@ -31,7 +31,7 @@
 #include "message-stack.h"
 #include "verbs.h"
 #include "preferences.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-item-transform.h"
 #include "macros.h"
 #include "sp-item.h"

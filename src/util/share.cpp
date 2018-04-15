@@ -1,5 +1,6 @@
 /*
- * Inkscape::Util::ptr_shared<T> - like T const *, but stronger
+ * Inkscape::Util::ptr_shared<T> - like T const *, but stronger.
+ * Used to hold c-style strings for objects that are managed by the gc.
  *
  * Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -15,13 +16,13 @@
 namespace Inkscape {
 namespace Util {
 
-ptr_shared<char> share_string(char const *string) {
-    g_return_val_if_fail(string != NULL, share_unsafe<char>(NULL));
+ptr_shared share_string(char const *string) {
+    g_return_val_if_fail(string != NULL, share_unsafe(NULL));
     return share_string(string, std::strlen(string));
 }
 
-ptr_shared<char> share_string(char const *string, std::size_t length) {
-    g_return_val_if_fail(string != NULL, share_unsafe<char>(NULL));
+ptr_shared share_string(char const *string, std::size_t length) {
+    g_return_val_if_fail(string != NULL, share_unsafe(NULL));
     char *new_string=new (GC::ATOMIC) char[length+1];
     std::memcpy(new_string, string, length);
     new_string[length] = 0;

@@ -10,19 +10,23 @@
 #include "live_effects/parameter/enum.h"
 #include "helper/geom-pathstroke.h"
 
-#include "sp-shape.h"
-#include "style.h"
-#include "xml/repr.h"
-#include "sp-paint-server.h"
-#include "svg/svg-color.h"
 #include "desktop-style.h"
-#include "svg/css-ostringstream.h"
+
 #include "display/curve.h"
 
-#include <2geom/path.h>
+#include "object/sp-item-group.h"
+#include "object/sp-shape.h"
+#include "style.h"
+
+#include "svg/css-ostringstream.h"
+#include "svg/svg-color.h"
+
 #include <2geom/elliptical-arc.h>
 
 #include "lpe-jointype.h"
+
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -85,6 +89,7 @@ LPEJoinType::~LPEJoinType()
 void LPEJoinType::doOnApply(SPLPEItem const* lpeitem)
 {
     if (SP_IS_SHAPE(lpeitem)) {
+        Inkscape::Preferences *prefs = Inkscape::Preferences::get();
         SPLPEItem* item = const_cast<SPLPEItem*>(lpeitem);
         double width = (lpeitem && lpeitem->style) ? lpeitem->style->stroke_width.computed : 1.;
 
@@ -111,8 +116,14 @@ void LPEJoinType::doOnApply(SPLPEItem const* lpeitem)
 
         sp_desktop_apply_css_recursive(item, css, true);
         sp_repr_css_attr_unref (css);
-
-        line_width.param_set_value(width);
+        Glib::ustring pref_path = (Glib::ustring)"/live_effects/" +
+                                       (Glib::ustring)LPETypeConverter.get_key(effectType()).c_str() +
+                                       (Glib::ustring)"/" + 
+                                       (Glib::ustring)"line_width";
+        bool valid = prefs->getEntry(pref_path).isValid();
+        if(!valid){
+            line_width.param_set_value(width);
+        }
         line_width.write_to_SVG();
     }
 }

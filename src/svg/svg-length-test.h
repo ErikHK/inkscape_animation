@@ -124,7 +124,7 @@ public:
     // Ensure that all unit suffix strings allowed by SVG are covered by enum
     void testValidSVGStringsSupported()
     {
-        // Note that "px" is ommitted from the list, as it will be assumed to be so if not explicitly set.
+        // Note that "px" is omitted from the list, as it will be assumed to be so if not explicitly set.
         gchar const* valid[] = {"em", "ex", "pt", "pc", "cm", "mm", "in", "%"};
         std::set<std::string> validStrings(valid, valid + G_N_ELEMENTS(valid));
         for ( int i = (static_cast<int>(SVGLength::NONE) + 1); i <= static_cast<int>(SVGLength::LAST_UNIT); i++ ) {

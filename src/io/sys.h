@@ -32,8 +32,6 @@ FILE *fopen_utf8name( char const *utf8name, char const *mode );
 
 int mkdir_utf8name( char const *utf8name );
 
-int file_open_tmp( std::string& name_used, const std::string& prefix );
-
 bool file_test( char const *utf8name, GFileTest test );
 
 bool file_directory_exists( char const *utf8name );

@@ -3,7 +3,7 @@
  *
  * libavoid - Fast, Incremental, Object-avoiding Line Router
  *
- * Copyright (C) 2004-2009  Monash University
+ * Copyright (C) 2004-2011  Monash University
  *
  * --------------------------------------------------------------------
  * Much of the code in this module is based on code published with
@@ -29,12 +29,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Michael Wybrow <mjwybrow@users.sourceforge.net>
+ * Author(s):   Michael Wybrow
 */
 
 
-#ifndef _GEOMETRY_H
-#define _GEOMETRY_H
+#ifndef AVOID_GEOMETRY_H
+#define AVOID_GEOMETRY_H
 
 #include "libavoid/geomtypes.h"
 #include "libavoid/assertions.h"
@@ -58,7 +58,8 @@ extern int cornerSide(const Point &c1, const Point &c2, const Point &c3,
         const Point& p);
 extern bool pointOnLine(const Point& a, const Point& b, const Point& c,
         const double tolerance = 0.0);
-
+extern bool colinear(const Point& a, const Point& b, const Point& c,
+        const double tolerance = 0.0);
 // To be used only when the points are known to be colinear.
 extern bool inBetween(const Point& a, const Point& b, const Point& c);
 
@@ -119,6 +120,7 @@ extern int segmentIntersectPoint(const Point& a1, const Point& a2,
         const Point& b1, const Point& b2, double *x, double *y);
 extern int rayIntersectPoint(const Point& a1, const Point& a2,
         const Point& b1, const Point& b2, double *x, double *y);
+extern double rotationalAngle(const Point& p);
 
 
 }

@@ -10,6 +10,7 @@
 #include <glibmm/ustring.h>
 #include <2geom/forward.h>
 #include "ui/widget/registry.h"
+#include <gtkmm/expander.h>
 #include "parameter/bool.h"
 #include "effect-enum.h"
 
@@ -19,7 +20,7 @@
 class  SPDocument;
 class  SPDesktop;
 class  SPItem;
-class LivePathEffectObject;
+class  LivePathEffectObject;
 class  SPLPEItem;
 class  KnotHolder;
 class  KnotHolderEntity;
@@ -44,6 +45,12 @@ enum LPEPathFlashType {
     DEFAULT
 };
 
+enum LpeAction {
+    LPE_ERASE = 0,
+    LPE_TO_OBJECTS,
+    LPE_VISIBILITY
+};
+
 class Effect {
 public:
     static Effect* New(EffectType lpenr, LivePathEffectObject *lpeobj);
@@ -66,13 +73,16 @@ public:
     
     virtual void doAfterEffect (SPLPEItem const* lpeitem);
     virtual void doOnRemove (SPLPEItem const* lpeitem);
-
+    virtual void doOnVisibilityToggled(SPLPEItem const* lpeitem);
     void writeParamsToSVG();
 
     virtual void acceptParamPath (SPPath const* param_path);
     static int acceptsNumClicks(EffectType type);
     int acceptsNumClicks() const { return acceptsNumClicks(effectType()); }
     void doAcceptPathPreparations(SPLPEItem *lpeitem);
+    SPShape * getCurrentShape() const { return current_shape; };
+    void setCurrentShape(SPShape * shape) { current_shape = shape; }
+    void processObjects(LpeAction lpe_action);
 
     /*
      * isReady() indicates whether all preparations which are necessary to apply the LPE are done,
@@ -85,7 +95,7 @@ public:
     virtual void doEffect (SPCurve * curve);
 
     virtual Gtk::Widget * newWidget();
-
+    virtual Gtk::Widget * defaultParamSet();
     /**
      * Sets all parameters to their default values and writes them to SVG.
      */
@@ -100,9 +110,10 @@ public:
     // /TODO: in view of providesOwnFlashPaths() below, this is somewhat redundant
     //       (but spiro lpe still needs it!)
     virtual LPEPathFlashType pathFlashType() const { return DEFAULT; }
-    void addHandles(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item);
+    void addHandles(KnotHolder *knotholder, SPItem *item);
     std::vector<Geom::PathVector> getCanvasIndicators(SPLPEItem const* lpeitem);
     void update_helperpath();
+
     inline bool providesOwnFlashPaths() const {
         return provides_own_flash_paths || show_orig_path;
     }
@@ -122,7 +133,12 @@ public:
 
     void editNextParamOncanvas(SPItem * item, SPDesktop * desktop);
     bool apply_to_clippath_and_mask;
-
+    bool keep_paths; // set this to false allow retain extra generated objects, see measure line LPE
+    bool is_load;
+    bool upd_params;
+    BoolParam is_visible;
+    Geom::PathVector pathvector_before_effect;
+    Geom::PathVector pathvector_after_effect;
 protected:
     Effect(LivePathEffectObject *lpeobject);
 
@@ -139,7 +155,7 @@ protected:
     void registerParameter(Parameter * param);
     Parameter * getNextOncanvasEditableParam();
 
-    virtual void addKnotHolderEntities(KnotHolder * /*knotholder*/, SPDesktop * /*desktop*/, SPItem * /*item*/) {};
+    virtual void addKnotHolderEntities(KnotHolder * /*knotholder*/, SPItem * /*item*/) {};
 
     virtual void addCanvasIndicators(SPLPEItem const* lpeitem, std::vector<Geom::PathVector> &hp_vec);
 
@@ -147,7 +163,6 @@ protected:
     bool _provides_knotholder_entities;
 
     int oncanvasedit_it;
-    BoolParam is_visible;
 
     bool show_orig_path; // set this to true in derived effects to automatically have the original
                          // path displayed as helperpath
@@ -159,16 +174,20 @@ protected:
     // this boolean defaults to false, it concatenates the input path to one pwd2,
     // instead of normally 'splitting' the path into continuous pwd2 paths and calling doEffect_pwd2 for each.
     bool concatenate_before_pwd2;
-
     SPLPEItem * sp_lpe_item; // these get stored in doBeforeEffect_impl, and derived classes may do as they please with them.
+    SPShape * current_shape; // these get stored in performPathEffects.
+    std::vector<Glib::ustring> items;
     double current_zoom;
     std::vector<Geom::Point> selectedNodesPoints;
-    SPCurve * sp_curve;
-    Geom::PathVector pathvector_before_effect;
+
 private:
+    void onDefaultsExpanderChanged(Gtk::Expander * expander);
+    void setDefaultParam(Glib::ustring pref_path, Glib::ustring par, Glib::ustring  value, Glib::ustring  defvalue, Gtk::Label *parameter_label, Gtk::Button *set , Gtk::Button *unset);
+    void unsetDefaultParam(Glib::ustring pref_path, Glib::ustring par, Glib::ustring value, Glib::ustring defvalue, Gtk::Label *parameter_label, Gtk::Button *set , Gtk::Button *unset);
     bool provides_own_flash_paths; // if true, the standard flash path is suppressed
 
     bool is_ready;
+    bool defaultsopen;
 
     Effect(const Effect&);
     Effect& operator=(const Effect&);

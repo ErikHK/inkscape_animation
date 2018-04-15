@@ -2,190 +2,13 @@
 # Define the main source
 # -----------------------------------------------------------------------------
 
-set(sp_SRC
+set(inkscape_SRC
   attribute-rel-css.cpp
   attribute-rel-svg.cpp
   attribute-rel-util.cpp
   attribute-sort-util.cpp
-  sp-anchor.cpp
-  sp-clippath.cpp
-  sp-conn-end-pair.cpp
-  sp-conn-end.cpp
-  sp-cursor.cpp
-  sp-defs.cpp
-  sp-desc.cpp
-  sp-ellipse.cpp
-  sp-factory.cpp
-  sp-filter-primitive.cpp
-  sp-filter-reference.cpp
-  sp-filter.cpp
-  sp-flowdiv.cpp
-  sp-flowregion.cpp
-  sp-flowtext.cpp
-  sp-font-face.cpp
-  sp-font.cpp
-  sp-glyph-kerning.cpp
-  sp-glyph.cpp
-  sp-gradient-reference.cpp
-  sp-gradient.cpp
-  sp-guide.cpp
-  sp-hatch-path.cpp
-  sp-hatch.cpp
-  sp-image.cpp
-  sp-item-group.cpp
-  sp-item-notify-moveto.cpp
-  sp-item-rm-unsatisfied-cns.cpp
-  sp-item-transform.cpp
-  sp-item-update-cns.cpp
-  sp-item.cpp
-  sp-line.cpp
-  sp-linear-gradient.cpp
-  sp-lpe-item.cpp
-  sp-marker.cpp
-  sp-mask.cpp
-  sp-mesh-array.cpp
-  sp-mesh-gradient.cpp
-  sp-mesh-patch.cpp
-  sp-mesh-row.cpp
-  sp-metadata.cpp
-  sp-missing-glyph.cpp
-  sp-namedview.cpp
-  sp-object-group.cpp
-  sp-object.cpp
-  sp-offset.cpp
-  sp-paint-server.cpp
-  sp-path.cpp
-  sp-pattern.cpp
-  sp-polygon.cpp
-  sp-polyline.cpp
-  sp-radial-gradient.cpp
-  sp-rect.cpp
-  sp-root.cpp
-  sp-script.cpp
-  sp-shape.cpp
-  sp-solid-color.cpp
-  sp-spiral.cpp
-  sp-star.cpp
-  sp-stop.cpp
-  sp-string.cpp
-  sp-style-elem.cpp
-  sp-switch.cpp
-  sp-symbol.cpp
-  sp-tag-use-reference.cpp
-  sp-tag-use.cpp
-  sp-tag.cpp
-  sp-text.cpp
-  sp-title.cpp
-  sp-tref-reference.cpp
-  sp-tref.cpp
-  sp-tspan.cpp
-  sp-use-reference.cpp
-  sp-use.cpp
-  splivarot.cpp
-  viewbox.cpp
-  timeline-item.cpp
-
-  # -------
-  # Headers
-  attribute-rel-css.h
-  attribute-rel-svg.h
-  attribute-rel-util.h
-  attribute-sort-util.h
-  sp-anchor.h
-  sp-clippath.h
-  sp-conn-end-pair.h
-  sp-conn-end.h
-  sp-cursor.h
-  sp-defs.h
-  sp-desc.h
-  sp-ellipse.h
-  sp-factory.h
-  sp-filter-primitive.h
-  sp-filter-reference.h
-  sp-filter-units.h
-  sp-filter.h
-  sp-flowdiv.h
-  sp-flowregion.h
-  sp-flowtext.h
-  sp-font-face.h
-  sp-font.h
-  sp-glyph-kerning.h
-  sp-glyph.h
-  sp-gradient-reference.h
-  sp-gradient-spread.h
-  sp-gradient-test.h
-  sp-gradient-units.h
-  sp-gradient-vector.h
-  sp-gradient.h
-  sp-guide-attachment.h
-  sp-guide-constraint.h
-  sp-guide.h
-  sp-hatch-path.h
-  sp-hatch.h
-  sp-image.h
-  sp-item-group.h
-  sp-item-notify-moveto.h
-  sp-item-rm-unsatisfied-cns.h
-  sp-item-transform.h
-  sp-item-update-cns.h
-  sp-item.h
-  sp-line.h
-  sp-linear-gradient.h
-  sp-lpe-item.h
-  sp-marker-loc.h
-  sp-marker.h
-  sp-mask.h
-  sp-mesh-array.h
-  sp-mesh-gradient.h
-  sp-mesh-patch.h
-  sp-mesh-row.h
-  sp-metadata.h
-  sp-missing-glyph.h
-  sp-namedview.h
-  sp-object-group.h
-  sp-object.h
-  sp-offset.h
-  sp-paint-server-reference.h
-  sp-paint-server.h
-  sp-path.h
-  sp-pattern.h
-  sp-polygon.h
-  sp-polyline.h
-  sp-radial-gradient.h
-  sp-rect.h
-  sp-root.h
-  sp-script.h
-  sp-shape.h
-  sp-solid-color.h
-  sp-spiral.h
-  sp-star.h
-  sp-stop.h
-  sp-string.h
-  sp-style-elem-test.h
-  sp-style-elem.h
-  sp-switch.h
-  sp-symbol.h
-  sp-tag.h
-  sp-tag-use.h
-  sp-tag-use-reference.h
-  sp-text.h
-  sp-textpath.h
-  sp-title.h
-  sp-tref-reference.h
-  sp-tref.h
-  sp-tspan.h
-  sp-use-reference.h
-  sp-use.h
-  viewbox.h
-  timeline-item.h
-)
-
-set(inkscape_SRC
   attributes.cpp
   axis-manip.cpp
-  box3d-side.cpp
-  box3d.cpp
-  color-profile.cpp
   color.cpp
   composite-undo-stack-observer.cpp
   conditions.cpp
@@ -226,6 +49,7 @@ set(inkscape_SRC
   line-geometry.cpp
   line-snapper.cpp
   main-cmdlineact.cpp
+  main-cmdlinexact.cpp
   media.cpp
   message-context.cpp
   message-stack.cpp
@@ -233,8 +57,7 @@ set(inkscape_SRC
   object-hierarchy.cpp
   object-snapper.cpp
   path-chemistry.cpp
-  persp3d-reference.cpp
-  persp3d.cpp
+  path-prefix.cpp
   perspective-line.cpp
   preferences.cpp
   prefix.cpp
@@ -260,38 +83,35 @@ set(inkscape_SRC
   snapped-line.cpp
   snapped-point.cpp
   snapper.cpp
+  splivarot.cpp
+  sp-cursor.cpp
+  sp-item-notify-moveto.cpp 
   style-internal.cpp
   style.cpp
+  svg-view-slideshow.cpp
   svg-view-widget.cpp
   svg-view.cpp
   text-chemistry.cpp
   text-editing.cpp
   transf_mat_3x4.cpp
-  tween.cpp
   unclump.cpp
   unicoderange.cpp
-  uri-references.cpp
-  uri.cpp
   vanishing-point.cpp
   verbs.cpp
   version.cpp
 
   # -------
   # Headers
-  MultiPrinter.h
-  PylogFormatter.h
-  TRPIFormatter.h
-  attributes-test.h
+  attribute-rel-css.h
+  attribute-rel-svg.h
+  attribute-rel-util.h
+  attribute-sort-util.h
   attributes.h
   axis-manip.h
   bad-uri-exception.h
-  box3d-side.h
-  box3d.h
   cms-color-types.h
   cms-system.h
   color-profile-cms-fns.h
-  color-profile-test.h
-  color-profile.h
   color-rgba.h
   color.h
   colorspace.h
@@ -300,12 +120,10 @@ set(inkscape_SRC
   conn-avoid-ref.h
   console-output-undo-observer.h
   context-fns.h
-  decimal-round.h
   desktop-events.h
   desktop-style.h
   desktop.h
   device-manager.h
-  dir-util-test.h
   dir-util.h
   document-private.h
   document-subset.h
@@ -315,7 +133,6 @@ set(inkscape_SRC
   enums.h
   event-log.h
   event.h
-  extract-uri-test.h
   extract-uri.h
   file.h
   fill-or-stroke.h
@@ -329,11 +146,9 @@ set(inkscape_SRC
   guide-snapper.h
   help.h
   helper-fns.h
-  icon-size.h
   id-clash.h
   inkscape-version.h
   inkscape.h
-  isinf.h
   knot-enums.h
   knot-holder-entity.h
   knot-ptr.h
@@ -346,25 +161,20 @@ set(inkscape_SRC
   line-snapper.h
   macros.h
   main-cmdlineact.h
-  marker-test.h
+  main-cmdlinexact.h
   media.h
   menus-skeleton.h
   message-context.h
   message-stack.h
   message.h
-  mod360-test.h
   mod360.h
   number-opt-number.h
   object-hierarchy.h
   object-snapper.h
-  object-test.h
   path-chemistry.h
   path-prefix.h
-  persp3d-reference.h
-  persp3d.h
   perspective-line.h
   preferences-skeleton.h
-  preferences-test.h
   preferences.h
   prefix.h
   print.h
@@ -374,10 +184,7 @@ set(inkscape_SRC
   rdf.h
   remove-last.h
   removeoverlap.h
-  require-config.h
   resource-manager.h
-  round-test.h
-  round.h
   rubberband.h
   satisfied-guide-cns.h
   selcue.h
@@ -395,51 +202,48 @@ set(inkscape_SRC
   snapped-line.h
   snapped-point.h
   snapper.h
+  sp-cursor.h
+  sp-guide-attachment.h
+  sp-guide-constraint.h
+  sp-item-notify-moveto.h
   splivarot.h
   streq.h
   strneq.h
   style-enums.h
   style-internal.h
-  style-test.h
   style.h
   svg-profile.h
+  svg-view-slideshow.h
   svg-view-widget.h
   svg-view.h
   syseq.h
-  test-helpers.h
   text-chemistry.h
   text-editing.h
   text-tag-attributes.h
   transf_mat_3x4.h
-  tween.h
   unclump.h
   undo-stack-observer.h
   unicoderange.h
-  uri-references.h
-  uri-test.h
-  uri.h
   vanishing-point.h
-  verbs-test.h
   verbs.h
   version.h
 )
-
+  
 # -----------------------------------------------------------------------------
 # Generate version file
 # -----------------------------------------------------------------------------
 
-# a custom target that is always built
-add_custom_target(
-    inkscape_version ALL
-    COMMAND ${CMAKE_COMMAND}
-    -DINKSCAPE_SOURCE_DIR=${CMAKE_SOURCE_DIR}
-    -DINKSCAPE_BINARY_DIR=${CMAKE_BINARY_DIR}
-    -P ${CMAKE_SOURCE_DIR}/CMakeScripts/inkscape-version.cmake)
+# configure with values known at configure time
+configure_file(inkscape-version.cpp.in ${CMAKE_BINARY_DIR}/src/inkscape-version.cpp.in @ONLY)
 
-# buildinfo.h is a generated file
-set_source_files_properties(
-    ${CMAKE_BINARY_DIR}/src/inkscape-version.cpp
-    PROPERTIES GENERATED TRUE)
+# configure further at build time (always built as run_always.txt is never actually created)
+add_custom_command(
+    OUTPUT inkscape-version.cpp run_always.txt
+    COMMAND ${CMAKE_COMMAND}
+        -DINKSCAPE_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -DINKSCAPE_BINARY_DIR=${CMAKE_BINARY_DIR}
+        -P ${CMAKE_SOURCE_DIR}/CMakeScripts/inkscape-version.cmake
+    COMMENT "Generating inkscape-version.cpp")
 
 list(APPEND inkscape_SRC
   ${CMAKE_BINARY_DIR}/src/inkscape-version.cpp
@@ -455,10 +259,10 @@ list(APPEND inkscape_SRC
 add_subdirectory(debug)
 add_subdirectory(display)
 add_subdirectory(extension)
-add_subdirectory(filters)
 add_subdirectory(helper)
 add_subdirectory(io)
 add_subdirectory(live_effects)
+add_subdirectory(object)
 add_subdirectory(svg)
 add_subdirectory(trace)
 add_subdirectory(ui)
@@ -472,7 +276,6 @@ add_subdirectory(libavoid)
 add_subdirectory(libcola)
 add_subdirectory(libcroco)
 add_subdirectory(inkgc)
-add_subdirectory(libgdl)
 add_subdirectory(libuemf)
 add_subdirectory(libvpsc)
 add_subdirectory(livarot)
@@ -489,52 +292,57 @@ set(inkscape_SRC
 # -----------------------------------------------------------------------------
 # Setup the executable
 # -----------------------------------------------------------------------------
-#add_inkscape_lib(sp_LIB "${sp_SRC}")
-#add_inkscape_lib(inkscape_LIB "${inkscape_SRC}")
-
-set(inkview_SRC
+set(main_SRC main.cpp)
+set(view_SRC
   inkview.cpp
+  inkview-options-group.cpp
+  inkview-options-group.h
 )
 
 if(WIN32)
   # Sources for the inkscape executable on Windows.
-  set(main_SRC
+  list(APPEND main_SRC
     registrytool.h
     registrytool.cpp
-    main.cpp
-    winmain.cpp
-    #winconsole.cpp
   )
+
+  # Configure and add the platform specific resource files (enabling the app icon).
+  string(TIMESTAMP COPYRIGHT_YEAR %Y)
   
-  # Add the platform specific resource files (enabling the app icon).
-  if(${HAVE_MINGW64})
-    list(APPEND main_SRC inkscape-x64.rc)
-    list(APPEND inkview_SRC inkview-x64.rc)
-  else()
-    list(APPEND main_SRC inkscape.rc)
-    list(APPEND inkview_SRC inkview.rc)
-  endif()
+  set(FILE_NAME inkscape)
+  set(PROGRAM_NAME Inkscape)
+  set(PROGRAM_DESCRIPTION "Inkscape vector graphics editor")
+  configure_file(inkscape.rc ${CMAKE_BINARY_DIR}/src/inkscape.rc)
+  configure_file(inkscape-manifest.xml ${CMAKE_BINARY_DIR}/src/inkscape-manifest.xml)  
+  list(APPEND main_SRC ${CMAKE_BINARY_DIR}/src/inkscape.rc)
   
-  # Build the windows MS-DOS console executable.
+  set(FILE_NAME inkview)
+  set(PROGRAM_NAME Inkview)
+  set(PROGRAM_DESCRIPTION "Inkview vector graphics viewer")
+  configure_file(inkscape.rc ${CMAKE_BINARY_DIR}/src/inkview.rc)
+  configure_file(inkscape-manifest.xml ${CMAKE_BINARY_DIR}/src/inkview-manifest.xml)
+  list(APPEND view_SRC ${CMAKE_BINARY_DIR}/src/inkview.rc)
+  
+  # Build console applications as wrappers around inkscape/inkview.exe as GUI applications can't print to the console.
   add_executable(inkscape_com winconsole.cpp)
   set_target_properties(inkscape_com
-                        PROPERTIES LINK_FLAGS "-mconsole")
-else()
-  set(main_SRC main.cpp)
+                        PROPERTIES
+                          LINK_FLAGS "-mconsole"
+                          OUTPUT_NAME "inkscape"
+                          SUFFIX ".com")
+  add_executable(inkview_com winconsole.cpp)
+  set_target_properties(inkview_com
+                        PROPERTIES
+                          LINK_FLAGS "-mconsole"
+                          OUTPUT_NAME "inkview"
+                          SUFFIX ".com")
 endif()
-
-# Build everything except main and inkview.c in a shared library.
-add_library(inkscape_base SHARED ${inkscape_SRC} ${sp_SRC})
 
 # make executables for inkscape and inkview
 add_executable(inkscape ${main_SRC})
-add_executable(inkview ${inkview_SRC})
+add_executable(inkview ${view_SRC})
 
-add_dependencies(inkscape_base inkscape_version)
 
-if(WITH_DBUS)
-    add_dependencies(inkscape_base inkscape_dbus)
-endif()
 
 set(INKSCAPE_TARGET_LIBS
         # order from automake
@@ -553,28 +361,41 @@ set(INKSCAPE_TARGET_LIBS
         depixelize_LIB
         util_LIB
         gc_LIB
-        ${INKSCAPE_LIBS}
 )
 
-if (NOT "${WITH_EXT_GDL}")
-    # Insert it at the beginning of the list as the windows build fails otherwise
-    list (INSERT INKSCAPE_TARGET_LIBS 0 "gdl_LIB")
+# Build everything except main and inkview.c in a shared library.
+add_library(inkscape_base ${inkscape_SRC} ${sp_SRC})
+
+if(WITH_DBUS)
+    add_dependencies(inkscape_base inkscape_dbus)
 endif()
 
 # Link the inkscape_base library against all external dependencies
-target_link_libraries(inkscape_base ${INKSCAPE_TARGET_LIBS})
+target_link_libraries(inkscape_base PRIVATE ${INKSCAPE_TARGET_LIBS} PUBLIC ${INKSCAPE_LIBS})
 
 # Link inkscape and inkview against inkscape_base
 target_link_libraries(inkscape inkscape_base)
 target_link_libraries(inkview inkscape_base)
 
+
+
+#Define the installation
 if(NOT WIN32)
-  #Define the installation
   install(TARGETS
-    inkscape_base
     inkscape
     inkview 
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib/inkscape
-    ARCHIVE DESTINATION lib/inkscape)
+    RUNTIME DESTINATION bin)
+  if(BUILD_SHARED_LIBS)
+    install(TARGETS inkscape_base LIBRARY DESTINATION lib/inkscape)
+  endif()
+else()
+  install(TARGETS
+    inkscape
+    inkscape_com
+    inkview
+    inkview_com
+    RUNTIME DESTINATION .)
+  if(BUILD_SHARED_LIBS)
+    install(TARGETS inkscape_base RUNTIME DESTINATION .)
+  endif()
 endif()

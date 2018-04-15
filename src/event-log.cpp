@@ -22,7 +22,7 @@
 #include "util/ucompose.hpp"
 #include "document.h"
 #include "xml/repr.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 
 namespace
 {

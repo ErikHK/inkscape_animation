@@ -43,6 +43,7 @@ private:
     RandomParam endpoint_spacing_variation;
     ScalarParam prop_scale;
     BoolParam scale_y_rel;
+    bool transformed;
 
     LPECurveStitch(const LPECurveStitch&);
     LPECurveStitch& operator=(const LPECurveStitch&);

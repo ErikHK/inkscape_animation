@@ -8,7 +8,7 @@
 #include <gtkmm/treemodelcolumn.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/scrolledwindow.h>
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "keyframe-bar.h"
 
 //static gint playLoop();

@@ -4,17 +4,17 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include "ui/widget/registered-widget.h"
-#include <glibmm/i18n.h>
 
-#include "live_effects/parameter/parameter.h"
 #include "live_effects/effect.h"
+#include "live_effects/parameter/parameter.h"
 #include "svg/svg.h"
 #include "xml/repr.h"
 
 #include "svg/stringstream.h"
 
 #include "verbs.h"
+
+#include <glibmm/i18n.h>
 
 #define noLPEREALPARAM_DEBUG
 
@@ -39,6 +39,7 @@ Parameter::Parameter( const Glib::ustring& label, const Glib::ustring& tip,
 void
 Parameter::param_write_to_repr(const char * svgd)
 {
+    param_effect->upd_params = true;
     param_effect->getRepr()->setAttribute(param_key.c_str(), svgd);
 }
 
@@ -54,7 +55,7 @@ void Parameter::write_to_SVG(void)
  */
 ScalarParam::ScalarParam( const Glib::ustring& label, const Glib::ustring& tip,
                       const Glib::ustring& key, Inkscape::UI::Widget::Registry* wr,
-                      Effect* effect, gdouble default_value, bool no_widget)
+                      Effect* effect, gdouble default_value)
     : Parameter(label, tip, key, wr, effect),
       value(default_value),
       min(-SCALARPARAM_G_MAXDOUBLE),
@@ -65,8 +66,7 @@ ScalarParam::ScalarParam( const Glib::ustring& label, const Glib::ustring& tip,
       inc_step(0.1),
       inc_page(1),
       add_slider(false),
-      overwrite_widget(false),
-      hide_widget(no_widget)
+      _set_undo(true)
 {
 }
 
@@ -91,8 +91,15 @@ ScalarParam::param_getSVGValue() const
 {
     Inkscape::SVGOStringStream os;
     os << value;
-    gchar * str = g_strdup(os.str().c_str());
-    return str;
+    return g_strdup(os.str().c_str());
+}
+
+gchar *
+ScalarParam::param_getDefaultSVGValue() const
+{
+    Inkscape::SVGOStringStream os;
+    os << defvalue;
+    return  g_strdup(os.str().c_str());
 }
 
 void
@@ -101,9 +108,28 @@ ScalarParam::param_set_default()
     param_set_value(defvalue);
 }
 
+void 
+ScalarParam::param_update_default(gdouble default_value)
+{
+    defvalue = default_value;
+}
+
+void 
+ScalarParam::param_update_default(const gchar * default_value)
+{
+    double newval;
+    unsigned int success = sp_svg_number_read_d(default_value, &newval);
+    if (success == 1) {
+        param_update_default(newval);
+    }
+}
+
 void
 ScalarParam::param_set_value(gdouble val)
 {
+    if (value != val) {
+        param_effect->upd_params = true;
+    }
     value = val;
     if (integer)
         value = round(value);
@@ -121,7 +147,6 @@ ScalarParam::param_set_range(gdouble min, gdouble max)
     // Once again, in gtk2, this is not a problem. But in gtk3,
     // widgets get allocated the amount of size they ask for,
     // leading to excessively long widgets.
-
     if (min >= -SCALARPARAM_G_MAXDOUBLE) {
         this->min = min;
     } else {
@@ -130,9 +155,8 @@ ScalarParam::param_set_range(gdouble min, gdouble max)
     if (max <= SCALARPARAM_G_MAXDOUBLE) {
         this->max = max;
     } else {
-	this->max = SCALARPARAM_G_MAXDOUBLE;
+        this->max = SCALARPARAM_G_MAXDOUBLE;
     }
-
     param_set_value(value); // reset value to see whether it is in ranges
 }
 
@@ -146,15 +170,15 @@ ScalarParam::param_make_integer(bool yes)
 }
 
 void
-ScalarParam::param_overwrite_widget(bool overwrite_widget)
+ScalarParam::param_set_undo(bool set_undo)
 {
-    this->overwrite_widget = overwrite_widget;
+    _set_undo = set_undo;
 }
 
 Gtk::Widget *
 ScalarParam::param_newWidget()
 {
-    if(!hide_widget){
+    if (widget_is_visible) {
         Inkscape::UI::Widget::RegisteredScalar *rsu = Gtk::manage( new Inkscape::UI::Widget::RegisteredScalar(
             param_label, param_tooltip, param_key, *param_wr, param_effect->getRepr(), param_effect->getSPDoc() ) );
 
@@ -166,13 +190,19 @@ ScalarParam::param_newWidget()
         if (add_slider) {
             rsu->addSlider();
         }
-        if(!overwrite_widget){
+        rsu->signal_button_release_event().connect(sigc::mem_fun (*this, &ScalarParam::on_button_release));
+        if(_set_undo){
             rsu->set_undo_parameters(SP_VERB_DIALOG_LIVE_PATH_EFFECT, _("Change scalar parameter"));
         }
         return dynamic_cast<Gtk::Widget *> (rsu);
     } else {
         return NULL;
     }
+}
+
+bool ScalarParam::on_button_release(GdkEventButton* button_event) {
+    param_effect->upd_params = true;
+    return false;
 }
 
 void

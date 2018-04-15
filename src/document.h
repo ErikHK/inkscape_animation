@@ -39,6 +39,15 @@ extern bool sp_no_convert_text_baseline_spacing;
 
 
 
+// This variable is introduced with 0.92.1
+// with the introduction of automatic fix 
+// for files detected to have been created 
+// with previous versions to have a similar
+// look in 0.92+.
+extern bool sp_do_not_fix_pre_92;
+
+
+
 namespace Avoid {
 class Router;
 }
@@ -104,10 +113,13 @@ public:
 
     Inkscape::XML::Document *rdoc; ///< Our Inkscape::XML::Document
     Inkscape::XML::Node *rroot; ///< Root element of Inkscape::XML::Document
+
 private:
     SPRoot *root;             ///< Our SPRoot
+
 public:
     CRCascade *style_cascade;
+    CRStyleSheet *style_sheet;
 
 protected:
     char *uri;   ///< A filename (not a URI yet), or NULL
@@ -188,6 +200,10 @@ public:
     SPObject *getObjectById(char const *id) const;
     sigc::connection connectIdChanged(const char *id, IDChangedSignal::slot_type slot);
 
+    std::vector<SPObject *> getObjectsByClass(Glib::ustring const &klass) const;
+    std::vector<SPObject *> getObjectsByElement(Glib::ustring const &element) const;
+    std::vector<SPObject *> getObjectsBySelector(Glib::ustring const &selector) const;
+    
     void bindObjectToRepr(Inkscape::XML::Node *repr, SPObject *object);
     SPObject *getObjectByRepr(Inkscape::XML::Node *repr) const;
 
@@ -269,8 +285,8 @@ public:
     bool addResource(char const *key, SPObject *object);
     bool removeResource(char const *key, SPObject *object);
     const std::vector<SPObject *> getResourceList(char const *key) const;
-    std::vector<SPItem*> getItemsInBox(unsigned int dkey, Geom::Rect const &box, bool into_groups = false) const;
-    std::vector<SPItem*> getItemsPartiallyInBox(unsigned int dkey, Geom::Rect const &box, bool into_groups = false) const;
+    std::vector<SPItem*> getItemsInBox(unsigned int dkey, Geom::Rect const &box, bool take_insensitive = false, bool into_groups = false) const;
+    std::vector<SPItem*> getItemsPartiallyInBox(unsigned int dkey, Geom::Rect const &box, bool take_insensitive = false, bool into_groups = false) const;
     SPItem *getItemAtPoint(unsigned int key, Geom::Point const &p, bool into_groups, SPItem *upto = NULL) const;
     std::vector<SPItem*> getItemsAtPoints(unsigned const key, std::vector<Geom::Point> points, bool all_layers = true, size_t limit = 0) const ;
     SPItem *getGroupAtPoint(unsigned int key,  Geom::Point const &p) const;
@@ -296,7 +312,7 @@ private:
  *
  * 1. There is reference request dictionary, that contains
  * objects (styles) needing certain id. Object::build checks
- * final id against it, and invokes necesary methods
+ * final id against it, and invokes necessary methods
  *
  * 2. Removing referenced object is simply prohibited -
  * needs analyse, how we can deal with situations, where

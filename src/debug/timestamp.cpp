@@ -19,8 +19,8 @@ namespace Inkscape {
 
 namespace Debug {
 
-Util::ptr_shared<char> timestamp() {
-    Util::ptr_shared<char> result;
+Util::ptr_shared timestamp() {
+    Util::ptr_shared result;
     GTimeVal timestamp;
     g_get_current_time(&timestamp);
     gchar *value = g_strdup_printf( "%d.%06d", static_cast<gint>(timestamp.tv_sec), static_cast<gint>(timestamp.tv_usec) );

@@ -9,7 +9,7 @@
  * Authors:
  *   Johan Engelen
  *   Steren Giannini
- *   Noé Falzon
+ *   NoÃ© Falzon
  *   Victor Navez
 *
 * Copyright (C) Johan Engelen 2007 <j.b.c.engelen@utwente.nl>

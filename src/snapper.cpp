@@ -9,7 +9,7 @@
  *  Released under GNU GPL, read the file 'COPYING' for more information.
  */
 
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "inkscape.h"
 #include "desktop.h"
 

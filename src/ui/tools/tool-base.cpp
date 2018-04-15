@@ -40,7 +40,7 @@
 
 #include "desktop-events.h"
 #include "desktop-style.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "selection.h"
 #include "ui/interface.h"
 #include "macros.h"

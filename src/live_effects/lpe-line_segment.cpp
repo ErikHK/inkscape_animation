@@ -13,10 +13,8 @@
 
 #include "live_effects/lpe-line_segment.h"
 #include "ui/tools/lpe-tool.h"
-
-#include <2geom/pathvector.h>
-#include <2geom/geom.h>
-#include <2geom/bezier-curve.h>
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -34,7 +32,7 @@ LPELineSegment::LPELineSegment(LivePathEffectObject *lpeobject) :
     end_type(_("End type:"), _("Determines on which side the line or line segment is infinite."), "end_type", EndTypeConverter, &wr, this, END_OPEN_BOTH)
 {
     /* register all your parameters here, so Inkscape knows which parameters this effect has: */
-    registerParameter( dynamic_cast<Parameter *>(&end_type) );
+    registerParameter(&end_type);
 }
 
 LPELineSegment::~LPELineSegment()

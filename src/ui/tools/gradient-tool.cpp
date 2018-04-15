@@ -43,7 +43,7 @@
 #include "svg/css-ostringstream.h"
 #include "svg/svg-color.h"
 #include "snap.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "rubberband.h"
 #include "document-undo.h"
 #include "verbs.h"

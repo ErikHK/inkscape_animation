@@ -22,13 +22,13 @@ namespace XML {
  * represented by this structure.
  */
 struct AttributeRecord : public Inkscape::GC::Managed<> {
-    AttributeRecord(GQuark k, Inkscape::Util::ptr_shared<char> v)
+    AttributeRecord(GQuark k, Inkscape::Util::ptr_shared v)
     : key(k), value(v) {}
 
     /** @brief GQuark corresponding to the name of the attribute */
     GQuark key;
     /** @brief Shared pointer to the value of the attribute */
-    Inkscape::Util::ptr_shared<char> value;
+    Inkscape::Util::ptr_shared value;
 
     // accept default copy constructor and assignment operator
 };

@@ -87,25 +87,66 @@ static enum CRStatus put_css_properties_in_props_list (CRPropList ** a_props,
                                                        a_ruleset);
 
 static gboolean pseudo_class_add_sel_matches_node (CRSelEng * a_this,
-                                                   CRAdditionalSel *
-                                                   a_add_sel,
+                                                   CRAdditionalSel * a_add_sel,
                                                    CRXMLNodePtr a_node);
+
+static gboolean empty_pseudo_class_handler (CRSelEng * a_this,
+                                            CRAdditionalSel * a_sel,
+                                            CRXMLNodePtr a_node);
+
+static gboolean root_pseudo_class_handler (CRSelEng * a_this,
+                                           CRAdditionalSel * a_sel,
+                                           CRXMLNodePtr a_node);
 
 static gboolean lang_pseudo_class_handler (CRSelEng * a_this,
                                            CRAdditionalSel * a_sel,
                                            CRXMLNodePtr a_node);
 
+static gboolean only_child_pseudo_class_handler (CRSelEng * a_this,
+                                                 CRAdditionalSel * a_sel,
+                                                 CRXMLNodePtr a_node);
+
 static gboolean first_child_pseudo_class_handler (CRSelEng * a_this,
                                                   CRAdditionalSel * a_sel,
                                                   CRXMLNodePtr a_node);
 
+static gboolean first_of_type_pseudo_class_handler (CRSelEng * a_this,
+                                                    CRAdditionalSel * a_sel,
+                                                    CRXMLNodePtr a_node);
+
+static gboolean last_child_pseudo_class_handler (CRSelEng * a_this,
+                                                 CRAdditionalSel * a_sel,
+                                                 CRXMLNodePtr a_node);
+
+static gboolean last_of_type_pseudo_class_handler (CRSelEng * a_this,
+                                                   CRAdditionalSel * a_sel,
+                                                   CRXMLNodePtr a_node);
+
+static gboolean nth_child_pseudo_class_handler (CRSelEng * a_this,
+                                                CRAdditionalSel * a_sel,
+                                                CRXMLNodePtr a_node);
+
+static gboolean nth_of_type_pseudo_class_handler (CRSelEng * a_this,
+                                                  CRAdditionalSel * a_sel,
+                                                  CRXMLNodePtr a_node);
+
+static gboolean nth_last_child_pseudo_class_handler (CRSelEng * a_this,
+                                                     CRAdditionalSel * a_sel,
+                                                     CRXMLNodePtr a_node);
+
+static gboolean nth_last_of_type_pseudo_class_handler (CRSelEng * a_this,
+                                                       CRAdditionalSel * a_sel,
+                                                       CRXMLNodePtr a_node);
+
 static CRXMLNodePtr get_next_element_node (CRNodeIface const * a_node_iface, CRXMLNodePtr a_node);
 
-static CRXMLNodePtr get_next_child_element_node (CRNodeIface const * a_node_iface, CRXMLNodePtr a_node);
+static CRXMLNodePtr get_first_child_element_node (CRNodeIface const * a_node_iface, CRXMLNodePtr a_node);
 
 static CRXMLNodePtr get_prev_element_node (CRNodeIface const * a_node_iface, CRXMLNodePtr a_node);
 
 static CRXMLNodePtr get_next_parent_element_node (CRNodeIface const * a_node_iface, CRXMLNodePtr a_node);
+
+static CRArguments get_arguments_from_function (CRAdditionalSel * a_sel);
 
 void
 cr_sel_eng_set_node_iface (CRSelEng *const a_this, CRNodeIface const *const a_node_iface)
@@ -118,6 +159,60 @@ cr_sel_eng_set_node_iface (CRSelEng *const a_this, CRNodeIface const *const a_no
 /* Quick strcmp.  Test only for == 0 or != 0, not < 0 or > 0.  */
 #define strqcmp(str,lit,lit_len) \
   (strlen (str) != (lit_len) || memcmp (str, lit, lit_len))
+
+static gboolean
+root_pseudo_class_handler (CRSelEng *const a_this,
+                           CRAdditionalSel * a_sel, CRXMLNodePtr const a_node)
+{
+        CRNodeIface const *node_iface = NULL;
+        CRXMLNodePtr parent = NULL;
+
+        g_return_val_if_fail (a_this && PRIVATE (a_this)
+                              && a_sel && a_sel->content.pseudo
+                              && a_sel->content.pseudo
+                              && a_sel->content.pseudo->name
+                              && a_sel->content.pseudo->name->stryng
+                              && a_node, FALSE);
+
+        if (strcmp (a_sel->content.pseudo->name->stryng->str, "root")
+            || a_sel->content.pseudo->type != IDENT_PSEUDO) {
+                cr_utils_trace_info ("This handler is for :root only");
+                return FALSE;
+        }
+
+        node_iface = PRIVATE(a_this)->node_iface;
+        parent = node_iface->getParentNode (a_node);
+
+        // libxml apears to set the parent of the root element to an
+        // element of type 'xml'.
+        return (parent == NULL || !strcmp(node_iface->getLocalName(parent),"xml") );
+}
+
+static gboolean
+empty_pseudo_class_handler (CRSelEng *const a_this,
+                            CRAdditionalSel * a_sel, CRXMLNodePtr const a_node)
+{
+        CRNodeIface const *node_iface = NULL;
+
+        g_return_val_if_fail (a_this && PRIVATE (a_this)
+                              && a_sel && a_sel->content.pseudo
+                              && a_sel->content.pseudo
+                              && a_sel->content.pseudo->name
+                              && a_sel->content.pseudo->name->stryng
+                              && a_node, FALSE);
+
+        if (strcmp (a_sel->content.pseudo->name->stryng->str, "empty")
+            || a_sel->content.pseudo->type != IDENT_PSEUDO) {
+                cr_utils_trace_info ("This handler is for :empty only");
+                return FALSE;
+        }
+        node_iface = PRIVATE(a_this)->node_iface;
+
+        CRXMLNodePtr cur_node = NULL;
+        cur_node = node_iface->getFirstChild (a_node);
+
+        return (cur_node == NULL);
+}
 
 static gboolean
 lang_pseudo_class_handler (CRSelEng *const a_this,
@@ -144,15 +239,16 @@ lang_pseudo_class_handler (CRSelEng *const a_this,
                 return FALSE;
         }
         /*lang code should exist and be at least of length 2 */
-        if (!a_sel->content.pseudo->extra
-            || !a_sel->content.pseudo->extra->stryng
-            || a_sel->content.pseudo->extra->stryng->len < 2)
+        if (!a_sel->content.pseudo->term
+            || a_sel->content.pseudo->term->type != TERM_IDENT
+            || !a_sel->content.pseudo->term->content.str->stryng
+            || a_sel->content.pseudo->term->content.str->stryng->len < 2)
                 return FALSE;
         for (; node; node = get_next_parent_element_node (node_iface, node)) {
                 char *val = node_iface->getProp (node, (const xmlChar *) "lang");
                 if (!val) val = node_iface->getProp (node, (const xmlChar *) "xml:lang");
                 if (val) {
-                        if (!strcasecmp(val, a_sel->content.pseudo->extra->stryng->str)) {
+                        if (!strcasecmp(val, a_sel->content.pseudo->term->content.str->stryng->str)) {
                                 result = TRUE;
                                 break;
                         }
@@ -165,11 +261,11 @@ lang_pseudo_class_handler (CRSelEng *const a_this,
 }
 
 static gboolean
-first_child_pseudo_class_handler (CRSelEng *const a_this,
+only_child_pseudo_class_handler (CRSelEng *const a_this,
                                   CRAdditionalSel * a_sel, CRXMLNodePtr const a_node)
 {
         CRNodeIface const *node_iface = NULL;
-        CRXMLNodePtr node = NULL, parent = NULL;
+        CRXMLNodePtr parent = NULL;
 
         g_return_val_if_fail (a_this && PRIVATE (a_this)
                               && a_sel && a_sel->content.pseudo
@@ -178,8 +274,80 @@ first_child_pseudo_class_handler (CRSelEng *const a_this,
                               && a_sel->content.pseudo->name->stryng
                               && a_node, FALSE);
 
-        if (strcmp (a_sel->content.pseudo->name->stryng->str,
-                    "first-child")
+        if (strcmp (a_sel->content.pseudo->name->stryng->str, "only-child")
+            || a_sel->content.pseudo->type != IDENT_PSEUDO) {
+                cr_utils_trace_info ("This handler is for :only-child only");
+                return FALSE;
+        }
+        node_iface = PRIVATE(a_this)->node_iface;
+        parent = node_iface->getParentNode (a_node);
+        if (!parent)
+                return FALSE;
+
+        CRXMLNodePtr cur_node = NULL;
+
+        cur_node = get_first_child_element_node (node_iface, parent);
+        return (cur_node == a_node &&
+                !get_next_element_node(node_iface, cur_node) );
+}
+
+static gboolean
+only_of_type_pseudo_class_handler (CRSelEng *const a_this,
+                                  CRAdditionalSel * a_sel, CRXMLNodePtr const a_node)
+{
+        CRNodeIface const *node_iface = NULL;
+        CRXMLNodePtr parent = NULL;
+
+        g_return_val_if_fail (a_this && PRIVATE (a_this)
+                              && a_sel && a_sel->content.pseudo
+                              && a_sel->content.pseudo
+                              && a_sel->content.pseudo->name
+                              && a_sel->content.pseudo->name->stryng
+                              && a_node, FALSE);
+
+        if (strcmp (a_sel->content.pseudo->name->stryng->str, "only-of-type")
+            || a_sel->content.pseudo->type != IDENT_PSEUDO) {
+                cr_utils_trace_info ("This handler is for :only-of-type selector only");
+                return FALSE;
+        }
+        node_iface = PRIVATE(a_this)->node_iface;
+        parent = node_iface->getParentNode (a_node);
+        if (!parent)
+                return FALSE;
+
+        CRXMLNodePtr cur_node = NULL;
+        int m = 0;
+        int child = 0;
+        cur_node = get_first_child_element_node (node_iface, parent);
+
+        while (cur_node) {
+                if (!strcmp(node_iface->getLocalName(cur_node), a_sel->content.pseudo->sel_name->stryng->str)) {
+                        ++m;
+                }
+                if (cur_node == a_node) {
+                        child = m;
+                }
+                cur_node = get_next_element_node (node_iface, cur_node);
+        }
+        return (child == m && child == 1);
+}
+
+static gboolean
+first_child_pseudo_class_handler (CRSelEng *const a_this,
+                                  CRAdditionalSel * a_sel, CRXMLNodePtr const a_node)
+{
+        CRNodeIface const *node_iface = NULL;
+        CRXMLNodePtr node = NULL;
+        CRXMLNodePtr parent = NULL;
+
+        g_return_val_if_fail (a_this && PRIVATE (a_this)
+                              && a_sel && a_sel->content.pseudo
+                              && a_sel->content.pseudo
+                              && a_sel->content.pseudo->name
+                              && a_sel->content.pseudo->name->stryng
+                              && a_node, FALSE);
+
+        if (strcmp (a_sel->content.pseudo->name->stryng->str, "first-child")
             || a_sel->content.pseudo->type != IDENT_PSEUDO) {
                 cr_utils_trace_info ("This handler is for :first-child only");
                 return FALSE;
@@ -188,8 +356,395 @@ first_child_pseudo_class_handler (CRSelEng *const a_this,
         parent = node_iface->getParentNode (a_node);
         if (!parent)
                 return FALSE;
-        node = get_next_child_element_node (node_iface, parent);
+        node = get_first_child_element_node (node_iface, parent);
         return (node == a_node);
+}
+
+static gboolean
+first_of_type_pseudo_class_handler (CRSelEng *const a_this,
+                                  CRAdditionalSel * a_sel, CRXMLNodePtr const a_node)
+{
+        CRNodeIface const *node_iface = NULL;
+        CRXMLNodePtr parent = NULL;
+
+        g_return_val_if_fail (a_this && PRIVATE (a_this)
+                              && a_sel && a_sel->content.pseudo
+                              && a_sel->content.pseudo
+                              && a_sel->content.pseudo->name
+                              && a_sel->content.pseudo->name->stryng
+                              && a_node, FALSE);
+
+        if (strcmp (a_sel->content.pseudo->name->stryng->str, "first-of-type")
+            || a_sel->content.pseudo->type != IDENT_PSEUDO) {
+                cr_utils_trace_info ("This handler is for :first-of-type only");
+                return FALSE;
+        }
+        node_iface = PRIVATE(a_this)->node_iface;
+        parent = node_iface->getParentNode (a_node);
+        if (!parent)
+                return FALSE;
+
+        // Count which child no. of type
+        CRXMLNodePtr cur_node = NULL;
+        int child = 0;
+        int found = FALSE;
+
+        cur_node = get_first_child_element_node (node_iface, parent);
+
+        while (cur_node) {
+                if(!strcmp(node_iface->getLocalName(cur_node), a_sel->content.pseudo->sel_name->stryng->str)) {
+                        child++;
+                }
+                if (cur_node == a_node) {
+                        found = TRUE;
+                        break;
+                }
+                cur_node = get_next_element_node (node_iface, cur_node);
+        }
+
+        if (!found)
+                return FALSE;
+
+        return (child == 1);
+}
+
+static gboolean
+last_child_pseudo_class_handler (CRSelEng *const a_this,
+                                  CRAdditionalSel * a_sel, CRXMLNodePtr const a_node)
+{
+        CRNodeIface const *node_iface = NULL;
+        CRXMLNodePtr parent = NULL;
+
+        g_return_val_if_fail (a_this && PRIVATE (a_this)
+                              && a_sel && a_sel->content.pseudo
+                              && a_sel->content.pseudo
+                              && a_sel->content.pseudo->name
+                              && a_sel->content.pseudo->name->stryng
+                              && a_node, FALSE);
+
+        if (strcmp (a_sel->content.pseudo->name->stryng->str, "last-child")
+            || a_sel->content.pseudo->type != IDENT_PSEUDO) {
+                cr_utils_trace_info ("This handler is for :last-child only");
+                return FALSE;
+        }
+        node_iface = PRIVATE(a_this)->node_iface;
+        parent = node_iface->getParentNode (a_node);
+        if (!parent)
+                return FALSE;
+
+        CRXMLNodePtr cur_node = NULL;
+        int m = 0;
+        int child = 0;
+
+        cur_node = get_first_child_element_node (node_iface, parent);
+        while (cur_node) {
+                ++m;
+                if (cur_node == a_node) {
+                        child = m;
+                }
+                cur_node = get_next_element_node (node_iface, cur_node);
+
+        }
+        return (m == child);
+}
+
+static gboolean
+last_of_type_pseudo_class_handler (CRSelEng *const a_this,
+                                  CRAdditionalSel * a_sel, CRXMLNodePtr const a_node)
+{
+        CRNodeIface const *node_iface = NULL;
+        CRXMLNodePtr parent = NULL;
+
+        g_return_val_if_fail (a_this && PRIVATE (a_this)
+                              && a_sel && a_sel->content.pseudo
+                              && a_sel->content.pseudo
+                              && a_sel->content.pseudo->name
+                              && a_sel->content.pseudo->name->stryng
+                              && a_node, FALSE);
+
+        if (strcmp (a_sel->content.pseudo->name->stryng->str, "last-of-type")
+            || a_sel->content.pseudo->type != IDENT_PSEUDO) {
+                cr_utils_trace_info ("This handler is for :last-of-type only");
+                return FALSE;
+        }
+        node_iface = PRIVATE(a_this)->node_iface;
+        parent = node_iface->getParentNode (a_node);
+        if (!parent)
+                return FALSE;
+
+        CRXMLNodePtr cur_node = NULL;
+        int m = 0;
+        int child = 0;
+
+        cur_node = get_first_child_element_node (node_iface, parent);
+
+        while (cur_node) {
+                if (!strcmp(node_iface->getLocalName(cur_node), a_sel->content.pseudo->sel_name->stryng->str)) {
+                        ++m;
+                }
+                if (cur_node == a_node) {
+                        child = m;
+                }
+                cur_node = get_next_element_node (node_iface, cur_node);
+        }
+
+        return (m == child);
+}
+
+// See https://www.w3.org/TR/selectors/#nth-child-pseudo
+static gboolean
+nth_child_pseudo_class_handler (CRSelEng *const a_this,
+                                  CRAdditionalSel * a_sel, CRXMLNodePtr const a_node)
+{
+        CRNodeIface const *node_iface = NULL;
+        CRXMLNodePtr parent = NULL;
+
+        g_return_val_if_fail (a_this && PRIVATE (a_this)
+                              && a_sel && a_sel->content.pseudo
+                              && a_sel->content.pseudo
+                              && a_sel->content.pseudo->name
+                              && a_sel->content.pseudo->name->stryng
+                              && a_node, FALSE);
+
+        if (strcmp (a_sel->content.pseudo->name->stryng->str, "nth-child")
+            || a_sel->content.pseudo->type != FUNCTION_PSEUDO) {
+                cr_utils_trace_info ("This handler is for :nth-child only");
+                return FALSE;
+        }
+
+        /*pseude code term should exist */
+        if (!a_sel->content.pseudo->term)
+                return FALSE;
+
+        CRArguments arg = get_arguments_from_function (a_sel);
+
+        if (arg.a == 0 && arg.b == 0)
+                return FALSE;
+
+        int a = arg.a;
+        int b = arg.b;
+
+        node_iface = PRIVATE(a_this)->node_iface;
+        parent = node_iface->getParentNode (a_node);
+        if (!parent)
+                return FALSE;
+
+        /* Count which child this is */
+        CRXMLNodePtr cur_node = NULL;
+        int child = 0;
+        int found = FALSE;
+
+        cur_node = get_first_child_element_node (node_iface, parent);
+
+        while (cur_node) {
+                ++child;
+                if (cur_node == a_node) {
+                        found = TRUE;
+                        break;
+                }
+                cur_node = get_next_element_node (node_iface, cur_node);
+        }
+
+        if (!found)
+                return FALSE;
+
+        if (a == 0)
+                return (b == child);
+
+        return ((child - b)%a == 0 && (child - b)/a > -1);
+}
+
+static gboolean
+nth_of_type_pseudo_class_handler (CRSelEng *const a_this,
+                                  CRAdditionalSel * a_sel, CRXMLNodePtr const a_node)
+{
+        CRNodeIface const *node_iface = NULL;
+        CRXMLNodePtr parent = NULL;
+
+        g_return_val_if_fail (a_this && PRIVATE (a_this)
+                              && a_sel && a_sel->content.pseudo
+                              && a_sel->content.pseudo
+                              && a_sel->content.pseudo->name
+                              && a_sel->content.pseudo->name->stryng
+                              && a_node, FALSE);
+
+        if (strcmp (a_sel->content.pseudo->name->stryng->str, "nth-of-type")
+            || a_sel->content.pseudo->type != FUNCTION_PSEUDO) {
+                cr_utils_trace_info ("This handler is for :nth-of-type only");
+                return FALSE;
+        }
+
+        // pseudo code term should exist
+        if (!a_sel->content.pseudo->term)
+                return FALSE;
+
+        CRArguments arg = get_arguments_from_function (a_sel);
+
+        if (arg.a == 0 && arg.b == 0)
+                return FALSE;
+
+        int a = arg.a;
+        int b = arg.b;
+
+        node_iface = PRIVATE(a_this)->node_iface;
+        parent = node_iface->getParentNode (a_node);
+        if (!parent)
+                return FALSE;
+
+        // Count which child no. of required type
+        CRXMLNodePtr cur_node = NULL;
+        int child = 0;
+        int found = FALSE;
+
+        cur_node = get_first_child_element_node (node_iface, parent);
+
+        while (cur_node) {
+                // check if type match
+                if (!strcmp(node_iface->getLocalName(cur_node), a_sel->content.pseudo->sel_name->stryng->str))
+                        ++child;
+                if (cur_node == a_node) {
+                        found = TRUE;
+                        break;
+                }
+                cur_node = get_next_element_node (node_iface, cur_node);
+        }
+
+        if (!found)
+                return FALSE;
+
+        if (a == 0)
+                return (b == child);
+
+        return ((child - b)%a == 0 && (child - b)/a > -1);
+}
+
+static gboolean
+nth_last_child_pseudo_class_handler (CRSelEng *const a_this,
+                                  CRAdditionalSel * a_sel, CRXMLNodePtr const a_node)
+{
+        CRNodeIface const *node_iface = NULL;
+        CRXMLNodePtr parent = NULL;
+
+        g_return_val_if_fail (a_this && PRIVATE (a_this)
+                              && a_sel && a_sel->content.pseudo
+                              && a_sel->content.pseudo
+                              && a_sel->content.pseudo->name
+                              && a_sel->content.pseudo->name->stryng
+                              && a_node, FALSE);
+
+        if (strcmp (a_sel->content.pseudo->name->stryng->str, "nth-last-child")) {
+                cr_utils_trace_info ("This handler is for :nth-last-child only");
+                return FALSE;
+        }
+
+        /*pseudo code term should exist */
+        if (!a_sel->content.pseudo->term)
+                return FALSE;
+
+        CRArguments arg = get_arguments_from_function (a_sel);
+
+        if (arg.a == 0 && arg.b == 0)
+                return FALSE;
+
+        int a = arg.a;
+        int b = arg.b;
+
+        node_iface = PRIVATE(a_this)->node_iface;
+        parent = node_iface->getParentNode (a_node);
+
+        if (!parent) {
+                return FALSE;
+        }
+
+        /* Count which child this is (child) and total number of children (m). */
+
+        CRXMLNodePtr cur_node = NULL;
+        int m = 0;
+        int child = 0;
+        int found = FALSE;
+
+        cur_node = get_first_child_element_node (node_iface, parent);
+
+        while (cur_node) {
+                if (cur_node == a_node) {
+                        found = TRUE;
+                        child = m;
+                }
+                cur_node = get_next_element_node (node_iface,cur_node);
+                ++m;
+        }
+
+        if (!found)
+                return FALSE;
+
+        if (a == 0)
+                return ((m - b) == child);
+
+        return ((m - child - b)%a == 0 && (m - child - b)/a > -1);
+}
+
+static gboolean
+nth_last_of_type_pseudo_class_handler (CRSelEng *const a_this,
+                                  CRAdditionalSel * a_sel, CRXMLNodePtr const a_node)
+{
+        CRNodeIface const *node_iface = NULL;
+        CRXMLNodePtr parent = NULL;
+
+        g_return_val_if_fail (a_this && PRIVATE (a_this)
+                              && a_sel && a_sel->content.pseudo
+                              && a_sel->content.pseudo
+                              && a_sel->content.pseudo->name
+                              && a_sel->content.pseudo->name->stryng
+                              && a_node, FALSE);
+
+        if (strcmp (a_sel->content.pseudo->name->stryng->str, "nth-last-of-type")) {
+                cr_utils_trace_info ("This handler is for :nth-last-of-type only");
+                return FALSE;
+        }
+
+        /*pseude code term should exist */
+        if (!a_sel->content.pseudo->term)
+                return FALSE;
+
+        CRArguments arg = get_arguments_from_function (a_sel);
+
+        if (arg.a == 0 && arg.b == 0)
+                return FALSE;
+
+        int a = arg.a;
+        int b = arg.b;
+
+        node_iface = PRIVATE(a_this)->node_iface;
+        parent = node_iface->getParentNode (a_node);
+        if (!parent) {
+                return FALSE;
+        }
+
+        CRXMLNodePtr cur_node = NULL;
+        int m = 0;
+        int child = 0;
+        int found = FALSE;
+
+        cur_node = get_first_child_element_node (node_iface, parent);
+
+        while (cur_node) {
+                if (!strcmp(node_iface->getLocalName(cur_node), a_sel->content.pseudo->sel_name->stryng->str))
+                        ++m;
+                if (cur_node == a_node) {
+                        found = TRUE;
+                        child = m;
+                }
+                cur_node = get_next_element_node (node_iface, cur_node);
+        }
+
+        if (!found)
+                return FALSE;
+
+        if (a == 0)
+                return ((m - b) == child);
+
+        return ((m - child - b +1)%a == 0 && (m - child - b +1)/a > -1);
+
 }
 
 static gboolean
@@ -539,11 +1094,8 @@ get_next_element_node (CRNodeIface const * a_node_iface, CRXMLNodePtr a_node)
         return cur_node;
 }
 
-/* TODO: Consider renaming this to get_first_child_element_node.
-   (cf get_first_parent_element_node, which does getParent until element node
-   rather than getNextSibling). */
 static CRXMLNodePtr
-get_next_child_element_node (CRNodeIface const * a_node_iface, CRXMLNodePtr a_node)
+get_first_child_element_node (CRNodeIface const * a_node_iface, CRXMLNodePtr a_node)
 {
         CRXMLNodePtr cur_node = NULL;
 
@@ -581,6 +1133,64 @@ get_next_parent_element_node (CRNodeIface const * a_node_iface, CRXMLNodePtr a_n
                 cur_node = a_node_iface->getParentNode (cur_node);
         } while (cur_node && !a_node_iface->isElementNode (cur_node));
         return cur_node;
+}
+
+static CRArguments
+get_arguments_from_function (CRAdditionalSel * a_sel)
+{
+        CRArguments arg;
+        arg.a = 0;
+        arg.b = 0;
+        switch (a_sel->content.pseudo->term->type) {
+        case TERM_NUMBER:
+                if (a_sel->content.pseudo->term->content.num) {
+                        arg.b = a_sel->content.pseudo->term->content.num->val;
+                }
+                if (a_sel->content.pseudo->term->n) {
+                        arg.a = arg.b;
+                        arg.b = 0;
+                }
+                break;
+
+        case TERM_IDENT:
+                if (a_sel->content.pseudo->term->content.str) {
+                        if (!strcmp(a_sel->content.pseudo->term->content.str->stryng->str, "even")) {
+                                arg.a = 2;
+                                arg.b = 0;
+                        } else if (!strcmp(a_sel->content.pseudo->term->content.str->stryng->str, "odd")) {
+                                arg.a = 2;
+                                arg.b = 1;
+                        } else if (!strcmp(a_sel->content.pseudo->term->content.str->stryng->str, "n")) {
+                                /* 'n' without number */
+                                arg.a = 1;
+                        } else if (!strcmp(a_sel->content.pseudo->term->content.str->stryng->str, "-n")) {
+                                /* '-n' without number */
+                                arg.a = -1;
+                        } else {
+                                /* Unknown string */
+                                arg.a = 0;
+                                arg.b = 0;
+                                return (arg);
+                        }
+                }
+                break;
+
+        default:
+                cr_utils_trace_info ("Unknown term in nth style handler");
+                arg.a = 0;
+                arg.b = 0;
+                return (arg);
+        }
+
+        if (arg.a != 0 && a_sel->content.pseudo->term->next) {
+                /* check for b in 'an+b' */
+                if (a_sel->content.pseudo->term->next->type == TERM_NUMBER &&
+                    a_sel->content.pseudo->term->next->content.num ) {
+                        arg.b = a_sel->content.pseudo->term->next->content.num->val;
+                }
+        }
+
+        return (arg);
 }
 
 /**
@@ -738,6 +1348,45 @@ sel_matches_node_real (CRSelEng * a_this, CRSimpleSel * a_sel,
                         if (!cur_node)
                                 goto done;
                         break;
+
+                case COMB_TILDE: /* General sibling selector. */
+                {
+                        CRXMLNodePtr n = NULL;
+                        enum CRStatus status = CR_OK;
+                        gboolean matches = FALSE;
+
+                        /*
+                         * Walk through previous sibing nodes looking for a
+                         * node that matches the preceding selector.
+                         */
+                        for (n = get_prev_element_node (node_iface, cur_node);
+                             n;
+                             n = get_prev_element_node (node_iface, n)) {
+                                status = sel_matches_node_real
+                                        (a_this, cur_sel->prev,
+                                         n, &matches, FALSE, TRUE);
+
+                                if (status != CR_OK)
+                                        goto done;
+
+                                if (matches == TRUE) {
+                                        cur_node = n ;
+                                        break;
+                                }
+                        }
+
+                        if (!n) {
+                                /*
+                                 * Didn't find any previous sibling that matches
+                                 * the previous simple selector.
+                                 */
+                                goto done;
+                        }
+                        /*
+                         * See note above in COMB_WS section.
+                         */
+                        break;
+                }
 
                 case COMB_GT:
                         cur_node = get_next_parent_element_node (node_iface, cur_node);
@@ -1020,7 +1669,7 @@ put_css_properties_in_props_list (CRPropList ** a_props, CRStatement * a_stmt)
                          *(unless the already selected declaration 
                          *has an UA origin)
                          */
-                        if (decl->important == TRUE
+                        if (decl->important == TRUE && cur_decl->important != TRUE
                             && decl->parent_statement->parent_sheet->origin
                             != ORIGIN_UA) {
                                 continue;
@@ -1059,7 +1708,7 @@ put_css_properties_in_props_list (CRPropList ** a_props, CRStatement * a_stmt)
                  */
                 if (a_stmt->specificity
                     >= decl->parent_statement->specificity) {
-                        if (decl->important == TRUE)
+                        if (decl->important == TRUE && cur_decl->important != TRUE)
                                 continue;
                         props = cr_prop_list_unlink (props, pair);
                         if (pair) {
@@ -1121,13 +1770,57 @@ cr_sel_eng_new (void)
         }
         memset (PRIVATE (result), 0, sizeof (CRSelEngPriv));
         cr_sel_eng_register_pseudo_class_sel_handler
-                (result, (guchar *) "first-child",
+                (result, (guchar *) "root",
                  IDENT_PSEUDO, /*(CRPseudoClassSelectorHandler)*/
-                 first_child_pseudo_class_handler);
+                 root_pseudo_class_handler);
+        cr_sel_eng_register_pseudo_class_sel_handler
+                (result, (guchar *) "empty",
+                 IDENT_PSEUDO, /*(CRPseudoClassSelectorHandler)*/
+                 empty_pseudo_class_handler);
         cr_sel_eng_register_pseudo_class_sel_handler
                 (result, (guchar *) "lang",
                  FUNCTION_PSEUDO, /*(CRPseudoClassSelectorHandler)*/
                  lang_pseudo_class_handler);
+        cr_sel_eng_register_pseudo_class_sel_handler
+                (result, (guchar *) "only-child",
+                 IDENT_PSEUDO, /*(CRPseudoClassSelectorHandler)*/
+                 only_child_pseudo_class_handler);
+        cr_sel_eng_register_pseudo_class_sel_handler
+                (result, (guchar *) "only-of-type",
+                 IDENT_PSEUDO, /*(CRPseudoClassSelectorHandler)*/
+                 only_of_type_pseudo_class_handler);
+        cr_sel_eng_register_pseudo_class_sel_handler
+                (result, (guchar *) "first-child",
+                 IDENT_PSEUDO, /*(CRPseudoClassSelectorHandler)*/
+                 first_child_pseudo_class_handler);
+        cr_sel_eng_register_pseudo_class_sel_handler
+                (result, (guchar *) "first-of-type",
+                 IDENT_PSEUDO, /*(CRPseudoClassSelectorHandler)*/
+                 first_of_type_pseudo_class_handler);
+        cr_sel_eng_register_pseudo_class_sel_handler
+                (result, (guchar *) "last-child",
+                 IDENT_PSEUDO, /*(CRPseudoClassSelectorHandler)*/
+                 last_child_pseudo_class_handler);
+        cr_sel_eng_register_pseudo_class_sel_handler
+                (result, (guchar *) "last-of-type",
+                 IDENT_PSEUDO, /*(CRPseudoClassSelectorHandler)*/
+                 last_of_type_pseudo_class_handler);
+        cr_sel_eng_register_pseudo_class_sel_handler
+                (result, (guchar *) "nth-child",
+                 FUNCTION_PSEUDO, /*(CRPseudoClassSelectorHandler)*/
+                 nth_child_pseudo_class_handler);
+        cr_sel_eng_register_pseudo_class_sel_handler
+                (result, (guchar *) "nth-of-type",
+                 FUNCTION_PSEUDO, /*(CRPseudoClassSelectorHandler)*/
+                 nth_of_type_pseudo_class_handler);
+        cr_sel_eng_register_pseudo_class_sel_handler
+                (result, (guchar *) "nth-last-child",
+                 FUNCTION_PSEUDO, /*(CRPseudoClassSelectorHandler)*/
+                 nth_last_child_pseudo_class_handler);
+        cr_sel_eng_register_pseudo_class_sel_handler
+                (result, (guchar *) "nth-last-of-type",
+                 FUNCTION_PSEUDO, /*(CRPseudoClassSelectorHandler)*/
+                 nth_last_of_type_pseudo_class_handler);
 
         return result;
 }
@@ -1395,6 +2088,83 @@ cr_sel_eng_get_matched_rulesets (CRSelEng * a_this,
         return status;
 }
 
+enum CRStatus
+cr_sel_eng_process_stylesheet ( CRSelEng * a_eng,
+                                CRXMLNodePtr a_node,
+                                CRStyleSheet * a_stylesheet,
+                                CRStatement *** stmts_tab,
+                                gulong * tab_size,
+                                gulong * tab_len,
+                                gulong * index)
+{
+        enum CRStatus status = CR_OK;
+        CRStyleSheet *cur = NULL;
+        gushort stmts_chunck_size = 8;
+
+        // Process imported stylesheets first
+        for (cur = a_stylesheet->import ; cur ; cur = cur->next) {
+                cr_sel_eng_process_stylesheet( a_eng, a_node, cur, stmts_tab, tab_size, tab_len, index );
+        }
+
+        // Process this stylesheet
+        if (*tab_size - *index < 1) {
+                *stmts_tab = (CRStatement **) g_try_realloc
+                        (*stmts_tab, (*tab_size + stmts_chunck_size)
+                         * sizeof (CRStatement *));
+                if (!*stmts_tab) {
+                        cr_utils_trace_info ("Out of memory");
+                        status = CR_ERROR;
+                        goto cleanup;
+                }
+                *tab_size += stmts_chunck_size;
+                /*
+                 *compute the max size left for
+                 *cr_sel_eng_get_matched_rulesets_real()'s output tab
+                 */
+                *tab_len = *tab_size - *index;
+        }
+        while ((status = cr_sel_eng_get_matched_rulesets_real
+                (a_eng, a_stylesheet, a_node, *stmts_tab + *index, tab_len))
+               == CR_OUTPUT_TOO_SHORT_ERROR) {
+                *stmts_tab = (CRStatement **) g_try_realloc
+                        (*stmts_tab, (*tab_size + stmts_chunck_size)
+                         * sizeof (CRStatement *));
+                if (!*stmts_tab) {
+                        cr_utils_trace_info ("Out of memory");
+                        status = CR_ERROR;
+                        goto cleanup;
+                }
+                *tab_size += stmts_chunck_size;
+                *index += *tab_len;
+                /*
+                 *compute the max size left for
+                 *cr_sel_eng_get_matched_rulesets_real()'s output tab
+                 */
+                *tab_len = *tab_size - *index;
+        }
+        if (status != CR_OK) {
+                cr_utils_trace_info ("Error while running "
+                                     "selector engine");
+                goto cleanup;
+        }
+        *index += *tab_len;
+        *tab_len = *tab_size - *index;
+
+        // Process other document stylesheets last
+        for (cur = a_stylesheet->next ; cur ; cur = cur->next) {
+                cr_sel_eng_process_stylesheet( a_eng, a_node, cur, stmts_tab, tab_size, tab_len, index );
+        }
+
+        return status;
+
+ cleanup:
+        if (*stmts_tab) {
+                g_free (*stmts_tab);
+                *stmts_tab = NULL;
+        }
+
+        return status;
+}
 
 enum CRStatus
 cr_sel_eng_get_matched_properties_from_cascade (CRSelEng * a_this,
@@ -1420,48 +2190,13 @@ cr_sel_eng_get_matched_properties_from_cascade (CRSelEng * a_this,
                 sheet = cr_cascade_get_sheet (a_cascade, origin);
                 if (!sheet)
                         continue;
-                if (tab_size - index < 1) {
-                        stmts_tab = (CRStatement **) g_try_realloc
-                                (stmts_tab, (tab_size + stmts_chunck_size)
-                                 * sizeof (CRStatement *));
-                        if (!stmts_tab) {
-                                cr_utils_trace_info ("Out of memory");
-                                status = CR_ERROR;
-                                goto cleanup;
-                        }
-                        tab_size += stmts_chunck_size;
-                        /*
-                         *compute the max size left for
-                         *cr_sel_eng_get_matched_rulesets_real()'s output tab 
-                         */
-                        tab_len = tab_size - index;
-                }
-                while ((status = cr_sel_eng_get_matched_rulesets_real
-                        (a_this, sheet, a_node, stmts_tab + index, &tab_len))
-                       == CR_OUTPUT_TOO_SHORT_ERROR) {
-                        stmts_tab = (CRStatement **) g_try_realloc
-                                (stmts_tab, (tab_size + stmts_chunck_size)
-                                 * sizeof (CRStatement *));
-                        if (!stmts_tab) {
-                                cr_utils_trace_info ("Out of memory");
-                                status = CR_ERROR;
-                                goto cleanup;
-                        }
-                        tab_size += stmts_chunck_size;
-                        index += tab_len;
-                        /*
-                         *compute the max size left for
-                         *cr_sel_eng_get_matched_rulesets_real()'s output tab 
-                         */
-                        tab_len = tab_size - index;
-                }
+
+                status = cr_sel_eng_process_stylesheet (a_this, a_node, sheet, &stmts_tab, &tab_size, &tab_len, &index);
                 if (status != CR_OK) {
                         cr_utils_trace_info ("Error while running "
                                              "selector engine");
-                        goto cleanup;
+                        return status;
                 }
-                index += tab_len;
-                tab_len = tab_size - index;
         }
 
         /*
@@ -1472,7 +2207,6 @@ cr_sel_eng_get_matched_properties_from_cascade (CRSelEng * a_this,
          */
         for (i = 0; i < index; i++) {
                 CRStatement *stmt = stmts_tab[i];
-
                 if (!stmt)
                         continue;
                 switch (stmt->type) {
@@ -1488,11 +2222,6 @@ cr_sel_eng_get_matched_properties_from_cascade (CRSelEng * a_this,
 
         }
         status = CR_OK ;
- cleanup:
-        if (stmts_tab) {
-                g_free (stmts_tab);
-                stmts_tab = NULL;
-        }
 
         return status;
 }

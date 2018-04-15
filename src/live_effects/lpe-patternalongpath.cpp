@@ -4,15 +4,21 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
+#include <cmath>
+#include <algorithm>
+
+#include <2geom/bezier-to-sbasis.h>
+
 #include "live_effects/lpe-patternalongpath.h"
 #include "live_effects/lpeobject.h"
 #include "display/curve.h"
 
-#include <2geom/bezier-to-sbasis.h>
+#include "object/sp-shape.h"
 
 #include "knotholder.h"
-#include <cmath>
-#include <algorithm>
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
+
 using std::vector;
 
 
@@ -39,12 +45,16 @@ first) but I think we can first forget about them.
 
 namespace Inkscape {
 namespace LivePathEffect {
-Geom::PathVector pap_helper_path;
 
 namespace WPAP {
     class KnotHolderEntityWidthPatternAlongPath : public LPEKnotHolderEntity {
     public:
         KnotHolderEntityWidthPatternAlongPath(LPEPatternAlongPath * effect) : LPEKnotHolderEntity(effect) {}
+        virtual ~KnotHolderEntityWidthPatternAlongPath()
+        {
+            LPEPatternAlongPath *lpe = dynamic_cast<LPEPatternAlongPath *> (_effect);
+            lpe->_knot_entity = NULL;
+        }
         virtual void knot_set(Geom::Point const &p, Geom::Point const &origin, guint state);
         virtual Geom::Point knot_get() const;
     };
@@ -61,7 +71,7 @@ static const Util::EnumDataConverter<PAPCopyType> PAPCopyTypeConverter(PAPCopyTy
 LPEPatternAlongPath::LPEPatternAlongPath(LivePathEffectObject *lpeobject) :
     Effect(lpeobject),
     pattern(_("Pattern source:"), _("Path to put along the skeleton path"), "pattern", &wr, this, "M0,0 L1,0"),
-    original_height(0),
+    original_height(0.0),
     prop_scale(_("_Width:"), _("Width of the pattern"), "prop_scale", &wr, this, 1.0),
     copytype(_("Pattern copies:"), _("How many pattern copies to place along the skeleton path"),
         "copytype", PAPCopyTypeConverter, &wr, this, PAPCT_SINGLE_STRETCHED),
@@ -79,22 +89,24 @@ LPEPatternAlongPath::LPEPatternAlongPath(LivePathEffectObject *lpeobject) :
         "prop_units", &wr, this, false),
     vertical_pattern(_("Pattern is _vertical"), _("Rotate pattern 90 deg before applying"),
         "vertical_pattern", &wr, this, false),
+    hide_knot(_("Hide width knot"), _("Hide width knot"),"hide_knot", &wr, this, false),
     fuse_tolerance(_("_Fuse nearby ends:"), _("Fuse ends closer than this number. 0 means don't fuse."),
         "fuse_tolerance", &wr, this, 0)
 {
-    registerParameter( dynamic_cast<Parameter *>(&pattern) );
-    registerParameter( dynamic_cast<Parameter *>(&copytype) );
-    registerParameter( dynamic_cast<Parameter *>(&prop_scale) );
-    registerParameter( dynamic_cast<Parameter *>(&scale_y_rel) );
-    registerParameter( dynamic_cast<Parameter *>(&spacing) );
-    registerParameter( dynamic_cast<Parameter *>(&normal_offset) );
-    registerParameter( dynamic_cast<Parameter *>(&tang_offset) );
-    registerParameter( dynamic_cast<Parameter *>(&prop_units) );
-    registerParameter( dynamic_cast<Parameter *>(&vertical_pattern) );
-    registerParameter( dynamic_cast<Parameter *>(&fuse_tolerance) );
+    registerParameter(&pattern);
+    registerParameter(&copytype);
+    registerParameter(&prop_scale);
+    registerParameter(&scale_y_rel);
+    registerParameter(&spacing);
+    registerParameter(&normal_offset);
+    registerParameter(&tang_offset);
+    registerParameter(&prop_units);
+    registerParameter(&vertical_pattern);
+    registerParameter(&hide_knot);
+    registerParameter(&fuse_tolerance);
     prop_scale.param_set_digits(3);
     prop_scale.param_set_increments(0.01, 0.10);
-
+    _knot_entity = NULL;
     _provides_knotholder_entities = true;
 
 }
@@ -111,6 +123,15 @@ LPEPatternAlongPath::doBeforeEffect (SPLPEItem const* lpeitem)
     Geom::OptRect bbox = pattern.get_pathvector().boundsFast();
     if (bbox) {
         original_height = (*bbox)[Geom::Y].max() - (*bbox)[Geom::Y].min();
+    }
+    if (_knot_entity) {
+        if (hide_knot) {
+            helper_path.clear();
+            _knot_entity->knot->hide();
+        } else {
+            _knot_entity->knot->show();
+        }
+        _knot_entity->update_knot();
     }
 }
 
@@ -172,11 +193,10 @@ LPEPatternAlongPath::doEffect_pwd2 (Geom::Piecewise<Geom::D2<Geom::SBasis> > con
             uskeleton = remove_short_cuts(uskeleton, 0.01);
             Piecewise<D2<SBasis> > n = rot90(derivative(uskeleton));
             if (Geom::are_near(pwd2_in[0].at0(),pwd2_in[pwd2_in.size()-1].at1(), 0.01)) {
-                n = force_continuity(remove_short_cuts(n,0.1), 0.01);
+                n = force_continuity(remove_short_cuts(n, 0.1), 0.01);
             } else {
                 n = force_continuity(remove_short_cuts(n, 0.1));
-            }  
-            
+            }            
             int nbCopies = 0;
             double scaling = 1;
             switch(type) {
@@ -270,16 +290,20 @@ LPEPatternAlongPath::transform_multiply(Geom::Affine const& postmul, bool set)
 void
 LPEPatternAlongPath::addCanvasIndicators(SPLPEItem const */*lpeitem*/, std::vector<Geom::PathVector> &hp_vec)
 {
-    hp_vec.push_back(pap_helper_path);
+    hp_vec.push_back(helper_path);
 }
 
 
 void 
-LPEPatternAlongPath::addKnotHolderEntities(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item)
+LPEPatternAlongPath::addKnotHolderEntities(KnotHolder *knotholder, SPItem *item)
 {
-    KnotHolderEntity *e = new WPAP::KnotHolderEntityWidthPatternAlongPath(this);
-    e->create(desktop, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN, _("Change the width"), SP_KNOT_SHAPE_CIRCLE);
-    knotholder->add(e);
+    _knot_entity = new WPAP::KnotHolderEntityWidthPatternAlongPath(this);
+    _knot_entity->create(NULL, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN, _("Change the width"), SP_KNOT_SHAPE_CIRCLE);
+    knotholder->add(_knot_entity);
+    if (hide_knot) {
+        _knot_entity->knot->hide();
+        _knot_entity->update_knot();
+    }
 }
 
 namespace WPAP {
@@ -288,28 +312,33 @@ void
 KnotHolderEntityWidthPatternAlongPath::knot_set(Geom::Point const &p, Geom::Point const& /*origin*/, guint state)
 {
     LPEPatternAlongPath *lpe = dynamic_cast<LPEPatternAlongPath *> (_effect);
-    
+
     Geom::Point const s = snap_knot_position(p, state);
     SPShape const *sp_shape = dynamic_cast<SPShape const *>(SP_LPE_ITEM(item));
     if (sp_shape) {
-        Geom::Path const *path_in = sp_shape->getCurveBeforeLPE()->first_path();
-        Geom::Point ptA = path_in->pointAt(Geom::PathTime(0, 0.0));
-        Geom::Point B = path_in->pointAt(Geom::PathTime(1, 0.0));
-        Geom::Curve const *first_curve = &path_in->curveAt(Geom::PathTime(0, 0.0));
-        Geom::CubicBezier const *cubic = dynamic_cast<Geom::CubicBezier const *>(&*first_curve);
-        Geom::Ray ray(ptA, B);
-        if (cubic) {
-            ray.setPoints(ptA, (*cubic)[1]);
+        SPCurve *curve_before = sp_shape->getCurveForEdit();
+        if (curve_before) {
+            Geom::Path const *path_in = curve_before->first_path();
+            Geom::Point ptA = path_in->pointAt(Geom::PathTime(0, 0.0));
+            Geom::Point B = path_in->pointAt(Geom::PathTime(1, 0.0));
+            Geom::Curve const *first_curve = &path_in->curveAt(Geom::PathTime(0, 0.0));
+            Geom::CubicBezier const *cubic = dynamic_cast<Geom::CubicBezier const *>(&*first_curve);
+            Geom::Ray ray(ptA, B);
+            if (cubic) {
+                ray.setPoints(ptA, (*cubic)[1]);
+            }
+            ray.setAngle(ray.angle() + Geom::rad_from_deg(90));
+            Geom::Point knot_pos = this->knot->pos * item->i2dt_affine().inverse();
+            Geom::Coord nearest_to_ray = ray.nearestTime(knot_pos);
+            if(nearest_to_ray == 0){
+                lpe->prop_scale.param_set_value(-Geom::distance(s , ptA)/(lpe->original_height/2.0));
+            } else {
+                lpe->prop_scale.param_set_value(Geom::distance(s , ptA)/(lpe->original_height/2.0));
+            }
+            Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+            prefs->setDouble("/live_effect/pap/width", lpe->prop_scale);
+            curve_before->unref();
         }
-        ray.setAngle(ray.angle() + Geom::rad_from_deg(90));
-        Geom::Point knot_pos = this->knot->pos * item->i2dt_affine().inverse();
-        Geom::Coord nearest_to_ray = ray.nearestTime(knot_pos);
-        if(nearest_to_ray == 0){
-            lpe->prop_scale.param_set_value(-Geom::distance(s , ptA)/(lpe->original_height/2.0));
-        } else {
-            lpe->prop_scale.param_set_value(Geom::distance(s , ptA)/(lpe->original_height/2.0));
-        }
-        
     }
     sp_lpe_item_update_patheffect (SP_LPE_ITEM(item), false, true);
 }
@@ -318,28 +347,31 @@ Geom::Point
 KnotHolderEntityWidthPatternAlongPath::knot_get() const
 {
     LPEPatternAlongPath *lpe = dynamic_cast<LPEPatternAlongPath *> (_effect);
-
     SPShape const *sp_shape = dynamic_cast<SPShape const *>(SP_LPE_ITEM(item));
     if (sp_shape) {
-        Geom::Path const *path_in = sp_shape->getCurveBeforeLPE()->first_path();
-        Geom::Point ptA = path_in->pointAt(Geom::PathTime(0, 0.0));
-        Geom::Point B = path_in->pointAt(Geom::PathTime(1, 0.0));
-        Geom::Curve const *first_curve = &path_in->curveAt(Geom::PathTime(0, 0.0));
-        Geom::CubicBezier const *cubic = dynamic_cast<Geom::CubicBezier const *>(&*first_curve);
-        Geom::Ray ray(ptA, B);
-        if (cubic) {
-            ray.setPoints(ptA, (*cubic)[1]);
+        SPCurve *curve_before = sp_shape->getCurveForEdit();
+        if (curve_before) {
+            Geom::Path const *path_in = curve_before->first_path();
+            Geom::Point ptA = path_in->pointAt(Geom::PathTime(0, 0.0));
+            Geom::Point B = path_in->pointAt(Geom::PathTime(1, 0.0));
+            Geom::Curve const *first_curve = &path_in->curveAt(Geom::PathTime(0, 0.0));
+            Geom::CubicBezier const *cubic = dynamic_cast<Geom::CubicBezier const *>(&*first_curve);
+            Geom::Ray ray(ptA, B);
+            if (cubic) {
+                ray.setPoints(ptA, (*cubic)[1]);
+            }
+            ray.setAngle(ray.angle() + Geom::rad_from_deg(90));
+            Geom::Point result_point = Geom::Point::polar(ray.angle(), (lpe->original_height/2.0) * lpe->prop_scale) + ptA;
+            lpe->helper_path.clear();
+            if (!lpe->hide_knot) {
+                Geom::Path hp(result_point);
+                hp.appendNew<Geom::LineSegment>(ptA);
+                lpe->helper_path.push_back(hp);
+                hp.clear();
+            }
+            curve_before->unref();
+            return result_point;
         }
-        ray.setAngle(ray.angle() + Geom::rad_from_deg(90));
-        Geom::Point result_point = Geom::Point::polar(ray.angle(), (lpe->original_height/2.0) * lpe->prop_scale) + ptA;
-
-        pap_helper_path.clear();
-        Geom::Path hp(result_point);
-        hp.appendNew<Geom::LineSegment>(ptA);
-        pap_helper_path.push_back(hp);
-        hp.clear();
-        
-        return result_point;
     }
     return Geom::Point();
 }

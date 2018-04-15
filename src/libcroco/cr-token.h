@@ -35,37 +35,37 @@ G_BEGIN_DECLS
 
 enum CRTokenType
 {
-        NO_TK,
+        NO_TK,              //  0
         S_TK,
         CDO_TK,
         CDC_TK,
         INCLUDES_TK,
-        DASHMATCH_TK,
+        DASHMATCH_TK,       //  5
         COMMENT_TK,
         STRING_TK,
         IDENT_TK,
         HASH_TK,
-        IMPORT_SYM_TK,
+        IMPORT_SYM_TK,      // 10
         PAGE_SYM_TK,
         MEDIA_SYM_TK,
         FONT_FACE_SYM_TK,
         CHARSET_SYM_TK,
-        ATKEYWORD_TK,
+        ATKEYWORD_TK,       // 15
         IMPORTANT_SYM_TK,
         EMS_TK,
         EXS_TK,
         LENGTH_TK,
-        ANGLE_TK,
+        ANGLE_TK,           // 20
         TIME_TK,
         FREQ_TK,
         DIMEN_TK,
         PERCENTAGE_TK,
-        NUMBER_TK,
+        NUMBER_TK,          // 25
         RGB_TK,
         URI_TK,
         FUNCTION_TK,
         UNICODERANGE_TK,
-        SEMICOLON_TK,
+        SEMICOLON_TK,       // 30
         CBO_TK, /*opening curly bracket*/
         CBC_TK, /*closing curly bracket*/
         PO_TK, /*opening parenthesis*/

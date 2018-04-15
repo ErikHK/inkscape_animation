@@ -6,7 +6,8 @@
 
 #include "node-observer.h"
 #include "node.h"
-#include "sp-object.h"
+
+class SPObject;
 
 namespace Inkscape {
 namespace XML {
@@ -24,8 +25,8 @@ public:
     void notifyChildAdded(Node&, Node&, Node*);
     void notifyChildRemoved(Node&, Node&, Node*);
     void notifyChildOrderChanged(Node&, Node&, Node*, Node*);
-    void notifyContentChanged(Node&, Util::ptr_shared<char>, Util::ptr_shared<char>);
-    void notifyAttributeChanged(Node&, GQuark, Util::ptr_shared<char>, Util::ptr_shared<char>);
+    void notifyContentChanged(Node&, Util::ptr_shared, Util::ptr_shared);
+    void notifyAttributeChanged(Node&, GQuark, Util::ptr_shared, Util::ptr_shared);
     sigc::signal<void>& signal_changed();
 private:
     sigc::signal<void> _signal_changed;

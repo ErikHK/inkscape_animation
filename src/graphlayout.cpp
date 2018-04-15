@@ -24,7 +24,7 @@
 
 #include "desktop.h"
 #include "inkscape.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "graphlayout.h"
 #include "sp-path.h"
 #include "sp-item.h"

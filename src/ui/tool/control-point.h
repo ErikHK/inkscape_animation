@@ -18,7 +18,6 @@
 #include <2geom/point.h>
 
 #include "ui/control-types.h"
-#include "util/accumulators.h"
 #include "display/sodipodi-ctrl.h"
 #include "enums.h"
 
@@ -76,8 +75,6 @@ namespace UI {
  */
 class ControlPoint : boost::noncopyable, public sigc::trackable {
 public:
-    typedef Inkscape::Util::ReverseInterruptible RInt;
-    typedef Inkscape::Util::Interruptible Int;
 
     /**
      * Enumeration representing the possible states of the control point, used to determine
@@ -160,15 +157,6 @@ public:
      * desktops, which doesn't make much sense anyway.
      */
     void transferGrab(ControlPoint *from, GdkEventMotion *event);
-    /// @}
-
-    /// @name Receive notifications about control point events
-    /// @{
-    /*sigc::signal<void, Geom::Point const &, Geom::Point &, GdkEventMotion*> signal_dragged;
-    sigc::signal<bool, GdkEventButton*>::accumulated<RInt> signal_clicked;
-    sigc::signal<bool, GdkEventButton*>::accumulated<RInt> signal_doubleclicked;
-    sigc::signal<bool, GdkEventMotion*>::accumulated<Int> signal_grabbed;
-    sigc::signal<void, GdkEventButton*> signal_ungrabbed;*/
     /// @}
 
     /// @name Inspect the state of the control point
@@ -326,7 +314,7 @@ protected:
     void _setPixbuf(Glib::RefPtr<Gdk::Pixbuf>);
 
     /**
-     * Determins if the control point is not visible yet still reacting to events.
+     * Determines if the control point is not visible yet still reacting to events.
      *
      * @return true if non-visible, false otherwise.
      */

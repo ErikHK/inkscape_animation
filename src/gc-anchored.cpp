@@ -14,7 +14,6 @@
 #include "debug/event-tracker.h"
 #include "debug/simple-event.h"
 #include "debug/demangle.h"
-#include "util/share.h"
 #include "util/format.h"
 
 namespace Inkscape {
@@ -28,7 +27,7 @@ typedef Debug::SimpleEvent<Debug::Event::REFCOUNT> RefCountEvent;
 class BaseAnchorEvent : public RefCountEvent {
 public:
     BaseAnchorEvent(Anchored const *object, int bias,
-                    Util::ptr_shared<char> name)
+                    Util::ptr_shared name)
     : RefCountEvent(name)
     {
         _addProperty("base", Util::format("%p", Core::base(const_cast<Anchored *>(object))));

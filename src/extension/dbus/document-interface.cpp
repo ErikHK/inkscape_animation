@@ -40,7 +40,7 @@
 #include "selection-chemistry.h"// lots of selection functions
 #include "selection.h" //selection struct
 #include "sp-ellipse.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "sp-root.h"
 #include "style.h" //style_write
 #include "util/units.h"

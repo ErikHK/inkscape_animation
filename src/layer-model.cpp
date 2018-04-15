@@ -32,7 +32,7 @@
 #include "sp-defs.h"
 #include "sp-item.h"
 #include "sp-item-group.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "sp-root.h"
 #include <glib.h>
 #include <glibmm/i18n.h>

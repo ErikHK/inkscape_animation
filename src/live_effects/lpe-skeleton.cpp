@@ -20,13 +20,8 @@
 
 #include "live_effects/lpe-skeleton.h"
 
-// You might need to include other 2geom files. You can add them here:
-#include <2geom/path.h>
-
+// TODO due to internal breakage in glibmm headers, this must be last:
 #include <glibmm/i18n.h>
-
-//#include "knot-holder-entity.h"
-//#include "knotholder.h"
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -42,7 +37,7 @@ LPESkeleton::LPESkeleton(LivePathEffectObject *lpeobject) :
     //_provides_knotholder_entities
 
     /* register all your parameters here, so Inkscape knows which parameters this effect has: */
-    registerParameter( dynamic_cast<Parameter *>(&number) );
+    registerParameter(&number);
 }
 
 LPESkeleton::~LPESkeleton()
@@ -102,10 +97,10 @@ public:
 } // namespace Skeleton
 
 void
-LPESkeleton::addKnotHolderEntities(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item) {
+LPESkeleton::addKnotHolderEntities(KnotHolder *knotholder, SPItem *item) {
     {
         KnotHolderEntityMyHandle *e = new KnotHolderEntityMyHandle(this);
-        e->create(  desktop, item, knotholder,
+        e->create( NULL, item, knotholder,
                     _("Text describing what this handle does"),
                     //optional: knot_shape, knot_mode, knot_color);
         knotholder->add(e);

@@ -15,6 +15,7 @@
 
 #include "live_effects/parameter/parameter.h"
 
+#include "helper/geom-satellite.h"
 #include "svg/svg.h"
 #include "svg/stringstream.h"
 
@@ -59,12 +60,15 @@ public:
         g_strfreev (strarray);
         return true;
     }
-
+    virtual void param_update_default(const gchar * default_value){};
     virtual gchar * param_getSVGValue() const {
         Inkscape::SVGOStringStream os;
         writesvg(os, _vector);
-        gchar * str = g_strdup(os.str().c_str());
-        return str;
+        return g_strdup(os.str().c_str());
+    }
+    
+    virtual gchar * param_getDefaultSVGValue() const {
+        return g_strdup("");
     }
 
     void param_setValue(std::vector<StorageType> const &new_vector) {
@@ -93,7 +97,43 @@ protected:
                 // separate items with pipe symbol
                 str << " | ";
             }
-            str << vector[i];
+            writesvgData(str,vector[i]);
+        }
+    }
+    
+    void writesvgData(SVGOStringStream &str, float const &vector_data) const {
+        str << vector_data;
+    }
+
+    void writesvgData(SVGOStringStream &str, double const &vector_data) const {
+        str << vector_data;
+    }
+
+    void writesvgData(SVGOStringStream &str, Geom::Point const &vector_data) const {
+        str << vector_data;
+    }
+
+    void writesvgData(SVGOStringStream &str, std::vector<Satellite> const &vector_data) const {
+        for (size_t i = 0; i < vector_data.size(); ++i) {
+            if (i != 0) {
+                // separate items with @ symbol ¿Any other?
+                str << " @ ";
+            }
+            str << vector_data[i].getSatelliteTypeGchar();
+            str << ",";
+            str << vector_data[i].is_time;
+            str << ",";
+            str << vector_data[i].selected;
+            str << ",";
+            str << vector_data[i].has_mirror;
+            str << ",";
+            str << vector_data[i].hidden;
+            str << ",";
+            str << vector_data[i].amount;
+            str << ",";
+            str << vector_data[i].angle;
+            str << ",";
+            str << static_cast<int>(vector_data[i].steps);
         }
     }
 

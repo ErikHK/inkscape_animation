@@ -22,12 +22,7 @@
 #include <sigc++/signal.h>
 
 namespace Gtk {
-#if WITH_GTKMM_3_0
-	class Grid;
-#else
 	class Table;
-#endif
-
 	class VBox;
 	class Widget;
 }
@@ -39,7 +34,7 @@ namespace Gtk {
 #define SP_MODULE_KEY_INPUT_SVGZ "org.inkscape.input.svgz"
 /** Specifies the input module that should be used if none are selected */
 #define SP_MODULE_KEY_INPUT_DEFAULT SP_MODULE_KEY_AUTODETECT
-/** The key for outputing standard W3C SVG */
+/** The key for outputting standard W3C SVG */
 #define SP_MODULE_KEY_OUTPUT_SVG "org.inkscape.output.svg.plain"
 #define SP_MODULE_KEY_OUTPUT_SVGZ "org.inkscape.output.svgz.plain"
 /** This is an output file that has SVG data with the Sodipodi namespace extensions */
@@ -76,6 +71,7 @@ class SPDocument;
 namespace Inkscape {
 namespace Extension {
 
+class ExecutionEnv;
 class Dependency;
 class ExpirationTimer;
 class ExpirationTimer;
@@ -100,7 +96,6 @@ public:
         STATE_UNLOADED,    /**< The extension has not been loaded */
         STATE_DEACTIVATED  /**< The extension is missing something which makes it unusable */
     } state_t;
-    static std::vector<const gchar *> search_path; /**< A vector of paths to search for extensions */
 
 private:
     gchar     *id;                        /**< The unique identifier for the Extension */
@@ -115,6 +110,7 @@ private:
 protected:
     Inkscape::XML::Node *repr;            /**< The XML description of the Extension */
     Implementation::Implementation * imp; /**< An object that holds all the functions for making this work */
+    ExecutionEnv * execution_env;         /**< Execution environment of the extension (currently only used by Effects) */
     ExpirationTimer * timer;              /**< Timeout to unload after a given time */
 
 public:
@@ -136,10 +132,12 @@ public:
     bool          deactivated  (void);
     void          printFailure (Glib::ustring reason);
     Implementation::Implementation * get_imp (void) { return imp; };
+    void          set_execution_env (ExecutionEnv * env) { execution_env = env; };
+    ExecutionEnv *get_execution_env (void) { return execution_env; };
 
 /* Parameter Stuff */
 private:
-    GSList * parameters; /**< A table to store the parameters for this extension.
+    std::vector<Parameter *> parameters; /**< A table to store the parameters for this extension.
                               This only gets created if there are parameters in this
                               extension */
 
@@ -147,8 +145,7 @@ public:
     /** \brief  A function to get the number of parameters that
                 the extension has.
         \return The number of parameters. */
-    unsigned int param_count ( ) { return parameters == NULL ? 0 :
-                                              g_slist_length(parameters); };
+    unsigned int param_count ( ) { return parameters.size(); };
     /** \brief  A function to get the number of parameters that
                 are visible to the user that the extension has.
         \return The number of visible parameters.
@@ -181,7 +178,7 @@ public:
 
 private:
     void             make_param       (Inkscape::XML::Node * paramrepr);
-    
+
     /**
      * This function looks through the linked list for a parameter
      * structure with the name of the passed in name.
@@ -300,11 +297,7 @@ public:
     Gtk::VBox *    get_help_widget(void);
     Gtk::VBox *    get_params_widget(void);
 protected:
-#if WITH_GTKMM_3_0
-    inline static void add_val(Glib::ustring labelstr, Glib::ustring valuestr, Gtk::Grid * table, int * row);
-#else
     inline static void add_val(Glib::ustring labelstr, Glib::ustring valuestr, Gtk::Table * table, int * row);
-#endif
 };
 
 

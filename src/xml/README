@@ -1,0 +1,12 @@
+
+
+This directory contains code that handles the XML tree.
+
+Classes to store the parsed XML of an SVG document. Fairly generic,
+and doesn't contain significant SVG-specific functionality. The main
+distinguishing features (from something like libxml++) are
+notifications about XML changes and undo functionality. This subsystem
+is garbage-collected. Because XML nodes were formerly C structures
+called SPRepr, the XML tree is sometimes called the "repr tree", and
+XML nodes "reprs" (short for "representation").
+

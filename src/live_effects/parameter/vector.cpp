@@ -8,13 +8,12 @@
 #include <glibmm/i18n.h>
 
 #include "live_effects/parameter/vector.h"
-#include "sp-lpe-item.h"
+
 #include "knotholder.h"
 #include "svg/svg.h"
 #include "svg/stringstream.h"
 
 #include "live_effects/effect.h"
-#include "desktop.h"
 #include "verbs.h"
 
 namespace Inkscape {
@@ -49,6 +48,25 @@ VectorParam::param_set_default()
     setVector(defvalue);
 }
 
+void
+VectorParam::param_update_default(Geom::Point default_point)
+{
+    defvalue = default_point;
+}
+
+void
+VectorParam::param_update_default(const gchar * default_point)
+{
+    gchar ** strarray = g_strsplit(default_point, ",", 2);
+    double newx, newy;
+    unsigned int success = sp_svg_number_read_d(strarray[0], &newx);
+    success += sp_svg_number_read_d(strarray[1], &newy);
+    g_strfreev (strarray);
+    if (success == 2) {
+        param_update_default( Geom::Point(newx, newy) );
+    }
+}
+
 bool
 VectorParam::param_readSVGValue(const gchar * strvalue)
 {
@@ -79,8 +97,15 @@ VectorParam::param_getSVGValue() const
 {
     Inkscape::SVGOStringStream os;
     os << origin << " , " << vector;
-    gchar * str = g_strdup(os.str().c_str());
-    return str;
+    return g_strdup(os.str().c_str());
+}
+
+gchar *
+VectorParam::param_getDefaultSVGValue() const
+{
+    Inkscape::SVGOStringStream os;
+    os << defvalue;
+    return g_strdup(os.str().c_str());
 }
 
 Gtk::Widget *
@@ -188,14 +213,14 @@ private:
 };
 
 void
-VectorParam::addKnotHolderEntities(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item)
+VectorParam::addKnotHolderEntities(KnotHolder *knotholder, SPItem *item)
 {
     VectorParamKnotHolderEntity_Origin *origin_e = new VectorParamKnotHolderEntity_Origin(this);
-    origin_e->create(desktop, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN, handleTip(), ori_knot_shape, ori_knot_mode, ori_knot_color);
+    origin_e->create(NULL, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN, handleTip(), ori_knot_shape, ori_knot_mode, ori_knot_color);
     knotholder->add(origin_e);
 
     VectorParamKnotHolderEntity_Vector *vector_e = new VectorParamKnotHolderEntity_Vector(this);
-    vector_e->create(desktop, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN, handleTip(), vec_knot_shape, vec_knot_mode, vec_knot_color);
+    vector_e->create(NULL, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN, handleTip(), vec_knot_shape, vec_knot_mode, vec_knot_color);
     knotholder->add(vector_e);
 }
 

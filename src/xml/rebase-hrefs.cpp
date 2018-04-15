@@ -1,16 +1,18 @@
-#include "xml/rebase-hrefs.h"
-#include "dir-util.h"
-#include "../document.h"  /* Unfortunately there's a separate xml/document.h. */
-#include "io/sys.h"
-#include "sp-object.h"
-#include "streq.h"
-#include "util/share.h"
-#include "xml/attribute-record.h"
-#include "xml/node.h"
-#include <glib.h>
-#include <glibmm/miscutils.h>
+
 #include <glibmm/convert.h>
+#include <glibmm/miscutils.h>
 #include <glibmm/uriutils.h>
+
+#include "../document.h"  /* Unfortunately there's a separate xml/document.h. */
+#include "dir-util.h"
+#include "streq.h"
+
+#include "io/sys.h"
+
+#include "object/sp-object.h"
+
+#include "xml/node.h"
+#include "xml/rebase-hrefs.h"
 
 using Inkscape::XML::AttributeRecord;
 
@@ -115,8 +117,8 @@ Inkscape::XML::rebase_href_attrs(gchar const *const old_abs_base,
      *
      * However, if we find that xlink:href doesn't need rebasing, then return immediately
      * with no change to attributes. */
-    ptr_shared<char> old_href;
-    ptr_shared<char> sp_absref;
+    ptr_shared old_href;
+    ptr_shared sp_absref;
     List<AttributeRecord const> ret;
     {
         for (List<AttributeRecord const> ai(attributes); ai; ++ai) {
@@ -177,7 +179,7 @@ std::string Inkscape::XML::calc_abs_doc_base(gchar const *doc_base)
      * It's probably not worth trying to address this until we're using proper
      * relative URL/IRI href processing (with liburiparser).
      *
-     * (Note that one possibile difficulty with `..' is symlinks.) */
+     * (Note that one possible difficulty with `..' is symlinks.) */
     std::string ret;
 
     if (!doc_base) {

@@ -1,5 +1,6 @@
 /*
- * Inkscape::Util::ptr_shared<T> - like T const *, but stronger
+ * Inkscape::Util::ptr_shared<T> - like T const *, but stronger.
+ * Used to hold c-style strings for objects that are managed by the gc.
  *
  * Authors:
  *   MenTaLguY <mental@rydia.net>
@@ -19,118 +20,82 @@
 namespace Inkscape {
 namespace Util {
 
-template <typename T>
 class ptr_shared {
 public:
-    ptr_shared() : _obj(NULL) {}
 
-    template <typename T1>
-    ptr_shared(ptr_shared<T1> const &other) : _obj(other._obj) {}
+    ptr_shared() : _string(NULL) {}
+        ptr_shared(ptr_shared const &other) : _string(other._string) {}
 
-    T const *pointer() const { return _obj; }
+    operator char const *() const { return _string; }
+    operator bool() const { return _string; }
 
-    template <typename T1>
-    operator T1 const *() const { return _obj; }
+    char const *pointer() const { return _string; }
+    char const &operator[](int i) const { return _string[i]; }
 
-    operator bool() const { return _obj; }
-
-    T const &operator*() const { return *_obj; }
-    T const *operator->() const { return _obj; }
-    T const &operator[](int i) const { return _obj[i]; }
-
-    ptr_shared<T> operator+(int i) const {
-        return share_unsafe(_obj+i);
+    ptr_shared operator+(int i) const {
+        return share_unsafe(_string+i);
     }
-    ptr_shared<T> operator-(int i) const {
-        return share_unsafe(_obj-i);
+    ptr_shared operator-(int i) const {
+        return share_unsafe(_string-i);
     }
-
-    ptr_shared<T> &operator+=(int i) const {
-        _obj += i;
+    //WARNING: No bounds checking in += and -= functions. Moving the pointer
+    //past the end of the string and then back could probably cause the garbage
+    //collector to deallocate the string inbetween, as there's temporary no
+    //valid reference pointing into the allocated space.
+    ptr_shared &operator+=(int i) {
+        _string += i;
         return *this;
     }
-    ptr_shared<T> &operator-=(int i) const {
-        _obj -= i;
+    ptr_shared &operator-=(int i) {
+        _string -= i;
         return *this;
     }
-
-    template <typename T1>
-    std::ptrdiff_t operator-(ptr_shared<T1> const &other) {
-        return _obj - other._obj;
+    std::ptrdiff_t operator-(ptr_shared const &other) {
+        return _string - other._string;
     }
 
-    template <typename T1>
-    ptr_shared<T> &operator=(ptr_shared<T1> const &other) {
-        _obj = other._obj;
+    ptr_shared &operator=(ptr_shared const &other) {
+        _string = other._string;
         return *this;
     }
 
-    template <typename T1>
-    bool operator==(ptr_shared<T1> const &other) const {
-        return _obj == other._obj;
+    bool operator==(ptr_shared const &other) const {
+        return _string == other._string;
+    }
+    bool operator!=(ptr_shared const &other) const {
+        return _string != other._string;
+    }
+    bool operator>(ptr_shared const &other) const {
+        return _string > other._string;
+    }
+    bool operator<(ptr_shared const &other) const {
+        return _string < other._string;
     }
 
-    template <typename T1>
-    bool operator!=(ptr_shared<T1> const &other) const {
-        return _obj != other._obj;
-    }
-
-    template <typename T1>
-    bool operator>(ptr_shared<T1> const &other) const {
-        return _obj > other._obj;
-    }
-
-    template <typename T1>
-    bool operator<(ptr_shared<T1> const &other) const {
-        return _obj < other._obj;
-    }
-
-    static ptr_shared<T> share_unsafe(T const *obj) {
-        return ptr_shared<T>(obj);
-    }
-
-protected:
-    explicit ptr_shared(T const *obj) : _obj(obj) {}
+    friend ptr_shared share_unsafe(char const *string); 
 
 private:
-    T const *_obj;
+    ptr_shared(char const *string) : _string(string) {}
+    static ptr_shared share_unsafe(char const *string) {
+        return ptr_shared(string);
+    }
+
+    //This class (and code usign it) assumes that it never has to free this
+    //pointer, and that the memory it points to will not be freed as long as a
+    //ptr_shared pointing to it exists.
+    char const *_string;
 };
 
-template <typename T>
-inline ptr_shared<T> share(T const *obj) {
-    return share_unsafe(obj ? new T(*obj) : NULL);
+ptr_shared share_string(char const *string);
+ptr_shared share_string(char const *string, std::size_t length);
+
+inline ptr_shared share_unsafe(char const *string) {
+    return ptr_shared::share_unsafe(string);
 }
 
-ptr_shared<char> share_string(char const *string);
-ptr_shared<char> share_string(char const *string, std::size_t length);
-
-template <typename T>
-inline ptr_shared<T> reshare(T const *obj) {
-    return ptr_shared<T>::share_unsafe(obj);
-}
-
-template <typename T>
-inline ptr_shared<T> share_unsafe(T const *obj) {
-    return ptr_shared<T>::share_unsafe(obj);
-}
-
-inline ptr_shared<char> share_static_string(char const *string) {
+//TODO: Do we need this function?
+inline ptr_shared share_static_string(char const *string) {
     return share_unsafe(string);
-}
-
-template <typename T1, typename T2>
-inline ptr_shared<T1> static_cast_shared(ptr_shared<T2> const &ref) {
-    return reshare(static_cast<T1 const *>(ref.pointer()));
-}
-
-template <typename T1, typename T2>
-inline ptr_shared<T1> dynamic_cast_shared(ptr_shared<T2> const &ref) {
-    return reshare(dynamic_cast<T1 const *>(ref.pointer()));
-}
-
-template <typename T1, typename T2>
-inline ptr_shared<T1> reinterpret_cast_shared(ptr_shared<T2> const &ref) {
-    return reshare(reinterpret_cast<T1 const *>(ref.pointer()));
 }
 
 }

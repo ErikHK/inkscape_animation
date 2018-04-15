@@ -40,23 +40,23 @@ public:
     struct PropertyPair {
     public:
         PropertyPair() {}
-        PropertyPair(Util::ptr_shared<char> n, Util::ptr_shared<char> v)
+        PropertyPair(Util::ptr_shared n, Util::ptr_shared v)
         : name(n), value(v) {}
-        PropertyPair(char const *n, Util::ptr_shared<char> v)
+        PropertyPair(char const *n, Util::ptr_shared v)
         : name(Util::share_string(n)), value(v) {}
-        PropertyPair(Util::ptr_shared<char> n, char const *v)
+        PropertyPair(Util::ptr_shared n, char const *v)
         : name(n), value(Util::share_string(v)) {}
         PropertyPair(char const *n, char const *v)
         : name(Util::share_string(n)),
           value(Util::share_string(v)) {}
 
-        Util::ptr_shared<char> name;
-        Util::ptr_shared<char> value;
+        Util::ptr_shared name;
+        Util::ptr_shared value;
     };
 
     static Category category() { return OTHER; }
 
-    virtual Util::ptr_shared<char> name() const=0;
+    virtual Util::ptr_shared name() const=0;
     virtual unsigned propertyCount() const=0;
     virtual PropertyPair property(unsigned property) const=0;
 

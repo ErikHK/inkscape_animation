@@ -21,9 +21,9 @@ public:
 
     static cmsHTRANSFORM getDisplayTransform();
 
-    static Glib::ustring getDisplayId( int screen, int monitor );
+    static Glib::ustring getDisplayId( int monitor );
 
-    static Glib::ustring setDisplayPer( void* buf, unsigned int bufLen, int screen, int monitor );
+    static Glib::ustring setDisplayPer( void* buf, unsigned int bufLen, int monitor );
 
     static cmsHTRANSFORM getDisplayPer( Glib::ustring const& id );
 

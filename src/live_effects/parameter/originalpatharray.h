@@ -22,19 +22,21 @@
 #include "svg/svg.h"
 #include "svg/stringstream.h"
 #include "path-reference.h"
-#include "sp-object.h"
+
+class SPObject;
 
 namespace Inkscape {
 
 namespace LivePathEffect {
 
-class PathAndDirection {
+class PathAndDirectionAndVisible {
 public:
-    PathAndDirection(SPObject *owner)
+    PathAndDirectionAndVisible(SPObject *owner)
     : href(NULL),
     ref(owner),
     _pathvector(Geom::PathVector()),
-    reversed(false)
+    reversed(false),
+    visibled(true)
     {
         
     }
@@ -42,6 +44,7 @@ public:
     URIReference ref;
     Geom::PathVector _pathvector;
     bool reversed;
+    bool visibled;
     
     sigc::connection linked_changed_connection;
     sigc::connection linked_delete_connection;
@@ -64,32 +67,36 @@ public:
     virtual Gtk::Widget * param_newWidget();
     virtual bool param_readSVGValue(const gchar * strvalue);
     virtual gchar * param_getSVGValue() const;
+    virtual gchar * param_getDefaultSVGValue() const;
     virtual void param_set_default();
-    
+    virtual void param_update_default(const gchar * default_value){};
     /** Disable the canvas indicators of parent class by overriding this method */
     virtual void param_editOncanvas(SPItem * /*item*/, SPDesktop * /*dt*/) {};
     /** Disable the canvas indicators of parent class by overriding this method */
     virtual void addCanvasIndicators(SPLPEItem const* /*lpeitem*/, std::vector<Geom::PathVector> & /*hp_vec*/) {};
-    
-    std::vector<PathAndDirection*> _vector;
-    
+    void setFromOriginalD(bool from_original_d){ _from_original_d = from_original_d; update();};
+    void allowOnlyBsplineSpiro(bool allow_only_bspline_spiro){ _allow_only_bspline_spiro = allow_only_bspline_spiro; update();};
+
+    std::vector<PathAndDirectionAndVisible*> _vector;
+
 protected:
-    bool _updateLink(const Gtk::TreeIter& iter, PathAndDirection* pd);
+    bool _updateLink(const Gtk::TreeIter& iter, PathAndDirectionAndVisible* pd);
     bool _selectIndex(const Gtk::TreeIter& iter, int* i);
-    void unlink(PathAndDirection* to);
-    void remove_link(PathAndDirection* to);
-    void setPathVector(SPObject *linked_obj, guint flags, PathAndDirection* to);
+    void unlink(PathAndDirectionAndVisible* to);
+    void remove_link(PathAndDirectionAndVisible* to);
+    void setPathVector(SPObject *linked_obj, guint flags, PathAndDirectionAndVisible* to);
     
-    void linked_changed(SPObject *old_obj, SPObject *new_obj, PathAndDirection* to);
-    void linked_modified(SPObject *linked_obj, guint flags, PathAndDirection* to);
-    void linked_transformed(Geom::Affine const *, SPItem *, PathAndDirection*) {}
-    void linked_delete(SPObject *deleted, PathAndDirection* to);
+    void linked_changed(SPObject *old_obj, SPObject *new_obj, PathAndDirectionAndVisible* to);
+    void linked_modified(SPObject *linked_obj, guint flags, PathAndDirectionAndVisible* to);
+    void linked_transformed(Geom::Affine const *, SPItem *, PathAndDirectionAndVisible*) {}
+    void linked_delete(SPObject *deleted, PathAndDirectionAndVisible* to);
     
     ModelColumns *_model;
     Glib::RefPtr<Gtk::TreeStore> _store;
     Gtk::TreeView _tree;
     Gtk::CellRendererText *_text_renderer;
-    Gtk::CellRendererToggle *_toggle_renderer;
+    Gtk::CellRendererToggle *_toggle_reverse;
+    Gtk::CellRendererToggle *_toggle_visible;
     Gtk::TreeView::Column *_name_column;
     Gtk::ScrolledWindow _scroller;
     
@@ -98,8 +105,12 @@ protected:
     void on_up_button_click();
     void on_down_button_click();
     void on_reverse_toggled(const Glib::ustring& path);
+    void on_visible_toggled(const Glib::ustring& path);
     
 private:
+    bool _from_original_d;
+    bool _allow_only_bspline_spiro;
+    void update();
     OriginalPathArrayParam(const OriginalPathArrayParam&);
     OriginalPathArrayParam& operator=(const OriginalPathArrayParam&);
 };

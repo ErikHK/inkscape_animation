@@ -20,9 +20,9 @@ unsigned char const *sp_attribute_name(unsigned int id);
 
 /**
  * True iff k is a property in SVG, i.e. something that can be written either in a style attribute
- * or as its own XML attribute.
+ * or as its own XML attribute. This must be kept in sync with SPAttributeEnum.
  */
-#define SP_ATTRIBUTE_IS_CSS(k) (((k) >= SP_PROP_INKSCAPE_FONT_SPEC) && ((k) <= SP_PROP_TEXT_RENDERING))
+#define SP_ATTRIBUTE_IS_CSS(k) (((k) >= SP_ATTR_D) && ((k) <= SP_PROP_PATH_EFFECT))
 
 /*
  * Do not change order of attributes and properties. Attribute and
@@ -146,7 +146,7 @@ enum SPAttributeEnum {
     SP_ATTR_X,
     SP_ATTR_Y,
     /* SPPath */
-    SP_ATTR_D,
+    // SP_ATTR_D,  Promoted to property in SVG 2
     SP_ATTR_INKSCAPE_ORIGINAL_D,
     SP_ATTR_CONNECTOR_TYPE,
     SP_ATTR_CONNECTOR_CURVATURE,
@@ -181,6 +181,7 @@ enum SPAttributeEnum {
     SP_ATTR_SODIPODI_START,
     SP_ATTR_SODIPODI_END,
     SP_ATTR_SODIPODI_OPEN,
+    SP_ATTR_SODIPODI_ARC_TYPE,
     /* SPStar */
     SP_ATTR_SODIPODI_SIDES,
     SP_ATTR_SODIPODI_R1,
@@ -427,7 +428,12 @@ enum SPAttributeEnum {
     SP_ATTR_TEXT_EXCLUDE,
     SP_ATTR_LAYOUT_OPTIONS,
 
-    /* CSS & SVG Properties   KEEP ORDER */
+    /*  CSS & SVG Properties   KEEP ORDER!
+     *  If first or last property changed, macro at top must be changed!
+     */
+
+    /* SVG 2 Attributes promoted to properties */
+    SP_ATTR_D,
 
     /* Paint */
     SP_PROP_COLOR,
@@ -487,6 +493,9 @@ enum SPAttributeEnum {
     SP_PROP_FONT_VARIANT_EAST_ASIAN,
     SP_PROP_FONT_FEATURE_SETTINGS,
 
+    /* Variable Fonts (CSS Fonts Module Level 4) */
+    SP_PROP_FONT_VARIATION_SETTINGS,
+
     /* Text Layout */
     SP_PROP_TEXT_INDENT,
     SP_PROP_TEXT_ALIGN,
@@ -511,9 +520,10 @@ enum SPAttributeEnum {
 
     /* SVG 2 Text Wrapping */
     SP_PROP_SHAPE_INSIDE,
-    SP_PROP_SHAPE_OUTSIDE,
+    SP_PROP_SHAPE_SUBTRACT,
     SP_PROP_SHAPE_PADDING,
     SP_PROP_SHAPE_MARGIN,
+    SP_PROP_INLINE_SIZE,
     
     /* Text Decoration */
     SP_PROP_TEXT_DECORATION,  // CSS 2/CSS3-Shorthand

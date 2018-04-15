@@ -12,16 +12,14 @@
  */
 
 #include "live_effects/lpe-ellipse_5pts.h"
-
-// You might need to include other 2geom files. You can add them here:
-#include <glibmm/i18n.h>
-#include <2geom/path.h>
 #include <2geom/circle.h>
 #include <2geom/ellipse.h>
 #include <2geom/path-sink.h>
 #include "inkscape.h"
 #include "desktop.h"
 #include "message-stack.h"
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -171,7 +169,7 @@ LPEEllipse5Pts::doEffect_path (Geom::PathVector const & path_in)
 
     // figure out if we have a slice, guarding against rounding errors
 
-    Path p(Geom::Point(cos(0), sin(0)));
+    Geom::Path p(Geom::Point(cos(0), sin(0)));
 
     double end = 2 * M_PI;
     for (s = 0; s < end; s += M_PI_2) {

@@ -38,17 +38,20 @@ public:
 
     virtual bool param_readSVGValue(const gchar * strvalue);
     virtual gchar * param_getSVGValue() const;
+    virtual gchar * param_getDefaultSVGValue() const;
 
     virtual void param_set_default();
+    virtual void param_update_default(const gchar * default_value);
     void param_set_and_write_default();
     void set_new_value (Geom::PathVector const &newpath, bool write_to_svg);
     void set_new_value (Geom::Piecewise<Geom::D2<Geom::SBasis> > const &newpath, bool write_to_svg);
-
+    void set_buttons(bool edit_button, bool copy_button, bool paste_button, bool link_button);
     virtual void param_editOncanvas(SPItem * item, SPDesktop * dt);
     virtual void param_setup_nodepath(Inkscape::NodePath::Path *np);
     virtual void addCanvasIndicators(SPLPEItem const* lpeitem, std::vector<Geom::PathVector> &hp_vec);
 
     virtual void param_transform_multiply(Geom::Affine const& /*postmul*/, bool /*set*/);
+    void setFromOriginalD(bool from_original_d){ _from_original_d = from_original_d; };
 
     sigc::signal <void> signal_path_pasted;
     sigc::signal <void> signal_path_changed;
@@ -90,6 +93,11 @@ protected:
     gchar * defvalue;
 
 private:
+    bool _from_original_d;
+    bool _edit_button;
+    bool _copy_button;
+    bool _paste_button;
+    bool _link_button;
     PathParam(const PathParam&);
     PathParam& operator=(const PathParam&);
 };

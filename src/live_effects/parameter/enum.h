@@ -27,12 +27,14 @@ public:
                 const Util::EnumDataConverter<E>& c,
                 Inkscape::UI::Widget::Registry* wr,
                 Effect* effect,
-                E default_value)
+                E default_value,
+                bool sort = true)
         : Parameter(label, tip, key, wr, effect)
     {
         enumdataconv = &c;
         defvalue = default_value;
         value = defvalue;
+        sorted = sort;
     };
 
     virtual ~EnumParam() { };
@@ -40,12 +42,11 @@ public:
     virtual Gtk::Widget * param_newWidget() {
         Inkscape::UI::Widget::RegisteredEnum<E> *regenum = Gtk::manage ( 
             new Inkscape::UI::Widget::RegisteredEnum<E>( param_label, param_tooltip,
-                       param_key, *enumdataconv, *param_wr, param_effect->getRepr(), param_effect->getSPDoc() ) );
+                       param_key, *enumdataconv, *param_wr, param_effect->getRepr(), param_effect->getSPDoc(), sorted ) );
 
         regenum->set_active_by_id(value);
         regenum->combobox()->setProgrammatically = false;
         regenum->set_undo_parameters(SP_VERB_DIALOG_LIVE_PATH_EFFECT, _("Change enumeration parameter"));
-
         return dynamic_cast<Gtk::Widget *> (regenum);
     };
 
@@ -60,10 +61,13 @@ public:
         return true;
     };
     gchar * param_getSVGValue() const {
-        gchar * str = g_strdup( enumdataconv->get_key(value).c_str() );
-        return str;
+        return g_strdup( enumdataconv->get_key(value).c_str() );
     };
-
+    
+    gchar * param_getDefaultSVGValue() const {
+        return g_strdup( enumdataconv->get_key(defvalue).c_str() );
+    };
+    
     E get_value() const {
         return value;
     }
@@ -75,8 +79,19 @@ public:
     void param_set_default() {
         param_set_value(defvalue);
     }
-
+    
+    void param_update_default(E default_value) {
+        defvalue = default_value;
+    }
+    
+    virtual void param_update_default(const gchar * default_value) {
+        param_update_default(enumdataconv->get_id_from_key(Glib::ustring(default_value)));
+    }
+    
     void param_set_value(E val) {
+        if (value != val) {
+            param_effect->upd_params = true;
+        }
         value = val;
     }
 
@@ -86,6 +101,7 @@ private:
 
     E value;
     E defvalue;
+    bool sorted;
 
     const Util::EnumDataConverter<E> * enumdataconv;
 };

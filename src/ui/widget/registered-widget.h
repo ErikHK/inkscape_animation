@@ -12,23 +12,24 @@
 #ifndef INKSCAPE_UI_WIDGET_REGISTERED_WIDGET__H_
 #define INKSCAPE_UI_WIDGET_REGISTERED_WIDGET__H_
 
-#include "ui/widget/scalar.h"
 #include <2geom/affine.h>
 #include "xml/node.h"
 #include "registry.h"
 
+#include "ui/widget/scalar.h"
 #include "ui/widget/scalar-unit.h"
 #include "ui/widget/point.h"
 #include "ui/widget/text.h"
 #include "ui/widget/random.h"
 #include "ui/widget/unit-menu.h"
+#include "ui/widget/font-button.h"
 #include "ui/widget/color-picker.h"
 #include "inkscape.h"
 
 #include "document.h"
 #include "document-undo.h"
 #include "desktop.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 
 #include <gtkmm/checkbutton.h>
 
@@ -77,6 +78,8 @@ protected:
     RegisteredWidget( A& a, B& b, C c, D d ): W( a, b, c, d ) { construct(); }
     template< typename A, typename B, typename C, typename D, typename E , typename F>
     RegisteredWidget( A& a, B& b, C c, D& d, E& e, F* f): W( a, b, c, d, e, f) { construct(); }
+    template< typename A, typename B, typename C, typename D, typename E , typename F, typename G>
+    RegisteredWidget( A& a, B& b, C& c, D& d, E& e, F f, G& g): W( a, b, c, d, e, f, g) { construct(); }
 
     virtual ~RegisteredWidget() {};
 
@@ -105,12 +108,14 @@ protected:
 
         bool saved = DocumentUndo::getUndoSensitive(local_doc);
         DocumentUndo::setUndoSensitive(local_doc, false);
+        const char * svgstr_old = local_repr->attribute(_key.c_str());
         if (!write_undo) {
             local_repr->setAttribute(_key.c_str(), svgstr);
         }
         DocumentUndo::setUndoSensitive(local_doc, saved);
-
-        local_doc->setModifiedSinceSave();
+        if (svgstr_old && svgstr && strcmp(svgstr_old,svgstr)) {
+            local_doc->setModifiedSinceSave();
+        }
 
         if (write_undo) {
             local_repr->setAttribute(_key.c_str(), svgstr);
@@ -132,7 +137,7 @@ private:
         repr = NULL;
         doc = NULL;
         write_undo = false;
-        event_type = -1;
+        event_type = 0; //SP_VERB_INVALID
     }
 };
 
@@ -241,9 +246,8 @@ public:
             Registry& wr,
             Inkscape::XML::Node* repr_in = NULL,
             SPDocument *doc_in = NULL );
-
 protected:
-    sigc::connection  _value_changed_connection;
+    sigc::connection _value_changed_connection;
     void on_value_changed();
 };
 
@@ -415,6 +419,23 @@ public:
 protected:
     sigc::connection  _value_changed_connection;
     sigc::connection  _reseeded_connection;
+    void on_value_changed();
+};
+
+class RegisteredFontButton : public RegisteredWidget<FontButton> {
+public:
+    virtual ~RegisteredFontButton();
+    RegisteredFontButton ( const Glib::ustring& label,
+                             const Glib::ustring& tip,
+                             const Glib::ustring& key,
+                             Registry& wr,
+                             Inkscape::XML::Node* repr_in = NULL,
+                             SPDocument *doc_in = NULL);
+
+    void setValue (Glib::ustring fontspec);
+
+protected:
+    sigc::connection  _signal_font_set;
     void on_value_changed();
 };
 

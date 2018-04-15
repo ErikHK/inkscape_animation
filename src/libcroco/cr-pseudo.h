@@ -27,6 +27,7 @@
 #include <glib.h>
 #include "cr-attr-sel.h"
 #include "cr-parsing-location.h"
+#include "cr-term.h"
 
 G_BEGIN_DECLS
 
@@ -47,7 +48,8 @@ struct _CRPseudo
 {
         enum CRPseudoType type ;
         CRString *name ;
-        CRString *extra ;
+        CRString *sel_name;
+        CRTerm *term ;
         CRParsingLocation location ;
 } ;
 

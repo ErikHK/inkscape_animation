@@ -29,6 +29,7 @@
 #include <sigc++/sigc++.h>
 
 #include <2geom/affine.h>
+#include <2geom/transforms.h>
 #include <2geom/rect.h>
 
 #include "ui/view/view.h"
@@ -36,7 +37,7 @@
 #include <glibmm/ustring.h>
 
 #include "preferences.h"
-#include "sp-gradient.h" // TODO refactor enums out to their own .h file
+#include "object/sp-gradient.h" // TODO refactor enums out to their own .h file
 
 class SPCSSAttr;
 struct SPCanvas;
@@ -59,8 +60,6 @@ class SPNamedView;
 class SPObject;
 class SPStyle;
 typedef struct _DocumentInterface DocumentInterface;//struct DocumentInterface;
-
-extern std::vector<SPObject *> LAYERS_TO_HIDE;
 
 namespace Gtk
 {
@@ -176,34 +175,19 @@ public:
     SPCanvasGroup *sketch;
     SPCanvasGroup *controls;
     SPCanvasGroup *tempgroup;   ///< contains temporary canvas items
-    SPCanvasItem  *table;       ///< outside-of-page background
     SPCanvasItem  *page;        ///< page background
     SPCanvasItem  *page_border; ///< page border
+    SPCanvasItem  *canvas_rotate; ///< quickly show canvas rotation
+    SPCanvasItem  *canvas_debug;  ///< shows tiling
     SPCSSAttr     *current;     ///< current style
     bool           _focusMode;  ///< Whether we're focused working or general working
 
-    std::list<Geom::Rect> zooms_past;
-    std::list<Geom::Rect> zooms_future;
-
-    bool _quick_zoom_enabled; ///< Signifies that currently we're in quick zoom mode
-    Geom::Rect _quick_zoom_stored_area;  ///< The area of the screen before quick zoom
     unsigned int dkey;
     unsigned int number;
     guint window_state;
     unsigned int interaction_disabled_counter;
     bool waiting_cursor;
     bool showing_dialogs;
-	
-	bool fade_previous_layers;
-	bool show_all_keyframes;
-	bool is_playing; //is the animation playing?
-	//int start_loop_keyframe;
-	//int end_loop_keyframe;
-	int animation_start;
-	int animation_stop;
-
-	
-	guint fps; //animation frames per second
 
     /// \todo fixme: This has to be implemented in different way */
     guint guides_active : 1;
@@ -219,12 +203,9 @@ public:
 
     sigc::signal<void, sp_verb_t>      _tool_changed;
     sigc::signal<void, SPObject *>     _layer_changed_signal;
-    sigc::signal<void, SPObject *>     _tween_expansion_signal;
     sigc::signal<bool, const SPCSSAttr *>::accumulated<StopOnTrue> _set_style_signal;
     sigc::signal<int, SPStyle *, int>::accumulated<StopOnNonZero> _query_style_signal;
     
-    sigc::signal<void, int>	_ease_changed;
-
     /// Emitted when the zoom factor changes (not emitted when scrolling).
     /// The parameter is the new zoom factor
     sigc::signal<void, double> signal_zoom_changed;
@@ -247,10 +228,6 @@ public:
     {
         return _set_style_signal.connect (slot);
     }
-    sigc::connection connectTweenExpansion(const sigc::slot<void, SPObject *> & slot)
-    {
-    	_tween_expansion_signal.connect(slot);
-    }
     sigc::connection connectQueryStyle (const sigc::slot<int, SPStyle *, int> & slot)
     {
         return _query_style_signal.connect (slot);
@@ -263,13 +240,6 @@ public:
     sigc::connection connectCurrentLayerChanged(const sigc::slot<void, SPObject *> & slot) {
         return _layer_changed_signal.connect(slot);
     }
-
-    void emitTweenExpansion(SPObject * obj);
-
-    sigc::connection connectEaseChanged(const sigc::slot<void, int> & slot) {
-            return _ease_changed.connect(slot);
-        }
-
 
     /**
      * Return new desktop object.
@@ -340,10 +310,7 @@ public:
     void change_document (SPDocument *document);
 
 
-    void set_event_context2(const std::string& toolName);
-
-    //void set_event_context (GType type, const gchar *config);
-    //void push_event_context (GType type, const gchar *config, unsigned int key);
+    void setEventContext(const std::string& toolName);
 
     void set_coordinate_status (Geom::Point p);
     SPItem *getItemFromListAtPointBottom(const std::vector<SPItem*> &list, Geom::Point const &p) const;
@@ -351,38 +318,54 @@ public:
     SPItem *getGroupAtPoint(Geom::Point const &p) const;
     Geom::Point point() const;
 
+    void prev_transform();
+    void next_transform();
+    void clear_transform_history();
+    
+    void set_display_area (bool log = true);
+    void set_display_area (Geom::Point const &c, Geom::Point const &w, bool log = true);
+    void set_display_area (Geom::Rect const &a, Geom::Coord border, bool log = true);
     Geom::Rect get_display_area() const;
-    void set_display_area (double x0, double y0, double x1, double y1, double border, bool log = true);
-    void set_display_area(Geom::Rect const &a, Geom::Coord border, bool log = true);
-    void zoom_absolute (double cx, double cy, double zoom);
-    void zoom_relative (double cx, double cy, double zoom);
-    void zoom_absolute_keep_point (double cx, double cy, double px, double py, double zoom);
-    void zoom_relative_keep_point (double cx, double cy, double zoom);
-    void zoom_relative_keep_point (Geom::Point const &c, double const zoom)
-    {
-            zoom_relative_keep_point (c[Geom::X], c[Geom::Y], zoom);
-    }
+
+    void zoom_absolute_keep_point   (Geom::Point const &c, double const zoom);
+    void zoom_relative_keep_point   (Geom::Point const &c, double const zoom);
+    void zoom_absolute_center_point (Geom::Point const &c, double const zoom);
+    void zoom_relative_center_point (Geom::Point const &c, double const zoom);
 
     void zoom_page();
     void zoom_page_width();
     void zoom_drawing();
     void zoom_selection();
-    void zoom_grab_focus();
-    double current_zoom() const  { return _d2w.descrim(); }
-    void prev_zoom();
-    void next_zoom();
-    void zoom_quick(bool enable = true);
 
+    double current_zoom() const { return _current_affine.getZoom(); }
+
+    void zoom_quick(bool enable = true);
     /** \brief  Returns whether the desktop is in quick zoom mode or not */
     bool quick_zoomed(void) { return _quick_zoom_enabled; }
 
+    void zoom_grab_focus();
+
+    void rotate_absolute_keep_point   (Geom::Point const &c, double const rotate);
+    void rotate_relative_keep_point   (Geom::Point const &c, double const rotate);
+    void rotate_absolute_center_point (Geom::Point const &c, double const rotate);
+    void rotate_relative_center_point (Geom::Point const &c, double const rotate);
+
+    enum CanvasFlip {
+        FLIP_NONE       = 0,
+        FLIP_HORIZONTAL = 1,
+        FLIP_VERTICAL   = 2
+    };
+    void flip_absolute_keep_point   (Geom::Point const &c, CanvasFlip flip);
+    void flip_relative_keep_point   (Geom::Point const &c, CanvasFlip flip);
+    void flip_absolute_center_point (Geom::Point const &c, CanvasFlip flip);
+    void flip_relative_center_point (Geom::Point const &c, CanvasFlip flip);
+
+    double current_rotation() const { return _current_affine.getRotation(); }
+
+    void scroll_absolute (Geom::Point const &point, bool is_scrolling = false);
+    void scroll_relative (Geom::Point const &delta, bool is_scrolling = false);
+    void scroll_relative_in_svg_coords (double dx, double dy, bool is_scrolling = false);
     bool scroll_to_point (Geom::Point const &s_dt, gdouble autoscrollspeed = 0);
-    void scroll_world (double dx, double dy, bool is_scrolling = false);
-    void scroll_world (Geom::Point const &scroll, bool is_scrolling = false)
-    {
-        scroll_world(scroll[Geom::X], scroll[Geom::Y], is_scrolling);
-    }
-    void scroll_world_in_svg_coords (double dx, double dy, bool is_scrolling = false);
 
     void getWindowGeometry (gint &x, gint &y, gint &w, gint &h);
     void setWindowPosition (Geom::Point p);
@@ -435,7 +418,7 @@ public:
      */
     void show_dialogs();
 
-    Geom::Affine w2d() const; //transformation from window to desktop coordinates (used for zooming)
+    Geom::Affine w2d() const; //transformation from window to desktop coordinates (zoom/rotate).
     Geom::Point w2d(Geom::Point const &p) const;
     Geom::Point d2w(Geom::Point const &p) const;
     Geom::Affine doc2dt() const;
@@ -458,8 +441,102 @@ private:
     Inkscape::UI::View::EditWidgetInterface       *_widget;
     Inkscape::MessageContext  *_guides_message_context;
     bool _active;
-    Geom::Affine _w2d;
-    Geom::Affine _d2w;
+
+    // This simple class ensures that _w2d is always in sync with _rotation and _scale
+    // We keep rotation and scale separate to avoid having to extract them from the affine.
+    // With offset, this describes fully how to map the drawing to the window.
+    // Future: merge offset as a translation in w2d.
+    class DesktopAffine {
+      public:
+        Geom::Affine w2d() const { return _w2d; };
+        Geom::Affine d2w() const { return _d2w; };
+
+        void setScale( Geom::Scale scale ) {
+            _scale = scale;
+            _update();
+        }
+        void setScale( double scale ) {
+            _scale = Geom::Scale(scale, -scale); // Y flip
+            _update();
+        }
+        void addScale( Geom::Scale scale) {
+            _scale *= scale;
+            _update();
+        }
+        void addScale( double scale ) {
+            _scale *= Geom::Scale(scale, -scale); // Y flip?? Check
+            _update();
+        }
+
+        void setRotate( Geom::Rotate rotate ) {
+            _rotate = rotate;
+            _update();
+        }
+        void setRotate( double rotate ) {
+            _rotate = Geom::Rotate( rotate );
+            _update();
+        }
+        void addRotate( Geom::Rotate rotate ) {
+            _rotate *= rotate;
+            _update();
+        }
+        void addRotate( double rotate ) {
+            _rotate *= Geom::Rotate( rotate );
+            _update();
+        }
+
+        void setFlip( CanvasFlip flip ) {
+            _flip = Geom::Scale();
+            addFlip( flip );
+        }
+
+        void addFlip( CanvasFlip flip ) {
+            if (flip & FLIP_HORIZONTAL) {
+                _flip *= Geom::Scale(-1.0, 1.0);
+            }
+            if (flip & FLIP_VERTICAL) {
+                _flip *= Geom::Scale(1.0, -1.0);
+            }
+            _update();
+        }
+
+        double getZoom() const {
+            return _d2w.descrim();
+        }
+
+        double getRotation() const {
+            return _rotate.angle();
+        }
+
+        void setOffset( Geom::Point offset ) {
+            _offset = offset;
+        }
+        void addOffset( Geom::Point offset ) {
+            _offset += offset;
+        }
+        Geom::Point getOffset() {
+            return _offset;
+        }
+
+      private:
+        void _update() {
+            _d2w = _rotate * _scale * _flip;
+            _w2d = _d2w.inverse();
+        }            
+        Geom::Affine  _w2d;      // Window to desktop
+        Geom::Affine  _d2w;      // Desktop to window
+        Geom::Rotate  _rotate;   // Rotate part of _w2d
+        Geom::Scale   _scale;    // Scale part of _w2d
+        Geom::Scale   _flip;     // Flip part of _w2d
+        Geom::Point   _offset;   // Point on canvas to align to (0,0) of window
+    };
+
+    DesktopAffine _current_affine;
+    std::list<DesktopAffine> transforms_past;
+    std::list<DesktopAffine> transforms_future;
+    bool _quick_zoom_enabled; ///< Signifies that currently we're in quick zoom mode
+    DesktopAffine _quick_zoom_affine;  ///< The transform of the screen before quick zoom
+
     Geom::Affine _doc2dt;
 
     /*
@@ -484,8 +561,6 @@ private:
 
     bool grids_visible; /* don't set this variable directly, use the method below */
     void set_grids_visible(bool visible);
-
-    void push_current_zoom(std::list<Geom::Rect> &);
 
     sigc::signal<void, SPDesktop*> _destroy_signal;
     sigc::signal<void,SPDesktop*,SPDocument*>     _document_replaced_signal;

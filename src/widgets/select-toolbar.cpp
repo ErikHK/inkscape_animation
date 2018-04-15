@@ -36,7 +36,7 @@
 #include "selection-chemistry.h"
 #include "selection.h"
 #include "sp-item-transform.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "toolbox.h"
 #include "ui/icon-names.h"
 #include "ui/widget/unit-tracker.h"

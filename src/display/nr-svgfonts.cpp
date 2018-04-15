@@ -16,22 +16,24 @@
 #include <2geom/transforms.h>
 #include <cairo.h>
 #include <vector>
-#include "sp-object.h"
+
 #include "svg/svg.h"
 #include "display/cairo-utils.h"
 #include "display/nr-svgfonts.h"
 #include "display/nr-svgfonts.h"
-#include "sp-path.h"
-#include "sp-object-group.h"
-#include "sp-use.h"
-#include "sp-use-reference.h"
 #include "display/curve.h"
+
 #include "xml/repr.h"
-#include "sp-font-face.h"
-#include "sp-glyph.h"
-#include "sp-missing-glyph.h"
-#include "sp-font.h"
-#include "sp-glyph-kerning.h"
+
+#include "object/sp-path.h"
+#include "object/sp-object-group.h"
+#include "object/sp-use.h"
+#include "object/sp-use-reference.h"
+#include "object/sp-font-face.h"
+#include "object/sp-glyph.h"
+#include "object/sp-missing-glyph.h"
+#include "object/sp-font.h"
+#include "object/sp-glyph-kerning.h"
 
 // ************************//
 // UserFont Implementation //
@@ -166,7 +168,7 @@ SvgFont::scaled_font_text_to_glyphs (cairo_scaled_font_t  */*scaled_font*/,
     unsigned int len;
 
     bool missing;
-    //First we findout whats the number of glyphs needed.
+    //First we find out what's the number of glyphs needed.
     while(g_utf8_get_char(_utf8)){
         missing = true;
         for (i=0; i < (unsigned long) this->glyphs.size(); i++){
@@ -197,21 +199,27 @@ SvgFont::scaled_font_text_to_glyphs (cairo_scaled_font_t  */*scaled_font*/,
     bool is_horizontal_text = true; //TODO
     _utf8 = (char*) utf8;
 
+    double font_height = units_per_em();
     while(g_utf8_get_char(_utf8)){
         len = 0;
         for (i=0; i < (unsigned long) this->glyphs.size(); i++){
             //check whether is there a glyph declared on the SVG document
             // that matches with the text string in its current position
             if ( (len = size_of_substring(this->glyphs[i]->unicode.c_str(), _utf8)) ){
-                for(SPObject* node = this->font->children;previous_unicode && node;node=node->next){
-                    //apply glyph kerning if appropriate
-                    SPHkern *hkern = dynamic_cast<SPHkern *>(node);
-                    if (hkern && is_horizontal_text && MatchHKerningRule(hkern, this->glyphs[i], previous_unicode, previous_glyph_name) ){
-                        x -= (hkern->k / 1000.0);//TODO: use here the height of the font
+                for(auto& node: font->children) {
+                    if (!previous_unicode) {
+                        break;
                     }
-                    SPVkern *vkern = dynamic_cast<SPVkern *>(node);
-                    if (vkern && !is_horizontal_text && MatchVKerningRule(vkern, this->glyphs[i], previous_unicode, previous_glyph_name) ){
-                        y -= (vkern->k / 1000.0);//TODO: use here the "height" of the font
+                    //apply glyph kerning if appropriate
+                    SPHkern *hkern = dynamic_cast<SPHkern *>(&node);
+                    if (hkern && is_horizontal_text &&
+                        MatchHKerningRule(hkern, this->glyphs[i], previous_unicode, previous_glyph_name) ){
+                        x -= (hkern->k / font_height);
+                    }
+                    SPVkern *vkern = dynamic_cast<SPVkern *>(&node);
+                    if (vkern && !is_horizontal_text &&
+                        MatchVKerningRule(vkern, this->glyphs[i], previous_unicode, previous_glyph_name) ){
+                        y -= (vkern->k / font_height);
                     }
                 }
                 previous_unicode = const_cast<char*>(this->glyphs[i]->unicode.c_str());//used for kerning checking
@@ -221,8 +229,15 @@ SvgFont::scaled_font_text_to_glyphs (cairo_scaled_font_t  */*scaled_font*/,
                 (*glyphs)[count++].y = y;
 
                 //advance glyph coordinates:
-                if (is_horizontal_text) x+=(this->font->horiz_adv_x/1000.0);//TODO: use here the height of the font
-                else y+=(this->font->vert_adv_y/1000.0);//TODO: use here the "height" of the font
+                if (is_horizontal_text) {
+                    if (this->glyphs[i]->horiz_adv_x != 0) {
+                        x+=(this->glyphs[i]->horiz_adv_x/font_height);
+                    } else {
+                        x+=(this->font->horiz_adv_x/font_height);
+                    }
+                } else {
+                    y+=(this->font->vert_adv_y/font_height);
+                }
                 _utf8+=len; //advance 'len' bytes in our string pointer
                 //continue;
                 goto raptorz;
@@ -235,8 +250,8 @@ SvgFont::scaled_font_text_to_glyphs (cairo_scaled_font_t  */*scaled_font*/,
             (*glyphs)[count++].y = y;
 
             //advance glyph coordinates:
-            if (is_horizontal_text) x+=(this->font->horiz_adv_x/1000.0);//TODO: use here the height of the font
-            else y+=(this->font->vert_adv_y/1000.0);//TODO: use here the "height" of the font
+            if (is_horizontal_text) x+=(this->font->horiz_adv_x/font_height);//TODO: use here the height of the font
+            else y+=(this->font->vert_adv_y/font_height);//TODO: use here the "height" of the font
 
             _utf8 = g_utf8_next_char(_utf8); //advance 1 char in our string pointer
         }
@@ -252,9 +267,7 @@ SvgFont::render_glyph_path(cairo_t* cr, Geom::PathVector* pathv){
         cairo_new_path(cr);
 
         //adjust scale of the glyph
-//        Geom::Scale s(1.0/((SPFont*) node->parent)->horiz_adv_x);
-        Geom::Scale s(1.0/1000);//TODO: use here the units-per-em attribute?
-
+        Geom::Scale s(1.0/units_per_em());
         Geom::Rect area( Geom::Point(0,0), Geom::Point(1,1) ); //I need help here!    (reaction: note that the 'area' parameter is an *optional* rect, so you can pass an empty Geom::OptRect() )
 
         feed_pathvector_to_cairo (cr, *pathv, s, area, false, 0);
@@ -270,11 +283,11 @@ SvgFont::glyph_modified(SPObject* /* blah */, unsigned int /* bleh */){
 
 Geom::PathVector
 SvgFont::flip_coordinate_system(SPFont* spfont, Geom::PathVector pathv){
-    double units_per_em = 1000;
-    for (SPObject *obj = spfont->children; obj; obj = obj->next){
-        if (dynamic_cast<SPFontFace *>(obj)) {
+    double units_per_em = 1024;
+    for(auto& obj: spfont->children) {
+        if (dynamic_cast<SPFontFace *>(&obj)) {
             //XML Tree being directly used here while it shouldn't be.
-            sp_repr_get_double(obj->getRepr(), "units_per_em", &units_per_em);
+            sp_repr_get_double(obj.getRepr(), "units_per_em", &units_per_em);
         }
     }
 
@@ -339,19 +352,19 @@ SvgFont::scaled_font_render_glyph (cairo_scaled_font_t  */*scaled_font*/,
 
     if (node->hasChildren()){
         //render the SVG described on this glyph's child nodes.
-        for(node = node->children; node; node=node->next){
+        for(auto& child: node->children) {
             {
-                SPPath *path = dynamic_cast<SPPath *>(node);
+                SPPath *path = dynamic_cast<SPPath *>(&child);
                 if (path) {
                     pathv = path->_curve->get_pathvector();
                     pathv = flip_coordinate_system(spfont, pathv);
                     render_glyph_path(cr, &pathv);
                 }
             }
-            if (dynamic_cast<SPObjectGroup *>(node)) {
+            if (dynamic_cast<SPObjectGroup *>(&child)) {
                 g_warning("TODO: svgfonts: render OBJECTGROUP");
             }
-            SPUse *use = dynamic_cast<SPUse *>(node);
+            SPUse *use = dynamic_cast<SPUse *>(&child);
             if (use) {
                 SPItem* item = use->ref->getObject();
                 SPPath *path = dynamic_cast<SPPath *>(item);
@@ -374,12 +387,12 @@ SvgFont::scaled_font_render_glyph (cairo_scaled_font_t  */*scaled_font*/,
 cairo_font_face_t*
 SvgFont::get_font_face(){
     if (!this->userfont) {
-        for(SPObject* node = this->font->children;node;node=node->next){
-            SPGlyph *glyph = dynamic_cast<SPGlyph *>(node);
+        for(auto& node: font->children) {
+            SPGlyph *glyph = dynamic_cast<SPGlyph *>(&node);
             if (glyph) {
                 glyphs.push_back(glyph);
             }
-            SPMissingGlyph *missing = dynamic_cast<SPMissingGlyph *>(node);
+            SPMissingGlyph *missing = dynamic_cast<SPMissingGlyph *>(&node);
             if (missing) {
                 missingglyph = missing;
             }
@@ -395,6 +408,20 @@ void SvgFont::refresh(){
     this->userfont = NULL;
 }
 
+double SvgFont::units_per_em() {
+    double units_per_em = 1024;
+    for (auto& obj: font->children) {
+        if (dynamic_cast<SPFontFace *>(&obj)) {
+            //XML Tree being directly used here while it shouldn't be.
+            sp_repr_get_double(obj.getRepr(), "units-per-em", &units_per_em);
+        }
+    }
+    if (units_per_em <= 0.0) {
+        units_per_em = 1024;
+    }
+    return units_per_em;
+}
+    
 /*
   Local Variables:
   mode:c++

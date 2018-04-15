@@ -49,7 +49,7 @@
 #include "sp-text.h"
 #include "sp-gradient.h"
 #include "sp-flowtext.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-root.h"
 #include "ui/view/view.h"
 #include "helper/action.h"
@@ -2064,6 +2064,8 @@ Glib::ustring ContextMenu::getImageEditorName() {
     return value;
 }
 
+
+/*
 void ContextMenu::ImageEdit(void)
 {
     if (_desktop->selection->isEmpty()) {
@@ -2132,6 +2134,7 @@ void ContextMenu::ImageEdit(void)
         errThing = 0;
     }
 }
+*/
 
 void ContextMenu::ImageTraceBitmap(void)
 {

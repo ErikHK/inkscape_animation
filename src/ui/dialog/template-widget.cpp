@@ -24,7 +24,7 @@
 #include "document.h"
 #include "document-undo.h"
 #include "file.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "extension/implementation/implementation.h"
 #include "inkscape.h"
 

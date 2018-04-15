@@ -181,35 +181,6 @@ TextEdit::TextEdit()
     text_view = gtk_text_view_new_with_buffer (text_buffer);
     gtk_text_view_set_wrap_mode ((GtkTextView *) text_view, GTK_WRAP_WORD);
 
-#ifdef WITH_GTKSPELL
-#ifdef WITH_GTKMM_3_0
-/*
-       TODO: Use computed xml:lang attribute of relevant element, if present, to specify the
-       language (either as 2nd arg of gtkspell_new_attach, or with explicit
-       gtkspell_set_language call in; see advanced.c example in gtkspell docs).
-       onReadSelection looks like a suitable place.
-*/
-    GtkSpellChecker * speller = gtk_spell_checker_new();
-
-    if (! gtk_spell_checker_attach(speller, GTK_TEXT_VIEW(text_view))) {
-        g_print("gtkspell error:\n");
-    }
-#else
-    GError *error = NULL;
-
-/*
-       TODO: Use computed xml:lang attribute of relevant element, if present, to specify the
-       language (either as 2nd arg of gtkspell_new_attach, or with explicit
-       gtkspell_set_language call in; see advanced.c example in gtkspell docs).
-       onReadSelection looks like a suitable place.
-*/
-    if (gtkspell_new_attach(GTK_TEXT_VIEW(text_view), NULL, &error) == NULL) {
-        g_print("gtkspell error: %s\n", error->message);
-        g_error_free(error);
-    }
-#endif
-#endif
-
     gtk_widget_set_size_request (text_view, -1, 64);
     gtk_text_view_set_editable (GTK_TEXT_VIEW (text_view), TRUE);
     scroller.add(*Gtk::manage(Glib::wrap(text_view)));

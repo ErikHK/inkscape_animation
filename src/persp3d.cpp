@@ -13,14 +13,15 @@
 
 #include "persp3d.h"
 #include "perspective-line.h"
+#include "sp-root.h"
+#include "sp-defs.h"
+
 #include "attributes.h"
 #include "document-private.h"
 #include "document-undo.h"
 #include "vanishing-point.h"
 #include "ui/tools/box3d-tool.h"
-#include "box3d.h"
 #include "svg/stringstream.h"
-#include "xml/document.h"
 #include "xml/node-event-vector.h"
 #include "desktop.h"
 
@@ -215,9 +216,10 @@ Persp3D *persp3d_create_xml_element(SPDocument *document, Persp3DImpl *dup) {// 
 Persp3D *persp3d_document_first_persp(SPDocument *document)
 {
     Persp3D *first = 0;
-    for ( SPObject *child = document->getDefs()->firstChild(); child && !first; child = child->getNext() ) {
-        if (SP_IS_PERSP3D(child)) {
-            first = SP_PERSP3D(child);
+    for (auto& child: document->getDefs()->children) {
+        if (SP_IS_PERSP3D(&child)) {
+            first = SP_PERSP3D(&child);
+            break;
         }
     }
     return first;
@@ -493,10 +495,10 @@ persp3d_on_repr_attr_changed ( Inkscape::XML::Node * /*repr*/,
 
 /* checks whether all boxes linked to this perspective are currently selected */
 bool
-persp3d_has_all_boxes_in_selection (Persp3D *persp, Inkscape::Selection *selection) {
+persp3d_has_all_boxes_in_selection (Persp3D *persp, Inkscape::ObjectSet *set) {
     Persp3DImpl *persp_impl = persp->perspective_impl;
 
-    std::list<SPBox3D *> selboxes = selection->box3DList();
+    std::list<SPBox3D *> selboxes = set->box3DList();
 
     for (std::vector<SPBox3D *>::iterator i = persp_impl->boxes.begin(); i != persp_impl->boxes.end(); ++i) {
         if (std::find(selboxes.begin(), selboxes.end(), *i) == selboxes.end()) {
@@ -533,9 +535,9 @@ persp3d_print_debugging_info (Persp3D *persp) {
 
 void persp3d_print_debugging_info_all(SPDocument *document)
 {
-    for ( SPObject *child = document->getDefs()->firstChild(); child; child = child->getNext() ) {
-        if (SP_IS_PERSP3D(child)) {
-            persp3d_print_debugging_info(SP_PERSP3D(child));
+    for (auto& child: document->getDefs()->children) {
+        if (SP_IS_PERSP3D(&child)) {
+            persp3d_print_debugging_info(SP_PERSP3D(&child));
         }
     }
     persp3d_print_all_selected();

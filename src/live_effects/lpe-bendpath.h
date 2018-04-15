@@ -43,9 +43,11 @@ public:
 
     virtual void resetDefaults(SPItem const* item);
 
+    virtual void transform_multiply(Geom::Affine const& postmul, bool set);
+
     void addCanvasIndicators(SPLPEItem const */*lpeitem*/, std::vector<Geom::PathVector> &hp_vec);
 
-    virtual void addKnotHolderEntities(KnotHolder * knotholder, SPDesktop * desktop, SPItem * item);
+    virtual void addKnotHolderEntities(KnotHolder * knotholder, SPItem * item);
 
     PathParam bend_path;
 
@@ -56,6 +58,9 @@ protected:
 private:
     BoolParam scale_y_rel;
     BoolParam vertical_pattern;
+    BoolParam hide_knot;
+    KnotHolderEntity * _knot_entity;
+    Geom::PathVector helper_path;
     Geom::Piecewise<Geom::D2<Geom::SBasis> > uskeleton;
     Geom::Piecewise<Geom::D2<Geom::SBasis> > n;
 

@@ -18,7 +18,6 @@
 #include <fstream>
 #include <glib.h>
 #include <glib/gstdio.h>
-#include <glibmm/fileutils.h>
 #include <glibmm/ustring.h>
 #include <gtk/gtk.h>
 
@@ -35,36 +34,6 @@ void dump_str(gchar const *str, gchar const *prefix);
 void dump_ustr(Glib::ustring const &ustr);
 
 extern guint update_in_progress;
-
-
-#define DEBUG_MESSAGE(key, ...) \
-{\
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get(); \
-    gint dump = prefs->getBool("/options/bulia/" #key) ? 1 : 0;\
-    gint dumpD = prefs->getBool("/options/bulia/" #key"D") ? 1 : 0;\
-    gint dumpD2 = prefs->getBool("/options/bulia/" #key"D2") ? 1 : 0;\
-    dumpD &= ( (update_in_progress == 0) || dumpD2 );\
-    if ( dump )\
-    {\
-        g_message( __VA_ARGS__ );\
-\
-    }\
-    if ( dumpD )\
-    {\
-        GtkWidget *dialog = gtk_message_dialog_new(NULL,\
-                                                   GTK_DIALOG_DESTROY_WITH_PARENT, \
-                                                   GTK_MESSAGE_INFO,    \
-                                                   GTK_BUTTONS_OK,      \
-                                                   __VA_ARGS__          \
-                                                   );\
-        g_signal_connect_swapped(dialog, "response",\
-                                 G_CALLBACK(gtk_widget_destroy),        \
-                                 dialog);                               \
-        gtk_widget_show_all( dialog );\
-    }\
-}
-
-
 
 
 void Inkscape::IO::dump_fopen_call( char const *utf8name, char const *id )
@@ -97,86 +66,44 @@ void Inkscape::IO::dump_fopen_call( char const *utf8name, char const *id )
 
 FILE *Inkscape::IO::fopen_utf8name( char const *utf8name, char const *mode )
 {
-    static gint counter = 0;
     FILE* fp = NULL;
-
-    DEBUG_MESSAGE( dumpOne, "entering fopen_utf8name( '%s', '%s' )[%d]", utf8name, mode, (counter++) );
-
-#ifndef WIN32
-    DEBUG_MESSAGE( dumpOne, "           STEP 0              ( '%s', '%s' )[%d]", utf8name, mode, (counter++) );
     gchar *filename = g_filename_from_utf8( utf8name, -1, NULL, NULL, NULL );
     if ( filename )
     {
-        DEBUG_MESSAGE( dumpOne, "           STEP 1              ( '%s', '%s' )[%d]", utf8name, mode, (counter++) );
-        fp = std::fopen(filename, mode);
-        DEBUG_MESSAGE( dumpOne, "           STEP 2              ( '%s', '%s' )[%d]", utf8name, mode, (counter++) );
+        // ensure we open the file in binary mode (not needed in POSIX but doesn't hurt either)
+        Glib::ustring how( mode );
+        if ( how.find("b") == Glib::ustring::npos )
+        {
+            how.append("b");
+        }
+        // when opening a file for writing: create parent directories if they don't exist already
+        if ( how.find("w") != Glib::ustring::npos )
+        {
+            gchar *dirname = g_path_get_dirname(utf8name);
+            if (g_mkdir_with_parents(dirname, 0777)) {
+                g_warning("Could not create directory '%s'", dirname);
+            }
+            g_free(dirname);
+        }
+        fp = g_fopen(filename, how.c_str());
         g_free(filename);
-        DEBUG_MESSAGE( dumpOne, "           STEP 3              ( '%s', '%s' )[%d]", utf8name, mode, (counter++) );
         filename = 0;
     }
-#else
-    Glib::ustring how( mode );
-    how.append("b");
-    DEBUG_MESSAGE( dumpOne, "   calling is_os_wide()       ( '%s', '%s' )[%d]", utf8name, mode, (counter++) );
-
-    fp = g_fopen(utf8name, how.c_str());
-#endif
-
-    DEBUG_MESSAGE( dumpOne, "leaving fopen_utf8name( '%s', '%s' )[%d]", utf8name, mode, (counter++) );
-
     return fp;
 }
 
 
 int Inkscape::IO::mkdir_utf8name( char const *utf8name )
 {
-    static gint counter = 0;
     int retval = -1;
-
-    DEBUG_MESSAGE( dumpMk, "entering mkdir_utf8name( '%s' )[%d]", utf8name, (counter++) );
-
-#ifndef WIN32
-    DEBUG_MESSAGE( dumpMk, "           STEP 0              ( '%s' )[%d]", utf8name, (counter++) );
     gchar *filename = g_filename_from_utf8( utf8name, -1, NULL, NULL, NULL );
     if ( filename )
     {
-        DEBUG_MESSAGE( dumpMk, "           STEP 1              ( '%s' )[%d]", utf8name, (counter++) );
-        retval = ::mkdir(filename, S_IRWXU | S_IRGRP | S_IXGRP);
-        DEBUG_MESSAGE( dumpMk, "           STEP 2              ( '%s' )[%d]", utf8name, (counter++) );
+        retval = g_mkdir(filename, S_IRWXU | S_IRGRP | S_IXGRP); // The mode argument is ignored on Windows.
         g_free(filename);
-        DEBUG_MESSAGE( dumpMk, "           STEP 3              ( '%s' )[%d]", utf8name, (counter++) );
         filename = 0;
     }
-#else
-    DEBUG_MESSAGE( dumpMk, "   calling is_os_wide()       ( '%s' )[%d]", utf8name, (counter++) );
-
-    // Mode should be ingnored inside of glib on the way in
-    retval = g_mkdir( utf8name, 0 );
-#endif
-
-    DEBUG_MESSAGE( dumpMk, "leaving mkdir_utf8name( '%s' )[%d]", utf8name, (counter++) );
-
     return retval;
-}
-
-/* 
- * Wrapper around Glib::file_open_tmp().
- * Returns a handle to the temp file.
- * name_used contains the actual name used (a raw filename, not necessarily utf8).
- * 
- * Returns:
- * A file handle (as from open()) to the file opened for reading and writing. 
- * The file is opened in binary mode on platforms where there is a difference. 
- * The file handle should be closed with close().
- * 
- * Note:
- * On Windows Vista Glib::file_open_tmp fails with the current version of glibmm
- * A special case is implemented for WIN32. This can be removed if the issue is fixed
- * in future versions of glibmm 
- * */
-int Inkscape::IO::file_open_tmp(std::string& name_used, const std::string& prefix)
-{
-    return Glib::file_open_tmp(name_used, prefix);
 }
 
 bool Inkscape::IO::file_test( char const *utf8name, GFileTest test )
@@ -226,7 +153,7 @@ bool Inkscape::IO::file_is_writable( char const *utf8name)
             filename = g_filename_from_utf8 ( utf8name, -1, NULL, NULL, NULL );
         }
         if ( filename ) {
-            struct stat st;
+            GStatBuf st;
             if (g_file_test (filename, G_FILE_TEST_EXISTS)){ 
                 if (g_lstat (filename, &st) == 0) {
                     success = ((st.st_mode & S_IWRITE) != 0);

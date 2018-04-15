@@ -11,26 +11,29 @@
 
 #include <math.h>
 #include <algorithm>
-#include "control-point.h"
+
 #include <glib/gi18n.h>
+
 #include <2geom/transforms.h>
+
+#include "control-point.h"
 #include "desktop.h"
-#include "sp-namedview.h"
+#include "pure-transform.h"
+#include "seltrans.h"
+#include "snap.h"
 
 #include "display/sodipodi-ctrlrect.h"
-#include "preferences.h"
-#include "pure-transform.h"
-#include "snap.h"
-#include "snap-candidate.h"
-#include "sp-namedview.h"
+
+#include "object/sp-namedview.h"
+
 #include "ui/tool/commit-events.h"
 #include "ui/tool/control-point-selection.h"
-#include "ui/tool/selectable-control-point.h"
 #include "ui/tool/event-utils.h"
+#include "ui/tool/node.h"
+#include "ui/tool/selectable-control-point.h"
 #include "ui/tool/transform-handle-set.h"
 #include "ui/tools/node-tool.h"
-#include "ui/tool/node.h"
-#include "seltrans.h"
+
 
 // FIXME BRAIN DAMAGE WARNING: this is a global variable in select-context.cpp
 // It should be moved to a header
@@ -187,6 +190,11 @@ void TransformHandle::ungrabbed(GdkEventButton *)
     _setState(_state);
     endTransform();
     _th.signal_commit.emit(getCommitEvent());
+
+    //updates the positions of the nodes
+    Inkscape::UI::Tools::NodeTool *nt = INK_NODE_TOOL(_th._desktop->event_context);
+    ControlPointSelection* selection = nt->_selected_nodes;
+    selection->setOriginalPoints();
 }
 
 

@@ -5,9 +5,14 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
+#include "document.h"
 #include "live_effects/lpegroupbbox.h"
-
-#include "sp-item.h"
+#include "object/sp-clippath.h"
+#include "object/sp-mask.h"
+#include "object/sp-root.h"
+#include "object/sp-shape.h"
+#include "object/sp-item-group.h"
+#include "object/sp-lpe-item.h"
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -22,7 +27,32 @@ namespace LivePathEffect {
  *                  or of the transformed lpeitem (\c absolute = \c true) using sp_item_i2doc_affine.
  * @post Updated values of boundingbox_X and boundingbox_Y. These intervals are set to empty intervals when the precondition is not met.
  */
-void GroupBBoxEffect::original_bbox(SPLPEItem const* lpeitem, bool absolute)
+
+Geom::OptRect
+GroupBBoxEffect::clip_mask_bbox(SPLPEItem *item, Geom::Affine transform)
+{
+    Geom::OptRect bbox;
+    Geom::Affine affine = transform * item->transform;
+    SPClipPath * clip_path = item->clip_ref->getObject();
+    if(clip_path) {
+        bbox.unionWith(clip_path->geometricBounds(affine));
+    }
+    SPMask * mask_path = item->mask_ref->getObject();
+    if(mask_path) {
+        bbox.unionWith(mask_path->visualBounds(affine));
+    }
+    SPGroup * group = dynamic_cast<SPGroup *>(item);
+    if (group) {
+        std::vector<SPItem*> item_list = sp_item_group_item_list(group);
+        for ( std::vector<SPItem*>::const_iterator iter=item_list.begin();iter!=item_list.end();++iter) {
+            SPLPEItem * subitem = dynamic_cast<SPLPEItem *>(*iter);
+            bbox.unionWith(clip_mask_bbox(subitem, affine));
+        }
+    }
+    return bbox;
+}
+
+void GroupBBoxEffect::original_bbox(SPLPEItem const* lpeitem, bool absolute, bool clip_mask)
 {
     // Get item bounding box
     Geom::Affine transform;
@@ -32,8 +62,12 @@ void GroupBBoxEffect::original_bbox(SPLPEItem const* lpeitem, bool absolute)
     else {
         transform = Geom::identity();
     }
-
+    
     Geom::OptRect bbox = lpeitem->geometricBounds(transform);
+    if (clip_mask) {
+        SPLPEItem * item = const_cast<SPLPEItem *>(lpeitem);
+        bbox.unionWith(clip_mask_bbox(item, transform * item->transform.inverse()));
+    }
     if (bbox) {
         boundingbox_X = (*bbox)[Geom::X];
         boundingbox_Y = (*bbox)[Geom::Y];

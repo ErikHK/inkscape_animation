@@ -3,7 +3,7 @@
  *
  * libavoid - Fast, Incremental, Object-avoiding Line Router
  *
- * Copyright (C) 2005-2009  Monash University
+ * Copyright (C) 2005-2014  Monash University
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -12,37 +12,42 @@
  * See the file LICENSE.LGPL distributed with the library.
  *
  * Licensees holding a valid commercial license may use this file in
- * accordance with the commercial license agreement provided with the
+ * accordance with the commercial license agreement provided with the 
  * library.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Tim Dwyer  <Tim.Dwyer@csse.monash.edu.au>
+ * Author(s):  Tim Dwyer
+ *             Michael Wybrow
  *
  * --------------
  *
- * This file contains a slightly modified version of Solver() from libvpsc:
+ * This file contains a slightly modified version of IncSolver() from libvpsc:
  * A solver for the problem of Variable Placement with Separation Constraints.
  * It has the following changes from the Adaptagrams VPSC version:
  *  -  The required VPSC code has been consolidated into a single file.
- *  -  Unnecessary code (like Solver) has been removed.
+ *  -  Unnecessary code, like the Solver() class, has been removed.
  *  -  The PairingHeap code has been replaced by a STL priority_queue.
  *
- * Modifications:  Michael Wybrow  <mjwybrow@users.sourceforge.net>
+ * Modifications:  Michael Wybrow
  *
 */
 
+#include "libavoid/vpsc.h"
+
+#ifndef USELIBVPSC
+
 #include <iostream>
-#include <math.h>
+#include <cmath>
 #include <sstream>
 #include <map>
 #include <cfloat>
 #include <cstdio>
 
-#include "libavoid/vpsc.h"
 #include "libavoid/assertions.h"
+#include "libavoid/debug.h"
 
 
 using namespace std;
@@ -52,20 +57,26 @@ namespace Avoid {
 static const double ZERO_UPPERBOUND=-1e-10;
 static const double LAGRANGIAN_TOLERANCE=-1e-4;
 
-IncSolver::IncSolver(vector<Variable*> const &vs, vector<Constraint *> const &cs)
+
+IncSolver::IncSolver(Variables const &vs, Constraints const &cs)
     : m(cs.size()),
       cs(cs),
-      n(vs.size()),
-      vs(vs)
+      n(vs.size()), 
+      vs(vs),
+      needsScaling(false)
 {
     for(unsigned i=0;i<n;++i) {
         vs[i]->in.clear();
         vs[i]->out.clear();
+
+        // Set needsScaling if any variables have a scale other than 1.
+        needsScaling |= (vs[i]->scale != 1);
     }
     for(unsigned i=0;i<m;++i) {
         Constraint *c=cs[i];
         c->left->out.push_back(c);
         c->right->in.push_back(c);
+        c->needsScaling = needsScaling;
     }
     bs=new Blocks(vs);
 #ifdef LIBVPSC_LOGGING
@@ -80,6 +91,16 @@ IncSolver::IncSolver(vector<Variable*> const &vs, vector<Constraint *> const &cs
 }
 IncSolver::~IncSolver() {
     delete bs;
+}
+
+void IncSolver::addConstraint(Constraint *c)
+{
+    ++m;
+    c->active = false;
+    inactive.push_back(c);
+    c->left->out.push_back(c);
+    c->right->in.push_back(c);
+    c->needsScaling = needsScaling;
 }
 
 // useful in debugging
@@ -104,7 +125,7 @@ void IncSolver::copyResult() {
     for(Variables::const_iterator i=vs.begin();i!=vs.end();++i) {
         Variable* v=*i;
         v->finalPosition=v->position();
-        COLA_ASSERT(v->finalPosition==v->finalPosition);/// TODO: check! Possibly some error in this line...
+        COLA_ASSERT(v->finalPosition==v->finalPosition);
     }
 }
 
@@ -132,16 +153,16 @@ bool IncSolver::constraintGraphIsCyclic(const unsigned n, Variable* const vs[]) 
             varmap[vs[i]]->out.insert(varmap[r]);
         }
     }
-    while(!graph.empty()) {
+    while(graph.size()>0) {
         node *u=NULL;
         vector<node*>::iterator i=graph.begin();
         for(;i!=graph.end();++i) {
             u=*i;
-            if(u->in.empty()) {
+            if(u->in.size()==0) {
                 break;
             }
         }
-        if(i==graph.end() && !graph.empty()) {
+        if(i==graph.end() && graph.size()>0) {
             //cycle found!
             return true;
         } else {
@@ -163,14 +184,17 @@ bool IncSolver::constraintGraphIsCyclic(const unsigned n, Variable* const vs[]) 
 bool IncSolver::blockGraphIsCyclic() {
     map<Block*, node*> bmap;
     vector<node*> graph;
-    for(set<Block*>::const_iterator i=bs->begin();i!=bs->end();++i) {
-        Block *b=*i;
+    size_t length = bs->size();
+    for (size_t i = 0; i < length; ++i)
+    {
+        Block *b = bs->at(i);
         node *u=new node;
         graph.push_back(u);
         bmap[b]=u;
     }
-    for(set<Block*>::const_iterator i=bs->begin();i!=bs->end();++i) {
-        Block *b=*i;
+    for (size_t i = 0; i < length; ++i)
+    {
+        Block *b = bs->at(i);
         b->setUpInConstraints();
         Constraint *c=b->findMinInConstraint();
         while(c!=NULL) {
@@ -189,16 +213,16 @@ bool IncSolver::blockGraphIsCyclic() {
             c=b->findMinOutConstraint();
         }
     }
-    while(!graph.empty()) {
+    while(graph.size()>0) {
         node *u=NULL;
         vector<node*>::iterator i=graph.begin();
         for(;i!=graph.end();++i) {
             u=*i;
-            if(u->in.empty()) {
+            if(u->in.size()==0) {
                 break;
             }
         }
-        if(i==graph.end() && !graph.empty()) {
+        if(i==graph.end() && graph.size()>0) {
             //cycle found!
             return true;
         } else {
@@ -232,7 +256,7 @@ bool IncSolver::solve() {
 #endif
     }
     copyResult();
-    return bs->size()!=n;
+    return bs->size()!=n; 
 }
 /*
  * incremental version of satisfy that allows refinement after blocks are
@@ -244,8 +268,8 @@ bool IncSolver::solve() {
  *
  * Note: there is a special case to handle when the most violated constraint
  * is between two variables in the same block.  Then, we must split the block
- * over an active constraint between the two variables.  We choose the
- * constraint with the most negative lagrangian multiplier.
+ * over an active constraint between the two variables.  We choose the 
+ * constraint with the most negative lagrangian multiplier. 
  */
 bool IncSolver::satisfy() {
 #ifdef LIBVPSC_LOGGING
@@ -256,8 +280,8 @@ bool IncSolver::satisfy() {
     //long splitCtr = 0;
     Constraint* v = NULL;
     //CBuffer buffer(inactive);
-    while((v = mostViolated(inactive))
-          && (v->equality || ((v->slack() < ZERO_UPPERBOUND) && !v->active)))
+    while ( (v = mostViolated(inactive)) && 
+            (v->equality || ((v->slack() < ZERO_UPPERBOUND) && !v->active)) )
     {
         COLA_ASSERT(!v->active);
         Block *lb = v->left->block, *rb = v->right->block;
@@ -287,14 +311,16 @@ bool IncSolver::satisfy() {
                     v->unsatisfiable=true;
                     continue;
                 }
-            } catch(UnsatisfiableException& e) {
+            } catch(UnsatisfiableException e) {
                 e.path.push_back(v);
+                /*
                 std::cerr << "Unsatisfiable:" << std::endl;
                 for(std::vector<Constraint*>::iterator r=e.path.begin();
                         r!=e.path.end();++r)
                 {
                     std::cerr << **r <<std::endl;
                 }
+                */
                 v->unsatisfiable=true;
                 continue;
             }
@@ -306,9 +332,9 @@ bool IncSolver::satisfy() {
                 bs->insert(rb);
             } else {
                 bs->insert(lb->merge(rb,v));
+                delete ((lb->deleted) ? lb : rb);
             }
         }
-        bs->cleanup();
 #ifdef LIBVPSC_LOGGING
         f<<"...remaining blocks="<<bs->size()<<", cost="<<bs->cost()<<endl;
 #endif
@@ -343,8 +369,10 @@ void IncSolver::moveBlocks() {
     ofstream f(LOGFILE,ios::app);
     f<<"moveBlocks()..."<<endl;
 #endif
-    for(set<Block*>::const_iterator i(bs->begin());i!=bs->end();++i) {
-        Block *b = *i;
+    size_t length = bs->size();
+    for (size_t i = 0; i < length; ++i)
+    {
+        Block *b = bs->at(i);
         b->updateWeightedPosition();
         //b->posn = b->wposn / b->weight;
     }
@@ -359,8 +387,10 @@ void IncSolver::splitBlocks() {
     moveBlocks();
     splitCnt=0;
     // Split each block if necessary on min LM
-    for(set<Block*>::const_iterator i(bs->begin());i!=bs->end();++i) {
-        Block* b = *i;
+    size_t length = bs->size();
+    for (size_t i = 0; i < length; ++i)
+    {
+        Block *b = bs->at(i);
         Constraint* v=b->findMinLM();
         if(v!=NULL && v->lm < LAGRANGIAN_TOLERANCE) {
             COLA_ASSERT(!v->equality);
@@ -398,38 +428,55 @@ void IncSolver::splitBlocks() {
  * Scan constraint list for the most violated constraint, or the first equality
  * constraint
  */
-Constraint* IncSolver::mostViolated(Constraints &l) {
-    double minSlack = DBL_MAX;
-    Constraint* v=NULL;
+Constraint* IncSolver::mostViolated(Constraints &l)
+{
+    double slackForMostViolated = DBL_MAX;
+    Constraint* mostViolated = NULL;
 #ifdef LIBVPSC_LOGGING
     ofstream f(LOGFILE,ios::app);
-    f<<"Looking for most violated..."<<endl;
+    f << "Looking for most violated..." << endl;
 #endif
-    Constraints::iterator end = l.end();
-    Constraints::iterator deletePoint = end;
-    for(Constraints::iterator i=l.begin();i!=end;++i) {
-        Constraint *c=*i;
-        double slack = c->slack();
-        if(c->equality || slack < minSlack) {
-            minSlack=slack;
-            v=c;
-            deletePoint=i;
-            if(c->equality) break;
+    size_t lSize = l.size();
+    size_t deleteIndex = lSize;
+    Constraint *constraint = NULL;
+    double slack = 0;
+    for (size_t index = 0; index < lSize; ++index)
+    {
+        constraint = l[index];
+        slack = constraint->slack();
+        if (constraint->equality || slack < slackForMostViolated)
+        {
+            slackForMostViolated = slack;    
+            mostViolated = constraint;
+            deleteIndex = index;
+            if (constraint->equality)
+            {
+                break;
+            }
         }
     }
     // Because the constraint list is not order dependent we just
     // move the last element over the deletePoint and resize
     // downwards.  There is always at least 1 element in the
     // vector because of search.
-    // TODO check this logic and add parens:
-    if((deletePoint != end) && (((minSlack < ZERO_UPPERBOUND) && !v->active) || v->equality)) {
-        *deletePoint = l[l.size()-1];
-        l.resize(l.size()-1);
+    if ( (deleteIndex < lSize) && 
+         (((slackForMostViolated < ZERO_UPPERBOUND) && !mostViolated->active) || 
+          mostViolated->equality) )
+    {
+        l[deleteIndex] = l[lSize-1];
+        l.resize(lSize-1);
     }
 #ifdef LIBVPSC_LOGGING
-    f<<"  most violated is: "<<*v<<endl;
+    if (mostViolated)
+    {
+        f << "  most violated is: " << *mostViolated << endl;
+    }
+    else
+    {
+        f << "  non found." << endl;
+    }
 #endif
-    return v;
+    return mostViolated;
 }
 
 
@@ -440,33 +487,35 @@ using std::list;
 using std::copy;
 #define __NOTNAN(p) (p)==(p)
 
-long blockTimeCtr;
 
 Blocks::Blocks(vector<Variable*> const &vs) : vs(vs),nvs(vs.size()) {
     blockTimeCtr=0;
-    for(int i=0;i<nvs;i++) {
-        insert(new Block(vs[i]));
+    m_blocks.resize(nvs);
+    for(size_t i=0;i<nvs;i++) {
+        m_blocks[i] = new Block(this, vs[i]);
     }
 }
 Blocks::~Blocks(void)
 {
     blockTimeCtr=0;
-    for(set<Block*>::iterator i=begin();i!=end();++i) {
-        delete *i;
+    size_t length = m_blocks.size();
+    for (size_t i = 0; i < length; ++i)
+    {
+        delete m_blocks[i];
     }
-    clear();
+    m_blocks.clear();
 }
 
 /*
- * returns a list of variables with total ordering determined by the constraint
+ * returns a list of variables with total ordering determined by the constraint 
  * DAG
  */
 list<Variable*> *Blocks::totalOrder() {
     list<Variable*> *order = new list<Variable*>;
-    for(int i=0;i<nvs;i++) {
+    for(size_t i=0;i<nvs;i++) {
         vs[i]->visited=false;
     }
-    for(int i=0;i<nvs;i++) {
+    for(size_t i=0;i<nvs;i++) {
         if(vs[i]->in.size()==0) {
             dfsVisit(vs[i],order);
         }
@@ -483,7 +532,7 @@ void Blocks::dfsVisit(Variable *v, list<Variable*> *order) {
         if(!c->right->visited) {
             dfsVisit(c->right, order);
         }
-    }
+    }    
 #ifdef LIBVPSC_LOGGING
     ofstream f(LOGFILE,ios::app);
     f<<"  order="<<*v<<endl;
@@ -494,7 +543,7 @@ void Blocks::dfsVisit(Variable *v, list<Variable*> *order) {
  * Processes incoming constraints, most violated to least, merging with the
  * neighbouring (left) block until no more violated constraints are found
  */
-void Blocks::mergeLeft(Block *r) {
+void Blocks::mergeLeft(Block *r) {    
 #ifdef LIBVPSC_LOGGING
     ofstream f(LOGFILE,ios::app);
     f<<"mergeLeft called on "<<*r<<endl;
@@ -507,7 +556,7 @@ void Blocks::mergeLeft(Block *r) {
         f<<"mergeLeft on constraint: "<<*c<<endl;
 #endif
         r->deleteMinInConstraint();
-        Block *l = c->left->block;
+        Block *l = c->left->block;        
         if (l->in==NULL) l->setUpInConstraints();
         double dist = c->right->offset - c->left->offset - c->gap;
         if (r->vars->size() < l->vars->size()) {
@@ -520,22 +569,22 @@ void Blocks::mergeLeft(Block *r) {
         r->timeStamp=blockTimeCtr;
         removeBlock(l);
         c=r->findMinInConstraint();
-    }
+    }        
 #ifdef LIBVPSC_LOGGING
     f<<"merged "<<*r<<endl;
 #endif
-}
+}    
 /*
  * Symmetrical to mergeLeft
  */
-void Blocks::mergeRight(Block *l) {
+void Blocks::mergeRight(Block *l) {    
 #ifdef LIBVPSC_LOGGING
     ofstream f(LOGFILE,ios::app);
     f<<"mergeRight called on "<<*l<<endl;
-#endif
+#endif    
     l->setUpOutConstraints();
     Constraint *c = l->findMinOutConstraint();
-    while (c != NULL && c->slack()<0) {
+    while (c != NULL && c->slack()<0) {        
 #ifdef LIBVPSC_LOGGING
         f<<"mergeRight on constraint: "<<*c<<endl;
 #endif
@@ -551,7 +600,7 @@ void Blocks::mergeRight(Block *l) {
         l->mergeOut(r);
         removeBlock(r);
         c=l->findMinOutConstraint();
-    }
+    }    
 #ifdef LIBVPSC_LOGGING
     f<<"merged "<<*l<<endl;
 #endif
@@ -560,15 +609,40 @@ void Blocks::removeBlock(Block *doomed) {
     doomed->deleted=true;
     //erase(doomed);
 }
-void Blocks::cleanup() {
-    vector<Block*> bcopy(begin(),end());
-    for(vector<Block*>::iterator i=bcopy.begin();i!=bcopy.end();++i) {
-        Block *b=*i;
-        if(b->deleted) {
-            erase(b);
-            delete b;
+
+// Clears up deleted blocks from the blocks list.
+void Blocks::cleanup(void)
+{
+    // We handle removal of items in-place by doing a single linear pass over 
+    // the vector. We use two indexes, j to refer to elements we've checked
+    // from the original list and i to refer to the current position we are
+    // writing in the updated list.
+    size_t i = 0;
+    
+    // For all items in the current blocks list...
+    size_t length = m_blocks.size();
+    for (size_t j = 0; j < length; )
+    {
+        if (m_blocks[j]->deleted)
+        {
+            // The element is deleted, so free it and increment j.
+            delete m_blocks[j];
+            ++j;
+        }
+        else
+        {
+            // The current element is still valid.
+            if (j > i)
+            {
+                // If we've not looking at same element, then copy from j to i.
+                m_blocks[i] = m_blocks[j];
+            }
+            // Increment both indexes.
+            ++i;
+            ++j;
         }
     }
+    m_blocks.resize(i);
 }
 /*
  * Splits block b across constraint c into two new blocks, l and r (c's left
@@ -576,6 +650,8 @@ void Blocks::cleanup() {
  */
 void Blocks::split(Block *b, Block *&l, Block *&r, Constraint *c) {
     b->split(l,r,c);
+    m_blocks.push_back(l);
+    m_blocks.push_back(r);
 #ifdef LIBVPSC_LOGGING
     ofstream f(LOGFILE,ios::app);
     f<<"Split left: "<<*l<<endl;
@@ -592,8 +668,6 @@ void Blocks::split(Block *b, Block *&l, Block *&r, Constraint *c) {
     mergeRight(r);
     removeBlock(b);
 
-    insert(l);
-    insert(r);
     COLA_ASSERT(__NOTNAN(l->posn));
     COLA_ASSERT(__NOTNAN(r->posn));
 }
@@ -603,8 +677,10 @@ void Blocks::split(Block *b, Block *&l, Block *&r, Constraint *c) {
  */
 double Blocks::cost() {
     double c = 0;
-    for(set<Block*>::iterator i=begin();i!=end();++i) {
-        c += (*i)->cost();
+    size_t length = m_blocks.size();
+    for (size_t i = 0; i < length; ++i)
+    {
+        c += m_blocks[i]->cost();
     }
     return c;
 }
@@ -619,7 +695,7 @@ void PositionStats::addVariable(Variable* v) {
     /*
 #ifdef LIBVPSC_LOGGING
     ofstream f(LOGFILE,ios::app);
-    f << "adding v[" << v->id << "], blockscale=" << scale << ", despos="
+    f << "adding v[" << v->id << "], blockscale=" << scale << ", despos=" 
       << v->desiredPosition << ", ai=" << ai << ", bi=" << bi
       << ", AB=" << AB << ", AD=" << AD << ", A2=" << A2;
 #endif
@@ -642,7 +718,7 @@ void Block::addVariable(Variable* v) {
 #endif
 */
 }
-Block::Block(Variable* const v)
+Block::Block(Blocks *blocks, Variable* const v)
     : vars(new vector<Variable*>)
     , posn(0)
     //, weight(0)
@@ -651,6 +727,7 @@ Block::Block(Variable* const v)
     , timeStamp(0)
     , in(NULL)
     , out(NULL)
+    , blocks(blocks)
 {
     if(v!=NULL) {
         v->offset=0;
@@ -692,13 +769,15 @@ void Block::setUpConstraintHeap(Heap* &h,bool in) {
         vector<Constraint*> *cs=in?&(v->in):&(v->out);
         for (Cit j=cs->begin();j!=cs->end();++j) {
             Constraint *c=*j;
-            c->timeStamp=blockTimeCtr;
-            if (((c->left->block != this) && in) || ((c->right->block != this) && !in)) {
+            c->timeStamp=blocks->blockTimeCtr;
+            if ( ((c->left->block != this) && in) || 
+                 ((c->right->block != this) && !in) )
+            {
                 h->push(c);
             }
         }
     }
-}
+}    
 Block* Block::merge(Block* b, Constraint* c) {
 #ifdef LIBVPSC_LOGGING
     ofstream f(LOGFILE,ios::app);
@@ -773,7 +852,7 @@ void Block::mergeIn(Block *b) {
     f<<"  merged heap: "<<*in<<endl;
 #endif
 }
-void Block::mergeOut(Block *b) {
+void Block::mergeOut(Block *b) {    
     findMinOutConstraint();
     b->findMinOutConstraint();
     while (!b->out->empty())
@@ -821,7 +900,7 @@ Constraint *Block::findMinInConstraint() {
     }
     for(Cit i=outOfDate.begin();i!=outOfDate.end();++i) {
         v=*i;
-        v->timeStamp=blockTimeCtr;
+        v->timeStamp=blocks->blockTimeCtr;
         in->push(v);
     }
     if(in->empty()) {
@@ -905,21 +984,21 @@ double Block::compute_dfdv(Variable* const v, Variable* const u) {
 }
 
 // The top level v and r are variables between which we want to find the
-// constraint with the smallest lm.
+// constraint with the smallest lm.  
 // Similarly, m is initially NULL and is only assigned a value if the next
 // variable to be visited is r or if a possible min constraint is returned from
 // a nested call (rather than NULL).
 // Then, the search for the m with minimum lm occurs as we return from
-// the recursion (checking only constraints traversed left-to-right
+// the recursion (checking only constraints traversed left-to-right 
 // in order to avoid creating any new violations).
 // We also do not consider equality constraints as potential split points
 bool Block::split_path(
-    Variable* r,
-    Variable* const v,
-    Variable* const u,
+    Variable* r, 
+    Variable* const v, 
+    Variable* const u, 
     Constraint* &m,
     bool desperation=false
-    )
+    ) 
 {
     for(Cit it(v->in.begin());it!=v->in.end();++it) {
         Constraint *c=*it;
@@ -964,43 +1043,43 @@ bool Block::split_path(
 }
 /*
 Block::Pair Block::compute_dfdv_between(
-        Variable* r, Variable* const v, Variable* const u,
+        Variable* r, Variable* const v, Variable* const u, 
         const Direction dir = NONE, bool changedDirection = false) {
     double dfdv=v->weight*(v->position() - v->desiredPosition);
     Constraint *m=NULL;
     for(Cit it(v->in.begin());it!=v->in.end();++it) {
         Constraint *c=*it;
         if(canFollowLeft(c,u)) {
-            if(dir==RIGHT) {
-                changedDirection = true;
+            if(dir==RIGHT) { 
+                changedDirection = true; 
             }
             if(c->left==r) {
                        r=NULL;
-                    if(!c->equality) m=c;
+                    if(!c->equality) m=c; 
             }
             Pair p=compute_dfdv_between(r,c->left,v,
                     LEFT,changedDirection);
             dfdv -= c->lm = -p.first;
-            if(r && p.second)
+            if(r && p.second) 
                 m = p.second;
         }
     }
     for(Cit it(v->out.begin());it!=v->out.end();++it) {
         Constraint *c=*it;
         if(canFollowRight(c,u)) {
-            if(dir==LEFT) {
-                changedDirection = true;
+            if(dir==LEFT) { 
+                changedDirection = true; 
             }
             if(c->right==r) {
-                       r=NULL;
-                    if(!c->equality) m=c;
+                       r=NULL; 
+                    if(!c->equality) m=c; 
             }
             Pair p=compute_dfdv_between(r,c->right,v,
                     RIGHT,changedDirection);
             dfdv += c->lm = p.first;
-            if(r && p.second)
-                m = changedDirection && !c->equality && c->lm < p.second->lm
-                    ? c
+            if(r && p.second) 
+                m = changedDirection && !c->equality && c->lm < p.second->lm 
+                    ? c 
                     : p.second;
         }
     }
@@ -1075,7 +1154,7 @@ Constraint *Block::findMinLMBetween(Variable* const lv, Variable* const rv) {
     }
 #else
     if(min_lm==NULL) {
-        fprintf(stderr,"Couldn't find split point!\n");
+        //err_printf("Couldn't find split point!\n");
         UnsatisfiableException e;
         getActivePathBetween(e.path,lv,rv,NULL);
         throw e;
@@ -1085,7 +1164,7 @@ Constraint *Block::findMinLMBetween(Variable* const lv, Variable* const rv) {
     return min_lm;
 }
 
-// populates block b by traversing the active constraint tree adding variables as they're
+// populates block b by traversing the active constraint tree adding variables as they're 
 // visited.  Starts from variable v and does not backtrack over variable u.
 void Block::populateSplitBlock(Block *b, Variable* v, Variable const* u) {
     b->addVariable(v);
@@ -1094,7 +1173,7 @@ void Block::populateSplitBlock(Block *b, Variable* v, Variable const* u) {
             populateSplitBlock(b, (*c)->left, v);
     }
     for (Cit c=v->out.begin();c!=v->out.end();++c) {
-        if (canFollowRight(*c,u))
+        if (canFollowRight(*c,u)) 
             populateSplitBlock(b, (*c)->right, v);
     }
 }
@@ -1162,10 +1241,10 @@ Constraint* Block::splitBetween(Variable* const vl, Variable* const vr,
     f<<"  need to split between: "<<*vl<<" and "<<*vr<<endl;
 #endif
     Constraint *c=findMinLMBetween(vl, vr);
-    if(c!=NULL) {
 #ifdef LIBVPSC_LOGGING
     f<<"  going to split on: "<<*c<<endl;
 #endif
+    if(c!=NULL) {
         split(lb,rb,c);
         deleted = true;
     }
@@ -1179,10 +1258,10 @@ Constraint* Block::splitBetween(Variable* const vl, Variable* const vr,
  */
 void Block::split(Block* &l, Block* &r, Constraint* c) {
     c->active=false;
-    l=new Block();
+    l=new Block(blocks);
     populateSplitBlock(l,c->left,c->right);
     //COLA_ASSERT(l->weight>0);
-    r=new Block();
+    r=new Block(blocks);
     populateSplitBlock(r,c->right,c->left);
     //COLA_ASSERT(r->weight>0);
 }
@@ -1218,7 +1297,9 @@ Constraint::Constraint(Variable *left, Variable *right, double gap, bool equalit
   timeStamp(0),
   active(false),
   equality(equality),
-  unsatisfiable(false)
+  unsatisfiable(false),
+  needsScaling(true),
+  creator(NULL)
 {
     // In hindsight I think it's probably better to build the constraint DAG
     // (by creating variable in/out lists) when needed, rather than in advance
@@ -1226,7 +1307,7 @@ Constraint::Constraint(Variable *left, Variable *right, double gap, bool equalit
     //right->in.push_back(this);
 }
 Constraint::~Constraint() {
-    // see constructor: the following is just way too slow.
+    // see constructor: the following is just way too slow.  
     // Better to create a
     // new DAG on demand than maintain the lists dynamically.
     //Constraints::iterator i;
@@ -1239,30 +1320,45 @@ Constraint::~Constraint() {
     //}
     //right->in.erase(i);
 }
-double Constraint::slack() const {
-    return unsatisfiable ? DBL_MAX
-           : right->scale * right->position()
-         - gap - left->scale * left->position();
+std::string Constraint::toString(void) const
+{
+    std::stringstream stream;
+    stream << "Constraint: var(" << left->id << ") ";
+    if (gap < 0)
+    {
+        stream << "- " << -gap << " ";
+    }
+    else
+    {
+        stream << "+ " << gap << " ";
+    }
+    stream << ((equality) ? "==" : "<=");
+    stream << " var(" << right->id << ") ";
+    return stream.str();
 }
+
 std::ostream& operator <<(std::ostream &os, const Constraint &c)
 {
-    if(&c==NULL) {
-        os<<"NULL";
-    } else {
-        const char *type=c.equality?"=":"<=";
-        std::ostringstream lscale, rscale;
-        if(c.left->scale!=1) {
-            lscale << c.left->scale << "*";
-        }
-        if(c.right->scale!=1) {
-            rscale << c.right->scale << "*";
-        }
-        os<<lscale.str()<<*c.left<<"+"<<c.gap<<type<<rscale.str()<<*c.right;
-        if(c.left->block&&c.right->block)
-            os<<"("<<c.slack()<<")"<<(c.active?"-active":"")
-                <<"(lm="<<c.lm<<")";
-        else
-            os<<"(vars have no position)";
+    const char *type = c.equality ? "=" : "<=";
+    std::ostringstream lscale, rscale;
+    if (c.left->scale != 1) 
+    {
+        lscale << c.left->scale << "*";
+    }
+    if (c.right->scale != 1)
+    {
+        rscale << c.right->scale << "*";
+    }
+    os << lscale.str() << *c.left << "+" << c.gap << type << 
+          rscale.str() << *c.right;
+    if (c.left->block && c.right->block)
+    {
+        os << "(" << c.slack() << ")" << (c.active ? "-active" : "") <<
+              "(lm=" << c.lm << ")";
+    }
+    else
+    {
+        os << "(vars have no position)";
     }
     return os;
 }
@@ -1270,11 +1366,11 @@ std::ostream& operator <<(std::ostream &os, const Constraint &c)
 bool CompareConstraints::operator() (
     Constraint *const &l, Constraint *const &r
 ) const {
-    double const sl =
+    double const sl = 
         l->left->block->timeStamp > l->timeStamp
         ||l->left->block==l->right->block
         ?-DBL_MAX:l->slack();
-    double const sr =
+    double const sr = 
         r->left->block->timeStamp > r->timeStamp
         ||r->left->block==r->right->block
         ?-DBL_MAX:r->slack();
@@ -1298,4 +1394,107 @@ std::ostream& operator <<(std::ostream &os, const Variable &v) {
     return os;
 }
 
+typedef std::list<std::map<Variable *, double> > VarOffsetMapList;
+
+class EqualityConstraintSet
+{
+    public:
+        EqualityConstraintSet(Variables vs)
+        {
+            for (size_t i = 0; i < vs.size(); ++i)
+            {
+                std::map<Variable *, double> varSet;
+                varSet[vs[i]] = 0;
+                variableGroups.push_back(varSet);
+            }
+        }
+        bool isRedundant(Variable *lhs, Variable *rhs, double sep)
+        {
+            VarOffsetMapList::iterator lhsSet = setForVar(lhs);
+            VarOffsetMapList::iterator rhsSet = setForVar(rhs);
+            if (lhsSet == rhsSet)
+            {
+                // Check if this is a redundant constraint.
+                if (fabs(((*lhsSet)[lhs] + sep) - (*rhsSet)[rhs]) < 0.0001)
+                {
+                    // If so, return true.
+                    return true;
+                }
+            }
+            return false;
+        }
+        void mergeSets(Variable *lhs, Variable *rhs, double sep)
+        {
+            VarOffsetMapList::iterator lhsSet = setForVar(lhs);
+            VarOffsetMapList::iterator rhsSet = setForVar(rhs);
+            if (lhsSet == rhsSet)
+            {
+                return;
+            }
+
+            double rhsOldOffset = (*rhsSet)[rhs];
+            double rhsNewOffset = (*lhsSet)[lhs] + sep;
+            double offset = rhsNewOffset - rhsOldOffset;
+
+            // Update offsets
+            for (std::map<Variable *, double>::iterator it = rhsSet->begin();
+                    it != rhsSet->end(); ++it)
+            {
+                it->second += offset;
+            }
+            
+            // Merge rhsSet into lhsSet
+            lhsSet->insert(rhsSet->begin(), rhsSet->end());
+            variableGroups.erase(rhsSet);
+        }
+
+    private:
+        VarOffsetMapList::iterator setForVar(Variable *var)
+        {
+            for (VarOffsetMapList::iterator it = variableGroups.begin();
+                    it != variableGroups.end(); ++it)
+            {
+                if (it->find(var) != it->end())
+                {
+                    return it;
+                }
+            }
+            return variableGroups.end();
+        }
+
+    VarOffsetMapList variableGroups;
+};
+
+Constraints constraintsRemovingRedundantEqualities(Variables const &vars, 
+        Constraints const &constraints)
+{
+    EqualityConstraintSet equalitySets(vars);
+    Constraints cs = Constraints(constraints.size());
+    int csSize = 0;
+
+    for (unsigned i = 0; i < constraints.size(); ++i)
+    {
+        Constraint *c = constraints[i];
+        if (c->equality)
+        {
+            if (!equalitySets.isRedundant(c->left, c->right, c->gap))
+            {
+                // Only add non-redundant equalities
+                equalitySets.mergeSets(c->left, c->right, c->gap);
+                cs[csSize++] = c;
+            }
+        }
+        else
+        {
+            // Add all non-equalities
+            cs[csSize++] = c;
+        }
+    }
+    cs.resize(csSize);
+    return cs;
 }
+
+
+}
+
+#endif

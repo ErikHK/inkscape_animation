@@ -48,15 +48,28 @@ UnitParam::param_getSVGValue() const
     return g_strdup(unit->abbr.c_str());
 }
 
+gchar *
+UnitParam::param_getDefaultSVGValue() const
+{
+    return g_strdup(defunit->abbr.c_str());
+}
+
 void
 UnitParam::param_set_default()
 {
     param_set_value(*defunit);
 }
 
+void 
+UnitParam::param_update_default(const gchar * default_unit)
+{
+    defunit = unit_table.getUnit((Glib::ustring)default_unit);
+}
+
 void
 UnitParam::param_set_value(Inkscape::Util::Unit const &val)
 {
+    param_effect->upd_params = true;
     unit = new Inkscape::Util::Unit(val);
 }
 

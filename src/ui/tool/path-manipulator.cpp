@@ -10,39 +10,31 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include "live_effects/lpe-powerstroke.h"
-#include "live_effects/lpe-bspline.h"
-#include "live_effects/lpe-fillet-chamfer.h"
-#include <string>
-#include <sstream>
-#include <deque>
-#include <stdexcept>
-#include <boost/shared_ptr.hpp>
-#include <2geom/bezier-curve.h>
 #include <2geom/bezier-utils.h>
 #include <2geom/path-sink.h>
-#include <glibmm/i18n.h>
-#include "ui/tool/path-manipulator.h"
-#include "desktop.h"
 
 #include "display/sp-canvas.h"
 #include "display/sp-canvas-util.h"
 #include "display/curve.h"
 #include "display/canvas-bpath.h"
-#include "document.h"
-#include "live_effects/effect.h"
+
+#include "helper/geom.h"
+
 #include "live_effects/lpeobject.h"
 #include "live_effects/lpeobject-reference.h"
+#include "live_effects/lpe-powerstroke.h"
+#include "live_effects/lpe-bspline.h"
 #include "live_effects/parameter/path.h"
-#include "sp-path.h"
-#include "helper/geom.h"
-#include "preferences.h"
+
+#include "object/sp-path.h"
 #include "style.h"
+
 #include "ui/tool/control-point-selection.h"
 #include "ui/tool/curve-drag-point.h"
 #include "ui/tool/event-utils.h"
 #include "ui/tool/multi-path-manipulator.h"
-#include "xml/node.h"
+#include "ui/tool/path-manipulator.h"
+
 #include "xml/node-observer.h"
 
 namespace Inkscape {
@@ -82,7 +74,7 @@ public:
     }
 
     virtual void notifyAttributeChanged(Inkscape::XML::Node &/*node*/, GQuark attr,
-        Util::ptr_shared<char>, Util::ptr_shared<char>)
+        Util::ptr_shared, Util::ptr_shared)
     {
         // do nothing if blocked
         if (_blocked) return;
@@ -198,8 +190,7 @@ void PathManipulator::writeXML()
 {
     if (!_live_outline)
         _updateOutline();
-    if (!_live_objects)
-        _setGeometry();
+    _setGeometry();
 
     if (!_path) return;
     _observer->block();
@@ -209,9 +200,7 @@ void PathManipulator::writeXML()
     } else {
         // this manipulator will have to be destroyed right after this call
         _getXMLNode()->removeObserver(*_observer);
-        sp_object_ref(_path);
         _path->deleteObject(true, true);
-        sp_object_unref(_path);
         _path = NULL;
     }
     _observer->unblock();
@@ -1160,6 +1149,9 @@ void PathManipulator::_createControlPointsFromGeometry()
             ++i;
         }
     }
+    if (pathv.empty()) {
+        return;
+    }
     _spcurve->set_pathvector(pathv);
 
     pathv *= (_edit_transform * _i2d_transform);
@@ -1366,6 +1358,23 @@ void PathManipulator::_createGeometryFromControlPoints(bool alert_LPE)
     }
     builder.flush();
     Geom::PathVector pathv = builder.peek() * (_edit_transform * _i2d_transform).inverse();
+    for (Geom::PathVector::iterator i = pathv.begin(); i != pathv.end(); ) {
+        // NOTE: this utilizes the fact that Geom::PathVector is an std::vector.
+        // When we erase an element, the next one slides into position,
+        // so we do not increment the iterator even though it is theoretically invalidated.
+        if (i->empty()) {
+            i = pathv.erase(i);
+        } else {
+            ++i;
+        }
+    }
+    if (pathv.empty()) {
+        return;
+    }
+
+    if (_spcurve->get_pathvector() == pathv) {
+        return;
+    }
     _spcurve->set_pathvector(pathv);
     if (alert_LPE) {
         /// \todo note that _path can be an Inkscape::LivePathEffect::Effect* too, kind of confusing, rework member naming?
@@ -1377,20 +1386,11 @@ void PathManipulator::_createGeometryFromControlPoints(bool alert_LPE)
                     lpe_pwr->adjustForNewPath(pathv);
                 }
             }
-            this_effect = _path->getPathEffectOfType(Inkscape::LivePathEffect::FILLET_CHAMFER);
-            if(this_effect){
-                LivePathEffect::LPEFilletChamfer *lpe_fll = dynamic_cast<LivePathEffect::LPEFilletChamfer*>(this_effect->getLPEObj()->get_lpe());
-                if (lpe_fll) {
-                    lpe_fll->adjustForNewPath(pathv);
-                }
-            }
         }
     }
-
     if (_live_outline)
         _updateOutline();
-    if (_live_objects)
-        _setGeometry();
+    _setGeometry();
 }
 
 /** Build one segment of the geometric representation.
@@ -1480,7 +1480,7 @@ void PathManipulator::_getGeometry()
         }
     } else {
         _spcurve->unref();
-        _spcurve = _path->get_curve_for_edit();
+        _spcurve = _path->getCurveForEdit();
         // never allow NULL to sneak in here!
         if (_spcurve == NULL) {
             _spcurve = new SPCurve();
@@ -1492,7 +1492,6 @@ void PathManipulator::_getGeometry()
 void PathManipulator::_setGeometry()
 {
     using namespace Inkscape::LivePathEffect;
-
     if (!_lpe_key.empty()) {
         // copied from nodepath.cpp
         // NOTE: if we are editing an LPE param, _path is not actually an SPPath, it is
@@ -1500,17 +1499,23 @@ void PathManipulator::_setGeometry()
         Effect *lpe = LIVEPATHEFFECT(_path)->get_lpe();
         if (lpe) {
             PathParam *pathparam = dynamic_cast<PathParam *>(lpe->getParameter(_lpe_key.data()));
+            if (pathparam->get_pathvector() == _spcurve->get_pathvector()) {
+                return; //False we dont update LPE
+            }
             pathparam->set_new_value(_spcurve->get_pathvector(), false);
             LIVEPATHEFFECT(_path)->requestModified(SP_OBJECT_MODIFIED_FLAG);
         }
     } else {
+        // return true to leave the decission on empty to the caller. 
+        // Maybe the path become empty and we want to update to empty
         if (empty()) return;
-        if (SPCurve * original = _path->get_original_curve()){
+        if (SPCurve * original = _path->getCurveBeforeLPE()){
             if(!_spcurve->is_equal(original)) {
-                _path->set_original_curve(_spcurve, false, false);
-                delete original;
+                _path->setCurveBeforeLPE(_spcurve, false);
+                sp_lpe_item_update_patheffect(_path, true, false);
+                original->unref();
             }
-        } else if(!_spcurve->is_equal(_path->get_curve())) {
+        } else if(!_spcurve->is_equal(_path->getCurve(true))) {
             _path->setCurve(_spcurve, false);
         }
     }
@@ -1640,7 +1645,7 @@ void PathManipulator::_selectionChanged(SelectableControlPoint *p, bool selected
     }
 }
 
-/** Removes all nodes belonging to this manipulator from the control pont selection */
+/** Removes all nodes belonging to this manipulator from the control point selection */
 void PathManipulator::_removeNodesFromSelection()
 {
     // remove this manipulator's nodes from selection
@@ -1673,7 +1678,6 @@ Geom::Coord PathManipulator::_updateDragPoint(Geom::Point const &evp)
 
     Geom::Affine to_desktop = _edit_transform * _i2d_transform;
     Geom::PathVector pv = _spcurve->get_pathvector();
-
     boost::optional<Geom::PathVectorTime> pvp =
         pv.nearestTime(_desktop->w2d(evp) * to_desktop.inverse());
     if (!pvp) return dist;
@@ -1689,6 +1693,7 @@ Geom::Coord PathManipulator::_updateDragPoint(Geom::Point const &evp)
     double stroke_tolerance = _getStrokeTolerance();
     if (first && first.next() &&
         fracpart != 0.0 &&
+        fracpart != 1.0 &&
         dist < stroke_tolerance)
     {
         _dragpoint->setVisible(true);
@@ -1709,7 +1714,7 @@ void PathManipulator::_updateOutlineOnZoomChange()
     if (_show_path_direction) _updateOutline();
 }
 
-/** Compute the radius from the edge of the path where clicks chould initiate a curve drag
+/** Compute the radius from the edge of the path where clicks should initiate a curve drag
  * or segment selection, in window coordinates. */
 double PathManipulator::_getStrokeTolerance()
 {

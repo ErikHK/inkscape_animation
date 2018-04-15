@@ -23,29 +23,25 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include <config.h>
 #endif
 
+#include <glibmm/regex.h>
+
 #include "style-internal.h"
-#include "style-enums.h"
 #include "style.h"
 
-#include "svg/svg.h"
-#include "svg/svg-color.h"
-#include "svg/svg-icc-color.h"
-
+#include "bad-uri-exception.h"
+#include "extract-uri.h"
+#include "preferences.h"
 #include "streq.h"
 #include "strneq.h"
 
-#include "extract-uri.h"
-#include "preferences.h"
+#include "svg/svg.h"
+#include "svg/svg-color.h"
 #include "svg/css-ostringstream.h"
+
 #include "util/units.h"
-
-#include <sigc++/functors/ptr_fun.h>
-#include <sigc++/adaptors/bind.h>
-
-#include <glibmm/regex.h>
 
 // TODO REMOVE OR MAKE MEMBER FUNCTIONS
 void sp_style_fill_paint_server_ref_changed(  SPObject *old_ref, SPObject *ref, SPStyle *style);
@@ -57,6 +53,20 @@ void sp_style_set_ipaint_to_uri_string (SPStyle *style, SPIPaint *paint, const g
 using Inkscape::CSSOStringStream;
 
 // SPIBase --------------------------------------------------------------
+
+// Standard criteria for writing a property
+// dfp == different from parent
+inline bool should_write( guint const flags, bool set, bool dfp, bool src) {
+
+    bool should_write = false;
+    if ( ((flags & SP_STYLE_FLAG_ALWAYS)        && src)    ||
+         ((flags & SP_STYLE_FLAG_IFSET)  && set && src)    ||
+         ((flags & SP_STYLE_FLAG_IFDIFF) && set && src && dfp)) {
+        should_write = true;
+    }
+    return should_write;
+}
+
 
 
 // SPIFloat -------------------------------------------------------------
@@ -80,19 +90,17 @@ SPIFloat::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPIFloat::write( guint const flags, SPIBase const *const base) const {
+SPIFloat::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPIFloat const *const my_base = dynamic_cast<const SPIFloat*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         if (this->inherit) {
             return (name + ":inherit;");
         } else {
             Inkscape::CSSOStringStream os;
-            os << name << ":" << this->value << ";";
+            os << name << ":" << this->value << important_str() << ";";
             return os.str();
         }
     }
@@ -156,19 +164,17 @@ SPIScale24::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPIScale24::write( guint const flags, SPIBase const *const base) const {
+SPIScale24::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPIScale24 const *const my_base = dynamic_cast<const SPIScale24*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         if (this->inherit) {
             return (name + ":inherit;");
         } else {
             Inkscape::CSSOStringStream os;
-            os << name << ":" << SP_SCALE24_TO_FLOAT(this->value) << ";";
+            os << name << ":" << SP_SCALE24_TO_FLOAT(this->value) << important_str() << ";";
             return os.str();
         }
     }
@@ -199,6 +205,7 @@ SPIScale24::merge( const SPIBase* const parent ) {
                 std::cerr << "SPIScale24::merge: unhandled property: " << name << std::endl;
             if( !set || (!inherit && value == SP_SCALE24_MAX) ) {
                 value = p->value;
+                set = (value != 1.0);
             } else {
                 if( inherit ) value = p->value; // Insures child is up-to-date
                 value = SP_SCALE24_MUL( value, p->value );
@@ -308,53 +315,53 @@ SPILength::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPILength::write( guint const flags, SPIBase const *const base) const {
+SPILength::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPILength const *const my_base = dynamic_cast<const SPILength*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         if (this->inherit) {
             return (name + ":inherit;");
         } else {
             Inkscape::CSSOStringStream os;
             switch (this->unit) {
                 case SP_CSS_UNIT_NONE:
-                    os << name << ":" << this->computed << ";";
+                    os << name << ":" << this->computed;
                     break;
                 case SP_CSS_UNIT_PX:
-                    os << name << ":" << this->computed << "px;";
+                    os << name << ":" << this->computed << "px";
                     break;
                 case SP_CSS_UNIT_PT:
-                    os << name << ":" << Inkscape::Util::Quantity::convert(this->computed, "px", "pt") << "pt;";
+                    os << name << ":" << Inkscape::Util::Quantity::convert(this->computed, "px", "pt") << "pt";
                     break;
                 case SP_CSS_UNIT_PC:
-                    os << name << ":" << Inkscape::Util::Quantity::convert(this->computed, "px", "pc") << "pc;";
+                    os << name << ":" << Inkscape::Util::Quantity::convert(this->computed, "px", "pc") << "pc";
                     break;
                 case SP_CSS_UNIT_MM:
-                    os << name << ":" << Inkscape::Util::Quantity::convert(this->computed, "px", "mm") << "mm;";
+                    os << name << ":" << Inkscape::Util::Quantity::convert(this->computed, "px", "mm") << "mm";
                     break;
                 case SP_CSS_UNIT_CM:
-                    os << name << ":" << Inkscape::Util::Quantity::convert(this->computed, "px", "cm") << "cm;";
+                    os << name << ":" << Inkscape::Util::Quantity::convert(this->computed, "px", "cm") << "cm";
                     break;
                 case SP_CSS_UNIT_IN:
-                    os << name << ":" << Inkscape::Util::Quantity::convert(this->computed, "px", "in") << "in;";
+                    os << name << ":" << Inkscape::Util::Quantity::convert(this->computed, "px", "in") << "in";
                     break;
                 case SP_CSS_UNIT_EM:
-                    os << name << ":" << this->value << "em;";
+                    os << name << ":" << this->value << "em";
                     break;
                 case SP_CSS_UNIT_EX:
-                    os << name << ":" << this->value << "ex;";
+                    os << name << ":" << this->value << "ex";
                     break;
                 case SP_CSS_UNIT_PERCENT:
-                    os << name << ":" << (this->value * 100.0) << "%;";
+                    os << name << ":" << (this->value * 100.0) << "%";
                     break;
                 default:
                     /* Invalid */
                     break;
             }
+            os << important_str();
+            os << ";";
             return os.str();
         }
     }
@@ -465,18 +472,16 @@ SPILengthOrNormal::read( gchar const *str ) {
 };
 
 const Glib::ustring
-SPILengthOrNormal::write( guint const flags, SPIBase const *const base) const {
+SPILengthOrNormal::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPILength const *const my_base = dynamic_cast<const SPILength*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         if (this->normal) {
-            return (name + ":normal;");
+            return (name + ":normal" + important_str() + ";");
         } else {
-            return SPILength::write(flags, base);
+            return SPILength::write(flags, style_src_req, base);
         }
     }
     return Glib::ustring("");
@@ -518,6 +523,130 @@ SPILengthOrNormal::operator==(const SPIBase& rhs) {
 }
 
 
+// SPIFontVariationSettings ----------------------------------------------------
+
+void
+SPIFontVariationSettings::read( gchar const *str ) {
+
+    if( !str ) return;
+
+    if ( !strcmp(str, "normal") ) {
+        set = true;
+        inherit = false;
+        normal = true;
+        axes.clear();
+        return;
+    }
+
+
+    std::vector<Glib::ustring> tokens = Glib::Regex::split_simple(",", str);
+
+    // Match a pattern of a CSS <string> of length 4, whitespace, CSS <number>.
+    // (CSS string is quoted with double quotes).
+
+    // Matching must use a Glib::ustring or matching may produce
+    // subtle errors which may be shown by an "Invalid byte sequence
+    // in conversion input" error.
+    Glib::RefPtr<Glib::Regex> regex = Glib::Regex::create("\"(\\w{4})\"\\s+([-+]?\\d*\\.?\\d+([eE][-+]?\\d+)?)");
+    Glib::MatchInfo matchInfo;
+
+    for (auto token: tokens) {
+        regex->match(token, matchInfo);
+        if (matchInfo.matches()) {
+            float value = std::stod(matchInfo.fetch(2));
+            axes.insert(std::pair<Glib::ustring,float>(matchInfo.fetch(1), value));
+        }
+    }
+
+    if (!axes.empty()) {
+        set = true;
+        inherit = false;
+        normal = false;
+    }
+};
+
+const Glib::ustring
+SPIFontVariationSettings::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
+
+    SPIFontVariationSettings const *const my_base = dynamic_cast<const SPIFontVariationSettings*>(base);
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
+        if (this->normal) {
+            return (name + ":normal" + important_str() + ";");
+        } else {
+            Inkscape::CSSOStringStream os;
+            os << name << ":";
+
+            for (auto it=axes.begin(); it!=axes.end(); /* nothing */ ){
+                os << "'" << it->first << "' " << it->second;
+                ++it;
+                if (it!=axes.end()) {
+                    os << ", ";
+                }
+            }
+
+            os << important_str();
+            os << ";";
+            return os.str();
+        }
+    }
+    return Glib::ustring("");
+}
+
+void
+SPIFontVariationSettings::cascade( const SPIBase* const parent ) {
+    if( const SPIFontVariationSettings* p = dynamic_cast<const SPIFontVariationSettings*>(parent) ) {
+        if( !set || inherit ) {  // Always inherits
+            normal   = p->normal;
+            axes.clear();
+            axes     = p->axes;
+        }
+    } else {
+        std::cerr << "SPIFontVariationSettings::cascade(): Incorrect parent type" << std::endl;
+    }
+}
+
+void
+SPIFontVariationSettings::merge( const SPIBase* const parent ) {
+    if( const SPIFontVariationSettings* p = dynamic_cast<const SPIFontVariationSettings*>(parent) ) {
+        // if( inherits ) {  'font-variation-settings' always inherits.
+        if( (!set || inherit) && p->set && !(p->inherit) ) {
+            set     = p->set;
+            inherit = p->inherit;
+            normal  = p->normal;
+            axes    = p->axes;
+        }
+    }
+}
+
+bool
+SPIFontVariationSettings::operator==(const SPIBase& rhs) {
+    if( const SPIFontVariationSettings* r = dynamic_cast<const SPIFontVariationSettings*>(&rhs) ) {
+        if( normal && r->normal ) { return true; }
+        if( normal != r->normal ) { return false; }
+        return axes == r->axes;
+    } else {
+        return false;
+    }
+}
+
+// Generate a string useful for passing to Pango, etc.
+const Glib::ustring
+SPIFontVariationSettings::toString() const {
+
+    Inkscape::CSSOStringStream os;
+    for (auto it=axes.begin(); it!=axes.end(); ++it){
+        os << it->first << "=" << it->second << ",";
+    }
+
+    std::string string = os.str(); // Glib::ustring doesn't have pop_back()
+    if (!string.empty()) {
+        string.pop_back(); // Delete extra comma at end
+    }
+
+    return string;
+}
 
 // SPIEnum --------------------------------------------------------------
 
@@ -552,20 +681,18 @@ SPIEnum::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPIEnum::write( guint const flags, SPIBase const *const base) const {
+SPIEnum::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPIEnum const *const my_base = dynamic_cast<const SPIEnum*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         if (this->inherit) {
-            return (name + ":inherit;");
+            return (name + ":inherit" + important_str() + ";" );
         }
         for (unsigned i = 0; enums[i].key; ++i) {
             if (enums[i].value == static_cast< gint > (this->value) ) {
-                return (name + ":" + enums[i].key + ";");
+                return (name + ":" + enums[i].key + important_str() + ";");
             }
         }
     }
@@ -672,14 +799,12 @@ void
 SPIEnumBits::read( gchar const *str ) {
 
     if( !str ) return;
-    std::cout << "SPIEnumBits: " << name << ": " << str << std::endl;
     if( !strcmp(str, "inherit") ) {
         set = true;
         inherit = true;
     } else {
         for (unsigned i = 0; enums[i].key; i++) {
             if (!strcmp(str, enums[i].key)) {
-                std::cout << "  found: " << enums[i].key << std::endl;
                 set = true;
                 inherit = false;
                 value += enums[i].value;
@@ -691,19 +816,17 @@ SPIEnumBits::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPIEnumBits::write( guint const flags, SPIBase const *const base) const {
+SPIEnumBits::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPIEnum const *const my_base = dynamic_cast<const SPIEnum*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         if (this->inherit) {
-            return (name + ":inherit;");
+            return (name + ":inherit" + important_str() + ";" );
         }
         if (this->value == 0 ) {
-            return (name + ":normal");
+            return (name + ":normal" + important_str() + ";" );
         }
         Glib::ustring return_string = name + ":";
         unsigned j = 1;
@@ -714,6 +837,8 @@ SPIEnumBits::write( guint const flags, SPIBase const *const base) const {
             }
             j *= 2;
         }
+        return_string += important_str();
+        return_string += ";";
         return return_string;
     }
     return Glib::ustring("");
@@ -762,22 +887,20 @@ SPILigatures::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPILigatures::write( guint const flags, SPIBase const *const base) const {
+SPILigatures::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPIEnum const *const my_base = dynamic_cast<const SPIEnum*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         if (this->inherit) {
-            return (name + ":inherit;");
+            return (name + ":inherit" + important_str() + ";");
         }
         if (value == SP_CSS_FONT_VARIANT_LIGATURES_NONE ) {
-                return (name + ":none;");
+            return (name + ":none" + important_str() + ";" );
         }
         if (value == SP_CSS_FONT_VARIANT_LIGATURES_NORMAL ) {
-                return (name + ":normal;");
+            return (name + ":normal" + important_str() + ";");
         }
 
         Glib::ustring return_string = name + ":";
@@ -790,6 +913,7 @@ SPILigatures::write( guint const flags, SPIBase const *const base) const {
         if ( !(value & SP_CSS_FONT_VARIANT_LIGATURES_CONTEXTUAL) )
             return_string += "no-contextual ";
         return_string.erase( return_string.size() - 1 );
+        return_string += important_str();
         return_string += ";";
         return return_string;
     }
@@ -863,19 +987,17 @@ SPINumeric::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPINumeric::write( guint const flags, SPIBase const *const base) const {
+SPINumeric::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPIEnum const *const my_base = dynamic_cast<const SPIEnum*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         if (this->inherit) {
-            return (name + ":inherit;");
+            return (name + ":inherit" + important_str() + ";");
         }
         if (value == SP_CSS_FONT_VARIANT_NUMERIC_NORMAL ) {
-                return (name + ":normal;");
+            return (name + ":normal" + important_str() + ";");
         }
 
         Glib::ustring return_string = name + ":";
@@ -896,6 +1018,7 @@ SPINumeric::write( guint const flags, SPIBase const *const base) const {
         if ( value & SP_CSS_FONT_VARIANT_NUMERIC_SLASHED_ZERO )
             return_string += "slashed-zero ";
         return_string.erase( return_string.size() - 1 );
+        return_string += important_str();
         return_string += ";";
         return return_string;
     }
@@ -934,28 +1057,26 @@ SPIString::read( gchar const *str ) {
 // This routine is actually rarely used. Writing is done usually
 // in sp_repr_css_write_string...
 const Glib::ustring
-SPIString::write( guint const flags, SPIBase const *const base) const {
+SPIString::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPIString const *const my_base = dynamic_cast<const SPIString*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this) ); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         if (this->inherit) {
-            return (name + ":inherit;");
+            return (name + ":inherit" + important_str() + ";");
         } else {
             if( this->value ) {
                 if( name.compare( "font-family" ) == 0 ) {
                     Glib::ustring font_family( this->value );
                     css_font_family_quote( font_family );
-                    return (name + ":" + font_family + ";");
+                    return (name + ":" + font_family + important_str() + ";");
                 } else if( name.compare( "-inkscape-font-specification" ) == 0 ) {
                     Glib::ustring font_spec( this->value );
                     css_quote( font_spec );
-                    return (name + ":" + font_spec + ";");
+                    return (name + ":" + font_spec + important_str() + ";");
                 } else {
-                    return (name + ":" + this->value + ";");
+                    return (name + ":" + this->value + important_str() + ";");
                 }
             }
         }
@@ -1045,14 +1166,12 @@ void SPIColor::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPIColor::write( guint const flags, SPIBase const *const base) const {
+SPIColor::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPIColor const *const my_base = dynamic_cast<const SPIColor*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         CSSOStringStream css;
 
         if (this->currentcolor) {
@@ -1080,7 +1199,7 @@ SPIColor::write( guint const flags, SPIBase const *const base) const {
         }
 
         if ( !css.str().empty() ) {
-            return (name + ":" + css.str() + ";");
+            return (name + ":" + css.str() + important_str() + ";");
         }
     }
 
@@ -1274,14 +1393,12 @@ SPIPaint::read( gchar const *str, SPStyle &style_in, SPDocument *document_in ) {
 }
 
 const Glib::ustring
-SPIPaint::write( guint const flags, SPIBase const *const base) const {
+SPIPaint::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPIPaint const *const my_base = dynamic_cast<const SPIPaint*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         CSSOStringStream css;
 
         if (this->inherit) {
@@ -1347,7 +1464,7 @@ SPIPaint::write( guint const flags, SPIBase const *const base) const {
         }
 
         if ( !css.str().empty() ) {
-            return (name + ":" + css.str() + ";");
+            return (name + ":" + css.str() + important_str() + ";");
         }
     }
 
@@ -1546,21 +1663,19 @@ SPIPaintOrder::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPIPaintOrder::write( guint const flags, SPIBase const *const base) const {
+SPIPaintOrder::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPIPaintOrder const *const my_base = dynamic_cast<const SPIPaintOrder*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         CSSOStringStream css;
 
         if (this->inherit) {
             css << "inherit";
         } else {
             for( unsigned i = 0; i < PAINT_ORDER_LAYERS; ++i ) {
-                if( this->layer_set[i] == true ) {
+                if( layer_set[i] ) {
                     switch (this->layer[i]) {
                         case SP_CSS_PAINT_ORDER_NORMAL:
                             css << "normal";
@@ -1584,7 +1699,7 @@ SPIPaintOrder::write( guint const flags, SPIBase const *const base) const {
                 }
             }
         }
-        return (name + ":" + css.str() + ";");
+        return (name + ":" + css.str() + important_str() + ";");
     }
     return Glib::ustring("");
 }
@@ -1694,19 +1809,19 @@ SPIFilter::read( gchar const *str ) {
     }
 }
 
-const Glib::ustring SPIFilter::write( guint const flags, SPIBase const *const /*base*/) const
+const Glib::ustring SPIFilter::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const /*base*/) const
 {
     // TODO: fix base
     //SPILength const *const my_base = dynamic_cast<const SPILength*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set))
-    {
+    // bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool dfp = true;
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         if (this->inherit) {
-            return (name + ":inherit;");
+            return (name + ":inherit" + important_str() + ";");
         } else if(this->href && this->href->getURI()) {
             gchar *uri = this->href->getURI()->toString();
-            Glib::ustring retval = name + ":url(" + uri + ");";
+            Glib::ustring retval = name + ":url(" + uri + ")" + important_str() + ";";
             g_free(uri);
             return retval;
         }
@@ -1833,14 +1948,12 @@ SPIDashArray::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPIDashArray::write( guint const flags, SPIBase const *const base) const {
+SPIDashArray::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPIDashArray const *const my_base = dynamic_cast<const SPIDashArray*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         if (this->inherit) {
             return (name + ":inherit;");
         } else if (this->values.empty() ) {
@@ -1854,6 +1967,7 @@ SPIDashArray::write( guint const flags, SPIBase const *const base) const {
                 }
                 os << this->values[i];
             }
+            os << important_str();
             os << ";";
             return os.str();
         }
@@ -1950,14 +2064,12 @@ SPIFontSize::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPIFontSize::write( guint const flags, SPIBase const *const base) const {
+SPIFontSize::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPIFontSize const *const my_base = dynamic_cast<const SPIFontSize*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         CSSOStringStream css;
 
         if (this->inherit) {
@@ -1978,7 +2090,7 @@ SPIFontSize::write( guint const flags, SPIBase const *const base) const {
         } else if (this->type == SP_FONT_SIZE_PERCENTAGE) {
             css << (this->value * 100.0) << "%";
         }
-        return (name + ":" + css.str() + ";");
+        return (name + ":" + css.str() + important_str() + ";");
     }
     return Glib::ustring("");
 }
@@ -2097,7 +2209,7 @@ SPIFontSize::merge( const SPIBase* const parent ) {
                      ( p->type == SP_FONT_SIZE_LENGTH &&
                        p->unit != SP_CSS_UNIT_EM &&
                        p->unit != SP_CSS_UNIT_EX ) ) {
-                    // Parent absolut size
+                    // Parent absolute size
                     type = SP_FONT_SIZE_LENGTH;
 
                 } else {
@@ -2244,7 +2356,7 @@ SPIFont::read( gchar const *str ) {
     }
 }
 
-const Glib::ustring SPIFont::write( guint const /*flags*/, SPIBase const *const /*base*/) const
+const Glib::ustring SPIFont::write( guint const /*flags*/, SPStyleSrc const & /*style_src_req*/, SPIBase const *const /*base*/) const
 {
     // At the moment, do nothing. We could add a preference to write out
     // 'font' shorthand rather than longhand properties.
@@ -2321,14 +2433,12 @@ SPIBaselineShift::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPIBaselineShift::write( guint const flags, SPIBase const *const base) const {
+SPIBaselineShift::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
 
     SPIBaselineShift const *const my_base = dynamic_cast<const SPIBaselineShift*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || !this->isZero() )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         CSSOStringStream css;
 
         if (this->inherit) {
@@ -2348,7 +2458,7 @@ SPIBaselineShift::write( guint const flags, SPIBase const *const base) const {
         } else if (this->type == SP_BASELINE_SHIFT_PERCENTAGE) {
             css << (this->value * 100.0) << "%";
         }
-        return (name + ":" + css.str() + ";");
+        return (name + ":" + css.str() + important_str() + ";");
     }
     return Glib::ustring("");
 }
@@ -2512,13 +2622,11 @@ SPITextDecorationLine::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPITextDecorationLine::write( guint const flags, SPIBase const *const base) const {
+SPITextDecorationLine::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
     SPITextDecorationLine const *const my_base = dynamic_cast<const SPITextDecorationLine*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         Inkscape::CSSOStringStream os;
         os << name << ":";
         if( inherit ) {
@@ -2531,6 +2639,7 @@ SPITextDecorationLine::write( guint const flags, SPIBase const *const base) cons
         } else {
             os << "none";
         }
+        os << important_str();
         os << ";";
         return ( os.str() );
     }
@@ -2644,13 +2753,11 @@ SPITextDecorationStyle::read( gchar const *str ) {
 }
 
 const Glib::ustring
-SPITextDecorationStyle::write( guint const flags, SPIBase const *const base) const {
+SPITextDecorationStyle::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
     SPITextDecorationStyle const *const my_base = dynamic_cast<const SPITextDecorationStyle*>(base);
-    if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
-         ((flags & SP_STYLE_FLAG_IFSET) && this->set) ||
-         ((flags & SP_STYLE_FLAG_IFDIFF) && this->set
-          && (!my_base->set || this != my_base )))
-    {
+    bool dfp = (!inherits || !my_base || (my_base != this)); // Different from parent
+    bool src = (style_src_req == style_src || !(flags & SP_STYLE_FLAG_IFSRC));
+    if (should_write(flags, set, dfp, src)) {
         Inkscape::CSSOStringStream os;
         os << name << ":";
         if( inherit ) {
@@ -2669,6 +2776,7 @@ SPITextDecorationStyle::write( guint const flags, SPIBase const *const base) con
             std::cerr  << "SPITextDecorationStyle::write(): No valid value for property" << std::endl;
             return Glib::ustring("");
         }
+        os << important_str();
         os << ";";
         return ( os.str() );
     }
@@ -2792,7 +2900,7 @@ SPITextDecoration::read( gchar const *str ) {
     }
 
     // If we set text_decoration_line, then update style_td (for CSS2 text-decoration)
-    if( style->text_decoration_line.set == true ) {
+    if( style->text_decoration_line.set ) {
         style_td = style;
     }
 }
@@ -2800,7 +2908,7 @@ SPITextDecoration::read( gchar const *str ) {
 // Returns CSS2 'text-decoration' (using settings in SPTextDecorationLine)
 // This is required until all SVG renderers support CSS3 'text-decoration'
 const Glib::ustring
-SPITextDecoration::write( guint const flags, SPIBase const *const base) const {
+SPITextDecoration::write( guint const flags, SPStyleSrc const &style_src_req, SPIBase const *const base) const {
     SPITextDecoration const *const my_base = dynamic_cast<const SPITextDecoration*>(base);
     if ( (flags & SP_STYLE_FLAG_ALWAYS) ||
          ((flags & SP_STYLE_FLAG_IFSET) && style->text_decoration_line.set) ||
@@ -2823,6 +2931,7 @@ SPITextDecoration::write( guint const flags, SPIBase const *const base) const {
         } else {
             os << "none";
         }
+        os << important_str();
         os << ";";
         return ( os.str() );
     }

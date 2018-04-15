@@ -101,7 +101,7 @@
 #include "libavoid/vertices.h"
 #include "libavoid/router.h"
 #include "context-fns.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-text.h"
 #include "sp-flowtext.h"
 #include "display/curve.h"

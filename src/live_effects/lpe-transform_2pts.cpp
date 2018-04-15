@@ -14,14 +14,14 @@
 
 #include "live_effects/lpe-transform_2pts.h"
 #include "display/curve.h"
-#include <2geom/transforms.h>
-#include <2geom/pathvector.h>
-#include "sp-path.h"
 #include "ui/icon-names.h"
 #include "svg/svg.h"
 #include "verbs.h"
+#include "object/sp-path.h"
+
 // TODO due to internal breakage in glibmm headers, this must be last:
 #include <glibmm/i18n.h>
+
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -66,9 +66,9 @@ LPETransform2Pts::LPETransform2Pts(LivePathEffectObject *lpeobject) :
     registerParameter(&lock_angle);
 
     first_knot.param_make_integer(true);
-    first_knot.param_overwrite_widget(true);
+    first_knot.param_set_undo(false);
     last_knot.param_make_integer(true);
-    last_knot.param_overwrite_widget(true);
+    last_knot.param_set_undo(false);
     helper_size.param_set_range(0, 999);
     helper_size.param_set_increments(1, 1);
     helper_size.param_set_digits(0);
@@ -89,14 +89,13 @@ void
 LPETransform2Pts::doOnApply(SPLPEItem const* lpeitem)
 {
     using namespace Geom;
-    original_bbox(lpeitem);
-
+    original_bbox(lpeitem, false, true);
     point_a = Point(boundingbox_X.min(), boundingbox_Y.middle());
     point_b = Point(boundingbox_X.max(), boundingbox_Y.middle());
     SPLPEItem * splpeitem = const_cast<SPLPEItem *>(lpeitem);
     SPPath *sp_path = dynamic_cast<SPPath *>(splpeitem);
     if (sp_path) {
-        pathvector = sp_path->get_original_curve()->get_pathvector();
+        pathvector = sp_path->getCurveForEdit()->get_pathvector();
     }
     if(!pathvector.empty()) {
         point_a = pathvector.initialPoint();
@@ -121,14 +120,14 @@ void
 LPETransform2Pts::doBeforeEffect (SPLPEItem const* lpeitem)
 {
     using namespace Geom;
-    original_bbox(lpeitem);
+    original_bbox(lpeitem, false, true);
     point_a = Point(boundingbox_X.min(), boundingbox_Y.middle());
     point_b = Point(boundingbox_X.max(), boundingbox_Y.middle());
 
     SPLPEItem * splpeitem = const_cast<SPLPEItem *>(lpeitem);
     SPPath *sp_path = dynamic_cast<SPPath *>(splpeitem);
     if (sp_path) {
-        pathvector = sp_path->get_original_curve()->get_pathvector();
+        pathvector = sp_path->getCurveForEdit()->get_pathvector();
     }
     if(from_original_width_toggler != from_original_width) {
         from_original_width_toggler = from_original_width;
@@ -141,14 +140,22 @@ LPETransform2Pts::doBeforeEffect (SPLPEItem const* lpeitem)
         size_t nnodes = nodeCount(pathvector);
         first_knot.param_set_range(1, last_knot-1);
         last_knot.param_set_range(first_knot+1, nnodes);
-        from_original_width.param_setValue(false);
+        if (from_original_width){
+            from_original_width.param_setValue(false);
+        }
     } else {
-        first_knot.param_set_value(1);
-        last_knot.param_set_value(2);
+        if (first_knot != 1){
+            first_knot.param_set_value(1);
+        }
+        if (last_knot != 2){
+            last_knot.param_set_value(2);
+        }
         first_knot.param_set_range(1,1);
         last_knot.param_set_range(2,2);
-        from_original_width.param_setValue(true);
         append_path = false;
+        if (!from_original_width){
+            from_original_width.param_setValue(true);
+        }
     }
     if(lock_lenght && !lock_angle && previous_lenght != -1) {
         Geom::Ray transformed((Geom::Point)start,(Geom::Point)end);
@@ -176,7 +183,7 @@ LPETransform2Pts::updateIndex()
     SPLPEItem * splpeitem = const_cast<SPLPEItem *>(sp_lpe_item);
     SPPath *sp_path = dynamic_cast<SPPath *>(splpeitem);
     if (sp_path) {
-        pathvector = sp_path->get_original_curve()->get_pathvector();
+        pathvector = sp_path->getCurveForEdit()->get_pathvector();
     }
     if(pathvector.empty()) {
         return;
@@ -254,6 +261,8 @@ LPETransform2Pts::reset()
         first_knot.param_set_value(1);
         last_knot.param_set_value(2);
     }
+    offset.param_set_value(0.0);
+    stretch.param_set_value(1.0);
     Geom::Ray transformed(point_a, point_b);
     previous_angle = transformed.angle();
     previous_lenght = Geom::distance(point_a, point_b);
@@ -353,6 +362,9 @@ Gtk::Widget *LPETransform2Pts::newWidget()
     vbox->pack_start(*button2, true, true, 2);
     vbox->pack_start(*button3, true, true, 2);
     vbox->pack_start(*button4, true, true, 2);
+    if(Gtk::Widget* widg = defaultParamSet()) {
+        vbox->pack_start(*widg, true, true, 2);
+    }
     return dynamic_cast<Gtk::Widget *>(vbox);
 }
 

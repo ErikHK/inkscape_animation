@@ -38,6 +38,7 @@
 #include "io/base64stream.h"
 #include "display/nr-filter-utils.h"
 #include "libnrtype/font-instance.h"
+#include "object/sp-defs.h"
 
 #include "Function.h"
 #include "GfxState.h"
@@ -618,7 +619,7 @@ bool SvgBuilder::isPatternTypeSupported(GfxPattern *pattern) {
  * \brief Creates a pattern from poppler's data structure
  * Handles linear and radial gradients. Creates a new PdfParser and uses it to
  * build a tiling pattern.
- * \return an url pointing to the created pattern
+ * \return a url pointing to the created pattern
  */
 gchar *SvgBuilder::_createPattern(GfxPattern *pattern, GfxState *state, bool is_stroke) {
     gchar *id = NULL;

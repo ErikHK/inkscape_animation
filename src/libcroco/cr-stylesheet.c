@@ -62,13 +62,23 @@ cr_stylesheet_to_string (CRStyleSheet const *a_this)
 	gchar *str = NULL;
 	GString *stringue = NULL;
 	CRStatement const *cur_stmt = NULL;
+        CRStyleSheet *cur = NULL;
 
         g_return_val_if_fail (a_this, NULL);
 
-	if (a_this->statements) {
-		stringue = g_string_new (NULL) ;
-		g_return_val_if_fail (stringue, NULL) ;
-	}
+        stringue = g_string_new (NULL) ;
+        g_return_val_if_fail (stringue, NULL) ;
+
+        if (a_this->import) {
+                str = cr_stylesheet_to_string (a_this->import);
+                if (str) {
+                        g_string_append (stringue, str) ;
+                        g_free (str) ;
+                        g_string_append (stringue, "\n") ;
+                        str = NULL ;
+                }
+        }
+
         for (cur_stmt = a_this->statements;
              cur_stmt; cur_stmt = cur_stmt->next) {
 		if (cur_stmt->prev) {
@@ -81,6 +91,17 @@ cr_stylesheet_to_string (CRStyleSheet const *a_this)
 			str = NULL ;
 		}
         }
+
+        if (a_this->next) {
+                str = cr_stylesheet_to_string (a_this->next);
+                if (str) {
+                        g_string_append (stringue, "\n") ;
+                        g_string_append (stringue, str) ;
+                        g_free (str) ;
+                        str = NULL ;
+                }
+        }
+
 	if (stringue) {
 		str = stringue->str ;
 		g_string_free (stringue, FALSE) ;
@@ -137,6 +158,59 @@ cr_stylesheet_statement_get_from_list (CRStyleSheet * a_this, int itemnr)
         return cr_statement_get_from_list (a_this->statements, itemnr);
 }
 
+/**
+ *Appends a new stylesheet to the current list of #CRStylesheet.
+ *
+ *@param a_this the "this pointer" of the current instance
+ *of #CRStylesheet .
+ *@param a_new_stylesheet the stylesheet to append.
+ *@return the list of stylesheets with the a_new_stylesheet appended to it.
+ */
+CRStyleSheet *
+cr_stylesheet_append_stylesheet (CRStyleSheet * a_this, CRStyleSheet * a_new_stylesheet)
+{
+        CRStyleSheet *cur = NULL;
+
+        g_return_val_if_fail (a_new_stylesheet, NULL);
+
+        if (a_this == NULL)
+                return a_new_stylesheet;
+
+        for (cur = a_this; cur->next; cur = cur->next) ;
+
+        cur->next = a_new_stylesheet;
+
+        return a_this;
+}
+
+
+/**
+ *Appends a new import stylesheet to the current list of imports.
+ *
+ *@param a_this the "this pointer" of the current instance
+ *of #CRStylesheet .
+ *@param a_new_stylesheet the import stylesheet to append.
+ *@return the list of stylesheets with the a_new_import appended to it.
+ */
+CRStyleSheet *
+cr_stylesheet_append_import (CRStyleSheet * a_this, CRStyleSheet * a_new_import)
+{
+        CRStyleSheet *cur = NULL;
+
+        g_return_val_if_fail (a_new_import, NULL);
+
+        if (a_this->import == NULL)
+                a_this->import = a_new_import;
+                return a_this;
+
+        for (cur = a_this->import; cur->next; cur = cur->next) ;
+
+        cur->next = a_new_import;
+
+        return a_this;
+}
+
+
 void
 cr_stylesheet_ref (CRStyleSheet * a_this)
 {
@@ -174,5 +248,14 @@ cr_stylesheet_destroy (CRStyleSheet * a_this)
                 cr_statement_destroy (a_this->statements);
                 a_this->statements = NULL;
         }
+
+        if (a_this->import) {
+                cr_stylesheet_destroy (a_this->import);
+        }
+
+        if (a_this->next) {
+                cr_stylesheet_destroy (a_this->next);
+        }
+
         g_free (a_this);
 }

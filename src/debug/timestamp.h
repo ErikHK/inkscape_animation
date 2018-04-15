@@ -18,7 +18,7 @@ namespace Inkscape {
 
 namespace Debug {
 
-Util::ptr_shared<char> timestamp();
+Util::ptr_shared timestamp();
 
 }
 

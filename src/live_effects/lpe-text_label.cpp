@@ -11,9 +11,10 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include <glibmm/i18n.h>
-
 #include "live_effects/lpe-text_label.h"
+
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -22,7 +23,7 @@ LPETextLabel::LPETextLabel(LivePathEffectObject *lpeobject) :
     Effect(lpeobject),
     label(_("Label:"), _("Text label attached to the path"), "label", &wr, this, "This is a label")
 {
-    registerParameter( dynamic_cast<Parameter *>(&label) );
+    registerParameter(&label);
 }
 
 LPETextLabel::~LPETextLabel()

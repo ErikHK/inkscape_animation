@@ -23,7 +23,7 @@
 #include "document.h"
 #include "document-undo.h"
 #include "sp-guide.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 
 #include "ui/tools/tool-base.h"
 #include "widgets/desktop-widget.h"

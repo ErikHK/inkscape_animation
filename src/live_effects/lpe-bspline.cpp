@@ -6,7 +6,7 @@
 #include "ui/widget/scalar.h"
 #include "display/curve.h"
 #include "helper/geom-curves.h"
-#include "sp-path.h"
+#include "object/sp-path.h"
 #include "svg/svg.h"
 #include "xml/repr.h"
 #include "preferences.h"
@@ -44,12 +44,12 @@ LPEBSpline::LPEBSpline(LivePathEffectObject *lpeobject)
     weight.param_set_range(NO_POWER, 100.0);
     weight.param_set_increments(0.1, 0.1);
     weight.param_set_digits(4);
-    weight.param_overwrite_widget(true);
+    weight.param_set_undo(false);
 
     steps.param_set_range(1, 10);
     steps.param_set_increments(1, 1);
     steps.param_set_digits(0);
-    steps.param_overwrite_widget(true);
+    steps.param_set_undo(false);
 
     helper_size.param_set_range(0.0, 999.0);
     helper_size.param_set_increments(1, 1);
@@ -86,7 +86,7 @@ Gtk::Widget *LPEBSpline::newWidget()
     // use manage here, because after deletion of Effect object, others might
     // still be pointing to this widget.
     Gtk::VBox *vbox = Gtk::manage(new Gtk::VBox(Effect::newWidget()));
-
+    vbox->set_homogeneous(false);
     vbox->set_border_width(5);
     std::vector<Parameter *>::iterator it = param_vector.begin();
     while (it != param_vector.end()) {
@@ -139,6 +139,9 @@ Gtk::Widget *LPEBSpline::newWidget()
 
         ++it;
     }
+    if(Gtk::Widget* widg = defaultParamSet()) {
+        vbox->pack_start(*widg, true, true, 2);
+    }
     return dynamic_cast<Gtk::Widget *>(vbox);
 }
 
@@ -164,10 +167,11 @@ void LPEBSpline::changeWeight(double weight_ammount)
 {
     SPPath *path = dynamic_cast<SPPath *>(sp_lpe_item);
     if(path) {
-        SPCurve *curve = path->get_curve_for_edit();
+        SPCurve *curve = path->getCurveForEdit();
         doBSplineFromWidget(curve, weight_ammount/100.0);
         gchar *str = sp_svg_write_path(curve->get_pathvector());
         path->getRepr()->setAttribute("inkscape:original-d", str);
+        g_free(str);
     }
 }
 

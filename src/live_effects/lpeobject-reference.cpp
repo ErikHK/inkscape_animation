@@ -6,12 +6,13 @@
  * Released under GNU GPL, read the file 'COPYING' for more information.
  */
 
+#include "live_effects/lpeobject-reference.h"
+
 #include <string.h>
 
-#include "enums.h"
-#include "live_effects/lpeobject-reference.h"
+#include "bad-uri-exception.h"
 #include "live_effects/lpeobject.h"
-#include "uri.h"
+#include "object/uri.h"
 
 namespace Inkscape {
 
@@ -52,12 +53,14 @@ bool LPEObjectReference::_acceptObject(SPObject * const obj) const
 void
 LPEObjectReference::link(const char *to)
 {
-    if ( to == NULL ) {
+    if ( to && !to[0] ) {
         quit_listening();
         unlink();
     } else {
         if ( !lpeobject_href || ( strcmp(to, lpeobject_href) != 0 ) ) {
-            g_free(lpeobject_href);
+            if (lpeobject_href) {
+                g_free(lpeobject_href);
+            }
             lpeobject_href = g_strdup(to);
             try {
                 attach(Inkscape::URI(to));
@@ -75,8 +78,10 @@ LPEObjectReference::link(const char *to)
 void
 LPEObjectReference::unlink(void)
 {
-    g_free(lpeobject_href);
-    lpeobject_href = NULL;
+    if (lpeobject_href) {
+        g_free(lpeobject_href);
+        lpeobject_href = NULL;
+    }
     detach();
 }
 
@@ -95,9 +100,6 @@ LPEObjectReference::start_listening(LivePathEffectObject* to)
 void
 LPEObjectReference::quit_listening(void)
 {
-    if ( lpeobject == NULL ) {
-        return;
-    }
     _modified_connection.disconnect();
     _delete_connection.disconnect();
     lpeobject_repr = NULL;
@@ -119,16 +121,20 @@ lpeobjectreference_href_changed(SPObject */*old_ref*/, SPObject */*ref*/, LPEObj
 static void
 lpeobjectreference_delete_self(SPObject */*deleted*/, LPEObjectReference *lpeobjref)
 {
-        lpeobjref->quit_listening();
-        lpeobjref->unlink();
-        if (lpeobjref->user_unlink)
-            lpeobjref->user_unlink(lpeobjref, lpeobjref->owner);
+    lpeobjref->quit_listening();
+    lpeobjref->unlink();
+    if (lpeobjref->user_unlink) {
+        lpeobjref->user_unlink(lpeobjref, lpeobjref->owner);
+    }
 }
 
 static void
 lpeobjectreference_source_modified(SPObject */*iSource*/, guint /*flags*/, LPEObjectReference *lpeobjref)
 {
-    lpeobjref->owner->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+    SPObject *owner_obj = lpeobjref->owner;
+    if (owner_obj) {
+        lpeobjref->owner->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+    }
 }
 
 } //namespace LivePathEffect

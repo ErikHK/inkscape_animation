@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Michael Wybrow <mjwybrow@users.sourceforge.net>
+ * Author(s):   Michael Wybrow
 */
 
 
@@ -27,31 +27,73 @@
 #define AVOID_DEBUG_H
 
 
-#ifdef LIBAVOID_DEBUG
+#if defined(_MSC_VER) && defined(USE_ATLTRACE)
+    // Using Microsoft Visual C++ compiler and we want to use ATLTRACE
+    // to send warnings and error messages to a GUI window.
 
-#include <stdarg.h>
+    // Prevent inclusion of min and max macros.
+    #define NOMINMAX
+
+    #include <afx.h>
+#endif
+
+#include <cstdarg>
+#include <cstdio>
 #include <iostream>
 
-#endif
 
 namespace Avoid {
 
+// db_printf is debugging output for verifying behaviour of the router:
 #ifdef LIBAVOID_DEBUG
-inline void db_printf(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    vfprintf(stdout, fmt, ap);
-    va_end(ap);
-}
+
+  #if defined(_MSC_VER) && defined(USE_ATLTRACE)
+    #define db_printf  ATL::AtlTrace
+  #else
+    inline void db_printf(const char *fmt, ...)
+    {
+        va_list ap;
+        va_start(ap, fmt);
+        vfprintf(stdout, fmt, ap);
+        va_end(ap);
+    }
+  #endif
+
 #else
-inline void db_printf(const char *, ...)
-{
-}
+
+    inline void db_printf(const char *, ...)
+    {
+    }
+
+#endif
+
+// err_printf are critical errors that mean something pretty bad has happened:
+#if defined(_MSC_VER) && defined(USE_ATLTRACE)
+
+    #define err_printf ATL::AtlTrace
+
+#else
+
+    // For other environments we always show these errors.
+    inline void err_printf(const char *fmt, ...)
+    {
+        va_list ap;
+        va_start(ap, fmt);
+        vfprintf(stderr, fmt, ap);
+        va_end(ap);
+    }
+
 #endif
 
 }
 
+// Precision of numbers in libavoid SVG debug file.  Used in printf
+// strings ("%" PREC "g"), e.g., "%.16g"
+#if defined(HIGH_PRECISION_DEBUG)
+    #define PREC ".16"
+#else
+    #define PREC ""
+#endif
 
 #endif
 

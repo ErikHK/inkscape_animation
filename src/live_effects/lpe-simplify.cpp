@@ -5,20 +5,12 @@
 #include <gtkmm.h>
 #include "live_effects/lpe-simplify.h"
 #include "display/curve.h"
-#include "live_effects/parameter/parameter.h"
 #include "helper/geom.h"
-#include "livarot/Path.h"
-#include "splivarot.h"
 #include <2geom/svg-path-parser.h>
-#include "desktop.h"
-#include "inkscape.h"
 #include "svg/svg.h"
 #include "ui/tools/node-tool.h"
-#include <2geom/d2.h>
-#include <2geom/generic-rect.h>
-#include <2geom/interval.h>
 #include "ui/icon-names.h"
-#include "util/units.h"
+
 // TODO due to internal breakage in glibmm headers, this must be last:
 #include <glibmm/i18n.h>
 
@@ -123,6 +115,9 @@ LPESimplify::newWidget()
         ++it;
     }
     vbox->pack_start(*buttons,true, true, 2);
+    if(Gtk::Widget* widg = defaultParamSet()) {
+        vbox->pack_start(*widg, true, true, 2);
+    }
     return dynamic_cast<Gtk::Widget *>(vbox);
 }
 
@@ -148,11 +143,7 @@ LPESimplify::doEffect(SPCurve *curve)
     Geom::PathVector result = Geom::parse_svg_path(pathliv->svg_dump_path());
     generateHelperPathAndSmooth(result);
     curve->set_pathvector(result);
-    SPDesktop* desktop = SP_ACTIVE_DESKTOP;
-    if(desktop && INK_IS_NODE_TOOL(desktop->event_context)) {
-        Inkscape::UI::Tools::NodeTool *nt = static_cast<Inkscape::UI::Tools::NodeTool*>(desktop->event_context);
-        nt->update_helperpath();
-    }
+    Inkscape::UI::Tools::sp_update_helperpath();
 }
 
 void

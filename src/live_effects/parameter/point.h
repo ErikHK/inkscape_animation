@@ -11,7 +11,7 @@
 
 #include <glib.h>
 #include <2geom/point.h>
-
+#include "ui/widget/registered-widget.h"
 #include "live_effects/parameter/parameter.h"
 
 #include "knot-holder-entity.h"
@@ -38,26 +38,30 @@ public:
 
     bool param_readSVGValue(const gchar * strvalue);
     gchar * param_getSVGValue() const;
+    gchar * param_getDefaultSVGValue() const;
     inline const gchar *handleTip() const { return handle_tip ? handle_tip : param_tooltip.c_str(); }
     void param_setValue(Geom::Point newpoint, bool write = false);
     void param_set_default();
+    void param_hide_knot(bool hide);
     Geom::Point param_get_default() const;
     void param_set_liveupdate(bool live_update);
-    void param_update_default(Geom::Point newpoint);
+    void param_update_default(Geom::Point default_point);
+
+    virtual void param_update_default(const gchar * default_point);
     virtual void param_transform_multiply(Geom::Affine const& /*postmul*/, bool /*set*/);
 
     void set_oncanvas_looks(SPKnotShapeType shape, SPKnotModeType mode, guint32 color);
 
     virtual bool providesKnotHolderEntities() const { return true; }
-    virtual void addKnotHolderEntities(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item);
-
+    virtual void addKnotHolderEntities(KnotHolder *knotholder, SPItem *item);
     friend class PointParamKnotHolderEntity;
 private:
     PointParam(const PointParam&);
     PointParam& operator=(const PointParam&);
+    bool on_button_release(GdkEventButton* button_event);
     Geom::Point defvalue;
     bool liveupdate;
-    KnotHolder *knoth;
+    KnotHolderEntity * _knot_entity;
     SPKnotShapeType knot_shape;
     SPKnotModeType knot_mode;
     guint32 knot_color;

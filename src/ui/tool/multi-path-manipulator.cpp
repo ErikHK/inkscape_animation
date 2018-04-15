@@ -10,25 +10,25 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include <boost/shared_ptr.hpp>
-#include "node.h"
+#include <gdk/gdkkeysyms.h>
 #include <glibmm/i18n.h>
-#include "desktop.h"
 
+#include "desktop.h"
 #include "document.h"
 #include "document-undo.h"
-#include "live_effects/lpeobject.h"
 #include "message-stack.h"
-#include "preferences.h"
-#include "sp-path.h"
+#include "node.h"
+#include "verbs.h"
+
+#include "live_effects/lpeobject.h"
+
+#include "object/sp-path.h"
+
 #include "ui/tool/control-point-selection.h"
 #include "ui/tool/event-utils.h"
 #include "ui/tool/multi-path-manipulator.h"
 #include "ui/tool/path-manipulator.h"
-#include "util/unordered-containers.h"
-#include "verbs.h"
 
-#include <gdk/gdkkeysyms.h>
 
 namespace Inkscape {
 namespace UI {
@@ -163,7 +163,7 @@ void MultiPathManipulator::setItems(std::set<ShapeRecord> const &s)
             if (sr.edit_transform != sr_new.edit_transform ||
                 sr.role != sr_new.role)
             {
-                boost::shared_ptr<PathManipulator> hold(i->second);
+                std::shared_ptr<PathManipulator> hold(i->second);
                 if (sr.edit_transform != sr_new.edit_transform)
                     hold->setControlsTransform(sr_new.edit_transform);
                 if (sr.role != sr_new.role) {
@@ -181,7 +181,7 @@ void MultiPathManipulator::setItems(std::set<ShapeRecord> const &s)
     for (std::set<ShapeRecord>::iterator i = shapes.begin(); i != shapes.end(); ++i) {
         ShapeRecord const &r = *i;
         if (!SP_IS_PATH(r.item) && !IS_LIVEPATHEFFECT(r.item)) continue;
-        boost::shared_ptr<PathManipulator> newpm(new PathManipulator(*this, (SPPath*) r.item,
+        std::shared_ptr<PathManipulator> newpm(new PathManipulator(*this, (SPPath*) r.item,
             r.edit_transform, _getOutlineColor(r.role, r.item), r.lpe_key));
         newpm->showHandles(_show_handles);
         // always show outlines for clips and masks
@@ -282,90 +282,6 @@ void MultiPathManipulator::shiftSelection(int dir)
     _selection.insert(last_k.ptr());
 }
 
-
-void MultiPathManipulator::selectAllinOrder()
-{
-	int dir = 1;
-    if (empty()) return;
-
-    // 1. find last selected node
-    // 2. select the next node; if the last node or nothing is selected,
-    //    select first node
-    MapType::iterator last_i;
-    SubpathList::iterator last_j;
-    NodeList::iterator last_k;
-    bool anything_found = false;
-    bool anynode_found = false;
-
-    for (MapType::iterator i = _mmap.begin(); i != _mmap.end(); ++i) {
-        SubpathList &sp = i->second->subpathList();
-        for (SubpathList::iterator j = sp.begin(); j != sp.end(); ++j) {
-            anynode_found = true;
-            for (NodeList::iterator k = (*j)->begin(); k != (*j)->end(); ++k) {
-                if (k->selected()) {
-                    last_i = i;
-                    last_j = j;
-                    last_k = k;
-                    anything_found = true;
-                    // when tabbing backwards, we want the first node
-                    if (dir == -1) goto exit_loop;
-                }
-            }
-        }
-    }
-    exit_loop:
-
-    // NOTE: we should not assume the _selection contains only nodes
-    // in future it might also contain handles and other types of control points
-    // this is why we use a flag instead in the loop above, instead of calling
-    // selection.empty()
-    if (!anything_found) {
-        // select first / last node
-        // this should never fail because there must be at least 1 non-empty manipulator
-        if (anynode_found) {
-          if (dir == 1) {
-            _selection.insert((*_mmap.begin()->second->subpathList().begin())->begin().ptr());
-          } else {
-            _selection.insert((--(*--(--_mmap.end())->second->subpathList().end())->end()).ptr());
-          }
-        }
-        return;
-    }
-
-    // three levels deep - w00t!
-    if (dir == 1) {
-        if (++last_k == (*last_j)->end()) {
-            // here, last_k points to the node to be selected
-            ++last_j;
-            if (last_j == last_i->second->subpathList().end()) {
-                ++last_i;
-                if (last_i == _mmap.end()) {
-                    last_i = _mmap.begin();
-                }
-                last_j = last_i->second->subpathList().begin();
-            }
-            last_k = (*last_j)->begin();
-        }
-    } else {
-        if (!last_k || last_k == (*last_j)->begin()) {
-            if (last_j == last_i->second->subpathList().begin()) {
-                if (last_i == _mmap.begin()) {
-                    last_i = _mmap.end();
-                }
-                --last_i;
-                last_j = last_i->second->subpathList().end();
-            }
-            --last_j;
-            last_k = (*last_j)->end();
-        }
-        --last_k;
-    }
-    //_selection.clear();
-    _selection.insert(last_k.ptr());
-}
-
-
-
 void MultiPathManipulator::invertSelectionInSubpaths()
 {
     invokeForAll(&PathManipulator::invertSelectionInSubpaths);
@@ -430,20 +346,6 @@ void MultiPathManipulator::insertNode(Geom::Point pt)
     invokeForAll(&PathManipulator::insertNode, pt);
     _done(_("Add nodes"));
 }
-
-void MultiPathManipulator::insertNode(NodeList::iterator first, double t, bool take_selection)
-{
-    
-    //invokeForAll(&PathManipulator::insertNode, first, t, take_selection);
-    //_done(_("Add nodes"));
-	//PathManipulator::insertNode(first, t, take_selection);
-	Node *n = dynamic_cast<Node *>(*_selection.begin());
-            if (!n) return;
-
-    PathManipulator &pm = n->nodeList().subpathList().pm();
-	pm.insertNode(first, t, take_selection);
-}
-
 
 void MultiPathManipulator::duplicateNodes()
 {

@@ -32,7 +32,7 @@
 #include "io/sys.h"
 #include "preferences.h"
 #include "ui/shape-editor.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-root.h"
 #include "sp-script.h"
 #include "style.h"

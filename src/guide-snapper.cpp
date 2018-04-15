@@ -11,7 +11,7 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "desktop.h"
 #include "sp-guide.h"
 

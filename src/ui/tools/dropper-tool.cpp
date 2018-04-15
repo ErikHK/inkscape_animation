@@ -31,7 +31,7 @@
 #include "color-rgba.h"
 #include "desktop-style.h"
 #include "preferences.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-cursor.h"
 #include "desktop.h"
 

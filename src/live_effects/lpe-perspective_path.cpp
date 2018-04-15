@@ -11,18 +11,18 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 #include <gtkmm.h>
-#include "persp3d.h"
-#include "document.h"
+
+//#include "transf_mat_3x4.h"
 #include "document-private.h"
 #include "live_effects/lpe-perspective_path.h"
 #include "live_effects/lpeobject.h"
-#include "sp-item-group.h"
 #include "knot-holder-entity.h"
 #include "knotholder.h"
-#include "desktop.h"
-#include "util/units.h"
-#include "inkscape.h"
-#include "2geom/path.h"
+#include <util/units.h>
+
+#include "object/persp3d.h"
+#include "object/sp-defs.h"
+
 // TODO due to internal breakage in glibmm headers, this must be last:
 #include <glibmm/i18n.h>
 
@@ -54,11 +54,11 @@ LPEPerspectivePath::LPEPerspectivePath(LivePathEffectObject *lpeobject) :
     uses_plane_xy(_("Uses XY plane?"), _("If true, put the path on the left side of an imaginary box, otherwise on the right side"), "uses_plane_xy", &wr, this, true)
 {
     // register all your parameters here, so Inkscape knows which parameters this effect has:
-    registerParameter( dynamic_cast<Parameter *>(&scalex) );
-    registerParameter( dynamic_cast<Parameter *>(&scaley) );
-    registerParameter( dynamic_cast<Parameter *>(&offsetx) );
-    registerParameter( dynamic_cast<Parameter *>(&offsety) );
-    registerParameter( dynamic_cast<Parameter *>(&uses_plane_xy) );
+    registerParameter( &scalex);
+    registerParameter( &scaley);
+    registerParameter( &offsetx);
+    registerParameter( &offsety);
+    registerParameter( &uses_plane_xy);
 
     concatenate_before_pwd2 = true; // don't split the path into its subpaths
     _provides_knotholder_entities = true;
@@ -105,12 +105,12 @@ void LPEPerspectivePath::refresh(Gtk::Entry* perspective) {
     perspectiveID = perspective->get_text();
     Persp3D *first = 0;
     Persp3D *persp = 0;
-    for ( SPObject *child = this->lpeobj->document->getDefs()->firstChild(); child && !persp; child = child->getNext() ) {
-        if (SP_IS_PERSP3D(child) && first == 0) {
-            first = SP_PERSP3D(child);
+    for (auto& child: lpeobj->document->getDefs()->children) {
+        if (SP_IS_PERSP3D(&child) && first == 0) {
+            first = SP_PERSP3D(&child);
         }
-        if (SP_IS_PERSP3D(child) && strcmp(child->getId(), const_cast<const gchar *>(perspectiveID.c_str())) == 0) {
-            persp = SP_PERSP3D(child);
+        if (SP_IS_PERSP3D(&child) && strcmp(child.getId(), const_cast<const gchar *>(perspectiveID.c_str())) == 0) {
+            persp = SP_PERSP3D(&child);
             break;
         }
     }
@@ -229,25 +229,41 @@ LPEPerspectivePath::newWidget()
         ++it;
     }
     Gtk::HBox * perspectiveId = Gtk::manage(new Gtk::HBox(true,0));
+
+#if GTKMM_CHECK_VERSION(3,10,0)
+    Gtk::Label* labelPerspective = Gtk::manage(new Gtk::Label("Perspective ID:", Gtk::ALIGN_START, Gtk::ALIGN_START));
+#else
     Gtk::Label* labelPerspective = Gtk::manage(new Gtk::Label("Perspective ID:", 0., 0.));
+#endif
+
     Gtk::Entry* perspective = Gtk::manage(new Gtk::Entry());
     perspective->set_text(perspectiveID);
     perspective->set_tooltip_text("Set the perspective ID to apply");
     perspectiveId->pack_start(*labelPerspective, true, true, 2);
     perspectiveId->pack_start(*perspective, true, true, 2);
     vbox->pack_start(*perspectiveId, true, true, 2);
-    Gtk::Button* apply3D = Gtk::manage(new Gtk::Button(Glib::ustring(_("Refresh perspective"))));
-    apply3D->set_alignment(0.0, 0.5);
+    Gtk::Button* apply3D = Gtk::manage(new Gtk::Button());
+
+#if GTKMM_CHECK_VERSION(3,10,0)
+    Gtk::Label *apply3DLabel = Gtk::manage(new Gtk::Label(_("Refresh perspective"), Gtk::ALIGN_START, Gtk::ALIGN_CENTER));
+#else
+    Gtk::Label *apply3DLabel = Gtk::manage(new Gtk::Label(_("Refresh perspective"), 0.0, 0.5));
+#endif
+
+    apply3D->add(*apply3DLabel);
     apply3D->signal_clicked().connect(sigc::bind<Gtk::Entry*>(sigc::mem_fun(*this,&LPEPerspectivePath::refresh),perspective));
     Gtk::Widget* apply3DWidget = dynamic_cast<Gtk::Widget *>(apply3D);
     apply3DWidget->set_tooltip_text("Refresh perspective");
     vbox->pack_start(*apply3DWidget, true, true,2);
+    if(Gtk::Widget* widg = defaultParamSet()) {
+        vbox->pack_start(*widg, true, true, 2);
+    }
     return dynamic_cast<Gtk::Widget *>(vbox);
 }
 
-void LPEPerspectivePath::addKnotHolderEntities(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item) {
+void LPEPerspectivePath::addKnotHolderEntities(KnotHolder *knotholder, SPItem *item) {
     KnotHolderEntity *e = new PP::KnotHolderEntityOffset(this);
-    e->create( desktop, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN,
+    e->create( NULL, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN,
                _("Adjust the origin") );
     knotholder->add(e);
 };

@@ -123,8 +123,8 @@ public:
      * @param new_content New content of @c node
      */
     virtual void notifyContentChanged(Node &node,
-                                      Util::ptr_shared<char> old_content,
-                                      Util::ptr_shared<char> new_content) {
+                                      Util::ptr_shared old_content,
+                                      Util::ptr_shared new_content) {
         INK_UNUSED(node);
         INK_UNUSED(old_content);
         INK_UNUSED(new_content);
@@ -141,8 +141,8 @@ public:
      * @param new_value New value of the modified attribute
      */
     virtual void notifyAttributeChanged(Node &node, GQuark name,
-                                        Util::ptr_shared<char> old_value,
-                                        Util::ptr_shared<char> new_value) {
+                                        Util::ptr_shared old_value,
+                                        Util::ptr_shared new_value) {
         INK_UNUSED(node);
         INK_UNUSED(name);
         INK_UNUSED(old_value);

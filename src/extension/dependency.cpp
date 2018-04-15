@@ -9,17 +9,16 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include <config.h>
 #endif
 
 #include <glibmm/i18n.h>
 #include <glibmm/fileutils.h>
 #include <glibmm/miscutils.h>
-#include "config.h"
-#include "path-prefix.h"
 #include "dependency.h"
 #include "db.h"
 #include "extension.h"
+#include "io/resource.h"
 
 namespace Inkscape {
 namespace Extension {
@@ -91,7 +90,7 @@ Dependency::Dependency (Inkscape::XML::Node * in_repr)
 }
 
 /**
-    \brief   This depenency is not longer needed
+    \brief   This dependency is not longer needed
 
     Unreference the XML structure.
 */
@@ -105,7 +104,7 @@ Dependency::~Dependency (void)
     \return  Whether or not the dependency passes.
 
     This function depends largely on all of the enums.  The first level
-    that is evaluted is the \c _type.
+    that is evaluated is the \c _type.
 
     If the type is \c TYPE_EXTENSION then the id for the extension is
     looked up in the database.  If the extension is found, and it is
@@ -153,12 +152,11 @@ bool Dependency::check (void) const
             Glib::ustring location(_string);
             switch (_location) {
                 case LOCATION_EXTENSIONS: {
-                    for (unsigned int i=0; i<Inkscape::Extension::Extension::search_path.size(); i++) {
-                        std::string temploc = Glib::build_filename(Inkscape::Extension::Extension::search_path[i], location);
-                        if (Glib::file_test(temploc, filetest)) {
-                            location = temploc;
-                            break;
-                        }
+                    using namespace Inkscape::IO::Resource;
+                    Glib::ustring temploc = get_filename(EXTENSIONS, location.c_str());
+                    if(Glib::file_test(temploc, filetest)) {
+                        location = temploc;
+                        break;
                     }
                 } /* PASS THROUGH!!! */
                 case LOCATION_ABSOLUTE: {

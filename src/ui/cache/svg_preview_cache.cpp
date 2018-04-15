@@ -21,7 +21,7 @@
 
 #include <gtk/gtk.h>
 #include <2geom/transforms.h>
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "selection.h"
 #include "inkscape.h"
 #include "sp-rect.h"

@@ -100,8 +100,8 @@ void SimpleDocument::notifyChildOrderChanged(Node &parent,
 }
 
 void SimpleDocument::notifyContentChanged(Node &node,
-                                          Util::ptr_shared<char> old_content,
-                                          Util::ptr_shared<char> new_content)
+                                          Util::ptr_shared old_content,
+                                          Util::ptr_shared new_content)
 {
     if (_in_transaction) {
         _log_builder.setContent(node, old_content, new_content);
@@ -110,8 +110,8 @@ void SimpleDocument::notifyContentChanged(Node &node,
 
 void SimpleDocument::notifyAttributeChanged(Node &node,
                                             GQuark name,
-                                            Util::ptr_shared<char> old_value,
-                                            Util::ptr_shared<char> new_value)
+                                            Util::ptr_shared old_value,
+                                            Util::ptr_shared new_value)
 {
     if (_in_transaction) {
         _log_builder.setAttribute(node, name, old_value, new_value);

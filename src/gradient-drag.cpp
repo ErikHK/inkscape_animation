@@ -48,7 +48,7 @@
 #include "gradient-drag.h"
 #include "sp-stop.h"
 #include "snap.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "selection-chemistry.h"
 #include "verbs.h"
 #include "display/sp-canvas.h"

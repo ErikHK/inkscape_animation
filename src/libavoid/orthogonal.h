@@ -3,7 +3,7 @@
  *
  * libavoid - Fast, Incremental, Object-avoiding Line Router
  *
- * Copyright (C) 2009  Monash University
+ * Copyright (C) 2009-2011  Monash University
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Michael Wybrow <mjwybrow@users.sourceforge.net>
+ * Author(s):   Michael Wybrow
 */
 
 
@@ -28,9 +28,9 @@
 
 namespace Avoid {
 
+class Router;
 
 extern void generateStaticOrthogonalVisGraph(Router *router);
-
 extern void improveOrthogonalRoutes(Router *router);
 
 

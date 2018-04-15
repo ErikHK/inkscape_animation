@@ -13,26 +13,25 @@
 
 #include "live_effects/lpe-taperstroke.h"
 
-#include <2geom/path.h>
-#include <2geom/path.h>
 #include <2geom/circle.h>
 #include <2geom/sbasis-to-bezier.h>
+
+#include "desktop-style.h"
 
 #include "helper/geom-nodetype.h"
 #include "helper/geom-pathstroke.h"
 #include "display/curve.h"
-#include "sp-shape.h"
-#include "style.h"
-#include "xml/repr.h"
-#include "sp-paint-server.h"
 #include "svg/svg-color.h"
-#include "desktop-style.h"
 #include "svg/css-ostringstream.h"
 #include "svg/svg.h"
 
-#include "knot-holder-entity.h"
 #include "knotholder.h"
 
+#include "object/sp-shape.h"
+#include "object/sp-object-group.h"
+#include "style.h"
+
+// TODO due to internal breakage in glibmm headers, this must be last:
 #include <glibmm/i18n.h>
 
 template<typename T>
@@ -97,6 +96,7 @@ LPETaperStroke::LPETaperStroke(LivePathEffectObject *lpeobject) :
 void LPETaperStroke::doOnApply(SPLPEItem const* lpeitem)
 {
     if (SP_IS_SHAPE(lpeitem)) {
+        Inkscape::Preferences *prefs = Inkscape::Preferences::get();
         SPLPEItem* item = const_cast<SPLPEItem*>(lpeitem);
         double width = (lpeitem && lpeitem->style) ? lpeitem->style->stroke_width.computed : 1.;
 
@@ -123,8 +123,14 @@ void LPETaperStroke::doOnApply(SPLPEItem const* lpeitem)
 
         sp_desktop_apply_css_recursive(item, css, true);
         sp_repr_css_attr_unref (css);
-
-        line_width.param_set_value(width);
+        Glib::ustring pref_path = (Glib::ustring)"/live_effects/" +
+                                       (Glib::ustring)LPETypeConverter.get_key(effectType()).c_str() +
+                                       (Glib::ustring)"/" + 
+                                       (Glib::ustring)"stroke_width";
+        bool valid = prefs->getEntry(pref_path).isValid();
+        if(!valid){
+            line_width.param_set_value(width);
+        }
         line_width.write_to_SVG();
     } else {
         printf("WARNING: It only makes sense to apply Taper stroke to paths (not groups).\n");
@@ -441,14 +447,14 @@ Piecewise<D2<SBasis> > stretch_along(Piecewise<D2<SBasis> > pwd2_in, Geom::Path 
     }
 }
 
-void LPETaperStroke::addKnotHolderEntities(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item)
+void LPETaperStroke::addKnotHolderEntities(KnotHolder *knotholder, SPItem *item)
 {
     KnotHolderEntity *e = new TpS::KnotHolderEntityAttachBegin(this);
-    e->create(desktop, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN, _("Start point of the taper"), SP_KNOT_SHAPE_CIRCLE);
+    e->create(NULL, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN, _("Start point of the taper"), SP_KNOT_SHAPE_CIRCLE);
     knotholder->add(e);
 
     KnotHolderEntity *f = new TpS::KnotHolderEntityAttachEnd(this);
-    f->create(desktop, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN, _("End point of the taper"), SP_KNOT_SHAPE_CIRCLE);
+    f->create(NULL, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN, _("End point of the taper"), SP_KNOT_SHAPE_CIRCLE);
     knotholder->add(f);
 }
 
@@ -476,7 +482,6 @@ void KnotHolderEntityAttachBegin::knot_set(Geom::Point const &p, Geom::Point con
     // use that object.
     
     Geom::PathVector pathv = lpe->pathvector_before_effect;
-    
     Piecewise<D2<SBasis> > pwd2;
     Geom::Path p_in = return_at_first_cusp(pathv[0]);
     pwd2.concat(p_in.toPwSb());

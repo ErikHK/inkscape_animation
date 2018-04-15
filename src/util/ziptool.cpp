@@ -2602,7 +2602,7 @@ bool ZipFile::readFileData()
 
         //#### Uncompress the data
         std::vector<unsigned char> compBuf;
-        if (gpBitFlag & 0x8)//bit 3 was set.  means we dont know compressed size
+        if (gpBitFlag & 0x8)//bit 3 was set.  means we don't know compressed size
             {
             unsigned char c1, c2, c3, c4;
             c2 = c3 = c4 = 0;

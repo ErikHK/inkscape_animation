@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Michael Wybrow <mjwybrow@users.sourceforge.net>
+ * Author(s):  Michael Wybrow
 */
 
 
@@ -32,6 +32,7 @@
 #include "libavoid/debug.h"
 #include "libavoid/router.h"
 #include "libavoid/assertions.h"
+#include "libavoid/connend.h"
 
 using std::ostream;
 
@@ -44,18 +45,18 @@ VertID::VertID()
 }
 
 
-VertID::VertID(unsigned int id, bool s, int n)
-    : objID(id)
-    , isShape(s)
-    , vn(n)
+VertID::VertID(unsigned int id, unsigned short n, VertIDProps p)
+    : objID(id),
+      vn(n),
+      props(p)
 {
 }
 
 
 VertID::VertID(const VertID& other)
-    : objID(other.objID)
-    , isShape(other.isShape)
-    , vn(other.vn)
+    : objID(other.objID),
+      vn(other.vn),
+      props(other.props)
 {
 }
 
@@ -66,8 +67,8 @@ VertID& VertID::operator= (const VertID& rhs)
     //if (this == &rhs) return *this;
 
     objID = rhs.objID;
-    isShape = rhs.isShape;
     vn = rhs.vn;
+    props = rhs.props;
 
     return *this;
 }
@@ -79,8 +80,6 @@ bool VertID::operator==(const VertID& rhs) const
     {
         return false;
     }
-    // XXX RubberBand search breaks this:
-    // COLA_ASSERT(isShape == rhs.isShape);
     return true;
 }
 
@@ -91,7 +90,6 @@ bool VertID::operator!=(const VertID& rhs) const
     {
         return true;
     }
-    COLA_ASSERT(isShape == rhs.isShape);
     return false;
 }
 
@@ -109,13 +107,13 @@ bool VertID::operator<(const VertID& rhs) const
 
 VertID VertID::operator+(const int& rhs) const
 {
-    return VertID(objID, isShape, vn + rhs);
+    return VertID(objID, vn + rhs, props);
 }
 
 
 VertID VertID::operator-(const int& rhs) const
 {
-    return VertID(objID, isShape, vn - rhs);
+    return VertID(objID, vn - rhs, props);
 }
 
 
@@ -128,17 +126,24 @@ VertID& VertID::operator++(int)
 
 void VertID::print(FILE *file) const
 {
-    fprintf(file, "[%u,%d]", objID, vn);
+    fprintf(file, "[%u,%d, p=%u]", objID, vn, (unsigned int) props);
 }
 
 void VertID::db_print(void) const
 {
-    db_printf("[%u,%d]", objID, vn);
+    db_printf("[%u,%d, p=%u]", objID, vn, (unsigned int) props);
 }
 
 
 const unsigned short VertID::src = 1;
 const unsigned short VertID::tar = 2;
+
+// Property flags:
+const unsigned short VertID::PROP_ConnPoint      = 1;
+const unsigned short VertID::PROP_OrthShapeEdge  = 2;
+const unsigned short VertID::PROP_ConnectionPin  = 4;
+const unsigned short VertID::PROP_ConnCheckpoint = 8;
+const unsigned short VertID::PROP_DummyPinHelper = 16;
 
 
 ostream& operator<<(ostream& os, const VertID& vID)
@@ -161,7 +166,10 @@ VertInf::VertInf(Router *router, const VertID& vid, const Point& vpoint,
       orthogVisListSize(0),
       invisListSize(0),
       pathNext(NULL),
-      visDirections(ConnDirNone)
+      m_orthogonalPartner(NULL),
+      m_treeRoot(NULL),
+      visDirections(ConnDirNone),
+      orthogVisPropFlags(0)
 {
     point.id = vid.objID;
     point.vn = vid.vn;
@@ -175,8 +183,23 @@ VertInf::VertInf(Router *router, const VertID& vid, const Point& vpoint,
 
 VertInf::~VertInf()
 {
+    COLA_ASSERT(orphaned());
 }
 
+
+EdgeInf *VertInf::hasNeighbour(VertInf *target, bool orthogonal) const
+{
+    const EdgeInfList& visEdgeList = (orthogonal) ? orthogVisList : visList;
+    EdgeInfList::const_iterator finish = visEdgeList.end();
+    for (EdgeInfList::const_iterator edge = visEdgeList.begin(); edge != finish; ++edge)
+    {
+        if ((*edge)->otherVert(this) == target)
+        {
+            return *edge;
+        }
+    }
+    return NULL;
+}
 
 void VertInf::Reset(const VertID& vid, const Point& vpoint)
 {
@@ -206,7 +229,7 @@ void VertInf::removeFromGraph(const bool isConnVert)
 {
     if (isConnVert)
     {
-        COLA_ASSERT(!(id.isShape));
+        COLA_ASSERT(id.isConnPt());
     }
 
     // For each vertex.
@@ -236,6 +259,166 @@ void VertInf::removeFromGraph(const bool isConnVert)
 }
 
 
+void VertInf::orphan(void)
+{
+    // For each vertex.
+    EdgeInfList::const_iterator finish = visList.end();
+    EdgeInfList::const_iterator edge;
+    while ((edge = visList.begin()) != finish)
+    {
+        // Remove each visibility edge
+        (*edge)->makeInactive();
+    }
+
+    finish = orthogVisList.end();
+    while ((edge = orthogVisList.begin()) != finish)
+    {
+        // Remove each orthogonal visibility edge.
+        (*edge)->makeInactive();
+    }
+
+    finish = invisList.end();
+    while ((edge = invisList.begin()) != finish)
+    {
+        // Remove each invisibility edge
+        (*edge)->makeInactive();
+    }
+}
+
+// Returns the direction of this vertex relative to the other specified vertex.
+//
+ConnDirFlags VertInf::directionFrom(const VertInf *other) const
+{
+    double epsilon = 0.000001;
+    Point thisPoint = point;
+    Point otherPoint = other->point;
+    Point diff = thisPoint - otherPoint;
+
+    ConnDirFlags directions = ConnDirNone;
+    if (diff.y > epsilon)
+    {
+        directions |= ConnDirUp;
+    }
+    if (diff.y < -epsilon)
+    {
+        directions |= ConnDirDown;
+    }
+    if (diff.x > epsilon)
+    {
+        directions |= ConnDirRight;
+    }
+    if (diff.x < -epsilon)
+    {
+        directions |= ConnDirLeft;
+    }
+    return directions;
+}
+
+// Given a set of directions, mark visibility edges in all other directions
+// as being invalid so they get ignored during the search.
+//
+void VertInf::setVisibleDirections(const ConnDirFlags directions)
+{
+    for (EdgeInfList::const_iterator edge = visList.begin();
+            edge != visList.end(); ++edge)
+    {
+        if (directions == ConnDirAll)
+        {
+            (*edge)->setDisabled(false);
+        }
+        else
+        {
+            VertInf *otherVert = (*edge)->otherVert(this);
+            ConnDirFlags direction = otherVert->directionFrom(this);
+            bool visible = (direction & directions);
+            (*edge)->setDisabled(!visible);
+        }
+    }
+
+    for (EdgeInfList::const_iterator edge = orthogVisList.begin();
+            edge != orthogVisList.end(); ++edge)
+    {
+        if (directions == ConnDirAll)
+        {
+            (*edge)->setDisabled(false);
+        }
+        else
+        {
+            VertInf *otherVert = (*edge)->otherVert(this);
+            ConnDirFlags direction = otherVert->directionFrom(this);
+            bool visible = (direction & directions);
+            (*edge)->setDisabled(!visible);
+        }
+    }
+}
+
+// Number of points in path from end back to start, or zero if no path exists.
+//
+unsigned int VertInf::pathLeadsBackTo(const VertInf *start) const
+{
+    unsigned int pathlen = 1;
+    for (const VertInf *i = this; i != start; i = i->pathNext)
+    {
+        if ((pathlen > 1) && (i == this))
+        {
+            // We have a circular path, so path not found.
+            return 0;
+        }
+
+        pathlen++;
+        if (i == NULL)
+        {
+            // Path not found.
+            return 0;
+        }
+
+        // Check we don't have an apparent infinite connector path.
+        COLA_ASSERT(pathlen < 20000);
+    }
+    return pathlen;
+}
+
+VertInf **VertInf::makeTreeRootPointer(VertInf *root)
+{
+    m_treeRoot = (VertInf **) malloc(sizeof(VertInf *));
+    *m_treeRoot = root;
+    return m_treeRoot;
+}
+
+VertInf *VertInf::treeRoot(void) const
+{
+    return (m_treeRoot) ? *m_treeRoot : NULL;
+}
+
+VertInf **VertInf::treeRootPointer(void) const
+{
+    return m_treeRoot;
+}
+
+void VertInf::clearTreeRootPointer(void)
+{
+    m_treeRoot = NULL;
+}
+
+void VertInf::setTreeRootPointer(VertInf **pointer)
+{
+    m_treeRoot = pointer;
+}
+        
+void VertInf::setSPTFRoot(VertInf *root)
+{
+    // Use the m_treeRoot instance var, but as just a normal VertInf pointer.
+    m_treeRoot = (VertInf **) root;
+}
+
+
+VertInf *VertInf::sptfRoot(void) const
+{
+    // Use the m_treeRoot instance var, but as just a normal VertInf pointer.
+    return (VertInf *) m_treeRoot;
+}
+
+
 bool directVis(VertInf *src, VertInf *dst)
 {
     ShapeSet ss = ShapeSet();
@@ -251,11 +434,11 @@ bool directVis(VertInf *src, VertInf *dst)
     COLA_ASSERT(router == dst->_router);
 
     ContainsMap& contains = router->contains;
-    if (!(pID.isShape))
+    if (pID.isConnPt())
     {
         ss.insert(contains[pID].begin(), contains[pID].end());
     }
-    if (!(qID.isShape))
+    if (qID.isConnPt())
     {
         ss.insert(contains[qID].begin(), contains[qID].end());
     }
@@ -301,10 +484,10 @@ VertInfList::VertInfList()
                     (_firstConnVert &&  _lastConnVert) ); \
             COLA_ASSERT((!_firstShapeVert && !_lastShapeVert) || \
                     (_firstShapeVert &&  _lastShapeVert) ); \
-            COLA_ASSERT(!_firstShapeVert || _firstShapeVert->id.isShape); \
-            COLA_ASSERT(!_lastShapeVert || _lastShapeVert->id.isShape); \
-            COLA_ASSERT(!_firstConnVert || !(_firstConnVert->id.isShape)); \
-            COLA_ASSERT(!_lastConnVert || !(_lastConnVert->id.isShape)); \
+            COLA_ASSERT(!_firstShapeVert || !(_firstShapeVert->id.isConnPt())); \
+            COLA_ASSERT(!_lastShapeVert || !(_lastShapeVert->id.isConnPt())); \
+            COLA_ASSERT(!_firstConnVert || _firstConnVert->id.isConnPt()); \
+            COLA_ASSERT(!_lastConnVert || _lastConnVert->id.isConnPt()); \
         } while(0)
 
 
@@ -314,7 +497,7 @@ void VertInfList::addVertex(VertInf *vert)
     COLA_ASSERT(vert->lstPrev == NULL);
     COLA_ASSERT(vert->lstNext == NULL);
 
-    if (!(vert->id.isShape))
+    if (vert->id.isConnPt())
     {
         // A Connector vertex
         if (_firstConnVert)
@@ -358,7 +541,7 @@ void VertInfList::addVertex(VertInf *vert)
             // Join with conns list
             if (_lastConnVert)
             {
-                assert (_lastConnVert->lstNext == NULL);
+                COLA_ASSERT(_lastConnVert->lstNext == NULL);
 
                 _lastConnVert->lstNext = vert;
             }
@@ -382,7 +565,7 @@ VertInf *VertInfList::removeVertex(VertInf *vert)
     
     VertInf *following = vert->lstNext;
 
-    if (!(vert->id.isShape))
+    if (vert->id.isConnPt())
     {
         // A Connector vertex
         if (vert == _firstConnVert)

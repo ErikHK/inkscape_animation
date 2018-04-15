@@ -8,13 +8,12 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include <config.h>
-
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include "gtkmm/messagedialog.h"
+#include <gtkmm/dialog.h>
+#include <gtkmm/messagedialog.h>
 
 #include "execution-env.h"
 #include "prefdialog.h"
@@ -25,8 +24,7 @@
 #include "document.h"
 #include "document-undo.h"
 #include "desktop.h"
-#include "ui/view/view.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 
 #include "display/sp-canvas.h"
 
@@ -58,8 +56,8 @@ ExecutionEnv::ExecutionEnv (Effect * effect, Inkscape::UI::View::View * doc, Imp
     sp_namedview_document_from_window(desktop);
 
     if (desktop != NULL) {
-    	std::vector<SPItem*> selected = desktop->getSelection()->itemList();
-        for(std::vector<SPItem*>::const_iterator x = selected.begin(); x != selected.end(); ++x){
+        auto selected = desktop->getSelection()->items();
+        for(auto x = selected.begin(); x != selected.end(); ++x){
             Glib::ustring selected_id;
             selected_id = (*x)->getId();
             _selected.insert(_selected.end(), selected_id);
@@ -100,7 +98,7 @@ ExecutionEnv::genDocCache (void) {
     return;
 }
 
-/** \brief  Destory a document cache
+/** \brief  Destroy a document cache
 
     Just delete it.
 */
@@ -144,7 +142,15 @@ ExecutionEnv::createWorkingDialog (void) {
     g_free(dlgmessage);
 
     if (!_effect->is_silent()){
-        _visibleDialog->show();
+        Gtk::Dialog *dlg = _effect->get_pref_dialog();
+        if (dlg) {
+            _visibleDialog->set_transient_for(*dlg);
+        } else {
+            // ToDo: Do we need to make the window transient for the main window here?
+            //       Currently imossible to test because of GUI freezing during save,
+            //       see https://bugs.launchpad.net/inkscape/+bug/967416
+        }
+        _visibleDialog->show_now();
     }
 
     return;

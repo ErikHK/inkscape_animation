@@ -56,12 +56,12 @@ public:
                                  Node *old_prev, Node *new_prev);
 
     void notifyContentChanged(Node &node,
-                              Util::ptr_shared<char> old_content,
-                              Util::ptr_shared<char> new_content);
+                              Util::ptr_shared old_content,
+                              Util::ptr_shared new_content);
 
     void notifyAttributeChanged(Node &node, GQuark name,
-                                Util::ptr_shared<char> old_value,
-                                Util::ptr_shared<char> new_value);
+                                Util::ptr_shared old_value,
+                                Util::ptr_shared new_value);
 
 protected:
     SimpleDocument(SimpleDocument const &doc)

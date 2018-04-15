@@ -40,7 +40,7 @@
 #include "live_effects/effect.h"
 #include "preferences.h"
 #include "selection.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "ui/tools-switch.h"
 #include "ui/tools/lpe-tool.h"
 #include "ui/widget/unit-tracker.h"

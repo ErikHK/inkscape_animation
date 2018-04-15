@@ -14,7 +14,6 @@
 
 #include <glib.h> // g_assert()
 #include "attributes.h"
-#include <iostream>
 
 typedef struct {
     gint code;
@@ -139,7 +138,6 @@ static SPStyleProp const props[] = {
     {SP_ATTR_X, "x"},
     {SP_ATTR_Y, "y"},
     /* SPPath */
-    {SP_ATTR_D, "d"},
     {SP_ATTR_INKSCAPE_ORIGINAL_D, "inkscape:original-d"},
     /* (Note: XML representation of connectors may change in future.) */
     {SP_ATTR_CONNECTOR_TYPE, "inkscape:connector-type"},
@@ -174,7 +172,8 @@ static SPStyleProp const props[] = {
     {SP_ATTR_SODIPODI_RY, "sodipodi:ry"},
     {SP_ATTR_SODIPODI_START, "sodipodi:start"},
     {SP_ATTR_SODIPODI_END, "sodipodi:end"},
-    {SP_ATTR_SODIPODI_OPEN, "sodipodi:open"},
+    {SP_ATTR_SODIPODI_OPEN, "sodipodi:open"}, // Deprecated
+    {SP_ATTR_SODIPODI_ARC_TYPE, "sodipodi:arc-type"},
     /* SPStar */
     {SP_ATTR_SODIPODI_SIDES, "sodipodi:sides"},
     {SP_ATTR_SODIPODI_R1, "sodipodi:r1"},
@@ -422,6 +421,9 @@ static SPStyleProp const props[] = {
 
     /* CSS & SVG Properites */
 
+    /* SVG 2 Attributes promoted to properties */
+    {SP_ATTR_D, "d"},
+
     /* Paint */
     {SP_PROP_COLOR, "color"},
     {SP_PROP_OPACITY, "opacity"},
@@ -480,6 +482,9 @@ static SPStyleProp const props[] = {
     {SP_PROP_FONT_VARIANT_EAST_ASIAN, "font-variant-east-asian"},
     {SP_PROP_FONT_FEATURE_SETTINGS,   "font-feature-settings"},
 
+    /* Variable Fonts (CSS Fonts Module Level 4) */
+    {SP_PROP_FONT_VARIATION_SETTINGS,   "font-variation-settings"},
+
     /* Text */
     {SP_PROP_TEXT_INDENT, "text-indent"},
     {SP_PROP_TEXT_ALIGN, "text-align"},
@@ -504,9 +509,10 @@ static SPStyleProp const props[] = {
 
     /* SVG 2 Text Wrapping */
     {SP_PROP_SHAPE_INSIDE,  "shape-inside"},
-    {SP_PROP_SHAPE_OUTSIDE, "shape-outside"},
+    {SP_PROP_SHAPE_SUBTRACT,"shape-subtract"},
     {SP_PROP_SHAPE_PADDING, "shape-padding"},
     {SP_PROP_SHAPE_MARGIN,  "shape-margin"},
+    {SP_PROP_INLINE_SIZE,   "inline-size"},
 
     /* Text Decoration */
     {SP_PROP_TEXT_DECORATION,       "text-decoration"},  // CSS 2/CSS3-Shorthand
@@ -548,6 +554,7 @@ static SPStyleProp const props[] = {
 
     /* LivePathEffect */
     {SP_PROP_PATH_EFFECT, "effect"},
+
 };
 
 #define n_attrs (sizeof(props) / sizeof(props[0]))

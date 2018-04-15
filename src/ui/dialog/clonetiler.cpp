@@ -45,7 +45,7 @@
 #include "preferences.h"
 #include "selection.h"
 #include "sp-filter.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-use.h"
 #include "style.h"
 #include "svg/svg-color.h"

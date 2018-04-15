@@ -9,7 +9,7 @@
 
 #include "document.h"
 #include "sp-item-group.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "sp-path.h"
 #include "sp-root.h"
 #include "xml/document.h"

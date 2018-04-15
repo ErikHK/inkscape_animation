@@ -32,7 +32,7 @@
 #include "layer-manager.h"
 #include "preferences.h"
 #include "sp-item.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "sp-shape.h"
 #include "svg/css-ostringstream.h"
 #include "ui/icon-names.h"

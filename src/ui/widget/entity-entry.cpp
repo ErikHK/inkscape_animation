@@ -21,7 +21,7 @@
 #include <gtkmm/entry.h>
 
 #include "inkscape.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "rdf.h"
 #include "ui/widget/registry.h"
 #include "sp-root.h"

@@ -77,7 +77,7 @@ SPCycleType SP_CYCLING = SP_CYCLE_FOCUS;
 #include "sp-symbol.h"
 #include "sp-radial-gradient.h"
 #include "ui/tools/gradient-tool.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "preferences.h"
 #include "sp-offset.h"
 #include "sp-clippath.h"

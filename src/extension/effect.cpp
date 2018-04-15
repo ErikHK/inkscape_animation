@@ -13,8 +13,6 @@
 #include "helper/action.h"
 #include "ui/view/view.h"
 
-#include "selection.h"
-#include "sp-namedview.h"
 #include "desktop.h"
 #include "implementation/implementation.h"
 #include "effect.h"
@@ -260,7 +258,7 @@ Effect::prefs (Inkscape::UI::View::View * doc)
     \param  doc  The Inkscape::UI::View::View to do the effect on
 
     This function first insures that the extension is loaded, and if not,
-    loads it.  It then calls the implemention to do the actual work.  It
+    loads it.  It then calls the implementation to do the actual work.  It
     also resets the last effect pointer to be this effect.  Finally, it
     executes a \c SPDocumentUndo::done to commit the changes to the undo
     stack.
@@ -275,6 +273,7 @@ Effect::effect (Inkscape::UI::View::View * doc)
 
 
     ExecutionEnv executionEnv(this, doc);
+    execution_env = &executionEnv;
     timer->lock();
     executionEnv.run();
     if (executionEnv.wait()) {
@@ -351,6 +350,12 @@ Gtk::VBox *
 Effect::get_info_widget(void)
 {
     return Extension::get_info_widget();
+}
+
+PrefDialog *
+Effect::get_pref_dialog (void)
+{
+    return _prefDialog;
 }
 
 void

@@ -17,7 +17,6 @@
 #include <sigc++/sigc++.h>
 #include <glib.h>
 #include <gdk/gdk.h>
-#include <boost/shared_ptr.hpp>
 #include "ui/tools/tool-base.h"
 
 class SPDesktop;
@@ -62,7 +61,7 @@ public:
         EXTR_MIN_Y,
         EXTR_MAX_Y
     };
-//protected:
+protected:
     ControlPointSelection &_selection;
 };
 
@@ -76,14 +75,14 @@ template <typename T>
 class MultiManipulator : public PointManipulator {
 public:
     //typedef typename T::ItemType ItemType;
-    typedef typename std::pair<void*, boost::shared_ptr<T> > MapPair;
-    typedef typename std::map<void*, boost::shared_ptr<T> > MapType;
+    typedef typename std::pair<void*, std::shared_ptr<T> > MapPair;
+    typedef typename std::map<void*, std::shared_ptr<T> > MapType;
 
     MultiManipulator(SPDesktop *d, ControlPointSelection &sel)
         : PointManipulator(d, sel)
     {}
     void addItem(void *item) {
-        boost::shared_ptr<T> m(_createManipulator(item));
+        std::shared_ptr<T> m(_createManipulator(item));
         _mmap.insert(MapPair(item, m));
     }
     void removeItem(void *item) {
@@ -98,16 +97,17 @@ public:
     bool empty() {
         return _mmap.empty();
     }
-    void setItems(GSList const *list) {
+    
+    void setItems(std::vector<gpointer> list) { // this function is not called anywhere ... delete ?
         std::set<void*> to_remove;
         for (typename MapType::iterator mi = _mmap.begin(); mi != _mmap.end(); ++mi) {
             to_remove.insert(mi->first);
         }
-        for (GSList *i = const_cast<GSList*>(list); i; i = i->next) {
-            if (_isItemType(i->data)) {
+        for (auto i:list) {
+            if (_isItemType(i)) {
                 // erase returns the number of items removed
                 // if nothing was removed, it means this item did not have a manipulator - add it
-                if (!to_remove.erase(i->data)) addItem(i->data);
+                if (!to_remove.erase(i)) addItem(i);
             }
         }
         typedef typename std::set<void*>::iterator RmIter;

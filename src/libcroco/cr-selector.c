@@ -51,6 +51,19 @@ cr_selector_new (CRSimpleSel * a_simple_sel)
         return result;
 }
 
+/**
+ * cr_selector_parse_from_buf:
+ *
+ *@a_char_buf: the buffer to parse.
+ *@a_enc: the encoding of the input buffer a_char_buf.
+ *
+ *Parses a buf for selectors. 
+ *
+ *Fix Me: parsing will fail for some cases if buf does not end with '{'.
+ *
+ *Returns the newly built instance of #CRSelector, or
+ *NULL in case of failure.
+ */
 CRSelector *
 cr_selector_parse_from_buf (const guchar * a_char_buf, enum CREncoding a_enc)
 {
@@ -62,7 +75,17 @@ cr_selector_parse_from_buf (const guchar * a_char_buf, enum CREncoding a_enc)
                                          a_enc, FALSE);
         g_return_val_if_fail (parser, NULL);
 
-        return NULL;
+        CRSelector *selector = NULL;
+        enum CRStatus status = CR_OK;
+        status = cr_parser_parse_selector (parser, &selector);
+
+        if (status != CR_OK) {
+                if (selector) {
+                        cr_selector_unref (selector);
+                        selector = NULL;
+                }
+        }
+        return selector;
 }
 
 /**

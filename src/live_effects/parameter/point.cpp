@@ -4,20 +4,15 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include "ui/widget/registered-widget.h"
 #include "live_effects/parameter/point.h"
 #include "live_effects/effect.h"
 #include "svg/svg.h"
 #include "svg/stringstream.h"
 #include "ui/widget/point.h"
-#include "widgets/icon.h"
 #include "inkscape.h"
 #include "verbs.h"
 #include "knotholder.h"
 #include <glibmm/i18n.h>
-
-// needed for on-canvas editting:
-#include "desktop.h"
 
 namespace Inkscape {
 
@@ -30,7 +25,7 @@ PointParam::PointParam( const Glib::ustring& label, const Glib::ustring& tip,
     :   Parameter(label, tip, key, wr, effect), 
         defvalue(default_value),
         liveupdate(live_update),
-        knoth(NULL)
+        _knot_entity(NULL)
 {
     knot_shape = SP_KNOT_SHAPE_DIAMOND;
     knot_mode  = SP_KNOT_MODE_XOR;
@@ -62,9 +57,39 @@ PointParam::param_get_default() const{
 }
 
 void
-PointParam::param_update_default(Geom::Point newpoint)
+PointParam::param_update_default(Geom::Point default_point)
 {
-    defvalue = newpoint;
+    defvalue = default_point;
+}
+
+void
+PointParam::param_update_default(const gchar * default_point)
+{
+    gchar ** strarray = g_strsplit(default_point, ",", 2);
+    double newx, newy;
+    unsigned int success = sp_svg_number_read_d(strarray[0], &newx);
+    success += sp_svg_number_read_d(strarray[1], &newy);
+    g_strfreev (strarray);
+    if (success == 2) {
+        param_update_default( Geom::Point(newx, newy) );
+    }
+}
+
+void 
+PointParam::param_hide_knot(bool hide) {
+    if (_knot_entity) {
+        bool update = false;
+        if (hide && _knot_entity->knot->flags & SP_KNOT_VISIBLE) {
+            update = true;
+            _knot_entity->knot->hide();
+        } else if(!hide && !(_knot_entity->knot->flags & SP_KNOT_VISIBLE)) {
+            update = true;
+            _knot_entity->knot->show();
+        }
+        if (update) {
+            _knot_entity->update_knot();
+        }
+    }
 }
 
 void
@@ -78,8 +103,8 @@ PointParam::param_setValue(Geom::Point newpoint, bool write)
         param_write_to_repr(str);
         g_free(str);
     }
-    if(knoth && liveupdate){
-        knoth->update_knots();
+    if(_knot_entity && liveupdate){
+        _knot_entity->update_knot();
     }
 }
 
@@ -103,8 +128,15 @@ PointParam::param_getSVGValue() const
 {
     Inkscape::SVGOStringStream os;
     os << *dynamic_cast<Geom::Point const *>( this );
-    gchar * str = g_strdup(os.str().c_str());
-    return str;
+    return g_strdup(os.str().c_str());
+}
+
+gchar *
+PointParam::param_getDefaultSVGValue() const
+{
+    Inkscape::SVGOStringStream os;
+    os << defvalue;
+    return g_strdup(os.str().c_str());
 }
 
 void
@@ -123,19 +155,23 @@ PointParam::param_newWidget()
                                                               *param_wr,
                                                               param_effect->getRepr(),
                                                               param_effect->getSPDoc() ) );
-    // TODO: fix to get correct desktop (don't use SP_ACTIVE_DESKTOP)
-    SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-    Geom::Affine transf = desktop->doc2dt();
+    Geom::Affine transf = Geom::Scale(1, -1);
+    transf[5] = SP_ACTIVE_DOCUMENT->getHeight().value("px");
     pointwdg->setTransform(transf);
     pointwdg->setValue( *this );
     pointwdg->clearProgrammatically();
     pointwdg->set_undo_parameters(SP_VERB_DIALOG_LIVE_PATH_EFFECT, _("Change point parameter"));
+    pointwdg->signal_button_release_event().connect(sigc::mem_fun (*this, &PointParam::on_button_release));
 
     Gtk::HBox * hbox = Gtk::manage( new Gtk::HBox() );
     static_cast<Gtk::HBox*>(hbox)->pack_start(*pointwdg, true, true);
     static_cast<Gtk::HBox*>(hbox)->show_all_children();
-
     return dynamic_cast<Gtk::Widget *> (hbox);
+}
+
+bool PointParam::on_button_release(GdkEventButton* button_event) {
+    param_effect->upd_params = true;
+    return false;
 }
 
 void
@@ -149,7 +185,7 @@ PointParam::set_oncanvas_looks(SPKnotShapeType shape, SPKnotModeType mode, guint
 class PointParamKnotHolderEntity : public KnotHolderEntity {
 public:
     PointParamKnotHolderEntity(PointParam *p) { this->pparam = p; }
-    virtual ~PointParamKnotHolderEntity() { this->pparam->knoth = NULL;}
+    virtual ~PointParamKnotHolderEntity() { this->pparam->_knot_entity = NULL;}
 
     virtual void knot_set(Geom::Point const &p, Geom::Point const &origin, guint state);
     virtual Geom::Point knot_get() const;
@@ -174,10 +210,10 @@ PointParamKnotHolderEntity::knot_set(Geom::Point const &p, Geom::Point const &or
             s = A;
         }
     }
-    pparam->param_setValue(s, this->pparam->liveupdate);
-    SPLPEItem * splpeitem = dynamic_cast<SPLPEItem *>(item);
-    if(splpeitem && this->pparam->liveupdate){
-        sp_lpe_item_update_patheffect(splpeitem, false, false);
+    if(this->pparam->liveupdate){
+        pparam->param_setValue(s, true);
+    } else {
+        pparam->param_setValue(s);
     }
 }
 
@@ -191,24 +227,20 @@ void
 PointParamKnotHolderEntity::knot_click(guint state)
 {
     if (state & GDK_CONTROL_MASK) {
-            if (state & GDK_MOD1_MASK) {
-                this->pparam->param_set_default();
-                SPLPEItem * splpeitem = dynamic_cast<SPLPEItem *>(item);
-                if(splpeitem){
-                    sp_lpe_item_update_patheffect(splpeitem, false, false);
-                }
-            }
+        if (state & GDK_MOD1_MASK) {
+            this->pparam->param_set_default();
+            pparam->param_setValue(*pparam,true);
+        }
     }
 }
 
 void
-PointParam::addKnotHolderEntities(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item)
+PointParam::addKnotHolderEntities(KnotHolder *knotholder, SPItem *item)
 {
-    knoth = knotholder;
-    PointParamKnotHolderEntity *e = new PointParamKnotHolderEntity(this);
+    _knot_entity = new PointParamKnotHolderEntity(this);
     // TODO: can we ditch handleTip() etc. because we have access to handle_tip etc. itself???
-    e->create(desktop, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN, handleTip(), knot_shape, knot_mode, knot_color);
-    knotholder->add(e);
+    _knot_entity->create(NULL, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN, handleTip(), knot_shape, knot_mode, knot_color);
+    knotholder->add(_knot_entity);
 }
 
 } /* namespace LivePathEffect */

@@ -9,7 +9,7 @@
 
 #include "live_effects/effect.h"
 #include "knotholder.h"
-#include "sp-lpe-item.h"
+
 
 #include <2geom/piecewise.h>
 #include <2geom/sbasis-geometric.h>
@@ -89,6 +89,31 @@ PowerStrokePointArrayParam::recalculate_controlpoints_for_new_pwd2(Geom::Piecewi
     }
 }
 
+/** call this method to recalculate the controlpoints when path is reversed.*/
+std::vector<Geom::Point>
+PowerStrokePointArrayParam::reverse_controlpoints(bool write)
+{
+    std::vector<Geom::Point> controlpoints;
+    if (!last_pwd2.empty()) {
+        Geom::Piecewise<Geom::D2<Geom::SBasis> > const & pwd2_in_reverse = reverse(last_pwd2);
+        for (unsigned int i = 0; i < _vector.size(); ++i) {
+            Geom::Point control_pos = last_pwd2.valueAt(_vector[i][Geom::X]);
+            double new_pos = Geom::nearest_time(control_pos, pwd2_in_reverse);
+            controlpoints.push_back(Geom::Point(new_pos,_vector[i][Geom::Y]));
+            _vector[i][Geom::X] = new_pos;
+        }
+        if (write) {
+            write_to_SVG();
+            _vector.clear();
+            _vector = controlpoints;
+            controlpoints.clear();
+            write_to_SVG();
+            return _vector;
+        }
+    }
+    return controlpoints;
+}
+
 float PowerStrokePointArrayParam::median_width()
 {
 	size_t size = _vector.size();
@@ -163,7 +188,11 @@ PowerStrokePointArrayParamKnotHolderEntity::knot_set(Geom::Point const &p, Geom:
     Geom::Point const s = snap_knot_position(p, state);
     double t = nearest_time(s, pwd2);
     double offset = dot(s - pwd2.valueAt(t), n.valueAt(t));
-    _pparam->_vector.at(_index) = Geom::Point(t, offset);
+    _pparam->_vector.at(_index) = Geom::Point(t, offset/_pparam->_scale_width);
+    if (_pparam->_vector.size() == 1 ) {
+        Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+        prefs->setDouble("/live_effect/power_stroke/width", offset);
+    }
     sp_lpe_item_update_patheffect(SP_LPE_ITEM(item), false, false);
 }
 
@@ -184,7 +213,7 @@ PowerStrokePointArrayParamKnotHolderEntity::knot_get() const
         g_warning("Broken powerstroke point at %f, I won't try to add that", offset_point[X]);
         return Geom::Point(infinity(), infinity());
     }
-    Point canvas_point = pwd2.valueAt(offset_point[X]) + offset_point[Y] * n.valueAt(offset_point[X]);
+    Point canvas_point = pwd2.valueAt(offset_point[X]) + (offset_point[Y] * _pparam->_scale_width) * n.valueAt(offset_point[X]);
     return canvas_point;
 }
 
@@ -201,22 +230,21 @@ PowerStrokePointArrayParamKnotHolderEntity::knot_click(guint state)
         if (state & GDK_MOD1_MASK) {
             // delete the clicked knot
             std::vector<Geom::Point> & vec = _pparam->_vector;
-            vec.erase(vec.begin() + _index);
-            _pparam->param_set_and_write_new_value(vec);
-
-            // remove knot from knotholder
-            parent_holder->entity.remove(this);
-            // shift knots down one index
-            for(std::list<KnotHolderEntity *>::iterator ent = parent_holder->entity.begin(); ent != parent_holder->entity.end(); ++ent) {
-                PowerStrokePointArrayParamKnotHolderEntity *pspa_ent = dynamic_cast<PowerStrokePointArrayParamKnotHolderEntity *>(*ent);
-                if ( pspa_ent && pspa_ent->_pparam == this->_pparam ) {  // check if the knotentity belongs to this powerstrokepointarray parameter
-                    if (pspa_ent->_index > this->_index) {
-                        --pspa_ent->_index;
+            if (vec.size() > 1) { //Force don't remove last knot
+                vec.erase(vec.begin() + _index);
+                _pparam->param_set_and_write_new_value(vec);
+                // shift knots down one index
+                for(std::list<KnotHolderEntity *>::iterator ent = parent_holder->entity.begin(); ent != parent_holder->entity.end(); ++ent) {
+                    PowerStrokePointArrayParamKnotHolderEntity *pspa_ent = dynamic_cast<PowerStrokePointArrayParamKnotHolderEntity *>(*ent);
+                    if ( pspa_ent && pspa_ent->_pparam == this->_pparam ) {  // check if the knotentity belongs to this powerstrokepointarray parameter
+                        if (pspa_ent->_index > this->_index) {
+                            --pspa_ent->_index;
+                        }
                     }
-                }
-            };
-            // delete self and return
-            delete this;
+                };
+                // temporary hide, when knotholder were recreated it finally drop
+                this->knot->hide();
+            }
             return;
         } else {
             // add a knot to XML
@@ -248,11 +276,11 @@ PowerStrokePointArrayParamKnotHolderEntity::knot_click(guint state)
     } 
 }
 
-void PowerStrokePointArrayParam::addKnotHolderEntities(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item)
+void PowerStrokePointArrayParam::addKnotHolderEntities(KnotHolder *knotholder, SPItem *item)
 {
     for (unsigned int i = 0; i < _vector.size(); ++i) {
         PowerStrokePointArrayParamKnotHolderEntity *e = new PowerStrokePointArrayParamKnotHolderEntity(this, i);
-        e->create( desktop, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN,
+        e->create(NULL, item, knotholder, Inkscape::CTRL_TYPE_UNKNOWN,
                    _("<b>Stroke width control point</b>: drag to alter the stroke width. <b>Ctrl+click</b> adds a control point, <b>Ctrl+Alt+click</b> deletes it, <b>Shift+click</b> launches width dialog."),
                    knot_shape, knot_mode, knot_color);
         knotholder->add(e);

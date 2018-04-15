@@ -50,8 +50,9 @@ public:
     void read(SPObject *object, Inkscape::XML::Node *repr);
     void readFromObject(SPObject *object);
     void readFromPrefs(Glib::ustring const &path);
-    void readIfUnset( int id, char const *val );
+    void readIfUnset( int id, char const *val, SPStyleSrc const &source = SP_STYLE_SRC_STYLE_PROP );
     Glib::ustring write( unsigned int const flags = SP_STYLE_FLAG_IFSET,
+                         SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                          SPStyle const *const base = NULL ) const;
     void cascade( SPStyle const *const parent );
     void merge(   SPStyle const *const parent );
@@ -64,8 +65,8 @@ public:
 
 private:
     void _mergeString( char const *const p );
-    void _mergeDeclList( CRDeclaration const *const decl_list );
-    void _mergeDecl(      CRDeclaration const *const decl );
+    void _mergeDeclList( CRDeclaration const *const decl_list, SPStyleSrc const &source );
+    void _mergeDecl(     CRDeclaration const *const decl,      SPStyleSrc const &source );
     void _mergeProps( CRPropList *const props );
     void _mergeObjectStylesheet( SPObject const *const object );
 
@@ -89,6 +90,11 @@ public:
 
     /* ----------------------- THE PROPERTIES ------------------------- */
     /*                    Match order in style.cpp.                     */
+
+    /* SVG 2 attributes promoted to properties. */
+
+    /** Path data */
+    SPIString d;
 
     /* Font ---------------------------- */
 
@@ -127,6 +133,9 @@ public:
     /** Font feature settings (Low level access to TrueType tables) */
     SPIString font_feature_settings;
 
+    /** Font variation settings (Low level access to OpenType variable font design-coordinate values) */
+    SPIFontVariationSettings font_variation_settings;
+
     /* Text ----------------------------- */
 
     /** First line indent of paragraphs (css2 16.1) */
@@ -162,9 +171,10 @@ public:
 
     /** SVG2 Text Wrapping */
     SPIString shape_inside;
-    // SPIString shape_outside;
+    SPIString shape_subtract;
     SPILength shape_padding;
-    // SPILength shape_margin;
+    SPILength shape_margin;
+    SPILength inline_size;
 
     /* Text Decoration ----------------------- */
 
@@ -323,8 +333,10 @@ SPStyle *sp_style_unref(SPStyle *style); // SPStyle::unref();
 void sp_style_set_to_uri_string (SPStyle *style, bool isfill, const char *uri); // ?
 
 char const *sp_style_get_css_unit_string(int unit);  // No change?
-double sp_style_css_size_px_to_units(double size, int unit); // No change?
-double sp_style_css_size_units_to_px(double size, int unit); // No change?
+
+#define SP_CSS_FONT_SIZE_DEFAULT 12.0
+double sp_style_css_size_px_to_units(double size, int unit, double font_size = SP_CSS_FONT_SIZE_DEFAULT); // No change?
+double sp_style_css_size_units_to_px(double size, int unit, double font_size = SP_CSS_FONT_SIZE_DEFAULT); // No change?
 
 
 SPCSSAttr *sp_css_attr_from_style (SPStyle const *const style, unsigned int flags);

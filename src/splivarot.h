@@ -10,6 +10,7 @@
 #include <2geom/forward.h>
 #include <2geom/path.h>
 #include "livarot/Path.h"
+#include "object/object-set.h"  // bool_op
 
 class SPCurve;
 class SPDesktop;
@@ -17,24 +18,8 @@ class SPItem;
 
 namespace Inkscape {
     class Selection;
+    class ObjectSet;
 }
-
-// boolean operations
-// work on the current selection
-// selection has 2 contain exactly 2 items
-
-// UPDATE: these signatures have been modified so they may work in
-// command-line mode, i.e. without a desktop. If a desktop is not
-// provided (desktop == NULL), error messages will be shown on stderr.
-void sp_selected_path_union (Inkscape::Selection *selection, SPDesktop *desktop);
-void sp_selected_path_union_skip_undo (Inkscape::Selection *selection, SPDesktop *desktop);
-void sp_selected_path_intersect (Inkscape::Selection *selection, SPDesktop *desktop);
-void sp_selected_path_diff (Inkscape::Selection *selection, SPDesktop *desktop);
-void sp_selected_path_diff_skip_undo (Inkscape::Selection *selection, SPDesktop *desktop);
-void sp_selected_path_symdiff (Inkscape::Selection *selection, SPDesktop *desktop);
-void sp_selected_path_cut (Inkscape::Selection *selection, SPDesktop *desktop);
-void sp_selected_path_cut_skip_undo (Inkscape::Selection *selection, SPDesktop *desktop);
-void sp_selected_path_slice (Inkscape::Selection *selection, SPDesktop *desktop);
 
 // offset/inset of a curve
 // takes the fill-rule in consideration
@@ -53,7 +38,8 @@ void sp_selected_path_create_updating_offset_object_zero (SPDesktop *desktop);
 
 // outline of a curve
 // uses the stroke-width
-void sp_selected_path_outline (SPDesktop *desktop);
+void sp_selected_path_outline (SPDesktop *desktop, bool legacy = false);
+bool sp_item_path_outline(SPItem *item, SPDesktop *desktop, bool legacy);
 Geom::PathVector* item_outline(SPItem const *item, bool bbox_only = false);
 
 // simplifies a path (removes small segments and the like)

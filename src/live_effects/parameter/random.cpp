@@ -67,14 +67,35 @@ RandomParam::param_getSVGValue() const
 {
     Inkscape::SVGOStringStream os;
     os << value << ';' << startseed;
-    gchar * str = g_strdup(os.str().c_str());
-    return str;
+    return g_strdup(os.str().c_str());
+}
+
+gchar *
+RandomParam::param_getDefaultSVGValue() const
+{
+    Inkscape::SVGOStringStream os;
+    os << defvalue << ';' << defseed;
+    return g_strdup(os.str().c_str());
 }
 
 void
 RandomParam::param_set_default()
 {
     param_set_value(defvalue, defseed);
+}
+
+void
+RandomParam::param_update_default(gdouble default_value){
+    defvalue = default_value;
+}
+
+void
+RandomParam::param_update_default(const gchar * default_value){
+    double newval;
+    unsigned int success = sp_svg_number_read_d(default_value, &newval);
+    if (success == 1) {
+        param_update_default(newval);
+    }
 }
 
 void
@@ -130,10 +151,16 @@ RandomParam::param_newWidget()
     }
     regrandom->setRange(min, max);
     regrandom->setProgrammatically = false;
+    regrandom->signal_button_release_event().connect(sigc::mem_fun (*this, &RandomParam::on_button_release));
 
     regrandom->set_undo_parameters(SP_VERB_DIALOG_LIVE_PATH_EFFECT, _("Change random parameter"));
 
     return dynamic_cast<Gtk::Widget *> (regrandom);
+}
+
+bool RandomParam::on_button_release(GdkEventButton* button_event) {
+    param_effect->upd_params = true;
+    return false;
 }
 
 RandomParam::operator gdouble()

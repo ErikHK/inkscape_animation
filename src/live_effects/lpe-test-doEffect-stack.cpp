@@ -4,13 +4,11 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include <glibmm/i18n.h>
-
 #include "live_effects/lpe-test-doEffect-stack.h"
 
-#include <2geom/piecewise.h>
-#include <vector>
-#include <cstring>
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
+
 using std::memcpy;
 
 namespace Inkscape {
@@ -23,12 +21,12 @@ LPEdoEffectStackTest::LPEdoEffectStackTest(LivePathEffectObject *lpeobject) :
     point(_("Point param:"), "tooltip of point parameter", "point_param", &wr, this),
     path(_("Path param:"), "tooltip of path parameter", "path_param", &wr, this,"M 0,100 100,0")
 {
-    registerParameter( dynamic_cast<Parameter *>(&step) );
-    registerParameter( dynamic_cast<Parameter *>(&point) );
-    registerParameter( dynamic_cast<Parameter *>(&path) );
+    registerParameter(&step);
+    registerParameter(&point);
+    registerParameter(&path);
 
     point.set_oncanvas_looks(SP_KNOT_SHAPE_SQUARE, SP_KNOT_MODE_XOR, 0x00ff0000);
-    point.param_setValue(point,true);
+    point.param_setValue(point);
 }
 
 LPEdoEffectStackTest::~LPEdoEffectStackTest()

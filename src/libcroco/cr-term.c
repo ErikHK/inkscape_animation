@@ -74,6 +74,7 @@ cr_term_clear (CRTerm * a_this)
         }
 
         a_this->type = TERM_NO_TYPE;
+        a_this->n = FALSE;
 }
 
 /**

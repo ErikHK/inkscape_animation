@@ -9,6 +9,10 @@
 #endif
 
 #include "live_effects/parameter/originalpatharray.h"
+#include "live_effects/lpe-spiro.h"
+#include "live_effects/lpe-bspline.h"
+#include "live_effects/lpeobject.h"
+#include "live_effects/lpeobject-reference.h"
 
 #include <gtkmm/widget.h>
 #include <gtkmm/icontheme.h>
@@ -19,19 +23,19 @@
 #include <glibmm/i18n.h>
 
 #include "inkscape.h"
-#include "icon-size.h"
-#include "widgets/icon.h"
 #include "ui/clipboard.h"
 #include "svg/svg.h"
 #include "svg/stringstream.h"
 #include "originalpath.h"
-#include "uri.h"
 #include "display/curve.h"
 
 #include <2geom/coord.h>
 #include <2geom/point.h>
-#include "sp-shape.h"
-#include "sp-text.h"
+
+#include "object/sp-shape.h"
+#include "object/sp-text.h"
+#include "object/uri.h"
+
 #include "live_effects/effect.h"
 
 #include "verbs.h"
@@ -51,12 +55,14 @@ public:
         add(_colObject);
         add(_colLabel);
         add(_colReverse);
+        add(_colVisible);
     }
     virtual ~ModelColumns() {}
 
-    Gtk::TreeModelColumn<PathAndDirection*> _colObject;
+    Gtk::TreeModelColumn<PathAndDirectionAndVisible*> _colObject;
     Gtk::TreeModelColumn<Glib::ustring> _colLabel;
     Gtk::TreeModelColumn<bool> _colReverse;
+    Gtk::TreeModelColumn<bool> _colVisible;
 };
 
 OriginalPathArrayParam::OriginalPathArrayParam( const Glib::ustring& label,
@@ -68,7 +74,8 @@ OriginalPathArrayParam::OriginalPathArrayParam( const Glib::ustring& label,
         _vector(),
         _tree(),
         _text_renderer(),
-        _toggle_renderer(),
+        _toggle_reverse(),
+        _toggle_visible(),
         _scroller()
 {    
     _model = new ModelColumns();
@@ -78,6 +85,22 @@ OriginalPathArrayParam::OriginalPathArrayParam( const Glib::ustring& label,
     _tree.set_reorderable(true);
     _tree.enable_model_drag_dest (Gdk::ACTION_MOVE);
     
+    
+    Gtk::CellRendererToggle * _toggle_reverse = manage(new Gtk::CellRendererToggle());
+    int reverseColNum = _tree.append_column(_("Reverse"), *_toggle_reverse) - 1;
+    Gtk::TreeViewColumn* col_reverse = _tree.get_column(reverseColNum);
+    _toggle_reverse->set_activatable(true);
+    _toggle_reverse->signal_toggled().connect(sigc::mem_fun(*this, &OriginalPathArrayParam::on_reverse_toggled));
+    col_reverse->add_attribute(_toggle_reverse->property_active(), _model->_colReverse);
+    
+
+    Gtk::CellRendererToggle * _toggle_visible = manage(new Gtk::CellRendererToggle());
+    int visibleColNum = _tree.append_column(_("Visible"), *_toggle_visible) - 1;
+    Gtk::TreeViewColumn* col_visible = _tree.get_column(visibleColNum);
+    _toggle_visible->set_activatable(true);
+    _toggle_visible->signal_toggled().connect(sigc::mem_fun(*this, &OriginalPathArrayParam::on_visible_toggled));
+    col_visible->add_attribute(_toggle_visible->property_active(), _model->_colVisible);
+    
     _text_renderer = manage(new Gtk::CellRendererText());
     int nameColNum = _tree.append_column(_("Name"), *_text_renderer) - 1;
     _name_column = _tree.get_column(nameColNum);
@@ -85,13 +108,6 @@ OriginalPathArrayParam::OriginalPathArrayParam( const Glib::ustring& label,
 
     _tree.set_expander_column( *_tree.get_column(nameColNum) );
     _tree.set_search_column(_model->_colLabel);
-    
-    Gtk::CellRendererToggle * _toggle_renderer = manage(new Gtk::CellRendererToggle());
-    int toggleColNum = _tree.append_column(_("Reverse"), *_toggle_renderer) - 1;
-    Gtk::TreeViewColumn* col = _tree.get_column(toggleColNum);
-    _toggle_renderer->set_activatable(true);
-    _toggle_renderer->signal_toggled().connect(sigc::mem_fun(*this, &OriginalPathArrayParam::on_reverse_toggled));
-    col->add_attribute(_toggle_renderer->property_active(), _model->_colReverse);
     
     //quick little hack -- newer versions of gtk gave the item zero space allotment
     _scroller.set_size_request(-1, 120);
@@ -101,13 +117,15 @@ OriginalPathArrayParam::OriginalPathArrayParam( const Glib::ustring& label,
     //_scroller.set_shadow_type(Gtk::SHADOW_IN);
     
     oncanvas_editable = true;
+    _from_original_d = false;
+    _allow_only_bspline_spiro = false;
     
 }
 
 OriginalPathArrayParam::~OriginalPathArrayParam()
 {
     while (!_vector.empty()) {
-        PathAndDirection *w = _vector.back();
+        PathAndDirectionAndVisible *w = _vector.back();
         _vector.pop_back();
         unlink(w);
         delete w;
@@ -119,7 +137,7 @@ void OriginalPathArrayParam::on_reverse_toggled(const Glib::ustring& path)
 {
     Gtk::TreeModel::iterator iter = _store->get_iter(path);
     Gtk::TreeModel::Row row = *iter;
-    PathAndDirection *w = row[_model->_colObject];
+    PathAndDirectionAndVisible *w = row[_model->_colObject];
     row[_model->_colReverse] = !row[_model->_colReverse];
     w->reversed = row[_model->_colReverse];
     
@@ -128,6 +146,21 @@ void OriginalPathArrayParam::on_reverse_toggled(const Glib::ustring& path)
     g_free(full);
     DocumentUndo::done(param_effect->getSPDoc(), SP_VERB_DIALOG_LIVE_PATH_EFFECT,
                        _("Link path parameter to path"));
+}
+
+void OriginalPathArrayParam::on_visible_toggled(const Glib::ustring& path)
+{
+    Gtk::TreeModel::iterator iter = _store->get_iter(path);
+    Gtk::TreeModel::Row row = *iter;
+    PathAndDirectionAndVisible *w = row[_model->_colObject];
+    row[_model->_colVisible] = !row[_model->_colVisible];
+    w->visibled = row[_model->_colVisible];
+    
+    gchar * full = param_getSVGValue();
+    param_write_to_repr(full);
+    g_free(full);
+    DocumentUndo::done(param_effect->getSPDoc(), SP_VERB_DIALOG_LIVE_PATH_EFFECT,
+                       _("Toggle path parameter to path"));
 }
 
 void OriginalPathArrayParam::param_set_default()
@@ -144,7 +177,8 @@ Gtk::Widget* OriginalPathArrayParam::param_newWidget()
     
     
     { // Paste path to link button
-        Gtk::Widget *pIcon = Gtk::manage( sp_icon_get_icon("edit-clone", Inkscape::ICON_SIZE_BUTTON) );
+        Gtk::Image *pIcon = Gtk::manage(new Gtk::Image());
+        pIcon->set_from_icon_name("edit-clone", Gtk::ICON_SIZE_BUTTON);
         Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
         pButton->set_relief(Gtk::RELIEF_NONE);
         pIcon->show();
@@ -156,7 +190,8 @@ Gtk::Widget* OriginalPathArrayParam::param_newWidget()
     }
     
     { // Remove linked path
-        Gtk::Widget *pIcon = Gtk::manage( sp_icon_get_icon("gtk-remove", Inkscape::ICON_SIZE_BUTTON) );
+        Gtk::Image *pIcon = Gtk::manage(new Gtk::Image());
+        pIcon->set_from_icon_name("gtk-remove", Gtk::ICON_SIZE_BUTTON);
         Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
         pButton->set_relief(Gtk::RELIEF_NONE);
         pIcon->show();
@@ -168,7 +203,8 @@ Gtk::Widget* OriginalPathArrayParam::param_newWidget()
     }
     
     { // Move Down
-        Gtk::Widget *pIcon = Gtk::manage( sp_icon_get_icon( "gtk-go-down", Inkscape::ICON_SIZE_BUTTON) );
+        Gtk::Image *pIcon = Gtk::manage(new Gtk::Image());
+        pIcon->set_from_icon_name( "gtk-go-down", Gtk::ICON_SIZE_BUTTON);
         Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
         pButton->set_relief(Gtk::RELIEF_NONE);
         pIcon->show();
@@ -180,7 +216,8 @@ Gtk::Widget* OriginalPathArrayParam::param_newWidget()
     }
     
     { // Move Down
-        Gtk::Widget *pIcon = Gtk::manage( sp_icon_get_icon( "gtk-go-up", Inkscape::ICON_SIZE_BUTTON) );
+        Gtk::Image *pIcon = Gtk::manage(new Gtk::Image());
+        pIcon->set_from_icon_name( "gtk-go-up", Gtk::ICON_SIZE_BUTTON);
         Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
         pButton->set_relief(Gtk::RELIEF_NONE);
         pIcon->show();
@@ -214,8 +251,8 @@ void OriginalPathArrayParam::on_up_button_click()
         Gtk::TreeModel::Row row = *iter;
         
         int i = -1;
-        std::vector<PathAndDirection*>::iterator piter = _vector.begin();
-        for (std::vector<PathAndDirection*>::iterator iter = _vector.begin(); iter != _vector.end(); piter = iter, i++, ++iter) {
+        std::vector<PathAndDirectionAndVisible*>::iterator piter = _vector.begin();
+        for (std::vector<PathAndDirectionAndVisible*>::iterator iter = _vector.begin(); iter != _vector.end(); piter = iter, i++, ++iter) {
             if (*iter == row[_model->_colObject]) {
                 _vector.erase(iter);
                 _vector.insert(piter, row[_model->_colObject]);
@@ -241,9 +278,9 @@ void OriginalPathArrayParam::on_down_button_click()
         Gtk::TreeModel::Row row = *iter;
 
         int i = 0;
-        for (std::vector<PathAndDirection*>::iterator iter = _vector.begin(); iter != _vector.end(); i++, ++iter) {
+        for (std::vector<PathAndDirectionAndVisible*>::iterator iter = _vector.begin(); iter != _vector.end(); i++, ++iter) {
             if (*iter == row[_model->_colObject]) {
-                std::vector<PathAndDirection*>::iterator niter = _vector.erase(iter);
+                std::vector<PathAndDirectionAndVisible*>::iterator niter = _vector.erase(iter);
                 if (niter != _vector.end()) {
                     ++niter;
                     i++;
@@ -285,37 +322,40 @@ void
 OriginalPathArrayParam::on_link_button_click()
 {
     Inkscape::UI::ClipboardManager *cm = Inkscape::UI::ClipboardManager::get();
-    Glib::ustring pathid = cm->getShapeOrTextObjectId(SP_ACTIVE_DESKTOP);
-
-    if (pathid == "") {
+    std::vector<Glib::ustring> pathsid = cm->getElementsOfType(SP_ACTIVE_DESKTOP, "svg:path");
+    std::vector<Glib::ustring> textsid = cm->getElementsOfType(SP_ACTIVE_DESKTOP, "svg:text");
+    pathsid.insert(pathsid.end(), textsid.begin(), textsid.end());
+    if (pathsid.empty()) {
         return;
     }
-    // add '#' at start to make it an uri.
-    pathid.insert(pathid.begin(), '#');
-    
-    Inkscape::SVGOStringStream os;
     bool foundOne = false;
-    for (std::vector<PathAndDirection*>::const_iterator iter = _vector.begin(); iter != _vector.end(); ++iter) {
+    Inkscape::SVGOStringStream os;
+    for (std::vector<PathAndDirectionAndVisible*>::const_iterator iter = _vector.begin(); iter != _vector.end(); ++iter) {
         if (foundOne) {
             os << "|";
         } else {
             foundOne = true;
         }
-        os << (*iter)->href << "," << ((*iter)->reversed ? "1" : "0");
+        os << (*iter)->href << "," << ((*iter)->reversed ? "1" : "0") << "," << ((*iter)->visibled ? "1" : "0");
     }
-    
-    if (foundOne) {
-        os << "|";
+    for (auto i=pathsid.begin();i!=pathsid.end();++i) {
+        Glib::ustring pathid = *i;
+        // add '#' at start to make it an uri.
+        pathid.insert(pathid.begin(), '#');
+
+        if (foundOne) {
+            os << "|";
+        } else {
+            foundOne = true;
+        }
+        os << pathid.c_str() << ",0,1";
     }
-    
-    os << pathid.c_str() << ",0";
-    
     param_write_to_repr(os.str().c_str());
     DocumentUndo::done(param_effect->getSPDoc(), SP_VERB_DIALOG_LIVE_PATH_EFFECT,
-                       _("Link path parameter to path"));
+                       _("Link patharray parameter to path"));
 }
 
-void OriginalPathArrayParam::unlink(PathAndDirection* to)
+void OriginalPathArrayParam::unlink(PathAndDirectionAndVisible* to)
 {
     to->linked_modified_connection.disconnect();
     to->linked_delete_connection.disconnect();
@@ -324,15 +364,15 @@ void OriginalPathArrayParam::unlink(PathAndDirection* to)
     if (to->href) {
         g_free(to->href);
         to->href = NULL;
-    }    
+    }
 }
 
-void OriginalPathArrayParam::remove_link(PathAndDirection* to)
+void OriginalPathArrayParam::remove_link(PathAndDirectionAndVisible* to)
 {
     unlink(to);
-    for (std::vector<PathAndDirection*>::iterator iter = _vector.begin(); iter != _vector.end(); ++iter) {
+    for (std::vector<PathAndDirectionAndVisible*>::iterator iter = _vector.begin(); iter != _vector.end(); ++iter) {
         if (*iter == to) {
-            PathAndDirection *w = *iter;
+            PathAndDirectionAndVisible *w = *iter;
             _vector.erase(iter);
             delete w;
             return;
@@ -340,7 +380,7 @@ void OriginalPathArrayParam::remove_link(PathAndDirection* to)
     }
 }
 
-void OriginalPathArrayParam::linked_delete(SPObject */*deleted*/, PathAndDirection* /*to*/)
+void OriginalPathArrayParam::linked_delete(SPObject */*deleted*/, PathAndDirectionAndVisible* /*to*/)
 {
     //remove_link(to);
     
@@ -349,7 +389,7 @@ void OriginalPathArrayParam::linked_delete(SPObject */*deleted*/, PathAndDirecti
     g_free(full);
 }
 
-bool OriginalPathArrayParam::_updateLink(const Gtk::TreeIter& iter, PathAndDirection* pd)
+bool OriginalPathArrayParam::_updateLink(const Gtk::TreeIter& iter, PathAndDirectionAndVisible* pd)
 {
     Gtk::TreeModel::Row row = *iter;
     if (row[_model->_colObject] == pd) {
@@ -360,35 +400,54 @@ bool OriginalPathArrayParam::_updateLink(const Gtk::TreeIter& iter, PathAndDirec
     return false;
 }
 
-void OriginalPathArrayParam::linked_changed(SPObject */*old_obj*/, SPObject *new_obj, PathAndDirection* to)
+void OriginalPathArrayParam::linked_changed(SPObject */*old_obj*/, SPObject *new_obj, PathAndDirectionAndVisible* to)
 {
     to->linked_delete_connection.disconnect();
     to->linked_modified_connection.disconnect();
     to->linked_transformed_connection.disconnect();
     
     if (new_obj && SP_IS_ITEM(new_obj)) {
-        to->linked_delete_connection = new_obj->connectDelete(sigc::bind<PathAndDirection*>(sigc::mem_fun(*this, &OriginalPathArrayParam::linked_delete), to));
-        to->linked_modified_connection = new_obj->connectModified(sigc::bind<PathAndDirection*>(sigc::mem_fun(*this, &OriginalPathArrayParam::linked_modified), to));
-        to->linked_transformed_connection = SP_ITEM(new_obj)->connectTransformed(sigc::bind<PathAndDirection*>(sigc::mem_fun(*this, &OriginalPathArrayParam::linked_transformed), to));
+        to->linked_delete_connection = new_obj->connectDelete(sigc::bind<PathAndDirectionAndVisible*>(sigc::mem_fun(*this, &OriginalPathArrayParam::linked_delete), to));
+        to->linked_modified_connection = new_obj->connectModified(sigc::bind<PathAndDirectionAndVisible*>(sigc::mem_fun(*this, &OriginalPathArrayParam::linked_modified), to));
+        to->linked_transformed_connection = SP_ITEM(new_obj)->connectTransformed(sigc::bind<PathAndDirectionAndVisible*>(sigc::mem_fun(*this, &OriginalPathArrayParam::linked_transformed), to));
 
         linked_modified(new_obj, SP_OBJECT_MODIFIED_FLAG, to);
     } else {
         to->_pathvector = Geom::PathVector();
         SP_OBJECT(param_effect->getLPEObj())->requestModified(SP_OBJECT_MODIFIED_FLAG);
-        _store->foreach_iter(sigc::bind<PathAndDirection*>(sigc::mem_fun(*this, &OriginalPathArrayParam::_updateLink), to));
+        _store->foreach_iter(sigc::bind<PathAndDirectionAndVisible*>(sigc::mem_fun(*this, &OriginalPathArrayParam::_updateLink), to));
     }
 }
 
-void OriginalPathArrayParam::setPathVector(SPObject *linked_obj, guint /*flags*/, PathAndDirection* to)
+void OriginalPathArrayParam::setPathVector(SPObject *linked_obj, guint /*flags*/, PathAndDirectionAndVisible* to)
 {
     if (!to) {
         return;
     }
     SPCurve *curve = NULL;
     if (SP_IS_SHAPE(linked_obj)) {
-        curve = SP_SHAPE(linked_obj)->getCurveBeforeLPE();
-    }
-    if (SP_IS_TEXT(linked_obj)) {
+        SPLPEItem * lpe_item = SP_LPE_ITEM(linked_obj);
+        if (_from_original_d) {
+            curve = SP_SHAPE(linked_obj)->getCurveForEdit();
+        } else if (_allow_only_bspline_spiro && lpe_item && lpe_item->hasPathEffect()){
+            curve = SP_SHAPE(linked_obj)->getCurveForEdit();
+            PathEffectList lpelist = lpe_item->getEffectList();
+            PathEffectList::iterator i;
+            for (i = lpelist.begin(); i != lpelist.end(); ++i) {
+                LivePathEffectObject *lpeobj = (*i)->lpeobject;
+                if (lpeobj) {
+                    Inkscape::LivePathEffect::Effect *lpe = lpeobj->get_lpe();
+                    if (dynamic_cast<Inkscape::LivePathEffect::LPEBSpline *>(lpe)) {
+                        LivePathEffect::sp_bspline_do_effect(curve, 0);
+                    } else if (dynamic_cast<Inkscape::LivePathEffect::LPESpiro *>(lpe)) {
+                        LivePathEffect::sp_spiro_do_effect(curve);
+                    }
+                }
+            }
+        } else {
+            curve = SP_SHAPE(linked_obj)->getCurve();
+        }
+    } else  if (SP_IS_TEXT(linked_obj)) {
         curve = SP_TEXT(linked_obj)->getNormalizedBpath();
     }
 
@@ -401,21 +460,21 @@ void OriginalPathArrayParam::setPathVector(SPObject *linked_obj, guint /*flags*/
     }
 }
 
-void OriginalPathArrayParam::linked_modified(SPObject *linked_obj, guint flags, PathAndDirection* to)
+void OriginalPathArrayParam::linked_modified(SPObject *linked_obj, guint flags, PathAndDirectionAndVisible* to)
 {
     if (!to) {
         return;
     }
     setPathVector(linked_obj, flags, to);
     SP_OBJECT(param_effect->getLPEObj())->requestModified(SP_OBJECT_MODIFIED_FLAG);
-    _store->foreach_iter(sigc::bind<PathAndDirection*>(sigc::mem_fun(*this, &OriginalPathArrayParam::_updateLink), to));
+    _store->foreach_iter(sigc::bind<PathAndDirectionAndVisible*>(sigc::mem_fun(*this, &OriginalPathArrayParam::_updateLink), to));
 }
 
 bool OriginalPathArrayParam::param_readSVGValue(const gchar* strvalue)
 {
     if (strvalue) {
         while (!_vector.empty()) {
-            PathAndDirection *w = _vector.back();
+            PathAndDirectionAndVisible *w = _vector.back();
             unlink(w);
             _vector.pop_back();
             delete w;
@@ -426,11 +485,12 @@ bool OriginalPathArrayParam::param_readSVGValue(const gchar* strvalue)
         for (gchar ** iter = strarray; *iter != NULL; iter++) {
             if ((*iter)[0] == '#') {
                 gchar ** substrarray = g_strsplit(*iter, ",", 0);
-                PathAndDirection* w = new PathAndDirection((SPObject *)param_effect->getLPEObj());
+                PathAndDirectionAndVisible* w = new PathAndDirectionAndVisible((SPObject *)param_effect->getLPEObj());
                 w->href = g_strdup(*substrarray);
                 w->reversed = *(substrarray+1) != NULL && (*(substrarray+1))[0] == '1';
-
-                w->linked_changed_connection = w->ref.changedSignal().connect(sigc::bind<PathAndDirection *>(sigc::mem_fun(*this, &OriginalPathArrayParam::linked_changed), w));
+                //Like this to make backwards compatible, new value added in 0.93
+                w->visibled = *(substrarray+2) == NULL || (*(substrarray+2))[0] == '1';
+                w->linked_changed_connection = w->ref.changedSignal().connect(sigc::bind<PathAndDirectionAndVisible *>(sigc::mem_fun(*this, &OriginalPathArrayParam::linked_changed), w));
                 w->ref.attach(URI(w->href));
 
                 _vector.push_back(w);
@@ -442,6 +502,7 @@ bool OriginalPathArrayParam::param_readSVGValue(const gchar* strvalue)
                 row[_model->_colObject] = w;
                 row[_model->_colLabel] = obj ? ( obj->label() ? obj->label() : obj->getId() ) : w->href;
                 row[_model->_colReverse] = w->reversed;
+                row[_model->_colVisible] = w->visibled;
                 g_strfreev (substrarray);
             }
         }
@@ -455,16 +516,28 @@ gchar * OriginalPathArrayParam::param_getSVGValue() const
 {
     Inkscape::SVGOStringStream os;
     bool foundOne = false;
-    for (std::vector<PathAndDirection*>::const_iterator iter = _vector.begin(); iter != _vector.end(); ++iter) {
+    for (std::vector<PathAndDirectionAndVisible*>::const_iterator iter = _vector.begin(); iter != _vector.end(); ++iter) {
         if (foundOne) {
             os << "|";
         } else {
             foundOne = true;
         }
-        os << (*iter)->href << "," << ((*iter)->reversed ? "1" : "0");
+        os << (*iter)->href << "," << ((*iter)->reversed ? "1" : "0") << "," << ((*iter)->visibled ? "1" : "0");
     }
-    gchar * str = g_strdup(os.str().c_str());
-    return str;
+    return g_strdup(os.str().c_str());
+}
+
+gchar * OriginalPathArrayParam::param_getDefaultSVGValue() const
+{
+    return g_strdup("");
+}
+
+void OriginalPathArrayParam::update()
+{
+    for (std::vector<PathAndDirectionAndVisible*>::iterator iter = _vector.begin(); iter != _vector.end(); ++iter) {
+        SPObject *linked_obj = (*iter)->ref.getObject();
+        linked_modified(linked_obj, SP_OBJECT_MODIFIED_FLAG, *iter);
+    }
 }
 
 } /* namespace LivePathEffect */

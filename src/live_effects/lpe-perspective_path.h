@@ -17,9 +17,9 @@
 #include "live_effects/parameter/parameter.h"
 #include "live_effects/parameter/bool.h"
 #include "live_effects/lpegroupbbox.h"
-#include "2geom/point.h"
 
 #include <vector>
+#include "2geom/point.h"
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -41,7 +41,7 @@ public:
     virtual Gtk::Widget * newWidget();
     /* the knotholder entity classes must be declared friends */
     friend class PP::KnotHolderEntityOffset;
-    void addKnotHolderEntities(KnotHolder *knotholder, SPDesktop *desktop, SPItem *item);
+    void addKnotHolderEntities(KnotHolder *knotholder, SPItem *item);
 
 private:
     // add the parameters for your effect here:

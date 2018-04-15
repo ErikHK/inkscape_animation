@@ -21,7 +21,7 @@
 #include <2geom/circle.h>
 #include <2geom/path-sink.h>
 #include "document.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-image.h"
 #include "sp-item-group.h"
 #include "sp-item.h"

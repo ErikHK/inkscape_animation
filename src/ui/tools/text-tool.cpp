@@ -42,7 +42,7 @@
 #include "selection.h"
 #include "ui/shape-editor.h"
 #include "sp-flowtext.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-text.h"
 #include "style.h"
 #include "ui/tools/text-tool.h"

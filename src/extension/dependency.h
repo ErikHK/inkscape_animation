@@ -39,7 +39,7 @@ class Dependency {
 
     /** \brief  All of the possible locations to look for the dependency. */
     enum location_t {
-        LOCATION_PATH,       /**< Look in the PATH for this depdendency */
+        LOCATION_PATH,       /**< Look in the PATH for this dependency */
         LOCATION_EXTENSIONS, /**< Look in the extensions directory */
         LOCATION_ABSOLUTE,   /**< This dependency is already defined in absolute terms */
         LOCATION_CNT         /**< Number of locations to look */

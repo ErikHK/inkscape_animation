@@ -15,13 +15,10 @@
 
 #include <gtkmm.h>
 #include "live_effects/lpe-roughen.h"
-#include "desktop.h"
 #include "display/curve.h"
-#include "live_effects/parameter/parameter.h"
 #include <boost/functional/hash.hpp>
 #include "helper/geom.h"
-#include "sp-item-group.h"
-#include <cmath>
+
 // TODO due to internal breakage in glibmm headers, this must be last:
 #include <glibmm/i18n.h>
 
@@ -123,7 +120,7 @@ Gtk::Widget *LPERoughen::newWidget()
                         Gtk::ALIGN_START));
                 method_label->set_use_markup(true);
                 vbox->pack_start(*method_label, false, false, 2);
-                vbox->pack_start(*Gtk::manage(new Gtk::HSeparator()),
+                vbox->pack_start(*Gtk::manage(new Gtk::Separator(Gtk::ORIENTATION_HORIZONTAL)),
                                  Gtk::PACK_EXPAND_WIDGET);
             }
             if (param->param_key == "displace_x") {
@@ -132,7 +129,7 @@ Gtk::Widget *LPERoughen::newWidget()
                                                  Gtk::ALIGN_START));
                 displace_x_label->set_use_markup(true);
                 vbox->pack_start(*displace_x_label, false, false, 2);
-                vbox->pack_start(*Gtk::manage(new Gtk::HSeparator()),
+                vbox->pack_start(*Gtk::manage(new Gtk::Separator(Gtk::ORIENTATION_HORIZONTAL)),
                                  Gtk::PACK_EXPAND_WIDGET);
             }
             if (param->param_key == "global_randomize") {
@@ -141,7 +138,7 @@ Gtk::Widget *LPERoughen::newWidget()
                                                  Gtk::ALIGN_START));
                 global_rand->set_use_markup(true);
                 vbox->pack_start(*global_rand, false, false, 2);
-                vbox->pack_start(*Gtk::manage(new Gtk::HSeparator()),
+                vbox->pack_start(*Gtk::manage(new Gtk::Separator(Gtk::ORIENTATION_HORIZONTAL)),
                                  Gtk::PACK_EXPAND_WIDGET);
             }
             if (param->param_key == "handles") {
@@ -150,7 +147,7 @@ Gtk::Widget *LPERoughen::newWidget()
                                                  Gtk::ALIGN_START));
                 options->set_use_markup(true);
                 vbox->pack_start(*options, false, false, 2);
-                vbox->pack_start(*Gtk::manage(new Gtk::HSeparator()),
+                vbox->pack_start(*Gtk::manage(new Gtk::Separator(Gtk::ORIENTATION_HORIZONTAL)),
                                  Gtk::PACK_EXPAND_WIDGET);
             }
             Glib::ustring *tip = param->param_getTooltip();
@@ -165,6 +162,9 @@ Gtk::Widget *LPERoughen::newWidget()
             }
         }
         ++it;
+    }
+    if(Gtk::Widget* widg = defaultParamSet()) {
+        vbox->pack_start(*widg, true, true, 2);
     }
     return dynamic_cast<Gtk::Widget *>(vbox);
 }

@@ -301,12 +301,14 @@ void Tween::setScale(SPObject * child, double width, double height)
 		SPStar * star = SP_STAR(child);
 	}
 
+	/*
 	if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
 	{
 		SPGroup * group = SP_GROUP(child);
 		group->transform.setExpansionX(width);
 		group->transform.setExpansionY(height);
 	}
+	*/
 }
 
 void Tween::setPosition(SPObject * child, Geom::Point p)
@@ -330,12 +332,14 @@ void Tween::setPosition(SPObject * child, Geom::Point p)
 		star->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
 	}
 
+	/*
 	if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
 	{
 		SPGroup * group = SP_GROUP(child);
 		group->transform.setTranslation(p);
 		group->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
 	}
+	*/
 }
 
 void Tween::update()
@@ -562,7 +566,8 @@ Tween::Tween(KeyframeWidget * start) {
 		}
 		
 		//else if a group, take special care later!
-		if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
+		//if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
+		if(SP_IS_GROUP(child))
 		{
 			end_x = SP_GROUP(child)->transform.translation()[0];
 			end_y = SP_GROUP(child)->transform.translation()[1];
@@ -587,7 +592,8 @@ Tween::Tween(KeyframeWidget * start) {
 		//get opacity
 		start_opacity = SP_ITEM(child)->style->opacity.value;
 		
-		if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
+		//if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
+		if(SP_IS_GROUP(child))
 		{
 			start_x = SP_GROUP(child)->transform.translation()[0];
 			start_y = SP_GROUP(child)->transform.translation()[1];

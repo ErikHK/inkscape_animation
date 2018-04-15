@@ -8,7 +8,8 @@
  *
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
-#include "sp-lpe-item.h"
+
+class SPLPEItem;
 
 #include <2geom/interval.h>
 
@@ -17,12 +18,13 @@ namespace LivePathEffect {
 
 class GroupBBoxEffect {
 protected:
-	// Bounding box of the item the path effect is applied on
+    // Bounding box of the item the path effect is applied on
     Geom::Interval boundingbox_X;
     Geom::Interval boundingbox_Y;
 
-	//This sets boundingbox_X and boundingbox_Y
-    void original_bbox(SPLPEItem const* lpeitem, bool absolute = false);
+    //This sets boundingbox_X and boundingbox_Y
+    Geom::OptRect clip_mask_bbox(SPLPEItem * item, Geom::Affine transform);
+    void original_bbox(SPLPEItem const* lpeitem, bool absolute = false, bool clip_mask = false);
 };
 
 }; //namespace LivePathEffect

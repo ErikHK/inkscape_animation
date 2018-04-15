@@ -27,7 +27,7 @@
 #include "extension/extension.h"
 #include "preferences.h"
 #include "document-private.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 
 #include "radiobutton.h"
 

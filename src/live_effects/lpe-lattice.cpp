@@ -6,7 +6,7 @@
  * Authors:
  *   Johan Engelen <j.b.c.engelen@utwente.nl>
  *   Steren Giannini
- *   Noé Falzon
+ *   Noï¿½ Falzon
  *   Victor Navez
 *
 * Copyright (C) 2007-2008 Authors 
@@ -16,23 +16,12 @@
 
 #include "live_effects/lpe-lattice.h"
 
-#include "sp-shape.h"
-#include "sp-item.h"
-#include "sp-path.h"
 #include "display/curve.h"
-#include "svg/svg.h"
 
-#include <2geom/sbasis.h>
 #include <2geom/sbasis-2d.h>
-#include <2geom/sbasis-geometric.h>
 #include <2geom/bezier-to-sbasis.h>
-#include <2geom/sbasis-to-bezier.h>
-#include <2geom/d2.h>
-#include <2geom/piecewise.h>
-#include <2geom/transforms.h>
-
-#include "desktop.h" // TODO: should be factored out (see below)
-
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 using namespace Geom;
 
 namespace Inkscape {
@@ -61,22 +50,22 @@ LPELattice::LPELattice(LivePathEffectObject *lpeobject) :
     
 {
     // register all your parameters here, so Inkscape knows which parameters this effect has:
-    registerParameter( dynamic_cast<Parameter *>(&grid_point0) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point1) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point2) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point3) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point4) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point5) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point6) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point7) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point8) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point9) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point10) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point11) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point12) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point13) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point14) );
-    registerParameter( dynamic_cast<Parameter *>(&grid_point15) );
+    registerParameter(&grid_point0);
+    registerParameter(&grid_point1);
+    registerParameter(&grid_point2);
+    registerParameter(&grid_point3);
+    registerParameter(&grid_point4);
+    registerParameter(&grid_point5);
+    registerParameter(&grid_point6);
+    registerParameter(&grid_point7);
+    registerParameter(&grid_point8);
+    registerParameter(&grid_point9);
+    registerParameter(&grid_point10);
+    registerParameter(&grid_point11);
+    registerParameter(&grid_point12);
+    registerParameter(&grid_point13);
+    registerParameter(&grid_point14);
+    registerParameter(&grid_point15);
 
     apply_to_clippath_and_mask = true;
 }
@@ -175,7 +164,7 @@ LPELattice::doEffect_pwd2 (Geom::Piecewise<Geom::D2<Geom::SBasis> > const & pwd2
 void
 LPELattice::doBeforeEffect (SPLPEItem const* lpeitem)
 {
-    original_bbox(lpeitem);
+    original_bbox(lpeitem, false, true);
 }
 
 void
@@ -183,7 +172,7 @@ LPELattice::resetDefaults(SPItem const* item)
 {
     Effect::resetDefaults(item);
 
-    original_bbox(SP_LPE_ITEM(item), false);
+    original_bbox(SP_LPE_ITEM(item), false, true);
     
     // place the 16 control points
     grid_point0[Geom::X] = boundingbox_X.min();

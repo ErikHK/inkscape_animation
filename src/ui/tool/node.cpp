@@ -9,28 +9,26 @@
 #include <iostream>
 #include <stdexcept>
 #include <boost/utility.hpp>
-#include "multi-path-manipulator.h"
+
 #include <glib/gi18n.h>
+#include <gdk/gdkkeysyms.h>
+
 #include <2geom/bezier-utils.h>
-#include <2geom/transforms.h>
+
+#include "desktop.h"
+#include "multi-path-manipulator.h"
+#include "snap.h"
+
 #include "display/sp-ctrlline.h"
 #include "display/sp-canvas.h"
 #include "display/sp-canvas-util.h"
-#include "desktop.h"
 
-#include "preferences.h"
-#include "snap.h"
-#include "snap-preferences.h"
-#include "sp-namedview.h"
 #include "ui/control-manager.h"
 #include "ui/tool/control-point-selection.h"
 #include "ui/tool/event-utils.h"
-#include "ui/tool/node.h"
 #include "ui/tool/path-manipulator.h"
 #include "ui/tools/node-tool.h"
 #include "ui/tools-switch.h"
-#include <gdk/gdkkeysyms.h>
-#include <cmath>
 
 namespace {
 
@@ -173,7 +171,7 @@ void Handle::move(Geom::Point const &new_pos)
         }
         setPosition(new_pos);
 
-        //move the handler and its oposite the same proportion
+        //move the handler and its opposite the same proportion
         if(_pm()._isBSpline()){
             setPosition(_pm()._bsplineHandleReposition(this, false));
             bspline_weight = _pm()._bsplineHandlePosition(this, false);
@@ -191,7 +189,7 @@ void Handle::move(Geom::Point const &new_pos)
             / Geom::L2sq(direction)) * direction;
         setRelativePos(new_delta);
 
-        //move the handler and its oposite the same proportion
+        //move the handler and its opposite the same proportion
         if(_pm()._isBSpline()){ 
             setPosition(_pm()._bsplineHandleReposition(this, false));
             bspline_weight = _pm()._bsplineHandlePosition(this, false);
@@ -218,7 +216,7 @@ void Handle::move(Geom::Point const &new_pos)
     }
     setPosition(new_pos);
 
-    // moves the handler and its oposite the same proportion
+    // moves the handler and its opposite the same proportion
     if(_pm()._isBSpline()){
         setPosition(_pm()._bsplineHandleReposition(this, false));
         bspline_weight = _pm()._bsplineHandlePosition(this, false);
@@ -312,7 +310,7 @@ bool Handle::_eventHandler(Inkscape::UI::Tools::ToolBase *event_context, GdkEven
     return ControlPoint::_eventHandler(event_context, event);
 }
 
-//this function moves the handler and its oposite to the default proportion of DEFAULT_START_POWER
+//this function moves the handler and its opposite to the default proportion of DEFAULT_START_POWER
 void Handle::handle_2button_press(){
     if(_pm()._isBSpline()){
         setPosition(_pm()._bsplineHandleReposition(this, DEFAULT_START_POWER));
@@ -331,10 +329,7 @@ bool Handle::grabbed(GdkEventMotion *)
 
 void Handle::dragged(Geom::Point &new_pos, GdkEventMotion *event)
 {
-    if (tools_isactive(_desktop, TOOLS_NODES)) {
-        Inkscape::UI::Tools::NodeTool *nt = static_cast<Inkscape::UI::Tools::NodeTool*>(_desktop->event_context);
-        nt->update_helperpath();
-    }
+    Inkscape::UI::Tools::sp_update_helperpath();
     Geom::Point parent_pos = _parent->position();
     Geom::Point origin = _last_drag_origin();
     SnapManager &sm = _desktop->namedview->snap_manager;
@@ -372,7 +367,7 @@ void Handle::dragged(Geom::Point &new_pos, GdkEventMotion *event)
             ctrl_constraint = Inkscape::Snapper::SnapConstraint(parent_pos, parent_pos - perp_pos);
         }
         new_pos = result;
-        // moves the handler and its oposite in X fixed positions depending on parameter "steps with control" 
+        // moves the handler and its opposite in X fixed positions depending on parameter "steps with control" 
         // by default in live BSpline
         if(_pm()._isBSpline()){
             setPosition(new_pos);
@@ -486,7 +481,7 @@ Glib::ustring Handle::_getTip(unsigned state) const
 {
     char const *more;
     // a trick to mark as bspline if the node has no strength, we are going to use it later
-    // to show the appropiate messages. We cannot do it in any different way becasue the function is constant
+    // to show the appropriate messages. We cannot do it in any different way because the function is constant
     Handle *h = const_cast<Handle *>(this);
     bool isBSpline = _pm()._isBSpline();
     bool can_shift_rotate = _parent->type() == NODE_CUSP && !other()->isDegenerate();
@@ -567,14 +562,11 @@ Glib::ustring Handle::_getDragTip(GdkEventMotion */*event*/) const
     Inkscape::Util::Quantity x_q = Inkscape::Util::Quantity(dist[Geom::X], "px");
     Inkscape::Util::Quantity y_q = Inkscape::Util::Quantity(dist[Geom::Y], "px");
     Inkscape::Util::Quantity len_q = Inkscape::Util::Quantity(length(), "px");
-    GString *x = g_string_new(x_q.string(_desktop->namedview->display_units).c_str());
-    GString *y = g_string_new(y_q.string(_desktop->namedview->display_units).c_str());
-    GString *len = g_string_new(len_q.string(_desktop->namedview->display_units).c_str());
+    Glib::ustring x = x_q.string(_desktop->namedview->display_units);
+    Glib::ustring y = y_q.string(_desktop->namedview->display_units);
+    Glib::ustring len = len_q.string(_desktop->namedview->display_units);
     Glib::ustring ret = format_tip(C_("Path handle tip",
-        "Move handle by %s, %s; angle %.2f°, length %s"), x->str, y->str, angle, len->str);
-    g_string_free(x, TRUE);
-    g_string_free(y, TRUE);
-    g_string_free(len, TRUE);
+        "Move handle by %s, %s; angle %.2f°, length %s"), x.c_str(), y.c_str(), angle, len.c_str());
     return ret;
 }
 
@@ -761,7 +753,7 @@ void Node::_updateAutoHandles()
         return;
     }
 
-    // Auto nodes automaticaly adjust their handles to give an appearance of smoothness,
+    // Auto nodes automatically adjust their handles to give an appearance of smoothness,
     // no matter what their surroundings are.
     Geom::Point vec_next = _next()->position() - position();
     Geom::Point vec_prev = _prev()->position() - position();
@@ -891,7 +883,7 @@ void Node::setType(NodeType type, bool update_handles)
             break;
         default: break;
         }
-        /* in node type changes, about bspline traces, we can mantain them with NO_POWER power in border mode,
+        /* in node type changes, about bspline traces, we can maintain them with NO_POWER power in border mode,
            or we give them the default power in curve mode */
         if(_pm()._isBSpline()){
             double weight = NO_POWER;
@@ -1204,10 +1196,7 @@ bool Node::grabbed(GdkEventMotion *event)
 
 void Node::dragged(Geom::Point &new_pos, GdkEventMotion *event)
 {
-    if (tools_isactive(_desktop, TOOLS_NODES)) {
-        Inkscape::UI::Tools::NodeTool *nt = static_cast<Inkscape::UI::Tools::NodeTool*>(_desktop->event_context);
-        nt->update_helperpath();
-    }
+    Inkscape::UI::Tools::sp_update_helperpath();
     // For a note on how snapping is implemented in Inkscape, see snap.h.
     SnapManager &sm = _desktop->namedview->snap_manager;
     // even if we won't really snap, we might still call the one of the
@@ -1469,11 +1458,9 @@ Glib::ustring Node::_getDragTip(GdkEventMotion */*event*/) const
     
     Inkscape::Util::Quantity x_q = Inkscape::Util::Quantity(dist[Geom::X], "px");
     Inkscape::Util::Quantity y_q = Inkscape::Util::Quantity(dist[Geom::Y], "px");
-    GString *x = g_string_new(x_q.string(_desktop->namedview->display_units).c_str());
-    GString *y = g_string_new(y_q.string(_desktop->namedview->display_units).c_str());
-    Glib::ustring ret = format_tip(C_("Path node tip", "Move node by %s, %s"), x->str, y->str);
-    g_string_free(x, TRUE);
-    g_string_free(y, TRUE);
+    Glib::ustring x = x_q.string(_desktop->namedview->display_units);
+    Glib::ustring y = y_q.string(_desktop->namedview->display_units);
+    Glib::ustring ret = format_tip(C_("Path node tip", "Move node by %s, %s"), x.c_str(), y.c_str());
     return ret;
 }
 

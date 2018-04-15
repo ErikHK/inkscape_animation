@@ -12,11 +12,8 @@
  */
 
 #include "live_effects/lpe-ruler.h"
-#include <2geom/piecewise.h>
-#include <2geom/sbasis-geometric.h>
-#include "inkscape.h"
-#include "desktop.h"
-
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -48,15 +45,15 @@ LPERuler::LPERuler(LivePathEffectObject *lpeobject) :
     offset(_("_Offset:"), _("Offset of first mark"), "offset", &wr, this, 0.0),
     border_marks(_("Border marks:"), _("Choose whether to draw marks at the beginning and end of the path"), "border_marks", BorderMarkTypeConverter, &wr, this, BORDERMARK_BOTH)
 {
-    registerParameter(dynamic_cast<Parameter *>(&unit));
-    registerParameter(dynamic_cast<Parameter *>(&mark_distance));
-    registerParameter(dynamic_cast<Parameter *>(&mark_length));
-    registerParameter(dynamic_cast<Parameter *>(&minor_mark_length));
-    registerParameter(dynamic_cast<Parameter *>(&major_mark_steps));
-    registerParameter(dynamic_cast<Parameter *>(&shift));
-    registerParameter(dynamic_cast<Parameter *>(&offset));
-    registerParameter(dynamic_cast<Parameter *>(&mark_dir));
-    registerParameter(dynamic_cast<Parameter *>(&border_marks));
+    registerParameter(&unit);
+    registerParameter(&mark_distance);
+    registerParameter(&mark_length);
+    registerParameter(&minor_mark_length);
+    registerParameter(&major_mark_steps);
+    registerParameter(&shift);
+    registerParameter(&offset);
+    registerParameter(&mark_dir);
+    registerParameter(&border_marks);
 
     major_mark_steps.param_make_integer();
     major_mark_steps.param_set_range(1, 1000);
@@ -81,9 +78,12 @@ LPERuler::ruler_mark(Geom::Point const &A, Geom::Point const &n, MarkType const 
     using namespace Geom;
 
     double real_mark_length = mark_length;
-    real_mark_length = Inkscape::Util::Quantity::convert(real_mark_length, unit.get_abbreviation(), "px");
+    SPDocument * document = SP_ACTIVE_DOCUMENT;
+    SPNamedView *nv = sp_document_namedview(document, NULL);
+    Glib::ustring display_unit = nv->display_units->abbr;
+    real_mark_length = Inkscape::Util::Quantity::convert(real_mark_length, unit.get_abbreviation(), display_unit.c_str());
     double real_minor_mark_length = minor_mark_length;
-    real_minor_mark_length = Inkscape::Util::Quantity::convert(real_minor_mark_length, unit.get_abbreviation(), "px");
+    real_minor_mark_length = Inkscape::Util::Quantity::convert(real_minor_mark_length, unit.get_abbreviation(), display_unit.c_str());
 
     n_major = real_mark_length * n;
     n_minor = real_minor_mark_length * n;
@@ -133,10 +133,13 @@ LPERuler::doEffect_pwd2 (Geom::Piecewise<Geom::D2<Geom::SBasis> > const & pwd2_i
     std::vector<double> s_cuts;
 
     double real_mark_distance = mark_distance;
-    real_mark_distance = Inkscape::Util::Quantity::convert(real_mark_distance, unit.get_abbreviation(), "px");
+    SPDocument * document = SP_ACTIVE_DOCUMENT;
+    SPNamedView *nv = sp_document_namedview(document, NULL);
+    Glib::ustring display_unit = nv->display_units->abbr;
+    real_mark_distance = Inkscape::Util::Quantity::convert(real_mark_distance, unit.get_abbreviation(), display_unit.c_str());
 
     double real_offset = offset;
-    real_offset = Inkscape::Util::Quantity::convert(real_offset, unit.get_abbreviation(), "px");
+    real_offset = Inkscape::Util::Quantity::convert(real_offset, unit.get_abbreviation(), display_unit.c_str());
     for (double s = real_offset; s<totlength; s+=real_mark_distance){
         s_cuts.push_back(s);
     }
@@ -168,7 +171,7 @@ LPERuler::doEffect_pwd2 (Geom::Piecewise<Geom::D2<Geom::SBasis> > const & pwd2_i
     if (border_marks == BORDERMARK_END || border_marks == BORDERMARK_BOTH){
         Point A = pwd2_in.lastValue();
         Point n = rot90(unit_vector(speed.lastValue()))*sign;
-        //speed.lastValue() is somtimes wrong when the path is closed: a tiny line seg might added at the end to fix rounding errors...
+        //speed.lastValue() is sometimes wrong when the path is closed: a tiny line seg might added at the end to fix rounding errors...
         //TODO: Find a better fix!! (How do we know if the path was closed?)
         if ( A == pwd2_in.firstValue() &&
              speed.segs.size() > 1 &&

@@ -24,7 +24,7 @@
 #include "layer-manager.h"
 #include "message-stack.h"
 
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "sp-item.h"
 #include "verbs.h"
 #include "selection.h"

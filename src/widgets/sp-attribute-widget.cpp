@@ -27,7 +27,7 @@
 #include <sigc++/functors/ptr_fun.h>
 #include <sigc++/adaptors/bind.h>
 
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "xml/repr.h"
 #include "macros.h"
 #include "document.h"

@@ -48,7 +48,7 @@
 #include "path-prefix.h"
 #include "selection.h"
 #include "sp-linear-gradient.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-pattern.h"
 #include "sp-radial-gradient.h"
 #include "sp-rect.h"

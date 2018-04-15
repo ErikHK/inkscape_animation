@@ -37,7 +37,7 @@
 #include "rubberband.h"
 #include "selection.h"
 #include "snap.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "verbs.h"
 #include "sp-text.h"
 #include "sp-defs.h"

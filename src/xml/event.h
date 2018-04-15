@@ -167,8 +167,8 @@ private:
 class EventChgAttr : public Event {
 public:
     EventChgAttr(Node *repr, GQuark k,
-                 Inkscape::Util::ptr_shared<char> ov,
-                 Inkscape::Util::ptr_shared<char> nv,
+                 Inkscape::Util::ptr_shared ov,
+                 Inkscape::Util::ptr_shared nv,
                  Event *next)
     : Event(repr, next), key(k),
       oldval(ov), newval(nv) {}
@@ -176,9 +176,9 @@ public:
     /// GQuark corresponding to the changed attribute's name
     GQuark key;
     /// Value of the attribute before the change
-    Inkscape::Util::ptr_shared<char> oldval;
+    Inkscape::Util::ptr_shared oldval;
     /// Value of the attribute after the change
-    Inkscape::Util::ptr_shared<char> newval;
+    Inkscape::Util::ptr_shared newval;
 
 private:
     Event *_optimizeOne();
@@ -192,15 +192,15 @@ private:
 class EventChgContent : public Event {
 public:
     EventChgContent(Node *repr,
-                    Inkscape::Util::ptr_shared<char> ov,
-                    Inkscape::Util::ptr_shared<char> nv,
+                    Inkscape::Util::ptr_shared ov,
+                    Inkscape::Util::ptr_shared nv,
                     Event *next)
     : Event(repr, next), oldval(ov), newval(nv) {}
 
     /// Content of the node before the change
-    Inkscape::Util::ptr_shared<char> oldval;
+    Inkscape::Util::ptr_shared oldval;
     /// Content of the node after the change
-    Inkscape::Util::ptr_shared<char> newval;
+    Inkscape::Util::ptr_shared newval;
 
 private:
     Event *_optimizeOne();
@@ -209,7 +209,7 @@ private:
 };
 
 /**
- * @brief Obect representing child order change
+ * @brief Object representing child order change
  */
 class EventChgOrder : public Event {
 public:

@@ -25,15 +25,16 @@
 #include "selection.h"
 #include "xml/repr.h"
 #include "xml/attribute-record.h"
-#include "sp-item.h"
-#include "sp-shape.h"
-#include "sp-image.h"
 #include <2geom/transforms.h>
 #include "verbs.h"
 
 #include "display/cairo-utils.h"
 #include "display/drawing.h"
 #include "display/drawing-shape.h"
+
+#include "object/sp-item.h"
+#include "object/sp-shape.h"
+#include "object/sp-image.h"
 
 #include "siox.h"
 #include "imagemap-gdk.h"
@@ -65,7 +66,7 @@ SPImage *Tracer::getSelectedSPImage()
     if (sioxEnabled)
         {
         SPImage *img = NULL;
-        std::vector<SPItem*> const list = sel->itemList();
+        auto list = sel->items();
         std::vector<SPItem *> items;
         sioxShapes.clear();
 
@@ -74,7 +75,7 @@ SPImage *Tracer::getSelectedSPImage()
            them as bottom-to-top so that we can discover the image and any
            SPItems above it
         */
-        for (std::vector<SPItem*>::const_iterator i=list.begin() ; list.end()!=i ; ++i)
+        for (auto i=list.begin() ; list.end()!=i ; ++i)
             {
             if (!SP_IS_ITEM(*i))
                 {
@@ -527,7 +528,7 @@ void Tracer::traceThread()
         if (reprobj)
             {
             SPItem *newItem = SP_ITEM(reprobj);
-            newItem->doWriteTransform(pathRepr, tf, NULL);
+            newItem->doWriteTransform(tf);
             }
         if (nrPaths == 1)
             {

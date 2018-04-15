@@ -23,58 +23,53 @@
 
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include <config.h>
 #endif
 
-#include "ui/dialog/dialog-manager.h"
 #include <glibmm/i18n.h>
-#include <sigc++/functors/mem_fun.h>
-
 #include <2geom/transforms.h>
+
 #include <2geom/rect.h>
 
-#include "ui/tools/box3d-tool.h"
-#include "color.h"
-#include "desktop-events.h"
 #include "desktop.h"
 
+#include "color.h"
+#include "desktop-events.h"
 #include "desktop-style.h"
 #include "device-manager.h"
+#include "document-undo.h"
+#include "event-log.h"
+#include "layer-fns.h"
+#include "layer-manager.h"
+#include "message-context.h"
+#include "message-stack.h"
+#include "resource-manager.h"
+
 #include "display/canvas-arena.h"
+#include "display/canvas-debug.h"
 #include "display/canvas-grid.h"
+#include "display/canvas-rotate.h"
 #include "display/canvas-temporary-item-list.h"
 #include "display/drawing-group.h"
 #include "display/gnome-canvas-acetate.h"
-#include "display/drawing.h"
 #include "display/snap-indicator.h"
 #include "display/sodipodi-ctrlrect.h"
 #include "display/sp-canvas-group.h"
-#include "display/sp-canvas.h"
 #include "display/sp-canvas-util.h"
-#include "document.h"
-#include "document-undo.h"
-#include "event-log.h"
+
 #include "helper/action-context.h"
-#include "ui/interface.h"
-#include "layer-fns.h"
-#include "layer-manager.h"
-#include "layer-model.h"
-#include "macros.h"
-#include "message-context.h"
-#include "message-stack.h"
-#include "preferences.h"
-#include "resource-manager.h"
-#include "ui/tools/select-tool.h"
-#include "selection.h"
-#include "sp-item-group.h"
-#include "sp-item-group.h"
-#include "sp-namedview.h"
-#include "sp-root.h"
-#include "sp-defs.h"
-#include "ui/tool-factory.h"
-#include "widgets/desktop-widget.h"
-#include "xml/repr.h"
 #include "helper/action.h" //sp_action_perform
+
+#include "object/sp-namedview.h"
+#include "object/sp-root.h"
+
+#include "ui/dialog/dialog-manager.h"
+#include "ui/interface.h"
+#include "ui/tool-factory.h"
+#include "ui/tools/box3d-tool.h"
+#include "ui/tools/select-tool.h"
+
+#include "widgets/desktop-widget.h"
 
 // TODO those includes are only for node tool quick zoom. Remove them after fixing it.
 #include "ui/tools/node-tool.h"
@@ -111,7 +106,6 @@ SPDesktop::SPDesktop() :
     sketch( NULL ),
     controls( NULL ),
     tempgroup ( NULL ),
-    table( NULL ),
     page( NULL ),
     page_border( NULL ),
     current( NULL ),
@@ -122,14 +116,6 @@ SPDesktop::SPDesktop() :
     interaction_disabled_counter( 0 ),
     waiting_cursor( false ),
     showing_dialogs ( false ),
-	fade_previous_layers(true),
-	show_all_keyframes(false),
-	is_playing(false),
-	//start_loop_keyframe(1),
-	//end_loop_keyframe(90),
-	animation_start(1),
-	animation_stop(10),
-	fps(20),
     guides_active( false ),
     gr_item( NULL ),
     gr_point_type( POINT_LG_BEGIN ),
@@ -141,16 +127,10 @@ SPDesktop::SPDesktop() :
     _widget( NULL ),
     _guides_message_context( NULL ),
     _active( false ),
-    _w2d(),
-    _d2w(),
     _doc2dt( Geom::Scale(1, -1) ),
     _image_render_observer(this, "/options/rendering/imageinoutlinemode"),
     grids_visible( false )
 {
-	
-    _d2w.setIdentity();
-    _w2d.setIdentity();
-    
     layers = new Inkscape::LayerModel();
     layers->_layer_activated_signal.connect(sigc::bind(sigc::ptr_fun(_layer_activated), this));
     layers->_layer_deactivated_signal.connect(sigc::bind(sigc::ptr_fun(_layer_deactivated), this));
@@ -213,18 +193,14 @@ SPDesktop::init (SPNamedView *nv, SPCanvas *aCanvas, Inkscape::UI::View::EditWid
 
     SPCanvasGroup *root = canvas->getRoot();
 
-    /* Setup adminstrative layers */
+    /* Setup administrative layers */
     acetate = sp_canvas_item_new (root, GNOME_TYPE_CANVAS_ACETATE, NULL);
     g_signal_connect (G_OBJECT (acetate), "event", G_CALLBACK (sp_desktop_root_handler), this);
     main = (SPCanvasGroup *) sp_canvas_item_new (root, SP_TYPE_CANVAS_GROUP, NULL);
     g_signal_connect (G_OBJECT (main), "event", G_CALLBACK (sp_desktop_root_handler), this);
 
     /* This is the background the page sits on. */
-    table = sp_canvas_item_new (main, SP_TYPE_CTRLRECT, NULL);
-    SP_CTRLRECT(table)->setRectangle(Geom::Rect(Geom::Point(-80000, -80000), Geom::Point(80000, 80000)));
-    SP_CTRLRECT(table)->setColor(0x00000000, true, 0x00000000);
-    SP_CTRLRECT(table)->setCheckerboard( false );
-    sp_canvas_item_move_to_z (table, 0);
+    canvas->setBackgroundColor(0xffffff00);
 
     page = sp_canvas_item_new (main, SP_TYPE_CTRLRECT, NULL);
     ((CtrlRect *) page)->setColor(0x00000000, FALSE, 0x00000000);
@@ -251,13 +227,13 @@ SPDesktop::init (SPNamedView *nv, SPCanvas *aCanvas, Inkscape::UI::View::EditWid
     // being selected? or does it intercept some of the events that should have gone to the
     // node handler? see bug https://bugs.launchpad.net/inkscape/+bug/414142)
     gridgroup = (SPCanvasGroup *) sp_canvas_item_new (main, SP_TYPE_CANVAS_GROUP, NULL);
-    guides = (SPCanvasGroup *) sp_canvas_item_new (main, SP_TYPE_CANVAS_GROUP, NULL);
-    sketch = (SPCanvasGroup *) sp_canvas_item_new (main, SP_TYPE_CANVAS_GROUP, NULL);
+    guides    = (SPCanvasGroup *) sp_canvas_item_new (main, SP_TYPE_CANVAS_GROUP, NULL);
+    sketch    = (SPCanvasGroup *) sp_canvas_item_new (main, SP_TYPE_CANVAS_GROUP, NULL);
     tempgroup = (SPCanvasGroup *) sp_canvas_item_new (main, SP_TYPE_CANVAS_GROUP, NULL);
-    controls = (SPCanvasGroup *) sp_canvas_item_new (main, SP_TYPE_CANVAS_GROUP, NULL);
+    controls  = (SPCanvasGroup *) sp_canvas_item_new (main, SP_TYPE_CANVAS_GROUP, NULL);
 
     // Set the select tool as the active tool.
-    set_event_context2("/tools/select");
+    setEventContext("/tools/select");
 
     // display rect and zoom are now handled in sp_desktop_widget_realize()
 
@@ -282,7 +258,8 @@ SPDesktop::init (SPNamedView *nv, SPCanvas *aCanvas, Inkscape::UI::View::EditWid
     _doc2dt[5] = document->getHeight().value("px");
     sp_canvas_item_affine_absolute (SP_CANVAS_ITEM (drawing), _doc2dt);
 
-    _modified_connection = namedview->connectModified(sigc::bind<2>(sigc::ptr_fun(&_namedview_modified), this));
+    _modified_connection =
+        namedview->connectModified(sigc::bind<2>(sigc::ptr_fun(&_namedview_modified), this));
 
     Inkscape::DrawingItem *ai = document->getRoot()->invoke_show(
             SP_CANVAS_ARENA (drawing)->drawing,
@@ -344,8 +321,11 @@ SPDesktop::init (SPNamedView *nv, SPCanvas *aCanvas, Inkscape::UI::View::EditWid
 
     temporary_item_list = new Inkscape::Display::TemporaryItemList( this );
     snapindicator = new Inkscape::Display::SnapIndicator ( this );
-}
 
+    canvas_rotate = sp_canvas_item_new (root, SP_TYPE_CANVAS_ROTATE, NULL);
+    sp_canvas_item_hide( canvas_rotate );
+    // canvas_debug = sp_canvas_item_new (main, SP_TYPE_CANVAS_DEBUG, NULL);
+}
 
 void SPDesktop::destroy()
 {
@@ -355,6 +335,7 @@ void SPDesktop::destroy()
         delete snapindicator;
         snapindicator = NULL;
     }
+
     if (temporary_item_list) {
         delete temporary_item_list;
         temporary_item_list = NULL;
@@ -379,12 +360,6 @@ void SPDesktop::destroy()
     g_signal_handlers_disconnect_by_func(G_OBJECT (acetate), (gpointer) G_CALLBACK(sp_desktop_root_handler), this);
     g_signal_handlers_disconnect_by_func(G_OBJECT (main), (gpointer) G_CALLBACK(sp_desktop_root_handler), this);
     g_signal_handlers_disconnect_by_func(G_OBJECT (drawing), (gpointer) G_CALLBACK(_arena_handler), this);
-
-    if (event_context) {
-        event_context->finish();
-    	delete event_context;
-    	event_context = NULL;
-    }
 
     delete layers;
 
@@ -505,7 +480,7 @@ SPDesktop::remove_temporary_canvasitem (Inkscape::Display::TemporaryItem * tempi
 }
 
 void SPDesktop::redrawDesktop() {
-    sp_canvas_item_affine_absolute (SP_CANVAS_ITEM (main), _d2w); // redraw
+    sp_canvas_item_affine_absolute (SP_CANVAS_ITEM (main), _current_affine.d2w()); // redraw
 }
 
 void SPDesktop::_setDisplayMode(Inkscape::RenderMode mode) {
@@ -680,34 +655,34 @@ SPDesktop::change_document (SPDocument *theDocument)
 }
 
 /**
- * Replaces the currently active tool with a new one.
+ * Replaces the currently active tool with a new one. Pass the empty string to
+ * unset and free the current tool.
  */
-void SPDesktop::set_event_context2(const std::string& toolName)
+void SPDesktop::setEventContext(const std::string& toolName)
 {
-    Inkscape::UI::Tools::ToolBase* old_tool = event_context;
-
-    if (old_tool) {
-        if (toolName.compare(old_tool->pref_observer->observed_path) != 0) {
-            //g_message("Old tool: %s", old_tool->pref_observer->observed_path.c_str());
-            //g_message("New tool: %s", toolName.c_str());
-            old_tool->finish();
-            delete old_tool;
+    if (event_context) {
+        if (toolName.compare(event_context->pref_observer->observed_path) != 0) {
+            event_context->finish();
+            delete event_context;
         } else {
             _event_context_changed_signal.emit(this, event_context);
             return;
         }
     }
-    
-    Inkscape::UI::Tools::ToolBase* new_tool = ToolFactory::createObject(toolName);
-    new_tool->desktop = this;
-    new_tool->message_context = new Inkscape::MessageContext(this->messageStack());
-    event_context = new_tool;
-    new_tool->setup();
 
-    // Make sure no delayed snapping events are carried over after switching tools
-    // (this is only an additional safety measure against sloppy coding, because each
-    // tool should take care of this by itself)
-    sp_event_context_discard_delayed_snap_event(event_context);
+    if (toolName.empty()) {
+        event_context = nullptr;
+    } else {
+        event_context = ToolFactory::createObject(toolName);
+        event_context->desktop = this;
+        event_context->message_context = new Inkscape::MessageContext(this->messageStack());
+        event_context->setup();
+
+        // Make sure no delayed snapping events are carried over after switching tools
+        // (this is only an additional safety measure against sloppy coding, because each
+        // tool should take care of this by itself)
+        sp_event_context_discard_delayed_snap_event(event_context);
+    }
 
     _event_context_changed_signal.emit(this, event_context);
 }
@@ -759,306 +734,223 @@ Geom::Point SPDesktop::point() const
 {
     Geom::Point p = _widget->getPointer();
     Geom::Point pw = sp_canvas_window_to_world (canvas, p);
-    p = w2d(pw);
-
     Geom::Rect const r = canvas->getViewbox();
 
+    if (r.interiorContains(pw)) {
+        p = w2d(pw);
+        return p;
+    }
+
+    // Shouldn't happen
+    std::cerr << "SPDesktop::point(): point outside of canvas!" << std::endl;
     Geom::Point r0 = w2d(r.min());
     Geom::Point r1 = w2d(r.max());
-
-    if (p[Geom::X] >= r0[Geom::X] &&
-        p[Geom::X] <= r1[Geom::X] &&
-        p[Geom::Y] >= r1[Geom::Y] &&
-        p[Geom::Y] <= r0[Geom::Y])
-    {
-        return p;
-    } else {
-        return (r0 + r1) / 2;
-    }
+    return (r0 + r1) / 2.0;
 }
 
+
 /**
- * Put current zoom data in history list.
+ * Revert back to previous transform if possible. Note: current transform is
+ * always at front of stack.
  */
 void
-SPDesktop::push_current_zoom (std::list<Geom::Rect> &history)
+SPDesktop::prev_transform()
 {
-    Geom::Rect area = get_display_area();
-
-    if (history.empty() || history.front() != area) {
-        history.push_front(area);
+    if (transforms_past.empty()) {
+        std::cerr << "SPDesktop::prev_transform: current transform missing!" << std::endl;
+        return;
     }
+
+    if (transforms_past.size() == 1) {
+        messageStack()->flash(Inkscape::WARNING_MESSAGE, _("No previous transform."));
+        return;
+    }
+
+    // Push current transform into future transforms list.
+    transforms_future.push_front( _current_affine );
+
+    // Remove the current transform from the past transforms list.
+    transforms_past.pop_front();
+
+    // restore previous transform
+    _current_affine = transforms_past.front();
+    set_display_area (false);
+
 }
 
+
 /**
- * Set viewbox (x0, x1, y0 and y1 are in document pixels. Border is in screen pixels).
+ * Set transform to next in list.
+ */
+void SPDesktop::next_transform()
+{
+    if (transforms_future.empty()) {
+        this->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("No next transform."));
+        return;
+    }
+
+    // restore next transform
+    _current_affine = transforms_future.front();
+    set_display_area (false);
+
+    // remove the just-used transform from the future transforms list
+    transforms_future.pop_front();
+
+    // push current transform into past transforms list
+    transforms_past.push_front( _current_affine );
+}
+
+
+/**
+ * Clear transform lists.
  */
 void
-SPDesktop::set_display_area (double x0, double y0, double x1, double y1, double border, bool log)
+SPDesktop::clear_transform_history()
 {
-    g_assert(_widget);
-    bool zoomChanged = false;
+    transforms_past.clear();
+    transforms_future.clear();
+}
 
-    // save the zoom
+
+/**
+ * Does all the dirty work in setting the display area.
+ * _current_affine must already be full updated (including offset).
+ * log: if true, save transform in transform stack for reuse.
+ */
+void
+SPDesktop::set_display_area (bool log)
+{
+    // Save the transform
     if (log) {
-        push_current_zoom(zooms_past);
-        // if we do a logged zoom, our zoom-forward list is invalidated, so delete it
-        zooms_future.clear();
+        transforms_past.push_front( _current_affine );
+        // if we do a logged transform, our transform-forward list is invalidated, so delete it
+        transforms_future.clear();
     }
 
-    double const cx = 0.5 * (x0 + x1);
-    double const cy = 0.5 * (y0 + y1);
-
-    // FIXME: This 2geom idiom doesn't allow us to declare dbox const
-    Geom::Rect viewbox = canvas->getViewbox();
-    viewbox.expandBy(-border);
-
-    double scale = _d2w.descrim();
-    double newscale;
-    if (((x1 - x0) * viewbox.dimensions()[Geom::Y]) > ((y1 - y0) * viewbox.dimensions()[Geom::X])) {
-        newscale = viewbox.dimensions()[Geom::X] / (x1 - x0);
-    } else {
-        newscale = viewbox.dimensions()[Geom::Y] / (y1 - y0);
-    }
-
-    newscale = CLAMP(newscale, SP_DESKTOP_ZOOM_MIN, SP_DESKTOP_ZOOM_MAX); // unit: 'screen pixels' per 'document pixels'
-
-    int clear = FALSE;
-    if (!Geom::are_near(newscale, scale, Geom::EPSILON * scale)) {
-        // zoom changed - set new zoom factors
-        _d2w = Geom::Scale(newscale, -newscale);
-        _w2d = Geom::Scale(1/newscale, 1/-newscale);
-        redrawDesktop();
-        clear = TRUE;
-        zoomChanged = true;
-    }
-
-    /* Calculate top left corner (in document pixels) */
-    x0 = cx - 0.5 * viewbox.dimensions()[Geom::X] / newscale;
-    y1 = cy + 0.5 * viewbox.dimensions()[Geom::Y] / newscale;
+    redrawDesktop();
 
     // Scroll
-    canvas->scrollTo(x0 * newscale - border, y1 * -newscale - border, clear);
+    Geom::Point offset = _current_affine.getOffset();
+    canvas->scrollTo(offset, true);
+    // To do: if transform unchanged call with 'false' (redraw only newly exposed areas).
 
-    /*  update perspective lines if we are in the 3D box tool (so that infinite ones are shown correctly) */
-    //sp_box3d_context_update_lines(event_context);
+    /* Update perspective lines if we are in the 3D box tool (so that infinite ones are shown
+     * correctly) */
     if (SP_IS_BOX3D_CONTEXT(event_context)) {
     	SP_BOX3D_CONTEXT(event_context)->_vpdrag->updateLines();
     }
 
     _widget->updateRulers();
-    _widget->updateScrollbars(_d2w.descrim());
+    _widget->updateScrollbars(_current_affine.getZoom());
     _widget->updateZoom();
+    _widget->updateRotation();
 
-    if ( zoomChanged ) {
-        signal_zoom_changed.emit(_d2w.descrim());
-    }
+    signal_zoom_changed.emit(_current_affine.getZoom());
 }
 
-void SPDesktop::set_display_area(Geom::Rect const &a, Geom::Coord b, bool log)
-{
-    set_display_area(a.min()[Geom::X], a.min()[Geom::Y], a.max()[Geom::X], a.max()[Geom::Y], b, log);
-}
 
 /**
- * Return viewbox dimensions.
+ * Map the drawing to the window so that 'c' lies at 'w' where where 'c'
+ * is a point on the canvas and 'w' is position in window in screen pixels.
+ */
+void
+SPDesktop::set_display_area (Geom::Point const &c, Geom::Point const &w, bool log)
+{
+    // The relative offset needed to keep c at w.
+    Geom::Point offset = d2w(c) - w;
+    _current_affine.addOffset( offset );
+    set_display_area( log );
+}
+
+
+/**
+ * Map the center of rectangle 'r' (which specifies a non-rotated region of the
+ * drawing) to lie at the center of the window. The zoom factor is calculated such that
+ * the edges of 'r' closest to 'w' are 'border' length inside of the window (if
+ * there is no rotation). 'r' is in document pixel units, 'border' is in screen pixels.
+ */
+void
+SPDesktop::set_display_area( Geom::Rect const &r, double border, bool log)
+{
+    // Create a rectangle the size of the window aligned with origin.
+    Geom::Rect w( Geom::Point(), canvas->getViewbox().dimensions() ); // Not the SVG 'viewBox'.
+
+    // Shrink window to account for border padding.
+    w.expandBy( -border );
+
+    double zoom = 1.0;
+    // Determine which direction limits scale:
+    //   if (r.width/w.width > r.height/w.height) then zoom using width.
+    //   Avoiding division in test:
+    if ( r.width()*w.height() > r.height()*w.width() ) {
+        zoom = w.width() / r.width();
+    } else {
+        zoom = w.height() / r.height();
+    }
+    _current_affine.setScale( zoom );
+
+    // Zero offset, actual offset calculated later.
+    _current_affine.setOffset( Geom::Point( 0, 0 ) );
+
+    set_display_area( r.midpoint(), w.midpoint(), log );
+}
+
+
+/**
+ * Return viewbox dimensions. FixMe: Doesn't handle rotation. FixMe InvertedY
  */
 Geom::Rect SPDesktop::get_display_area() const
 {
     Geom::Rect const viewbox = canvas->getViewbox();
-
-    double const scale = _d2w[0];
+    double const scale = _current_affine.getZoom();
 
     /// @fixme hardcoded desktop transform
     return Geom::Rect(Geom::Point(viewbox.min()[Geom::X] / scale, viewbox.max()[Geom::Y] / -scale),
                       Geom::Point(viewbox.max()[Geom::X] / scale, viewbox.min()[Geom::Y] / -scale));
 }
 
+
 /**
- * Revert back to previous zoom if possible.
+ * Zoom keeping the point 'c' fixed in the desktop window.
  */
 void
-SPDesktop::prev_zoom()
+SPDesktop::zoom_absolute_keep_point (Geom::Point const &c, double zoom)
 {
-    if (zooms_past.empty()) {
-        messageStack()->flash(Inkscape::WARNING_MESSAGE, _("No previous zoom."));
-        return;
-    }
-
-    // push current zoom into forward zooms list
-    push_current_zoom (zooms_future);
-
-    // restore previous zoom
-    Geom::Rect past = zooms_past.front();
-    set_display_area (past.left(), past.top(), past.right(), past.bottom(), 0, false);
-
-    // remove the just-added zoom from the past zooms list
-    zooms_past.pop_front();
+    zoom = CLAMP (zoom, SP_DESKTOP_ZOOM_MIN, SP_DESKTOP_ZOOM_MAX);    
+    Geom::Point w = d2w( c ); // Must be before zoom changed.
+    _current_affine.setScale( zoom );
+    set_display_area( c, w );
 }
 
-/**
- * Set zoom to next in list.
- */
-void SPDesktop::next_zoom()
+
+void 
+SPDesktop::zoom_relative_keep_point (Geom::Point const &c, double zoom)
 {
-    if (zooms_future.empty()) {
-        this->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("No next zoom."));
-        return;
-    }
-
-    // push current zoom into past zooms list
-    push_current_zoom (zooms_past);
-
-    // restore next zoom
-    Geom::Rect future = zooms_future.front();
-    set_display_area (future.left(), future.top(), future.right(), future.bottom(), 0, false);
-
-    // remove the just-used zoom from the zooms_future list
-    zooms_future.pop_front();
+    double new_zoom = _current_affine.getZoom() * zoom;
+    zoom_absolute_keep_point( c, new_zoom );
 }
 
-/**
- * Performs a quick zoom into what the user is working on.
- *
- * @param  enable  Whether we're going in or out of quick zoom.
- */
-void SPDesktop::zoom_quick(bool enable)
-{
-    if (enable == _quick_zoom_enabled) {
-        return;
-    }
-
-    if (enable == true) {
-        _quick_zoom_stored_area = get_display_area();
-        bool zoomed = false;
-
-        // TODO This needs to migrate into the node tool, but currently the design
-        // of this method is sufficiently wrong to prevent this.
-        if (!zoomed && INK_IS_NODE_TOOL(event_context)) {
-            Inkscape::UI::Tools::NodeTool *nt = static_cast<Inkscape::UI::Tools::NodeTool*>(event_context);
-            if (!nt->_selected_nodes->empty()) {
-                Geom::Rect nodes = *nt->_selected_nodes->bounds();
-                double area = nodes.area();
-                // do not zoom if a single cusp node is selected aand the bounds
-                // have zero area.
-                if (!Geom::are_near(area, 0) && area * 2.0 < _quick_zoom_stored_area.area()) {
-                    set_display_area(nodes, true);
-                    zoomed = true;
-                }
-            }
-        }
-
-        if (!zoomed) {
-            Geom::OptRect const d = selection->visualBounds();
-            if (d && d->area() * 2.0 < _quick_zoom_stored_area.area()) {
-                set_display_area(*d, true);
-                zoomed = true;
-            }
-        }
-
-        if (!zoomed) {
-            zoom_relative(_quick_zoom_stored_area.midpoint()[Geom::X], _quick_zoom_stored_area.midpoint()[Geom::Y], 2.0);
-        }
-    } else {
-        set_display_area(_quick_zoom_stored_area, false);
-    }
-
-    _quick_zoom_enabled = enable;
-    return;
-}
 
 /**
- * Zoom to point with absolute zoom factor.
+ * Zoom aligning the point 'c' to the center of desktop window.
  */
-void
-SPDesktop::zoom_absolute_keep_point (double cx, double cy, double px, double py, double zoom)
+void 
+SPDesktop::zoom_absolute_center_point (Geom::Point const &c, double zoom)
 {
     zoom = CLAMP (zoom, SP_DESKTOP_ZOOM_MIN, SP_DESKTOP_ZOOM_MAX);
-
-    // maximum or minimum zoom reached, but there's no exact equality because of rounding errors;
-    // this check prevents "sliding" when trying to zoom in at maximum zoom;
-    /// \todo someone please fix calculations properly and remove this hack
-    if (fabs(_d2w.descrim() - zoom) < 0.0001*zoom && (fabs(SP_DESKTOP_ZOOM_MAX - zoom) < 0.01 || fabs(SP_DESKTOP_ZOOM_MIN - zoom) < 0.000001))
-        return;
-
-    Geom::Rect const viewbox = canvas->getViewbox();
-
-    double const width2 = viewbox.dimensions()[Geom::X] / zoom;
-    double const height2 = viewbox.dimensions()[Geom::Y] / zoom;
-
-    set_display_area(cx - px * width2,
-                     cy - py * height2,
-                     cx + (1 - px) * width2,
-                     cy + (1 - py) * height2,
-                     0.0);
+    _current_affine.setScale( zoom );
+    Geom::Rect viewbox = canvas->getViewbox();
+    set_display_area( c, viewbox.midpoint() );
 }
 
-/**
-  * Apply the desktop's current style or the tool style to the object.
-  */
-void SPDesktop::applyCurrentOrToolStyle(SPObject *obj, Glib::ustring const &tool_path, bool with_text)
+
+void 
+SPDesktop::zoom_relative_center_point (Geom::Point const &c, double zoom)
 {
-    SPCSSAttr *css_current = sp_desktop_get_style(this, with_text);
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-
-    if (prefs->getBool(tool_path + "/usecurrent") && css_current) {
-        obj->setCSS(css_current,"style");
-    } else {
-        SPCSSAttr *css = prefs->getInheritedStyle(tool_path + "/style");
-        obj->setCSS(css,"style");
-        sp_repr_css_attr_unref(css);
-    }
-    if (css_current) {
-        sp_repr_css_attr_unref(css_current);
-    }
+    double new_zoom = _current_affine.getZoom() * zoom;
+    zoom_absolute_center_point( c, new_zoom );
 }
 
-/**
- * Zoom to center with absolute zoom factor.
- */
-void
-SPDesktop::zoom_absolute (double cx, double cy, double zoom)
-{
-    zoom_absolute_keep_point (cx, cy, 0.5, 0.5, zoom);
-}
-
-/**
- * Zoom to point with relative zoom factor.
- */
-void
-SPDesktop::zoom_relative_keep_point (double cx, double cy, double zoom)
-{
-    Geom::Rect const area = get_display_area();
-
-    if (cx < area.min()[Geom::X]) {
-        cx = area.min()[Geom::X];
-    }
-    if (cx > area.max()[Geom::X]) {
-        cx = area.max()[Geom::X];
-    }
-    if (cy < area.min()[Geom::Y]) {
-        cy = area.min()[Geom::Y];
-    }
-    if (cy > area.max()[Geom::Y]) {
-        cy = area.max()[Geom::Y];
-    }
-
-    gdouble const scale = _d2w.descrim() * zoom;
-    double const px = (cx - area.min()[Geom::X]) / area.dimensions()[Geom::X];
-    double const py = (cy - area.min()[Geom::Y]) / area.dimensions()[Geom::Y];
-
-    zoom_absolute_keep_point(cx, cy, px, py, scale);
-}
-
-/**
- * Zoom to center with relative zoom factor.
- */
-void
-SPDesktop::zoom_relative (double cx, double cy, double zoom)
-{
-    gdouble scale = _d2w.descrim() * zoom;
-    zoom_absolute (cx, cy, scale);
-}
 
 /**
  * Set display area to origin and current document dimensions.
@@ -1094,29 +986,6 @@ SPDesktop::zoom_page_width()
     set_display_area(d, 10);
 }
 
-/**
- * Zoom to selection.
- */
-void
-SPDesktop::zoom_selection()
-{
-    Geom::OptRect const d = selection->visualBounds();
-
-    if ( !d || d->minExtent() < 0.1 ) {
-        return;
-    }
-
-    set_display_area(*d, 10);
-}
-
-/**
- * Tell widget to let zoom widget grab keyboard focus.
- */
-void
-SPDesktop::zoom_grab_focus()
-{
-    _widget->letZoomGrabFocus();
-}
 
 /**
  * Zoom to whole drawing.
@@ -1141,27 +1010,179 @@ SPDesktop::zoom_drawing()
     set_display_area(*d, 10);
 }
 
+
 /**
- * Scroll canvas by specific coordinate amount in svg coordinates.
+ * Zoom to selection.
  */
 void
-SPDesktop::scroll_world_in_svg_coords (double dx, double dy, bool is_scrolling)
+SPDesktop::zoom_selection()
 {
-    double scale = _d2w.descrim();
-    scroll_world(dx*scale, dy*scale, is_scrolling);
+    Geom::OptRect const d = selection->visualBounds();
+
+    if ( !d || d->minExtent() < 0.1 ) {
+        return;
+    }
+
+    set_display_area(*d, 10);
 }
 
+
 /**
- * Scroll canvas by specific coordinate amount.
+ * Performs a quick zoom into what the user is working on.
+ *
+ * @param  enable  Whether we're going in or out of quick zoom.
+ */
+void SPDesktop::zoom_quick(bool enable)
+{
+    if (enable == _quick_zoom_enabled) {
+        return;
+    }
+
+    if (enable) {
+        _quick_zoom_affine = _current_affine;
+        bool zoomed = false;
+
+        // TODO This needs to migrate into the node tool, but currently the design
+        // of this method is sufficiently wrong to prevent this.
+        if (!zoomed && INK_IS_NODE_TOOL(event_context)) {
+            Inkscape::UI::Tools::NodeTool *nt = static_cast<Inkscape::UI::Tools::NodeTool*>(event_context);
+            if (!nt->_selected_nodes->empty()) {
+                Geom::Rect nodes = *nt->_selected_nodes->bounds();
+                double area = nodes.area();
+                // do not zoom if a single cusp node is selected aand the bounds
+                // have zero area.
+                if (!Geom::are_near(area, 0)) {
+                    set_display_area(nodes, true);
+                    zoomed = true;
+                }
+            }
+        }
+
+        if (!zoomed) {
+            Geom::OptRect const d = selection->visualBounds();
+            if (d) {
+                set_display_area(*d, true);
+                zoomed = true;
+            }
+        }
+
+        if (!zoomed) {
+            Geom::Rect const d_canvas = canvas->getViewbox(); // Not SVG 'viewBox'
+            Geom::Point midpoint = w2d(d_canvas.midpoint()); // Midpoint of drawing on canvas.
+            zoom_relative_center_point(midpoint, 2.0);
+        }
+    } else {
+        _current_affine = _quick_zoom_affine;
+        set_display_area( false );
+    }
+
+    _quick_zoom_enabled = enable;
+    return;
+}
+
+
+/**
+ * Tell widget to let zoom widget grab keyboard focus.
  */
 void
-SPDesktop::scroll_world (double dx, double dy, bool is_scrolling)
+SPDesktop::zoom_grab_focus()
 {
-    g_assert(_widget);
+    _widget->letZoomGrabFocus();
+}
 
-    Geom::Rect const viewbox = canvas->getViewbox();
 
-    canvas->scrollTo(viewbox.min()[Geom::X] - dx, viewbox.min()[Geom::Y] - dy, FALSE, is_scrolling);
+/**
+ * Rotate keeping the point 'c' fixed in the desktop window.
+ */
+void
+SPDesktop::rotate_absolute_keep_point (Geom::Point const &c, double rotate)
+{
+    Geom::Point w = d2w( c ); // Must be before rotate changed.
+    _current_affine.setRotate( rotate );
+    set_display_area( c, w );
+}
+
+
+void 
+SPDesktop::rotate_relative_keep_point (Geom::Point const &c, double rotate)
+{
+    Geom::Point w = d2w( c ); // Must be before rotate changed.
+    _current_affine.addRotate( rotate );
+    set_display_area( c, w );
+}
+
+
+/**
+ * Rotate aligning the point 'c' to the center of desktop window.
+ */
+void 
+SPDesktop::rotate_absolute_center_point (Geom::Point const &c, double rotate)
+{
+    _current_affine.setRotate( rotate );
+    Geom::Rect viewbox = canvas->getViewbox();
+    set_display_area( c, viewbox.midpoint() );
+}
+
+
+void 
+SPDesktop::rotate_relative_center_point (Geom::Point const &c, double rotate)
+{
+    _current_affine.addRotate( rotate );
+    Geom::Rect viewbox = canvas->getViewbox();
+    set_display_area( c, viewbox.midpoint() );
+}
+
+
+/**
+ * Flip keeping the point 'c' fixed in the desktop window.
+ */
+void
+SPDesktop::flip_absolute_keep_point (Geom::Point const &c, CanvasFlip flip)
+{
+    Geom::Point w = d2w( c ); // Must be before flip.
+    _current_affine.setFlip( flip );
+    set_display_area( c, w );
+}
+
+
+void
+SPDesktop::flip_relative_keep_point (Geom::Point const &c, CanvasFlip flip)
+{
+    Geom::Point w = d2w( c ); // Must be before flip.
+    _current_affine.addFlip( flip );
+    set_display_area( c, w );
+}
+
+
+/**
+ * Flip aligning the point 'c' to the center of desktop window.
+ */
+void 
+SPDesktop::flip_absolute_center_point (Geom::Point const &c, CanvasFlip flip)
+{
+    _current_affine.setFlip( flip );
+    Geom::Rect viewbox = canvas->getViewbox();
+    set_display_area( c, viewbox.midpoint() );
+}
+
+
+void 
+SPDesktop::flip_relative_center_point (Geom::Point const &c, CanvasFlip flip)
+{
+    _current_affine.addFlip( flip );
+    Geom::Rect viewbox = canvas->getViewbox();
+    set_display_area( c, viewbox.midpoint() );
+}
+
+
+/**
+ * Scroll canvas by to a particular point (window coordinates).
+ */
+void
+SPDesktop::scroll_absolute (Geom::Point const &point, bool is_scrolling)
+{
+    canvas->scrollTo(point, FALSE, is_scrolling);
+    _current_affine.setOffset( point );
 
     /*  update perspective lines if we are in the 3D box tool (so that infinite ones are shown correctly) */
     //sp_box3d_context_update_lines(event_context);
@@ -1170,54 +1191,59 @@ SPDesktop::scroll_world (double dx, double dy, bool is_scrolling)
 	}
 
     _widget->updateRulers();
-    _widget->updateScrollbars(_d2w.descrim());
+    _widget->updateScrollbars(_current_affine.getZoom());
 }
 
+
+/**
+ * Scroll canvas by specific coordinate amount (window coordinates).
+ */
+void
+SPDesktop::scroll_relative (Geom::Point const &delta, bool is_scrolling)
+{
+    Geom::Rect const viewbox = canvas->getViewbox();
+    scroll_absolute( viewbox.min() - delta, is_scrolling );
+}
+
+
+/**
+ * Scroll canvas by specific coordinate amount in svg coordinates.
+ */
+void
+SPDesktop::scroll_relative_in_svg_coords (double dx, double dy, bool is_scrolling)
+{
+    double scale = _current_affine.getZoom();
+    scroll_relative(Geom::Point(dx*scale, dy*scale), is_scrolling);
+}
+
+
+/**
+ * Scroll screen so as to keep point 'p' visible in window.
+ * (Used, for example, when a node is being dragged.)
+ * 'p': The point in desktop coordinates.
+ * 'autoscrollspeed': The scroll speed (or zero to use preferences' value).
+ */
 bool
 SPDesktop::scroll_to_point (Geom::Point const &p, gdouble autoscrollspeed)
 {
-    using Geom::X;
-    using Geom::Y;
-
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+
+    // autoscrolldistance is in screen pixels.
     gdouble autoscrolldistance = (gdouble) prefs->getIntLimited("/options/autoscrolldistance/value", 0, -1000, 10000);
 
-    // autoscrolldistance is in screen pixels, but the display area is in document units
-    autoscrolldistance /= _d2w.descrim();
-    // FIXME: This 2geom idiom doesn't allow us to declare dbox const
-    Geom::Rect dbox = get_display_area();
-    dbox.expandBy(-autoscrolldistance);
+    Geom::Rect w = canvas->getViewbox(); // Window in screen coordinates.
+    w.expandBy(-autoscrolldistance);  // Shrink window
 
-    if (!(p[X] > dbox.min()[X] && p[X] < dbox.max()[X]) ||
-        !(p[Y] > dbox.min()[Y] && p[Y] < dbox.max()[Y])   ) {
+    Geom::Point c = d2w(p);  // Point 'p' in screen coordinates.
+    if (!w.contains(c)) {
 
-        Geom::Point const s_w( p * (Geom::Affine)_d2w );
-
-        gdouble x_to;
-        if (p[X] < dbox.min()[X])
-            x_to = dbox.min()[X];
-        else if (p[X] > dbox.max()[X])
-            x_to = dbox.max()[X];
-        else
-            x_to = p[X];
-
-        gdouble y_to;
-        if (p[Y] < dbox.min()[Y])
-            y_to = dbox.min()[Y];
-        else if (p[Y] > dbox.max()[Y])
-            y_to = dbox.max()[Y];
-        else
-            y_to = p[Y];
-
-        Geom::Point const d_dt(x_to, y_to);
-        Geom::Point const d_w( d_dt * _d2w );
-        Geom::Point const moved_w( d_w - s_w );
+        Geom::Point c2 = w.clamp(c); // Constrain c to window.
 
         if (autoscrollspeed == 0)
             autoscrollspeed = prefs->getDoubleLimited("/options/autoscrollspeed/value", 1, 0, 10);
 
         if (autoscrollspeed != 0)
-            scroll_world (autoscrollspeed * moved_w);
+            scroll_relative (autoscrollspeed * (c2 - c) );
 
         return true;
     }
@@ -1406,6 +1432,28 @@ SPDesktop::onWindowStateEvent (GdkEventWindowState* event)
     return false;
 }
 
+
+/**
+  * Apply the desktop's current style or the tool style to the object.
+  */
+void SPDesktop::applyCurrentOrToolStyle(SPObject *obj, Glib::ustring const &tool_path, bool with_text)
+{
+    SPCSSAttr *css_current = sp_desktop_get_style(this, with_text);
+    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+
+    if (prefs->getBool(tool_path + "/usecurrent") && css_current) {
+        obj->setCSS(css_current,"style");
+    } else {
+        SPCSSAttr *css = prefs->getInheritedStyle(tool_path + "/style");
+        obj->setCSS(css,"style");
+        sp_repr_css_attr_unref(css);
+    }
+    if (css_current) {
+        sp_repr_css_attr_unref(css_current);
+    }
+}
+
+
 void
 SPDesktop::setToolboxFocusTo (gchar const *label)
 {
@@ -1437,12 +1485,6 @@ SPDesktop::emitToolSubselectionChanged(gpointer data)
     INKSCAPE.subselection_changed (this);
 }
 
-void
-SPDesktop::emitTweenExpansion(SPObject * obj)
-{
-	_tween_expansion_signal.emit(obj);
-}
-
 void SPDesktop::updateNow()
 {
     canvas->updateNow();
@@ -1464,11 +1506,7 @@ void SPDesktop::setWaitingCursor()
     GdkDisplay *display = gdk_display_get_default();
     GdkCursor  *waiting = gdk_cursor_new_for_display(display, GDK_WATCH);
     gdk_window_set_cursor(gtk_widget_get_window(GTK_WIDGET(getCanvas())), waiting);
-#if GTK_CHECK_VERSION(3,0,0)
-    g_object_unref(waiting);
-#else
     gdk_cursor_unref(waiting);
-#endif
     // GDK needs the flush for the cursor change to take effect
     gdk_flush();
     waiting_cursor = true;
@@ -1565,13 +1603,18 @@ SPDesktop::setDocument (SPDocument *doc)
     }
 
     layers->setDocument(doc);
+    selection->setDocument(doc);
 
-	// remove old EventLog if it exists (see also: bug #1071082)
-	if (event_log) {
-		doc->removeUndoObserver(*event_log);
-		delete event_log;
-		event_log = 0;
-	}
+    if (event_log) {
+        // Remove it from the replaced document. This prevents Inkscape from
+        // crashing since we access it in the replaced document's destructor
+        // which results in an undefined behavior. (See also: bug #1670688)
+        if (this->doc()) {
+            this->doc()->removeUndoObserver(*event_log);
+        }
+        delete event_log;
+        event_log = 0;
+    }
 
     /* setup EventLog */
     event_log = new Inkscape::EventLog(doc);
@@ -1658,7 +1701,7 @@ SPDesktop::_onSelectionModified
 (Inkscape::Selection */*selection*/, guint /*flags*/, SPDesktop *dt)
 {
     if (!dt->_widget) return;
-    dt->_widget->updateScrollbars (dt->_d2w.descrim());
+    dt->_widget->updateScrollbars (dt->_current_affine.getZoom());
 }
 
 static void
@@ -1748,17 +1791,11 @@ static void _namedview_modified (SPObject *obj, guint flags, SPDesktop *desktop)
     SPNamedView *nv=SP_NAMEDVIEW(obj);
 
     if (flags & SP_OBJECT_MODIFIED_FLAG) {
-
-        /* Set page background */
-        sp_canvas_item_show (desktop->table);
         if (nv->pagecheckerboard) {
-            ((CtrlRect *) desktop->table)->setCheckerboard( true );
-            ((CtrlRect *) desktop->table)->setColor(0x00000000, true, nv->pagecolor ); // | 0xff);
+            desktop->canvas->setBackgroundCheckerboard();
         } else {
-            ((CtrlRect *) desktop->table)->setCheckerboard( false );
-            ((CtrlRect *) desktop->table)->setColor(0x00000000, true, nv->pagecolor | 0xff);
+            desktop->canvas->setBackgroundColor(nv->pagecolor);
         }
-        sp_canvas_item_move_to_z (desktop->table, 0);
 
         /* Show/hide page border */
         if (nv->showborder) {
@@ -1771,7 +1808,7 @@ static void _namedview_modified (SPObject *obj, guint flags, SPDesktop *desktop)
             }
             // place in the z-order stack
             if (nv->borderlayer == SP_BORDER_LAYER_BOTTOM) {
-                 sp_canvas_item_move_to_z (desktop->page_border, 2);
+                 sp_canvas_item_move_to_z (desktop->page_border, 1);
             } else {
                 int order = sp_canvas_item_order (desktop->page_border);
                 int morder = sp_canvas_item_order (desktop->drawing);
@@ -1806,17 +1843,17 @@ static void _namedview_modified (SPObject *obj, guint flags, SPDesktop *desktop)
 
 Geom::Affine SPDesktop::w2d() const
 {
-    return _w2d;
+    return _current_affine.w2d();
 }
 
 Geom::Point SPDesktop::w2d(Geom::Point const &p) const
 {
-    return p * _w2d;
+    return p * _current_affine.w2d();
 }
 
 Geom::Point SPDesktop::d2w(Geom::Point const &p) const
 {
-    return p * _d2w;
+    return p * _current_affine.d2w();
 }
 
 Geom::Affine SPDesktop::doc2dt() const
@@ -1870,7 +1907,6 @@ SPDesktop::show_dialogs()
     mapVerbPreference.insert(std::make_pair ("FillAndStroke", "/dialogs/fillstroke") );
     mapVerbPreference.insert(std::make_pair ("ExtensionEditor", "/dialogs/extensioneditor") );
     mapVerbPreference.insert(std::make_pair ("AlignAndDistribute", "/dialogs/align") );
-	mapVerbPreference.insert(std::make_pair ("AnimationDialog", "/dialogs/animation") );
     mapVerbPreference.insert(std::make_pair ("DocumentMetadata", "/dialogs/documentmetadata") );
     mapVerbPreference.insert(std::make_pair ("DocumentProperties", "/dialogs/documentoptions") );
     mapVerbPreference.insert(std::make_pair ("FilterEffectsDialog", "/dialogs/filtereffects") );
@@ -1898,11 +1934,18 @@ SPDesktop::show_dialogs()
     mapVerbPreference.insert(std::make_pair ("Symbols", "/dialogs/symbols") );
     mapVerbPreference.insert(std::make_pair ("ObjectsPanel", "/dialogs/objects") );
     mapVerbPreference.insert(std::make_pair ("TagsPanel", "/dialogs/tags") );
+    mapVerbPreference.insert(std::make_pair ("Prototype", "/dialogs/prototype") );
+
 
     for (std::map<Glib::ustring, Glib::ustring>::const_iterator iter = mapVerbPreference.begin(); iter != mapVerbPreference.end(); ++iter) {
         Glib::ustring pref = iter->second;
         int visible = prefs->getInt(pref + "/visible", 0);
         if (visible) {
+
+            // Try to ensure that the panel is created attached to the correct desktop (bug 1720096).
+            // There must be a better way of handling this problem!
+            INKSCAPE.activate_desktop(this);
+
             _dlg_mgr->showDialog(iter->first.c_str(), false); // without grabbing focus, we need focus to remain on the canvas
         }
     }

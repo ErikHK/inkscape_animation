@@ -1,4 +1,7 @@
+
 #include "helper-observer.h"
+
+#include "object/sp-object.h"
 
 namespace Inkscape {
 namespace XML {
@@ -44,10 +47,10 @@ void SignalObserver::notifyChildRemoved(XML::Node&, XML::Node&, XML::Node*)
 void SignalObserver::notifyChildOrderChanged(XML::Node&, XML::Node&, XML::Node*, XML::Node*)
 { signal_changed()(); }
 
-void SignalObserver::notifyContentChanged(XML::Node&, Util::ptr_shared<char>, Util::ptr_shared<char>)
+void SignalObserver::notifyContentChanged(XML::Node&, Util::ptr_shared, Util::ptr_shared)
 {}
 
-void SignalObserver::notifyAttributeChanged(XML::Node&, GQuark, Util::ptr_shared<char>, Util::ptr_shared<char>)
+void SignalObserver::notifyAttributeChanged(XML::Node&, GQuark, Util::ptr_shared, Util::ptr_shared)
 { signal_changed()(); }
 
 sigc::signal<void>& SignalObserver::signal_changed()

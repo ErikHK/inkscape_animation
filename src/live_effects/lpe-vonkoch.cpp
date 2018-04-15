@@ -5,10 +5,8 @@
  */
 
 #include "live_effects/lpe-vonkoch.h"
-
+// TODO due to internal breakage in glibmm headers, this must be last:
 #include <glibmm/i18n.h>
-
-#include <2geom/transforms.h>
 
 //using std::vector;
 namespace Inkscape {
@@ -55,15 +53,15 @@ LPEVonKoch::LPEVonKoch(LivePathEffectObject *lpeobject) :
     maxComplexity(_("_Max complexity:"), _("Disable effect if the output is too complex"), "maxComplexity", &wr, this, 1000)
 {
     //FIXME: a path is used here instead of 2 points to work around path/point param incompatibility bug.
-    registerParameter( dynamic_cast<Parameter *>(&ref_path) );
-    //registerParameter( dynamic_cast<Parameter *>(&refA) );
-    //registerParameter( dynamic_cast<Parameter *>(&refB) );
-    registerParameter( dynamic_cast<Parameter *>(&generator) );
-    registerParameter( dynamic_cast<Parameter *>(&similar_only) );
-    registerParameter( dynamic_cast<Parameter *>(&nbgenerations) );
-    registerParameter( dynamic_cast<Parameter *>(&drawall) );
-    registerParameter( dynamic_cast<Parameter *>(&maxComplexity) );
-    //registerParameter( dynamic_cast<Parameter *>(&draw_boxes) );
+    registerParameter(&ref_path);
+    //registerParameter(&refA) );
+    //registerParameter(&refB) );
+    registerParameter(&generator);
+    registerParameter(&similar_only);
+    registerParameter(&nbgenerations);
+    registerParameter(&drawall);
+    registerParameter(&maxComplexity);
+    //registerParameter(&draw_boxes) );
     apply_to_clippath_and_mask = true;
     nbgenerations.param_make_integer();
     nbgenerations.param_set_range(0, Geom::infinity());
@@ -171,7 +169,7 @@ LPEVonKoch::doEffect_path (Geom::PathVector const & path_in)
 }
 
 
-//Usefull?? 
+//Useful?? 
 //void 
 //LPEVonKoch::addCanvasIndicators(SPLPEItem const */*lpeitem*/, std::vector<Geom::PathVector> &hp_vec)
 /*{
@@ -241,7 +239,7 @@ void
 LPEVonKoch::doBeforeEffect (SPLPEItem const* lpeitem)
 {
     using namespace Geom;
-    original_bbox(lpeitem);
+    original_bbox(lpeitem, false, true);
     
     Geom::PathVector paths = ref_path.get_pathvector();
     Geom::Point A,B;
@@ -271,7 +269,7 @@ LPEVonKoch::resetDefaults(SPItem const* item)
     Effect::resetDefaults(item);
 
     using namespace Geom;
-    original_bbox(SP_LPE_ITEM(item));
+    original_bbox(SP_LPE_ITEM(item), false, true);
 
     Point A,B;
     A[Geom::X] = boundingbox_X.min();

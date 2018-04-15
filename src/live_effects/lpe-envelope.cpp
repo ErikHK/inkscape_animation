@@ -5,22 +5,10 @@
  */
 
 #include "live_effects/lpe-envelope.h"
-#include "sp-shape.h"
-#include "sp-item.h"
-#include "sp-path.h"
-#include "sp-item-group.h"
 #include "display/curve.h"
-#include "svg/svg.h"
-#include "ui/widget/scalar.h"
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
-#include <2geom/sbasis.h>
-#include <2geom/sbasis-geometric.h>
-#include <2geom/bezier-to-sbasis.h>
-#include <2geom/sbasis-to-bezier.h>
-#include <2geom/d2.h>
-#include <2geom/piecewise.h>
-
-#include <algorithm>
 using std::vector;
 
 namespace Inkscape {
@@ -32,15 +20,15 @@ LPEEnvelope::LPEEnvelope(LivePathEffectObject *lpeobject) :
     bend_path2(_("Right bend path:"), _("Right path along which to bend the original path"), "bendpath2", &wr, this, "M0,0 L1,0"),
     bend_path3(_("Bottom bend path:"), _("Bottom path along which to bend the original path"), "bendpath3", &wr, this, "M0,0 L1,0"),
     bend_path4(_("Left bend path:"), _("Left path along which to bend the original path"), "bendpath4", &wr, this, "M0,0 L1,0"),
-    xx(_("_Enable left & right paths"), _("Enable the left and right deformation paths"), "xx", &wr, this, true),
-    yy(_("_Enable top & bottom paths"), _("Enable the top and bottom deformation paths"), "yy", &wr, this, true)
+    xx(_("_Enable left &amp; right paths"), _("Enable the left and right deformation paths"), "xx", &wr, this, true),
+    yy(_("_Enable top &amp; bottom paths"), _("Enable the top and bottom deformation paths"), "yy", &wr, this, true)
 {
-    registerParameter( dynamic_cast<Parameter *>(&yy) );
-    registerParameter( dynamic_cast<Parameter *>(&xx) );
-    registerParameter( dynamic_cast<Parameter *>(&bend_path1) );
-    registerParameter( dynamic_cast<Parameter *>(&bend_path2) );
-    registerParameter( dynamic_cast<Parameter *>(&bend_path3) );
-    registerParameter( dynamic_cast<Parameter *>(&bend_path4) );
+    registerParameter(&yy);
+    registerParameter(&xx);
+    registerParameter(&bend_path1);
+    registerParameter(&bend_path2);
+    registerParameter(&bend_path3);
+    registerParameter(&bend_path4);
     concatenate_before_pwd2 = true;
     apply_to_clippath_and_mask = true;
 }
@@ -54,14 +42,14 @@ void
 LPEEnvelope::doBeforeEffect (SPLPEItem const* lpeitem)
 {
     // get the item bounding box
-    original_bbox(lpeitem);
+    original_bbox(lpeitem, false, true);
 }
 
 Geom::Piecewise<Geom::D2<Geom::SBasis> >
 LPEEnvelope::doEffect_pwd2 (Geom::Piecewise<Geom::D2<Geom::SBasis> > const & pwd2_in)
 {
 
-    if(xx.get_value() == false && yy.get_value() == false)
+    if(!xx.get_value() && !yy.get_value())
     {
         return pwd2_in;
     }
@@ -172,7 +160,7 @@ LPEEnvelope::doEffect_pwd2 (Geom::Piecewise<Geom::D2<Geom::SBasis> > const & pwd
     output_y =  ybis*(compose((uskeleton1),x1) + y1*compose(n1,x1) )
             +    y*(compose((uskeleton3),x3) + y3*compose(n3,x3) );
     output_y /= (boundingbox_Y.extent());
-    if(xx.get_value() == false && yy.get_value() == true)
+    if(!xx.get_value() && yy.get_value())
     {
             return output_y;
     }
@@ -181,13 +169,13 @@ LPEEnvelope::doEffect_pwd2 (Geom::Piecewise<Geom::D2<Geom::SBasis> > const & pwd
     output_x =    x*(compose((uskeleton2),y2) + -x2*compose(n2,y2) )
             + xbis*(compose((uskeleton4),y4) + -x4*compose(n4,y4) );
     output_x /= (boundingbox_X.extent());
-    if(xx.get_value() == true && yy.get_value() == false)
+    if(xx.get_value() && !yy.get_value())
     {
             return output_x;
     }
 
     /*output : Deformation by Up, Left, Right and Down Bend Paths*/
-    if(xx.get_value() == true && yy.get_value() == true)
+    if(xx.get_value() && yy.get_value())
     {
         Piecewise<SBasis> xsqr = x*xbis; /* xsqr = x * (BBox_X - x) */
         Piecewise<SBasis> ysqr = y*ybis; /* xsqr = y * (BBox_Y - y) */
@@ -217,7 +205,7 @@ LPEEnvelope::doEffect_pwd2 (Geom::Piecewise<Geom::D2<Geom::SBasis> > const & pwd
         output /= 2.;
 
         return output;
-        /*Of course, the result is not perfect, but on a graphical point of view, this is sufficent.*/
+        /*Of course, the result is not perfect, but on a graphical point of view, this is sufficient.*/
 
     }
 
@@ -230,7 +218,7 @@ LPEEnvelope::resetDefaults(SPItem const* item)
 {
     Effect::resetDefaults(item);
 
-    original_bbox(SP_LPE_ITEM(item));
+    original_bbox(SP_LPE_ITEM(item), false, true);
 
     Geom::Point Up_Left(boundingbox_X.min(), boundingbox_Y.min());
     Geom::Point Up_Right(boundingbox_X.max(), boundingbox_Y.min());

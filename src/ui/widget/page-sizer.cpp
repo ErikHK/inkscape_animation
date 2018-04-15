@@ -40,7 +40,7 @@
 #include "helper/action-context.h"
 #include "util/units.h"
 #include "inkscape.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-root.h"
 #include "ui/widget/button.h"
 #include "ui/widget/scalar-unit.h"

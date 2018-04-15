@@ -37,7 +37,7 @@ class Extension;
  */
 extern Glib::ustring const extension_pref_root;
 
-/** 
+/**
  * A class to represent the parameter of an extension.
  *
  * This is really a super class that allows them to abstract all
@@ -47,25 +47,16 @@ extern Glib::ustring const extension_pref_root;
  */
 class Parameter {
 
-protected:
-    /** List of possible scopes. */
-    typedef enum {
-        SCOPE_USER,     /**<  Parameter value is saved in the user's configuration file. (default) */
-        SCOPE_DOCUMENT, /**<  Parameter value is saved in the document. */
-        SCOPE_NODE      /**<  Parameter value is attached to the node. */
-    } _scope_t;
-
 public:
     Parameter(gchar const *name,
-              gchar const *guitext,
-              gchar const *desc,
-              const Parameter::_scope_t scope,
-              bool gui_hidden,
-              gchar const *gui_tip,
+              gchar const *text,
+              gchar const *description,
+              bool hidden,
+              int indent,
               Inkscape::Extension::Extension * ext);
 
     Parameter(gchar const *name,
-              gchar const *guitext,
+              gchar const *text,
               Inkscape::Extension::Extension * ext);
 
     virtual ~Parameter(void);
@@ -139,10 +130,13 @@ public:
 
     virtual Gtk::Widget * get_widget(SPDocument * doc, Inkscape::XML::Node * node, sigc::signal<void> * changeSignal);
 
-    gchar const * get_tooltip(void) const { return _desc; }
+    gchar const * get_tooltip(void) const { return _description; }
 
     /** Indicates if the GUI for this parameter is hidden or not */
-    bool get_gui_hidden() const { return _gui_hidden; }
+    bool get_hidden() const { return _hidden; }
+
+    /** Indentation level of the parameter */
+    int get_indent() const { return _indent; }
 
     virtual void string(std::list <std::string> &list) const;
 
@@ -155,21 +149,31 @@ public:
     /** All the code in Notebook::get_param to get the notebook content. */
     virtual Parameter *get_param(gchar const *name);
 
+
+    /** Recommended margin of boxes containing multiple Parameters (in px) */
+    const static int GUI_BOX_MARGIN = 10;
+    /** Recommended spacing between multiple Parameters packed into a box (in px) */
+    const static int GUI_BOX_SPACING = 4;
+    /** Recommended spacing between the widgets making up a single Parameter (e.g. label and input) (in px) */
+    const static int GUI_PARAM_WIDGETS_SPACING = 4;
+    /** Recommended indentation width of parameters (in px) */
+    const static int GUI_INDENTATION = 12;
+    /** Recommended maximum line length for wrapping textual parameters (in chars) */
+    const static int GUI_MAX_LINE_LENGTH = 60;
+
+
 protected:
-    /** Description of the parameter. */
-    gchar *       _desc;
+    /** Parameter text to show as the GUI label. */
+    gchar * _text;
 
-    /** Scope of the parameter. */
-    _scope_t _scope;
+    /** Extended description of the parameter (crrently shown as tooltip on hover). */
+    gchar * _description;
 
-    /** Text for the GUI selection of this. */
-    gchar *  _text;
+    /** Whether the parameter is visible. */
+    bool _hidden;
 
-    /** Whether the GUI is visible. */
-    bool _gui_hidden;
-
-    /** A tip for the GUI if there is one. */
-    gchar *  _gui_tip;
+    /** Indentation level of the parameter. */
+    int _indent;
 
 
     /* **** funcs **** */
@@ -187,7 +191,7 @@ protected:
 
 private:
     /** Which extension is this parameter attached to. */
-    Inkscape::Extension::Extension *extension;
+    Inkscape::Extension::Extension *_extension;
 
     /** The name of this parameter. */
     gchar *_name;

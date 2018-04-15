@@ -1,0 +1,17 @@
+
+
+This directory contains path and shape related code. This code is
+partially replaced by lib2geom. We still rely on this code for:
+
+* Binary path operations.
+* Path offsetting.
+* Finding start and end positions for lines text inside a shape.
+
+To do:
+
+* Move needed functionality to lib2geom or independent functions.
+* Delete directory.
+
+(Livarot is a pungent French cow milk cheese.)
+
+

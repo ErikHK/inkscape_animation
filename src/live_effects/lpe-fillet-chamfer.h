@@ -7,25 +7,23 @@
  *
  * Copyright (C) 2014 Author(s)
  *
- * Special thanks to Johan Engelen for the base of the effect -powerstroke-
- * Also to ScislaC for point me to the idea
- * Also su_v for his construvtive feedback and time
- * and finaly to Liam P. White for his big help on coding, that save me a lot of hours
+ * Jabiertxof:Thanks to all people help me
  *
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
 #include "live_effects/parameter/enum.h"
-#include "live_effects/parameter/bool.h"
-#include "live_effects/parameter/unit.h"
-
-#include "live_effects/parameter/filletchamferpointarray.h"
+#include "live_effects/parameter/satellitesarray.h"
 #include "live_effects/effect.h"
+#include "live_effects/parameter/unit.h"
+#include "live_effects/parameter/hidden.h"
+#include "helper/geom-pathvectorsatellites.h"
+#include "helper/geom-satellite.h"
 
 namespace Inkscape {
 namespace LivePathEffect {
 
-enum FilletMethod {
+enum Filletmethod {
     FM_AUTO,
     FM_ARC,
     FM_BEZIER,
@@ -35,41 +33,39 @@ enum FilletMethod {
 class LPEFilletChamfer : public Effect {
 public:
     LPEFilletChamfer(LivePathEffectObject *lpeobject);
-    virtual ~LPEFilletChamfer();
-
-    virtual Geom::PathVector doEffect_path(Geom::PathVector const &path_in);
-
-    virtual void doOnApply(SPLPEItem const *lpeItem);
     virtual void doBeforeEffect(SPLPEItem const *lpeItem);
-    virtual void adjustForNewPath(Geom::PathVector const &path_in);
-    virtual Gtk::Widget* newWidget();
-
-    int getKnotsNumber(SPCurve const *c);
-    void toggleHide();
-    void toggleFlexFixed();
-    void chamfer();
-    void chamferSubdivisions();
-    void inverseChamfer();
-    void fillet();
-    void inverseFillet();
-    void updateFillet();
-    void doUpdateFillet(Geom::PathVector const& original_pathv, double power);
-    void doChangeType(Geom::PathVector const& original_pathv, int type);
+    virtual Geom::PathVector doEffect_path(Geom::PathVector const &path_in);
+    virtual void doOnApply(SPLPEItem const *lpeItem);
+    virtual Gtk::Widget *newWidget();
+    Geom::Ray getRay(Geom::Point start, Geom::Point end, Geom::Curve *curve, bool reverse);
+    void addChamferSteps(Geom::Path &tmp_path, Geom::Path path_chamfer, Geom::Point end_arc_point, size_t steps);
+    void addCanvasIndicators(SPLPEItem const */*lpeitem*/, std::vector<Geom::PathVector> &hp_vec);
+    void updateSatelliteType(SatelliteType satellitetype);
+    void setSelected(PathVectorSatellites *_pathvector_satellites);
+    //void convertUnit();
+    void updateChamferSteps();
+    void updateAmount();
     void refreshKnots();
 
-    FilletChamferPointArrayParam fillet_chamfer_values;
+    SatellitesArrayParam satellites_param;
 
 private:
-
-    BoolParam hide_knots;
-    BoolParam ignore_radius_0;
-    BoolParam only_selected;
-    BoolParam flexible;
-    BoolParam use_knot_distance;
-    EnumParam<FilletMethod> method;
+    UnitParam unit;
+    EnumParam<Filletmethod> method;
     ScalarParam radius;
     ScalarParam chamfer_steps;
+    BoolParam flexible;
+    HiddenParam mode;
+    BoolParam mirror_knots;
+    BoolParam only_selected;
+    BoolParam use_knot_distance;
+    BoolParam hide_knots;
+    BoolParam apply_no_radius;
+    BoolParam apply_with_radius;
     ScalarParam helper_size;
+    bool _degenerate_hide;
+    PathVectorSatellites *_pathvector_satellites;
+    Geom::PathVector _hp;
 
     LPEFilletChamfer(const LPEFilletChamfer &);
     LPEFilletChamfer &operator=(const LPEFilletChamfer &);

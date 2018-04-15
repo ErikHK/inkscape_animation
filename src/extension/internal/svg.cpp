@@ -17,7 +17,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "svg.h"
 #include "file.h"
 #include "extension/system.h"
@@ -28,9 +28,9 @@
 #include "sp-root.h"
 #include "document.h"
 
-#ifdef WITH_GNOME_VFS
-# include <libgnomevfs/gnome-vfs.h>
-#endif
+//#ifdef WITH_GNOME_VFS
+//# include <libgnomevfs/gnome-vfs.h>
+//#endif
 
 namespace Inkscape {
 namespace Extension {
@@ -135,15 +135,16 @@ Svg::init(void)
             "</output>\n"
         "</inkscape-extension>", new Svg());
 
-#ifdef WITH_GNOME_VFS
-    gnome_vfs_init();
-#endif
+//#ifdef WITH_GNOME_VFS
+//    gnome_vfs_init();
+//#endif
 
 
     return;
 }
 
 
+/*
 #ifdef WITH_GNOME_VFS
 #define BUF_SIZE 8192
 
@@ -178,7 +179,7 @@ _load_uri (const gchar *uri)
     return g_strndup(&doc[0], doc.size());
 }
 #endif
-
+*/
 
 /**
     \return    A new document just for you!
@@ -192,6 +193,7 @@ _load_uri (const gchar *uri)
 SPDocument *
 Svg::open (Inkscape::Extension::Input */*mod*/, const gchar *uri)
 {
+/*
 #ifdef WITH_GNOME_VFS
     if (!gnome_vfs_initialized() || gnome_vfs_uri_is_local(gnome_vfs_uri_new(uri))) {
         // Use built-in loader instead of VFS for this
@@ -207,8 +209,9 @@ Svg::open (Inkscape::Extension::Input */*mod*/, const gchar *uri)
     g_free(buffer);
     return doc;
 #else
+*/
     return SPDocument::createNewDoc(uri, TRUE);
-#endif
+//#endif
 }
 
 /**

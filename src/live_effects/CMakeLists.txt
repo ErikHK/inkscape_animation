@@ -3,6 +3,7 @@ set(live_effects_SRC
 	lpe-angle_bisector.cpp
 	lpe-attach-path.cpp
 	lpe-bendpath.cpp
+	lpe-bool.cpp
 	lpe-bounding-box.cpp
 	lpe-bspline.cpp
 	lpe-circle_3pts.cpp
@@ -12,8 +13,11 @@ set(live_effects_SRC
 	lpe-constructgrid.cpp
 	lpe-copy_rotate.cpp
 	lpe-curvestitch.cpp
+	lpe-dash-stroke.cpp
 	lpe-dynastroke.cpp
 	lpe-ellipse_5pts.cpp
+	lpe-embrodery-stitch.cpp
+	lpe-embrodery-stitch-ordering.cpp
 	lpe-envelope.cpp
 	lpe-extrude.cpp
 	lpe-fill-between-many.cpp
@@ -27,6 +31,7 @@ set(live_effects_SRC
 	lpe-lattice.cpp
 	lpe-lattice2.cpp
 	lpe-line_segment.cpp
+	lpe-measure-segments.cpp
 	lpe-mirror_symmetry.cpp
 	lpe-offset.cpp
 	lpe-parallel.cpp
@@ -35,6 +40,8 @@ set(live_effects_SRC
 	lpe-perp_bisector.cpp
 	lpe-perspective-envelope.cpp
 	lpe-perspective_path.cpp
+	lpe-powerclip.cpp
+	lpe-powermask.cpp
 	lpe-powerstroke.cpp
 	lpe-recursiveskeleton.cpp
 	lpe-rough-hatches.cpp
@@ -55,10 +62,17 @@ set(live_effects_SRC
 	lpeobject.cpp
 	spiro-converters.cpp
 	spiro.cpp
+	lpe-pts2ellipse.cpp
 
 	parameter/array.cpp
 	parameter/bool.cpp
-	parameter/filletchamferpointarray.cpp
+	parameter/colorpicker.cpp
+	parameter/hidden.cpp
+	parameter/item-reference.cpp
+	parameter/item.cpp
+	parameter/message.cpp
+	parameter/originalitemarray.cpp
+	parameter/originalitem.cpp
 	parameter/originalpath.cpp
 	parameter/originalpatharray.cpp
 	parameter/parameter.cpp
@@ -67,7 +81,9 @@ set(live_effects_SRC
 	parameter/point.cpp
 	parameter/powerstrokepointarray.cpp
 	parameter/random.cpp
+	parameter/satellitesarray.cpp
 	parameter/text.cpp
+	parameter/fontbutton.cpp
 	parameter/togglebutton.cpp
 	parameter/transformedpoint.cpp
 	parameter/unit.cpp
@@ -81,6 +97,7 @@ set(live_effects_SRC
 	lpe-angle_bisector.h
 	lpe-attach-path.h
 	lpe-bendpath.h
+	lpe-bool.h
 	lpe-bounding-box.h
 	lpe-bspline.h
 	lpe-circle_3pts.h
@@ -90,8 +107,11 @@ set(live_effects_SRC
 	lpe-constructgrid.h
 	lpe-copy_rotate.h
 	lpe-curvestitch.h
+	lpe-dash-stroke.h
 	lpe-dynastroke.h
 	lpe-ellipse_5pts.h
+	lpe-embrodery-stitch.h
+	lpe-embrodery-stitch-ordering.h
 	lpe-envelope.h
 	lpe-extrude.h
 	lpe-fill-between-many.h
@@ -105,6 +125,7 @@ set(live_effects_SRC
 	lpe-lattice.h
 	lpe-lattice2.h
 	lpe-line_segment.h
+	lpe-measure-segments.h
 	lpe-mirror_symmetry.h
 	lpe-offset.h
 	lpe-parallel.h
@@ -114,6 +135,8 @@ set(live_effects_SRC
 	lpe-perspective-envelope.h
 	lpe-perspective_path.h
 	lpe-powerstroke-interpolators.h
+	lpe-powerclip.h
+	lpe-powermask.h
 	lpe-powerstroke.h
 	lpe-recursiveskeleton.h
 	lpe-rough-hatches.h
@@ -134,11 +157,18 @@ set(live_effects_SRC
 	lpeobject.h
 	spiro-converters.h
 	spiro.h
+	lpe-pts2ellipse.h
 
 	parameter/array.h
 	parameter/bool.h
+	parameter/colorpicker.h
+	parameter/hidden.h
 	parameter/enum.h
-	parameter/filletchamferpointarray.h
+	parameter/item.h
+	parameter/message.h
+	parameter/originalitemarray.cpp
+	parameter/item-reference.h
+	parameter/originalitem.h
 	parameter/originalpath.h
 	parameter/originalpatharray.h
 	parameter/parameter.h
@@ -147,7 +177,9 @@ set(live_effects_SRC
 	parameter/point.h
 	parameter/powerstrokepointarray.h
 	parameter/random.h
+	parameter/satellitesarray.h
 	parameter/text.h
+	parameter/fontbutton.h
 	parameter/togglebutton.h
 	parameter/transformedpoint.h
 	parameter/unit.h

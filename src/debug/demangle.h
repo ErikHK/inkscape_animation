@@ -18,7 +18,7 @@ namespace Inkscape {
 
 namespace Debug {
 
-Util::ptr_shared<char> demangle(char const *name);
+Util::ptr_shared demangle(char const *name);
 
 }
 

@@ -13,109 +13,92 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
 #endif
 
 #include <cstring>
 #include <string>
 #include <vector>
+
 #include <glib.h>
-#include "xml/repr.h"
-#include "svg/svg.h"
-#include "sp-path.h"
-#include "sp-shape.h"
-#include "sp-image.h"
-#include "sp-marker.h"
-#include "enums.h"
-#include "sp-text.h"
-#include "sp-flowtext.h"
-#include "text-editing.h"
-#include "sp-item-group.h"
-#include "style.h"
-#include "document.h"
+#include <glibmm/i18n.h>
+
+#include <2geom/svg-path-parser.h> // to get from SVG on boolean to Geom::Path
+#include <2geom/svg-path-writer.h>
+
+#include "splivarot.h"
+
 #include "document-undo.h"
+#include "document.h"
 #include "layer-model.h"
 #include "message-stack.h"
 #include "selection.h"
+#include "text-editing.h"
+#include "verbs.h"
 
-#include "desktop.h"
-#include "display/canvas-bpath.h"
-#include "display/curve.h"
-#include <glibmm/i18n.h>
-#include "preferences.h"
-
-#include "xml/repr.h"
-#include "xml/repr-sorting.h"
-#include <2geom/pathvector.h>
-#include <2geom/svg-path-writer.h>
 #include "helper/geom.h"
 
 #include "livarot/Path.h"
 #include "livarot/Shape.h"
 
-#include "splivarot.h"
-#include "verbs.h"
-#include "2geom/svg-path-parser.h" // to get from SVG on boolean to Geom::Path
+#include "object/sp-flowtext.h"
+#include "object/sp-image.h"
+#include "object/sp-marker.h"
+#include "object/sp-path.h"
+#include "object/sp-text.h"
+#include "style.h"
+
+#include "svg/svg.h"
+
+#include "util/units.h"            // to get abbr for document units
+
+#include "xml/repr-sorting.h"
+#include "xml/repr.h"
 
 using Inkscape::DocumentUndo;
 
 bool   Ancetre(Inkscape::XML::Node *a, Inkscape::XML::Node *who);
 
-void sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool_op bop, const unsigned int verb=SP_VERB_NONE, const Glib::ustring description="");
 void sp_selected_path_do_offset(SPDesktop *desktop, bool expand, double prefOffset);
 void sp_selected_path_create_offset_object(SPDesktop *desktop, int expand, bool updating);
 
-void
-sp_selected_path_union(Inkscape::Selection *selection, SPDesktop *desktop)
-{
-    sp_selected_path_boolop(selection, desktop, bool_op_union, SP_VERB_SELECTION_UNION, _("Union"));
+bool Inkscape::ObjectSet::pathUnion(const bool skip_undo) {
+    BoolOpErrors result = pathBoolOp(bool_op_union, skip_undo, false, SP_VERB_SELECTION_UNION, _("Union"));
+    return DONE == result;
 }
 
-void
-sp_selected_path_union_skip_undo(Inkscape::Selection *selection, SPDesktop *desktop)
+bool
+Inkscape::ObjectSet::pathIntersect(const bool skip_undo)
 {
-    sp_selected_path_boolop(selection, desktop, bool_op_union, SP_VERB_NONE, _("Union"));
+    BoolOpErrors result = pathBoolOp(bool_op_inters, skip_undo, false, SP_VERB_SELECTION_INTERSECT, _("Intersection"));
+    return DONE == result;
 }
 
-void
-sp_selected_path_intersect(Inkscape::Selection *selection, SPDesktop *desktop)
+bool
+Inkscape::ObjectSet::pathDiff(const bool skip_undo)
 {
-    sp_selected_path_boolop(selection, desktop, bool_op_inters, SP_VERB_SELECTION_INTERSECT, _("Intersection"));
+    BoolOpErrors result = pathBoolOp(bool_op_diff, skip_undo, false, SP_VERB_SELECTION_DIFF, _("Difference"));
+    return DONE == result;
 }
 
-void
-sp_selected_path_diff(Inkscape::Selection *selection, SPDesktop *desktop)
+bool
+Inkscape::ObjectSet::pathSymDiff(const bool skip_undo)
 {
-    sp_selected_path_boolop(selection, desktop, bool_op_diff, SP_VERB_SELECTION_DIFF, _("Difference"));
+    BoolOpErrors result = pathBoolOp(bool_op_symdiff, skip_undo, false, SP_VERB_SELECTION_SYMDIFF, _("Exclusion"));
+    return DONE == result;
 }
 
-void
-sp_selected_path_diff_skip_undo(Inkscape::Selection *selection, SPDesktop *desktop)
+bool
+Inkscape::ObjectSet::pathCut(const bool skip_undo)
 {
-    sp_selected_path_boolop(selection, desktop, bool_op_diff, SP_VERB_NONE, _("Difference"));
+    BoolOpErrors result = pathBoolOp(bool_op_cut, skip_undo, false, SP_VERB_SELECTION_CUT, _("Division"));
+    return DONE == result;
 }
 
-void
-sp_selected_path_symdiff(Inkscape::Selection *selection, SPDesktop *desktop)
+bool
+Inkscape::ObjectSet::pathSlice(const bool skip_undo)
 {
-    sp_selected_path_boolop(selection, desktop, bool_op_symdiff, SP_VERB_SELECTION_SYMDIFF, _("Exclusion"));
-}
-void
-sp_selected_path_cut(Inkscape::Selection *selection, SPDesktop *desktop)
-{
-    sp_selected_path_boolop(selection, desktop, bool_op_cut, SP_VERB_SELECTION_CUT, _("Division"));
-}
-
-void
-sp_selected_path_cut_skip_undo(Inkscape::Selection *selection, SPDesktop *desktop)
-{
-    sp_selected_path_boolop(selection, desktop, bool_op_cut, SP_VERB_NONE, _("Division"));
-}
-
-void
-sp_selected_path_slice(Inkscape::Selection *selection, SPDesktop *desktop)
-{
-    sp_selected_path_boolop(selection, desktop, bool_op_slice, SP_VERB_SELECTION_SLICE,  _("Cut path"));
+    BoolOpErrors result = pathBoolOp(bool_op_slice, skip_undo, false, SP_VERB_SELECTION_SLICE, _("Cut path"));
+    return DONE == result;
 }
 
 // helper for printing error messages, regardless of whether we have a GUI or not
@@ -298,7 +281,7 @@ sp_pathvector_boolop(Geom::PathVector const &pathva, Geom::PathVector const &pat
         free(toCut);
     } else if ( bop == bool_op_cut ) {
         // il faut appeler pour desallouer PointData (pas vital, mais bon)
-        // the Booleen() function did not deallocated the point_data array in theShape, because this
+        // the Booleen() function did not deallocate the point_data array in theShape, because this
         // function needs it.
         // this function uses the point_data to get the winding number of each path (ie: is a hole or not)
         // for later reconstruction in objects, you also need to extract which path is parent of holes (nesting info)
@@ -331,20 +314,50 @@ Geom::PathVector pathliv_to_pathvector(Path *pathliv){
 
 // boolean operations on the desktop
 // take the source paths from the file, do the operation, delete the originals and add the results
-void
-sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool_op bop, const unsigned int verb, const Glib::ustring description)
+BoolOpErrors Inkscape::ObjectSet::pathBoolOp(bool_op bop, const bool skip_undo, const bool checked, const unsigned int verb, const Glib::ustring description)
 {
-    SPDocument *doc = selection->layers()->getDocument();
-    std::vector<SPItem*> il= selection->itemList();
-    
-    // allow union on a single object for the purpose of removing self overlapse (svn log, revision 13334)
-    if ( (il.size() < 2) && (bop != bool_op_union)) {
-        boolop_display_error_message(desktop, _("Select <b>at least 2 paths</b> to perform a boolean operation."));
-        return;
+    if (nullptr != desktop() && !checked) {
+        SPDocument *doc = desktop()->getDocument();
+        BoolOpErrors returnCode = ObjectSet::pathBoolOp(bop, true, true);
+        switch(returnCode) {
+        case ERR_TOO_LESS_PATHS_1:
+            boolop_display_error_message(desktop(), _("Select <b>at least 1 path</b> to perform a boolean union."));
+            break;
+        case ERR_TOO_LESS_PATHS_2:
+            boolop_display_error_message(desktop(), _("Select <b>at least 2 paths</b> to perform a boolean operation."));
+            break;
+        case ERR_NO_PATHS:
+            boolop_display_error_message(desktop(), _("One of the objects is <b>not a path</b>, cannot perform boolean operation."));
+            break;
+        case ERR_Z_ORDER:
+            boolop_display_error_message(desktop(), _("Unable to determine the <b>z-order</b> of the objects selected for difference, XOR, division, or path cut."));
+            break;
+        case DONE_NO_PATH:
+            if (!skip_undo) { 
+                DocumentUndo::done(doc, SP_VERB_NONE, description);
+            }
+            break;
+        case DONE:
+            if (!skip_undo) { 
+                DocumentUndo::done(doc, verb, description);
+            }
+            break;
+        case DONE_NO_ACTION:
+            // Do nothing (?)
+            break;
+        }
+        return returnCode;
     }
-    else if ( il.size() < 1 ) {
-        boolop_display_error_message(desktop, _("Select <b>at least 1 path</b> to perform a boolean union."));
-        return;
+
+    SPDocument *doc = document();
+    std::vector<SPItem*> il(items().begin(), items().end());
+
+    // allow union on a single object for the purpose of removing self overlapse (svn log, revision 13334)
+    if (il.size() < 2 && bop != bool_op_union) {
+        return ERR_TOO_LESS_PATHS_2;
+    }
+    else if (il.size() < 1) {
+        return ERR_TOO_LESS_PATHS_1;
     }
 
     g_assert(!il.empty());
@@ -360,8 +373,7 @@ sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool
         Inkscape::XML::Node *b = il.back()->getRepr();
 
         if (a == NULL || b == NULL) {
-            boolop_display_error_message(desktop, _("Unable to determine the <b>z-order</b> of the objects selected for difference, XOR, division, or path cut."));
-            return;
+            return ERR_Z_ORDER;
         }
 
         if (Ancetre(a, b)) {
@@ -375,8 +387,7 @@ sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool
             // find their lowest common ancestor
             Inkscape::XML::Node *parent = LCA(a, b);
             if (parent == NULL) {
-                boolop_display_error_message(desktop, _("Unable to determine the <b>z-order</b> of the objects selected for difference, XOR, division, or path cut."));
-                return;
+                return ERR_Z_ORDER;
             }
 
             // find the children of the LCA that lead from it to the a and b
@@ -405,8 +416,7 @@ sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool
         SPItem *item = *l;
         if (!SP_IS_SHAPE(item) && !SP_IS_TEXT(item) && !SP_IS_FLOWTEXT(item))
         {
-            boolop_display_error_message(desktop, _("One of the objects is <b>not a path</b>, cannot perform boolean operation."));
-            return;
+            return ERR_NO_PATHS;
         }
     }
 
@@ -439,7 +449,7 @@ sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool
             if (originaux[curOrig] == NULL || originaux[curOrig]->descr_cmd.size() <= 1)
             {
                 for (int i = curOrig; i >= 0; i--) delete originaux[i];
-                return;
+                return DONE_NO_ACTION;
             }
             curOrig++;
         }
@@ -500,18 +510,18 @@ sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool
             bool zeroA = theShapeA->numberOfEdges() == 0;
             bool zeroB = theShapeB->numberOfEdges() == 0;
             if (zeroA || zeroB) {
-            	// We might need to do a swap. Apply the above rules depending on operation type.
-            	bool resultIsB =   ((bop == bool_op_union || bop == bool_op_symdiff) && zeroA)
-            		        || ((bop == bool_op_inters) && zeroB)
-            			||  (bop == bool_op_diff);
+                // We might need to do a swap. Apply the above rules depending on operation type.
+                bool resultIsB =   ((bop == bool_op_union || bop == bool_op_symdiff) && zeroA)
+                                   || ((bop == bool_op_inters) && zeroB)
+                                   ||  (bop == bool_op_diff);
                 if (resultIsB) {
-                	// Swap A and B to use B as the result
+                    // Swap A and B to use B as the result
                     Shape *swap = theShapeB;
                     theShapeB = theShapeA;
                     theShapeA = swap;
                 }
             } else {
-            	// Just do the Boolean operation as usual
+                // Just do the Boolean operation as usual
                 // les elements arrivent en ordre inverse dans la liste
                 theShape->Booleen(theShapeB, theShapeA, bop);
                 Shape *swap = theShape;
@@ -652,7 +662,7 @@ sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool
         free(toCut);
     } else if ( bop == bool_op_cut ) {
         // il faut appeler pour desallouer PointData (pas vital, mais bon)
-        // the Booleen() function did not deallocated the point_data array in theShape, because this
+        // the Booleen() function did not deallocate the point_data array in theShape, because this
         // function needs it.
         // this function uses the point_data to get the winding number of each path (ie: is a hole or not)
         // for later reconstruction in objects, you also need to extract which path is parent of holes (nesting info)
@@ -672,24 +682,23 @@ sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool
         for (std::vector<SPItem*>::const_iterator l = il.begin(); l != il.end(); l++){
             (*l)->deleteObject();
         }
-        DocumentUndo::done(doc, SP_VERB_NONE, description);
-        selection->clear();
+        clear();
 
         delete res;
-        return;
+        return DONE_NO_PATH;
     }
 
     // get the source path object
     SPObject *source;
     if ( bop == bool_op_diff || bop == bool_op_cut || bop == bool_op_slice ) {
         if (reverseOrderForOp) {
-             source = il[0];
+            source = il[0];
         } else {
-             source = il.back();
+            source = il.back();
         }
     } else {
         // find out the bottom object
-    	std::vector<Inkscape::XML::Node*> sorted(selection->reprList());
+        std::vector<Inkscape::XML::Node*> sorted(xmlNodes().begin(), xmlNodes().end());
 
         sort(sorted.begin(),sorted.end(),sp_repr_compare_position_bool);
 
@@ -717,7 +726,7 @@ sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool
     gchar *title = source->title();
     gchar *desc = source->desc();
     // remove source paths
-    selection->clear();
+    clear();
     for (std::vector<SPItem*>::const_iterator l = il.begin(); l != il.end(); l++){
         // if this is the bottommost object,
         if (!strcmp(reinterpret_cast<SPObject *>(*l)->getRepr()->attribute("id"), id)) {
@@ -748,7 +757,7 @@ sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool
             // that's why you needed the nesting
             // ConvertToFormeNested() dumped all the subpath in a single Path "res", so we need
             // to get the path for each part of the polygon. that's why you need the nesting info:
-            // to know in wich subpath to add a subpath
+            // to know in which subpath to add a subpath
             resPath=res->SubPathsWithNesting(nbRP, true, nbNest, nesting, conts);
 
             // cleaning
@@ -796,7 +805,7 @@ sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool
             // move to the saved position
             repr->setPosition(pos > 0 ? pos : 0);
 
-            selection->add(repr);
+            add(doc->getObjectByRepr(repr));
             Inkscape::GC::release(repr);
 
             delete resPath[i];
@@ -824,14 +833,14 @@ sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool
         repr->setAttribute("id", id);
         parent->appendChild(repr);
         if (title) {
-        	doc->getObjectByRepr(repr)->setTitle(title);
-        }            
-        if (desc) {
-        	doc->getObjectByRepr(repr)->setDesc(desc);
+            doc->getObjectByRepr(repr)->setTitle(title);
         }
-		repr->setPosition(pos > 0 ? pos : 0);
+        if (desc) {
+            doc->getObjectByRepr(repr)->setDesc(desc);
+        }
+        repr->setPosition(pos > 0 ? pos : 0);
 
-        selection->add(repr);
+        add(doc->getObjectByRepr(repr));
         Inkscape::GC::release(repr);
     }
 
@@ -839,17 +848,16 @@ sp_selected_path_boolop(Inkscape::Selection *selection, SPDesktop *desktop, bool
     if (title) g_free(title);
     if (desc) g_free(desc);
 
-    if (verb != SP_VERB_NONE) {
-        DocumentUndo::done(doc, verb, description);
-    }
-
     delete res;
+
+    return DONE;
 }
 
 static
 void sp_selected_path_outline_add_marker( SPObject *marker_object, Geom::Affine marker_transform,
                                           Geom::Scale stroke_scale, Geom::Affine transform,
-                                          Inkscape::XML::Node *g_repr, Inkscape::XML::Document *xml_doc, SPDocument * doc )
+                                          Inkscape::XML::Node *g_repr, Inkscape::XML::Document *xml_doc, SPDocument * doc,
+                                          SPDesktop *desktop , bool legacy)
 {
     SPMarker* marker = SP_MARKER (marker_object);
     SPItem* marker_item = sp_item_first_item_child(marker_object);
@@ -869,8 +877,13 @@ void sp_selected_path_outline_add_marker( SPObject *marker_object, Geom::Affine 
     if (marker_item->getRepr()) {
         Inkscape::XML::Node *m_repr = marker_item->getRepr()->duplicate(xml_doc);
         g_repr->appendChild(m_repr);
+        //There is a special group to markers with this reverse the order in clussion
+        m_repr->setPosition(0);
         SPItem *marker_item = (SPItem *) doc->getObjectByRepr(m_repr);
-        marker_item->doWriteTransform(m_repr, tr);
+        marker_item->doWriteTransform(tr);
+        if (!legacy) {
+            sp_item_path_outline(marker_item, desktop, legacy);
+        }
     }
 }
 
@@ -883,9 +896,9 @@ void item_outline_add_marker_child( SPItem const *item, Geom::Affine marker_tran
     // note: a marker child item can be an item group!
     if (SP_IS_GROUP(item)) {
         // recurse through all childs:
-        for (SPObject const *o = item->firstChild() ; o ; o = o->getNext() ) {
-            if ( SP_IS_ITEM(o) ) {
-                item_outline_add_marker_child(SP_ITEM(o), tr, pathv_in);
+        for (auto& o: item->children) {
+            if ( SP_IS_ITEM(&o) ) {
+                item_outline_add_marker_child(SP_ITEM(&o), tr, pathv_in);
             }
         }
     } else {
@@ -1144,59 +1157,76 @@ Geom::PathVector* item_outline(SPItem const *item, bool bbox_only)
     return ret_pathv;
 }
 
-void
-sp_selected_path_outline(SPDesktop *desktop)
+bool
+sp_item_path_outline(SPItem *item, SPDesktop *desktop, bool legacy)
 {
-    Inkscape::Selection *selection = desktop->getSelection();
-
-    if (selection->isEmpty()) {
-        desktop->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>stroked path(s)</b> to convert stroke to path."));
-        return;
-    }
-    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-    bool scale_stroke = prefs->getBool("/options/transform/stroke", true);
-    prefs->setBool("/options/transform/stroke", true);
     bool did = false;
-    std::vector<SPItem*> il(selection->itemList());
-    for (std::vector<SPItem*>::const_iterator l = il.begin(); l != il.end(); l++){
-        SPItem *item = *l;
+    Inkscape::Selection *selection = desktop->getSelection();
+    SPDocument * doc = desktop->getDocument();
+    Inkscape::XML::Document *xml_doc = doc->getReprDoc();
+    SPLPEItem *lpeitem = SP_LPE_ITEM(item);
+    if (lpeitem) {
+        lpeitem->removeAllPathEffects(true);
+    }
 
+    SPGroup *group = dynamic_cast<SPGroup *>(item);
+    if (group) {
+        if (legacy) {
+            return false;
+        }
+        std::vector<SPItem*> const item_list = sp_item_group_item_list(group);
+        for ( std::vector<SPItem*>::const_iterator iter=item_list.begin();iter!=item_list.end();++iter) {
+            SPItem *subitem = *iter;
+            sp_item_path_outline(subitem, desktop, legacy);
+        }
+    } else {
         if (!SP_IS_SHAPE(item) && !SP_IS_TEXT(item))
-            continue;
+            return did;
 
         SPCurve *curve = NULL;
         if (SP_IS_SHAPE(item)) {
             curve = SP_SHAPE(item)->getCurve();
             if (curve == NULL)
-                continue;
+                return did;
         }
         if (SP_IS_TEXT(item)) {
             curve = SP_TEXT(item)->getNormalizedBpath();
             if (curve == NULL)
-                continue;
+                return did;
         }
 
         g_assert(curve != NULL);
 
         if (curve->get_pathvector().empty()) {
-            continue;
+            return did;
         }
 
         // pas de stroke pas de chocolat
-        if (!item->style || item->style->stroke.noneSet) {
+        if (!item->style) {
             curve->unref();
-            continue;
+            return did;
         }
 
         // remember old stroke style, to be set on fill
         SPStyle *i_style = item->style;
+        //Stroke - and markers
+        gchar const *opacity;
+        gchar const *filter;
+
+        // Copying stroke style to fill will fail for properties not defined by style attribute
+        // (i.e., properties defined in style sheet or by attributes).
+
+        // Stroke
         SPCSSAttr *ncss = 0;
         {
-            ncss = sp_css_attr_from_style(i_style, SP_STYLE_FLAG_ALWAYS);
+            ncss = sp_css_attr_from_style(i_style, SP_STYLE_FLAG_ALWAYS | SP_STYLE_FLAG_IFSRC);
             gchar const *s_val = sp_repr_css_property(ncss, "stroke", NULL);
             gchar const *s_opac = sp_repr_css_property(ncss, "stroke-opacity", NULL);
-
+            opacity = sp_repr_css_property(ncss, "opacity", NULL);
+            filter = sp_repr_css_property(ncss, "filter", NULL);
             sp_repr_css_set_property(ncss, "stroke", "none");
+            sp_repr_css_set_property(ncss, "filter", NULL);
+            sp_repr_css_set_property(ncss, "opacity", NULL);
             sp_repr_css_set_property(ncss, "stroke-opacity", "1.0");
             sp_repr_css_set_property(ncss, "fill", s_val);
             if ( s_opac ) {
@@ -1209,122 +1239,132 @@ sp_selected_path_outline(SPDesktop *desktop)
             sp_repr_css_unset_property(ncss, "marker-end");
         }
 
+        // Fill
+        SPCSSAttr *ncsf = 0;
+        {
+            ncsf = sp_css_attr_from_style(i_style, SP_STYLE_FLAG_ALWAYS | SP_STYLE_FLAG_IFSRC);
+            sp_repr_css_set_property(ncsf, "stroke", "none");
+            sp_repr_css_set_property(ncsf, "stroke-opacity", "1.0");
+            sp_repr_css_set_property(ncsf, "filter", NULL);
+            sp_repr_css_set_property(ncsf, "opacity", NULL);
+            sp_repr_css_unset_property(ncsf, "marker-start");
+            sp_repr_css_unset_property(ncsf, "marker-mid");
+            sp_repr_css_unset_property(ncsf, "marker-end");
+        }
+
         Geom::Affine const transform(item->transform);
         float const scale = transform.descrim();
         gchar const *mask = item->getRepr()->attribute("mask");
         gchar const *clip_path = item->getRepr()->attribute("clip-path");
 
-        float o_width, o_miter;
-        JoinType o_join;
-        ButtType o_butt;
-
-        {
-            int jointype, captype;
-
-            jointype = i_style->stroke_linejoin.computed;
-            captype = i_style->stroke_linecap.computed;
-            o_width = i_style->stroke_width.computed;
-
-            switch (jointype) {
-                case SP_STROKE_LINEJOIN_MITER:
-                    o_join = join_pointy;
-                    break;
-                case SP_STROKE_LINEJOIN_ROUND:
-                    o_join = join_round;
-                    break;
-                default:
-                    o_join = join_straight;
-                    break;
-            }
-
-            switch (captype) {
-                case SP_STROKE_LINECAP_SQUARE:
-                    o_butt = butt_square;
-                    break;
-                case SP_STROKE_LINECAP_ROUND:
-                    o_butt = butt_round;
-                    break;
-                default:
-                    o_butt = butt_straight;
-                    break;
-            }
-
-            if (o_width < 0.032)
-                o_width = 0.032;
-            o_miter = i_style->stroke_miterlimit.value * o_width;
-        }
-
+        Path *orig = new Path;
+        Path *res = new Path;
         SPCurve *curvetemp = curve_for_item(item);
         if (curvetemp == NULL) {
             curve->unref();
-            continue;
+            return did;
         }
         // Livarot's outline of arcs is broken. So convert the path to linear and cubics only, for which the outline is created correctly.
         Geom::PathVector pathv = pathv_to_linear_and_cubic_beziers( curvetemp->get_pathvector() );
         curvetemp->unref();
+        if ( !item->style->stroke.noneSet ) {
+            float o_width, o_miter;
+            JoinType o_join;
+            ButtType o_butt;
 
-        Path *orig = new Path;
-        orig->LoadPathVector(pathv);
+            {
+                int jointype, captype;
 
-        Path *res = new Path;
-        res->SetBackData(false);
+                jointype = i_style->stroke_linejoin.computed;
+                captype = i_style->stroke_linecap.computed;
+                o_width = i_style->stroke_width.computed;
 
-        if (!i_style->stroke_dasharray.values.empty()) {
-            // For dashed strokes, use Stroke method, because Outline can't do dashes
-            // However Stroke adds lots of extra nodes _or_ makes the path crooked, so consider this a temporary workaround
+                switch (jointype) {
+                    case SP_STROKE_LINEJOIN_MITER:
+                        o_join = join_pointy;
+                        break;
+                    case SP_STROKE_LINEJOIN_ROUND:
+                        o_join = join_round;
+                        break;
+                    default:
+                        o_join = join_straight;
+                        break;
+                }
 
-            orig->ConvertWithBackData(0.1);
+                switch (captype) {
+                    case SP_STROKE_LINECAP_SQUARE:
+                        o_butt = butt_square;
+                        break;
+                    case SP_STROKE_LINECAP_ROUND:
+                        o_butt = butt_round;
+                        break;
+                    default:
+                        o_butt = butt_straight;
+                        break;
+                }
 
-            orig->DashPolylineFromStyle(i_style, scale, 0);
+                if (o_width < 0.032)
+                    o_width = 0.032;
+                o_miter = i_style->stroke_miterlimit.value * o_width;
+            }
 
-            Shape* theShape = new Shape;
-            orig->Stroke(theShape, false, 0.5*o_width, o_join, o_butt,
-                         0.5 * o_miter);
-            orig->Outline(res, 0.5 * o_width, o_join, o_butt, 0.5 * o_miter);
 
-            Shape *theRes = new Shape;
+            orig->LoadPathVector(pathv);
+            res->SetBackData(false);
 
-            theRes->ConvertToShape(theShape, fill_positive);
+            if (!i_style->stroke_dasharray.values.empty()) {
+                // For dashed strokes, use Stroke method, because Outline can't do dashes
+                // However Stroke adds lots of extra nodes _or_ makes the path crooked, so consider this a temporary workaround
 
-            Path *originaux[1];
-            originaux[0] = res;
-            theRes->ConvertToForme(orig, 1, originaux);
+                orig->ConvertWithBackData(0.1);
 
-            res->Coalesce(5.0);
+                orig->DashPolylineFromStyle(i_style, scale, 0);
 
-            delete theShape;
-            delete theRes;
+                Shape* theShape = new Shape;
+                orig->Stroke(theShape, false, 0.5*o_width, o_join, o_butt,
+                             0.5 * o_miter);
+                orig->Outline(res, 0.5 * o_width, o_join, o_butt, 0.5 * o_miter);
 
-        } else {
+                Shape *theRes = new Shape;
 
-            orig->Outline(res, 0.5 * o_width, o_join, o_butt, 0.5 * o_miter);
+                theRes->ConvertToShape(theShape, fill_positive);
 
-            orig->Coalesce(0.5 * o_width);
+                Path *originaux[1];
+                originaux[0] = res;
+                theRes->ConvertToForme(orig, 1, originaux);
 
-            Shape *theShape = new Shape;
-            Shape *theRes = new Shape;
+                res->Coalesce(5.0);
 
-            res->ConvertWithBackData(1.0);
-            res->Fill(theShape, 0);
-            theRes->ConvertToShape(theShape, fill_positive);
+                delete theShape;
+                delete theRes;
 
-            Path *originaux[1];
-            originaux[0] = res;
-            theRes->ConvertToForme(orig, 1, originaux);
+            } else {
+                orig->Outline(res, 0.5 * o_width, o_join, o_butt, 0.5 * o_miter);
 
-            delete theShape;
-            delete theRes;
+                orig->Coalesce(0.5 * o_width);
+
+                Shape *theShape = new Shape;
+                Shape *theRes = new Shape;
+
+                res->ConvertWithBackData(1.0);
+                res->Fill(theShape, 0);
+                theRes->ConvertToShape(theShape, fill_positive);
+
+                Path *originaux[1];
+                originaux[0] = res;
+                theRes->ConvertToForme(orig, 1, originaux);
+
+                delete theShape;
+                delete theRes;
+            }
+
+            if (orig->descr_cmd.size() <= 1) {
+                // ca a merd, ou bien le resultat est vide
+                delete res;
+                delete orig;
+                return did;
+            }
         }
-
-        if (orig->descr_cmd.size() <= 1) {
-            // ca a merd, ou bien le resultat est vide
-            delete res;
-            delete orig;
-            continue;
-        }
-
-        did = true;
-
         // remember the position of the item
         gint pos = item->getRepr()->position();
         // remember parent
@@ -1338,27 +1378,29 @@ sp_selected_path_outline(SPDesktop *desktop)
         
         if (res->descr_cmd.size() > 1) { // if there's 0 or 1 node left, drop this path altogether
 
-            SPDocument * doc = desktop->getDocument();
-            Inkscape::XML::Document *xml_doc = doc->getReprDoc();
-            Inkscape::XML::Node *repr = xml_doc->createElement("svg:path");
-
-            // restore old style, but set old stroke style on fill
-            sp_repr_css_change(repr, ncss, "style");
-
-            sp_repr_css_attr_unref(ncss);
-
-            gchar *str = orig->svg_dump_path();
-            repr->setAttribute("d", str);
-            g_free(str);
-
-            if (mask)
-                repr->setAttribute("mask", mask);
-            if (clip_path)
-                repr->setAttribute("clip-path", clip_path);
-
-            if (SP_IS_SHAPE(item) && SP_SHAPE(item)->hasMarkers ()) {
-
+            //The stroke
+            Inkscape::XML::Node *stroke = NULL;
+            if( !item->style->stroke.noneSet ){
+                SPDocument * doc = desktop->getDocument();
                 Inkscape::XML::Document *xml_doc = doc->getReprDoc();
+                stroke = xml_doc->createElement("svg:path");
+
+                // restore old style, but set old stroke style on fill
+                sp_repr_css_change(stroke, ncss, "style");
+
+                sp_repr_css_attr_unref(ncss);
+
+                gchar *str = orig->svg_dump_path();
+                stroke->setAttribute("d", str);
+                g_free(str);
+
+                if (mask)
+                    stroke->setAttribute("mask", mask);
+                if (clip_path)
+                    stroke->setAttribute("clip-path", clip_path);
+            }
+
+            if (SP_IS_SHAPE(item)) {
                 Inkscape::XML::Node *g_repr = xml_doc->createElement("svg:g");
 
                 // add the group to the parent
@@ -1366,133 +1408,257 @@ sp_selected_path_outline(SPDesktop *desktop)
                 // move to the saved position
                 g_repr->setPosition(pos > 0 ? pos : 0);
 
-                g_repr->appendChild(repr);
+                //The fill
+                Inkscape::XML::Node *fill = NULL;
+                if (!legacy) {
+//                    gchar const *f_val = sp_repr_css_property(ncsf, "fill", NULL);
+                    if( !item->style->fill.noneSet ){
+                        fill = xml_doc->createElement("svg:path");
+                        sp_repr_css_change(fill, ncsf, "style");
+
+                        sp_repr_css_attr_unref(ncsf);
+
+                        gchar *str = sp_svg_write_path( pathv );
+                        fill->setAttribute("d", str);
+                        g_free(str);
+
+                        if (mask)
+                            fill->setAttribute("mask", mask);
+                        if (clip_path)
+                            fill->setAttribute("clip-path", clip_path);
+                    }
+                }
                 // restore title, description, id, transform
-                repr->setAttribute("id", id);
-                SPItem *newitem = (SPItem *) doc->getObjectByRepr(repr);
-                newitem->doWriteTransform(repr, transform);
+                g_repr->setAttribute("id", id);
+                SPItem *newitem = (SPItem *) doc->getObjectByRepr(g_repr);
+                newitem->doWriteTransform(transform);
                 if (title) {
                 	newitem->setTitle(title);
                 }
                 if (desc) {
                 	newitem->setDesc(desc);
                 }
-                
                 SPShape *shape = SP_SHAPE(item);
 
                 Geom::PathVector const & pathv = curve->get_pathvector();
-
-                // START marker
-                for (int i = 0; i < 2; i++) {  // SP_MARKER_LOC and SP_MARKER_LOC_START
-                    if ( SPObject *marker_obj = shape->_marker[i] ) {
-                        Geom::Affine const m (sp_shape_marker_get_transform_at_start(pathv.front().front()));
-                        sp_selected_path_outline_add_marker( marker_obj, m,
-                                                             Geom::Scale(i_style->stroke_width.computed), transform,
-                                                             g_repr, xml_doc, doc );
+                Inkscape::XML::Node *markers = NULL;
+                if(SP_SHAPE(item)->hasMarkers ()) {
+                    if (!legacy) {
+                        markers = xml_doc->createElement("svg:g");
+                        g_repr->appendChild(markers);
+                        markers->setPosition(pos > 0 ? pos : 0);
+                    } else {
+                        markers = g_repr;
                     }
-                }
-                // MID marker
-                for (int i = 0; i < 3; i += 2) {  // SP_MARKER_LOC and SP_MARKER_LOC_MID
-                    SPObject *midmarker_obj = shape->_marker[i];
-                    if (!midmarker_obj) continue;
-                    for(Geom::PathVector::const_iterator path_it = pathv.begin(); path_it != pathv.end(); ++path_it) {
-                        // START position
-                        if ( path_it != pathv.begin() 
-                             && ! ((path_it == (pathv.end()-1)) && (path_it->size_default() == 0)) ) // if this is the last path and it is a moveto-only, there is no mid marker there
-                        {
-                            Geom::Affine const m (sp_shape_marker_get_transform_at_start(path_it->front()));
-                            sp_selected_path_outline_add_marker( midmarker_obj, m,
+                    // START marker
+                    for (int i = 0; i < 2; i++) {  // SP_MARKER_LOC and SP_MARKER_LOC_START
+                        if ( SPObject *marker_obj = shape->_marker[i] ) {
+                            Geom::Affine const m (sp_shape_marker_get_transform_at_start(pathv.front().front()));
+                            sp_selected_path_outline_add_marker( marker_obj, m,
                                                                  Geom::Scale(i_style->stroke_width.computed), transform,
-                                                                 g_repr, xml_doc, doc );
+                                                                 markers, xml_doc, doc, desktop, legacy);
                         }
-                        // MID position
-                       if (path_it->size_default() > 1) {
-                            Geom::Path::const_iterator curve_it1 = path_it->begin();      // incoming curve
-                            Geom::Path::const_iterator curve_it2 = ++(path_it->begin());  // outgoing curve
-                            while (curve_it2 != path_it->end_default())
+                    }
+                    // MID marker
+                    for (int i = 0; i < 3; i += 2) {  // SP_MARKER_LOC and SP_MARKER_LOC_MID
+                        SPObject *midmarker_obj = shape->_marker[i];
+                        if (!midmarker_obj) continue;
+                        for(Geom::PathVector::const_iterator path_it = pathv.begin(); path_it != pathv.end(); ++path_it) {
+                            // START position
+                            if ( path_it != pathv.begin() 
+                                 && ! ((path_it == (pathv.end()-1)) && (path_it->size_default() == 0)) ) // if this is the last path and it is a moveto-only, there is no mid marker there
                             {
-                                /* Put marker between curve_it1 and curve_it2.
-                                 * Loop to end_default (so including closing segment), because when a path is closed,
-                                 * there should be a midpoint marker between last segment and closing straight line segment
-                                 */
-                                Geom::Affine const m (sp_shape_marker_get_transform(*curve_it1, *curve_it2));
-                                sp_selected_path_outline_add_marker(midmarker_obj, m,
-                                                                    Geom::Scale(i_style->stroke_width.computed), transform,
-                                                                    g_repr, xml_doc, doc);
+                                Geom::Affine const m (sp_shape_marker_get_transform_at_start(path_it->front()));
+                                sp_selected_path_outline_add_marker( midmarker_obj, m,
+                                                                     Geom::Scale(i_style->stroke_width.computed), transform,
+                                                                     markers, xml_doc, doc, desktop, legacy);
+                            }
+                            // MID position
+                           if (path_it->size_default() > 1) {
+                                Geom::Path::const_iterator curve_it1 = path_it->begin();      // incoming curve
+                                Geom::Path::const_iterator curve_it2 = ++(path_it->begin());  // outgoing curve
+                                while (curve_it2 != path_it->end_default())
+                                {
+                                    /* Put marker between curve_it1 and curve_it2.
+                                     * Loop to end_default (so including closing segment), because when a path is closed,
+                                     * there should be a midpoint marker between last segment and closing straight line segment
+                                     */
+                                    Geom::Affine const m (sp_shape_marker_get_transform(*curve_it1, *curve_it2));
+                                    sp_selected_path_outline_add_marker( midmarker_obj, m,
+                                                                         Geom::Scale(i_style->stroke_width.computed), transform,
+                                                                         markers, xml_doc, doc, desktop, legacy);
 
-                                ++curve_it1;
-                                ++curve_it2;
+                                    ++curve_it1;
+                                    ++curve_it2;
+                                }
+                            }
+                            // END position
+                            if ( path_it != (pathv.end()-1) && !path_it->empty()) {
+                                Geom::Curve const &lastcurve = path_it->back_default();
+                                Geom::Affine const m = sp_shape_marker_get_transform_at_end(lastcurve);
+                                sp_selected_path_outline_add_marker( midmarker_obj, m,
+                                                                     Geom::Scale(i_style->stroke_width.computed), transform,
+                                                                     markers, xml_doc, doc, desktop, legacy);
                             }
                         }
-                        // END position
-                        if ( path_it != (pathv.end()-1) && !path_it->empty()) {
-                            Geom::Curve const &lastcurve = path_it->back_default();
+                    }
+                    // END marker
+                    for (int i = 0; i < 4; i += 3) {  // SP_MARKER_LOC and SP_MARKER_LOC_END
+                        if ( SPObject *marker_obj = shape->_marker[i] ) {
+                            /* Get reference to last curve in the path.
+                             * For moveto-only path, this returns the "closing line segment". */
+                            Geom::Path const &path_last = pathv.back();
+                            unsigned int index = path_last.size_default();
+                            if (index > 0) {
+                                index--;
+                            }
+                            Geom::Curve const &lastcurve = path_last[index];
+
                             Geom::Affine const m = sp_shape_marker_get_transform_at_end(lastcurve);
-                            sp_selected_path_outline_add_marker( midmarker_obj, m,
+                            sp_selected_path_outline_add_marker( marker_obj, m,
                                                                  Geom::Scale(i_style->stroke_width.computed), transform,
-                                                                 g_repr, xml_doc, doc );
+                                                                 markers, xml_doc, doc, desktop, legacy);
                         }
                     }
-                }
-                // END marker
-                for (int i = 0; i < 4; i += 3) {  // SP_MARKER_LOC and SP_MARKER_LOC_END
-                    if ( SPObject *marker_obj = shape->_marker[i] ) {
-                        /* Get reference to last curve in the path.
-                         * For moveto-only path, this returns the "closing line segment". */
-                        Geom::Path const &path_last = pathv.back();
-                        unsigned int index = path_last.size_default();
-                        if (index > 0) {
-                            index--;
-                        }
-                        Geom::Curve const &lastcurve = path_last[index];
-
-                        Geom::Affine const m = sp_shape_marker_get_transform_at_end(lastcurve);
-                        sp_selected_path_outline_add_marker( marker_obj, m,
-                                                             Geom::Scale(i_style->stroke_width.computed), transform,
-                                                             g_repr, xml_doc, doc );
+                    if (!legacy) {
+                        if (mask)
+                            markers->setAttribute("mask", mask);
+                        if (clip_path)
+                            markers->setAttribute("clip-path", clip_path);
                     }
                 }
-                //bug lp:1290573 : completely destroy the old object first
-                curve->unref();
-                selection->remove(item);
-                item->deleteObject(false);
 
-                selection->add(g_repr);
-
-                Inkscape::GC::release(g_repr);
-
-            } else
-            {
-                //lp:1290573
-                curve->unref();
-                selection->remove(item);
-                item->deleteObject(false);
-
-                // add the new repr to the parent
-                parent->appendChild(repr);
-
-                // move to the saved position
-                repr->setPosition(pos > 0 ? pos : 0);
-
-                // restore title, description, id, transform
-                repr->setAttribute("id", id);
-
-                SPItem *newitem = (SPItem *) desktop->getDocument()->getObjectByRepr(repr);
-                newitem->doWriteTransform(repr, transform);
-                if (title) {
-                	newitem->setTitle(title);
+                gchar const *paint_order = sp_repr_css_property(ncss, "paint-order", NULL);
+                SPIPaintOrder temp;
+                temp.read( paint_order );
+                bool unique = false;
+                if ((!fill && !markers) || (!fill && !stroke) || (!markers && !stroke)) {
+                    unique = true;
                 }
-                if (desc) {
-                	newitem->setDesc(desc);
+                if (temp.layer[0] != SP_CSS_PAINT_ORDER_NORMAL && !legacy && !unique) {
+
+                    if (temp.layer[0] == SP_CSS_PAINT_ORDER_FILL) {
+                        if (temp.layer[1] == SP_CSS_PAINT_ORDER_STROKE) {
+                            if ( fill ) {
+                                g_repr->appendChild(fill);
+                            }
+                            if ( stroke ) {
+                                g_repr->appendChild(stroke);
+                            }
+                            if ( markers ) {
+                                markers->setPosition(2);
+                            }
+                        } else {
+                            if ( fill ) {
+                                g_repr->appendChild(fill);
+                            }
+                            if ( markers ) {
+                                markers->setPosition(1);
+                            }
+                            if ( stroke ) {
+                                g_repr->appendChild(stroke);
+                            }
+                        }
+                    } else if (temp.layer[0] == SP_CSS_PAINT_ORDER_STROKE) {
+                        if (temp.layer[1] == SP_CSS_PAINT_ORDER_FILL) {
+                            if ( stroke ) {
+                                g_repr->appendChild(stroke);
+                            }
+                            if ( fill ) {
+                                g_repr->appendChild(fill);
+                            }
+                            if ( markers ) {
+                                markers->setPosition(2);
+                            }
+                        } else {
+                            if ( stroke ) {
+                                g_repr->appendChild(stroke);
+                            }
+                            if ( markers ) {
+                                markers->setPosition(1);
+                            }
+                            if ( fill ) {
+                                g_repr->appendChild(fill);
+                            }
+                        }
+                    } else {
+                        if (temp.layer[1] == SP_CSS_PAINT_ORDER_STROKE) {
+                            if ( markers ) {
+                                markers->setPosition(0);
+                            }
+                            if ( stroke ) {
+                                g_repr->appendChild(stroke);
+                            }
+                            if ( fill ) {
+                                g_repr->appendChild(fill);
+                            }
+                        } else {
+                            if ( markers ) {
+                                markers->setPosition(0);
+                            }
+                            if ( fill ) {
+                                g_repr->appendChild(fill);
+                            }
+                            if ( stroke ) {
+                                g_repr->appendChild(stroke);
+                            }
+                        }
+                    }
+
+                } else if (!unique) {
+                    if ( fill ) {
+                        g_repr->appendChild(fill);
+                    }
+                    if ( stroke ) {
+                        g_repr->appendChild(stroke);
+                    }
+                    if ( markers ) {
+                        markers->setPosition(2);
+                    }
+                }
+                if( fill || stroke || markers ) {
+                    did = true;
                 }
                 
-                selection->add(repr);
+                Inkscape::XML::Node *out = NULL;
+                if (!fill && !markers && did) {
+                    out = stroke;
+                } else if (!fill && !stroke  && did) {
+                    out = markers;
+                } else if (!markers && !stroke  && did) {
+                    out = fill;
+                } else if(did) {
+                    out = g_repr;
+                }
 
+                SPCSSAttr *r_style = sp_repr_css_attr_new();
+                sp_repr_css_set_property(r_style, "opacity", opacity);
+                sp_repr_css_set_property(r_style, "filter", filter);
+                sp_repr_css_change(out, r_style, "style");
+
+                sp_repr_css_attr_unref(r_style);
+                if (unique) {
+                    parent->appendChild(out);
+                    parent->removeChild(g_repr);
+                    out->setPosition(pos > 0 ? pos : 0);
+                }
+                out->setAttribute("transform", item->getRepr()->attribute("transform"));
+                //bug lp:1290573 : completely destroy the old object first
+                curve->unref();
+                //Check for recursive markers to path
+                if (did) {
+                    if( selection->includes(item) ){
+                        selection->remove(item);
+                        item->deleteObject(false);
+                        selection->add(out);
+                    } else {
+                        item->deleteObject(false);
+                    }
+                    Inkscape::GC::release(g_repr);
+                }
             }
-
-            Inkscape::GC::release(repr);
-
         }
+
         if (title) {
             g_free(title);
             title = 0;
@@ -1505,6 +1671,28 @@ sp_selected_path_outline(SPDesktop *desktop)
         delete res;
         delete orig;
     }
+    return did;
+}
+
+void
+sp_selected_path_outline(SPDesktop *desktop, bool legacy)
+{
+    Inkscape::Selection *selection = desktop->getSelection();
+
+    if (selection->isEmpty()) {
+        desktop->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Select <b>stroked path(s)</b> to convert stroke to path."));
+        return;
+    }
+    Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+    bool scale_stroke = prefs->getBool("/options/transform/stroke", true);
+    prefs->setBool("/options/transform/stroke", true);
+    bool did = false;
+    std::vector<SPItem*> il(selection->items().begin(), selection->items().end());
+    for (std::vector<SPItem*>::const_iterator l = il.begin(); l != il.end(); l++){
+        SPItem *item = *l;
+        did = sp_item_path_outline(item, desktop, legacy);
+    }
+
     prefs->setBool("/options/transform/stroke", scale_stroke);
     if (did) {
         DocumentUndo::done(desktop->getDocument(), SP_VERB_SELECTION_OUTLINE, 
@@ -1521,7 +1709,7 @@ void
 sp_selected_path_offset(SPDesktop *desktop)
 {
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-    double prefOffset = prefs->getDouble("/options/defaultoffsetwidth/value", 1.0, "px");
+    double prefOffset = prefs->getDouble("/options/defaultoffsetwidth/value", 1.0, desktop->getDocument()->getDisplayUnit()->abbr);
 
     sp_selected_path_do_offset(desktop, true, prefOffset);
 }
@@ -1529,7 +1717,7 @@ void
 sp_selected_path_inset(SPDesktop *desktop)
 {
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-    double prefOffset = prefs->getDouble("/options/defaultoffsetwidth/value", 1.0, "px");
+    double prefOffset = prefs->getDouble("/options/defaultoffsetwidth/value", 1.0, desktop->getDocument()->getDisplayUnit()->abbr);
 
     sp_selected_path_do_offset(desktop, false, prefOffset);
 }
@@ -1600,7 +1788,7 @@ void sp_selected_path_create_offset_object(SPDesktop *desktop, int expand, bool 
 
     Geom::Affine const transform(item->transform);
 
-    item->doWriteTransform(item->getRepr(), Geom::identity());
+    item->doWriteTransform(Geom::identity());
 
     //XML Tree being used directly here while it shouldn't be...
     gchar *style = g_strdup(item->getRepr()->attribute("style"));
@@ -1615,7 +1803,7 @@ void sp_selected_path_create_offset_object(SPDesktop *desktop, int expand, bool 
     {
         {
             Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-            o_width = prefs->getDouble("/options/defaultoffsetwidth/value", 1.0, "px");
+            o_width = prefs->getDouble("/options/defaultoffsetwidth/value", 1.0, desktop->getDocument()->getDisplayUnit()->abbr);
         }
 
         if (o_width < 0.01){
@@ -1701,7 +1889,7 @@ void sp_selected_path_create_offset_object(SPDesktop *desktop, int expand, bool 
         if ( updating ) {
 
 			//XML Tree being used directly here while it shouldn't be
-            item->doWriteTransform(item->getRepr(), transform);
+            item->doWriteTransform(transform);
             char const *id = item->getRepr()->attribute("id");
             char const *uri = g_strdup_printf("#%s", id);
             repr->setAttribute("xlink:href", uri);
@@ -1725,7 +1913,7 @@ void sp_selected_path_create_offset_object(SPDesktop *desktop, int expand, bool 
             const char *n_id = item->getRepr()->attribute("id");
             item->deleteObject(false);
             repr->setAttribute("id", n_id);
-            nitem->doWriteTransform(repr, transform);
+            nitem->doWriteTransform(transform);
         }
 
         // The object just created from a temporary repr is only a seed.
@@ -1771,7 +1959,7 @@ sp_selected_path_do_offset(SPDesktop *desktop, bool expand, double prefOffset)
     }
 
     bool did = false;
-    std::vector<SPItem*> il(selection->itemList());
+    std::vector<SPItem*> il(selection->items().begin(), selection->items().end());
     for (std::vector<SPItem*>::const_iterator l = il.begin(); l != il.end(); l++){
         SPItem *item = *l;
         SPCurve *curve = NULL;
@@ -1793,7 +1981,7 @@ sp_selected_path_do_offset(SPDesktop *desktop, bool expand, double prefOffset)
 
         Geom::Affine const transform(item->transform);
 
-        item->doWriteTransform(item->getRepr(), Geom::identity());
+        item->doWriteTransform(Geom::identity());
 
         gchar *style = g_strdup(item->getRepr()->attribute("style"));
 
@@ -1899,17 +2087,6 @@ sp_selected_path_do_offset(SPDesktop *desktop, bool expand, double prefOffset)
             res->Reset();
             theRes->ConvertToForme(res);
 
-            if (o_width >= 1.0)
-            {
-                res->ConvertEvenLines(1.0);
-                res->Simplify(1.0);
-            }
-            else
-            {
-                res->ConvertEvenLines(1.0*o_width);
-                res->Simplify(1.0 * o_width);
-            }
-
             delete theShape;
             delete theRes;
         }
@@ -1946,7 +2123,7 @@ sp_selected_path_do_offset(SPDesktop *desktop, bool expand, double prefOffset)
             SPItem *newitem = (SPItem *) desktop->getDocument()->getObjectByRepr(repr);
 
             // reapply the transform
-            newitem->doWriteTransform(repr, transform);
+            newitem->doWriteTransform(transform);
 
             repr->setAttribute("id", id);
 
@@ -2016,7 +2193,7 @@ sp_selected_path_simplify_item(SPDesktop *desktop,
        this is necessary so that the item is transformed twice back and forth,
        allowing all compensations to cancel out regardless of the preferences
     */
-    item->doWriteTransform(item->getRepr(), Geom::identity());
+    item->doWriteTransform(Geom::identity());
 
     gchar *style = g_strdup(item->getRepr()->attribute("style"));
     gchar *mask = g_strdup(item->getRepr()->attribute("mask"));
@@ -2089,7 +2266,7 @@ sp_selected_path_simplify_item(SPDesktop *desktop,
     SPItem *newitem = (SPItem *) desktop->getDocument()->getObjectByRepr(repr);
 
     // reapply the transform
-    newitem->doWriteTransform(repr, transform);
+    newitem->doWriteTransform(transform);
 
     // restore title & description
     if (title) {
@@ -2196,7 +2373,7 @@ sp_selected_path_simplify_selection(SPDesktop *desktop, float threshold, bool ju
         return;
     }
 
-    std::vector<SPItem*> items(selection->itemList());
+    std::vector<SPItem*> items(selection->items().begin(), selection->items().end());
 
     bool didSomething = sp_selected_path_simplify_items(desktop, selection,
                                                         items, threshold,
@@ -2371,7 +2548,7 @@ SPCurve* curve_for_item(SPItem *item)
     SPCurve *curve = NULL;
     if (SP_IS_SHAPE(item)) {
         if (SP_IS_PATH(item)) {
-            curve = SP_PATH(item)->get_curve_for_edit();
+            curve = SP_PATH(item)->getCurveForEdit();
         } else {
             curve = SP_SHAPE(item)->getCurve();
         }
@@ -2399,7 +2576,7 @@ SPCurve* curve_for_item_before_LPE(SPItem *item)
     
     SPCurve *curve = NULL;
     if (SP_IS_SHAPE(item)) {
-        curve = SP_SHAPE(item)->getCurveBeforeLPE();
+        curve = SP_SHAPE(item)->getCurveForEdit();
     }
     else if (SP_IS_TEXT(item) || SP_IS_FLOWTEXT(item))
     {

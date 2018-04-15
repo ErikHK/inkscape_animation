@@ -2,32 +2,25 @@
  * Author:
  *   Tavmjong Bah <tavmjong@free.fr>
  *
- * Copyright (C) 2015 Tavmong Bah
+ * Copyright (C) 2015, 2018 Tavmong Bah
  *
  * Released under GNU GPL.  Read the file 'COPYING' for more information.
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #include <gtkmm.h>
 #include <glibmm/i18n.h>
+
 #include <libnrtype/font-instance.h>
-#include <iostream>
 
 #include "font-variants.h"
 
 // For updating from selection
 #include "desktop.h"
-#include "selection.h"
-#include "style.h"
-#include "sp-text.h"
-#include "sp-tspan.h"
-#include "sp-tref.h"
-#include "sp-textpath.h"
-#include "sp-item-group.h"
-#include "xml/repr.h"
+#include "object/sp-text.h"
 
 namespace Inkscape {
 namespace UI {
@@ -97,12 +90,16 @@ namespace Widget {
     _ligatures_contextual.signal_clicked().connect ( sigc::mem_fun(*this, &FontVariants::ligatures_callback) );
 
     // Add to frame
-    _ligatures_vbox.add( _ligatures_common );
-    _ligatures_vbox.add( _ligatures_discretionary );
-    _ligatures_vbox.add( _ligatures_historical );
-    _ligatures_vbox.add( _ligatures_contextual );
-    _ligatures_frame.add( _ligatures_vbox );
-    add( _ligatures_frame );
+    _ligatures_grid.attach( _ligatures_common,              0, 0, 1, 1);
+    _ligatures_grid.attach( _ligatures_discretionary,       0, 1, 1, 1);
+    _ligatures_grid.attach( _ligatures_historical,          0, 2, 1, 1);
+    _ligatures_grid.attach( _ligatures_contextual,          0, 3, 1, 1);
+    _ligatures_grid.attach( _ligatures_label_common,        1, 0, 1, 1);
+    _ligatures_grid.attach( _ligatures_label_discretionary, 1, 1, 1, 1);
+    _ligatures_grid.attach( _ligatures_label_historical,    1, 2, 1, 1);
+    _ligatures_grid.attach( _ligatures_label_contextual,    1, 3, 1, 1);
+    _ligatures_frame.add( _ligatures_grid );
+    pack_start( _ligatures_frame, Gtk::PACK_SHRINK );
 
     ligatures_init();
     
@@ -119,16 +116,16 @@ namespace Widget {
     _position_super.set_group(position_group);
 
     // Add signals
-    _position_normal.signal_pressed().connect ( sigc::mem_fun(*this, &FontVariants::position_callback) );
-    _position_sub.signal_pressed().connect ( sigc::mem_fun(*this, &FontVariants::position_callback) );
-    _position_super.signal_pressed().connect ( sigc::mem_fun(*this, &FontVariants::position_callback) );
+    _position_normal.signal_button_press_event().connect ( sigc::mem_fun(*this, &FontVariants::position_callback) );
+    _position_sub.signal_button_press_event().connect ( sigc::mem_fun(*this, &FontVariants::position_callback) );
+    _position_super.signal_button_press_event().connect ( sigc::mem_fun(*this, &FontVariants::position_callback) );
 
     // Add to frame
-    _position_vbox.add( _position_normal );
-    _position_vbox.add( _position_sub );
-    _position_vbox.add( _position_super );
+    _position_vbox.pack_start( _position_normal);
+    _position_vbox.pack_start( _position_sub   );
+    _position_vbox.pack_start( _position_super );
     _position_frame.add( _position_vbox );
-    add( _position_frame );
+    pack_start( _position_frame, Gtk::PACK_SHRINK );
 
     position_init();
 
@@ -162,15 +159,15 @@ namespace Widget {
     _caps_titling.signal_clicked().connect ( sigc::mem_fun(*this, &FontVariants::caps_callback) );
 
     // Add to frame
-    _caps_vbox.add( _caps_normal );
-    _caps_vbox.add( _caps_small );
-    _caps_vbox.add( _caps_all_small );
-    _caps_vbox.add( _caps_petite );
-    _caps_vbox.add( _caps_all_petite );
-    _caps_vbox.add( _caps_unicase );
-    _caps_vbox.add( _caps_titling );
+    _caps_vbox.pack_start( _caps_normal    );
+    _caps_vbox.pack_start( _caps_small     );
+    _caps_vbox.pack_start( _caps_all_small );
+    _caps_vbox.pack_start( _caps_petite    );
+    _caps_vbox.pack_start( _caps_all_petite);
+    _caps_vbox.pack_start( _caps_unicase   );
+    _caps_vbox.pack_start( _caps_titling   );
     _caps_frame.add( _caps_vbox );
-    add( _caps_frame );
+    pack_start( _caps_frame, Gtk::PACK_SHRINK );
 
     caps_init();
 
@@ -216,22 +213,22 @@ namespace Widget {
     _numeric_slashed_zero.signal_clicked().connect (  sigc::mem_fun(*this, &FontVariants::numeric_callback) );
 
     // Add to frame
-    _numeric_stylebox.add( _numeric_default_style );
-    _numeric_stylebox.add( _numeric_lining );
-    _numeric_stylebox.add( _numeric_old_style );
-    _numeric_vbox.add( _numeric_stylebox );
-    _numeric_widthbox.add( _numeric_default_width );
-    _numeric_widthbox.add( _numeric_proportional );
-    _numeric_widthbox.add( _numeric_tabular );
-    _numeric_vbox.add( _numeric_widthbox );
-    _numeric_fractionbox.add( _numeric_default_fractions );
-    _numeric_fractionbox.add( _numeric_diagonal );
-    _numeric_fractionbox.add( _numeric_stacked );
-    _numeric_vbox.add( _numeric_fractionbox );
-    _numeric_vbox.add( _numeric_ordinal );
-    _numeric_vbox.add( _numeric_slashed_zero );
+    _numeric_stylebox.pack_start( _numeric_default_style );
+    _numeric_stylebox.pack_start( _numeric_lining );
+    _numeric_stylebox.pack_start( _numeric_old_style );
+    _numeric_vbox.pack_start( _numeric_stylebox );
+    _numeric_widthbox.pack_start( _numeric_default_width );
+    _numeric_widthbox.pack_start( _numeric_proportional );
+    _numeric_widthbox.pack_start( _numeric_tabular );
+    _numeric_vbox.pack_start( _numeric_widthbox );
+    _numeric_fractionbox.pack_start( _numeric_default_fractions );
+    _numeric_fractionbox.pack_start( _numeric_diagonal );
+    _numeric_fractionbox.pack_start( _numeric_stacked );
+    _numeric_vbox.pack_start( _numeric_fractionbox );
+    _numeric_vbox.pack_start( _numeric_ordinal );
+    _numeric_vbox.pack_start( _numeric_slashed_zero );
     _numeric_frame.add( _numeric_vbox );
-    add( _numeric_frame );
+    pack_start( _numeric_frame, Gtk::PACK_SHRINK );
     
 
     // Feature settings ---------------------
@@ -239,11 +236,19 @@ namespace Widget {
     // Add tooltips
     _feature_entry.set_tooltip_text( _("Feature settings in CSS form. No sanity checking is performed."));
 
+    _feature_list.set_justify( Gtk::JUSTIFY_LEFT );
+    _feature_list.set_line_wrap( true );
+
+    _feature_substitutions.set_justify( Gtk::JUSTIFY_LEFT );
+    _feature_substitutions.set_line_wrap( true );
+
     // Add to frame
-    _feature_vbox.add( _feature_entry );
-    _feature_vbox.add( _feature_label );
+    _feature_vbox.pack_start( _feature_entry );
+    _feature_vbox.pack_start( _feature_label );
+    _feature_vbox.pack_start( _feature_list  );
+    _feature_vbox.pack_start( _feature_substitutions );
     _feature_frame.add( _feature_vbox );
-    add( _feature_frame );
+    pack_start( _feature_frame, Gtk::PACK_SHRINK  );
 
     // Add signals
     //_feature_entry.signal_key_press_event().connect ( sigc::mem_fun(*this, &FontVariants::feature_callback) );
@@ -270,8 +275,8 @@ namespace Widget {
       // std::cout << "FontVariants::position_init()" << std::endl;
   }
   
-  void
-  FontVariants::position_callback() {
+  bool
+  FontVariants::position_callback(GdkEventButton * /*event*/) {
       // std::cout << "FontVariants::position_callback()" << std::endl;
       _position_changed = true;
       _changed_signal.emit();
@@ -538,32 +543,93 @@ namespace Widget {
               _numeric_slashed_zero.set_sensitive( false );
           }
 
+          // List available ligatures
+          Glib::ustring markup_liga;
+          Glib::ustring markup_dlig;
+          Glib::ustring markup_hlig;
+          Glib::ustring markup_calt;
+          for (auto table: res->openTypeLigatures) {
+
+              Glib::ustring markup;
+              markup += "<span font_family='";
+              markup += sp_font_description_get_family(res->descr);
+              markup += "'>";
+              markup += Glib::Markup::escape_text(table.second);
+              markup += "</span>";
+
+              if (table.first == "liga") markup_liga += markup;
+              if (table.first == "clig") markup_liga += markup;
+              if (table.first == "dlig") markup_dlig += markup;
+              if (table.first == "hlig") markup_hlig += markup;
+              if (table.first == "calt") markup_calt += markup;
+          }
+
+          _ligatures_label_common.set_markup        ( markup_liga.c_str() );
+          _ligatures_label_discretionary.set_markup ( markup_dlig.c_str() );
+          _ligatures_label_historical.set_markup    ( markup_hlig.c_str() );
+          _ligatures_label_contextual.set_markup    ( markup_calt.c_str() );
+
           // Make list of tables not handled above... eventually add Gtk::Label with
           // this info.
-          // std::map<Glib::ustring,int> table_copy = res->openTypeTables;
-          // if( (it = table_copy.find("liga")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("clig")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("dlig")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("hlig")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("calt")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("subs")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("sups")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("smcp")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("c2sc")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("pcap")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("unic")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("titl")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("lnum")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("onum")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("pnum")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("tnum")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("frac")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("afrc")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("ordn")) != table_copy.end() ) table_copy.erase( it );
-          // if( (it = table_copy.find("zero")) != table_copy.end() ) table_copy.erase( it );
-          // for(it = table_copy.begin(); it != table_copy.end(); ++it) {
-          //     std::cout << "Other: " << it->first << "  Occurances: " << it->second << std::endl;
-          // }
+          std::map<Glib::ustring,int> table_copy = res->openTypeTables;
+          if( (it = table_copy.find("liga")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("clig")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("dlig")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("hlig")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("calt")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("subs")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("sups")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("smcp")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("c2sc")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("pcap")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("unic")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("titl")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("lnum")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("onum")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("pnum")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("tnum")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("frac")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("afrc")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("ordn")) != table_copy.end() ) table_copy.erase( it );
+          if( (it = table_copy.find("zero")) != table_copy.end() ) table_copy.erase( it );
+          std::string ott_list = "OpenType tables not included above: ";
+          for(it = table_copy.begin(); it != table_copy.end(); ++it) {
+              // std::cout << "Other: " << it->first << "  Occurrences: " << it->second << std::endl;
+              ott_list += it->first;
+              ott_list += ", ";
+          }
+
+          _feature_list.set_text( ott_list.c_str() );
+
+          // "<span foreground='darkblue'>";
+          Glib::ustring markup;
+
+          for (auto table: res->openTypeStylistic) {
+
+              markup += table.first;
+              markup += ": ";
+
+              markup += "<span font_family='";
+              markup += sp_font_description_get_family(res->descr);
+              markup += "'>";
+              markup += Glib::Markup::escape_text(table.second);
+              markup += "</span>";
+
+              markup += " → ";
+
+              markup += "<span font_family='";
+              markup += sp_font_description_get_family(res->descr);
+              markup += "'>";
+              markup += "<span font_features='";
+              markup += table.first;
+              markup += "'>";
+              markup += Glib::Markup::escape_text(table.second);
+              markup += "</span>";
+              markup += "</span>\n";
+
+          }
+
+          _feature_substitutions.set_markup ( markup.c_str() );
 
       } else {
           std::cerr << "FontVariants::update(): Couldn't find font_instance for: "
@@ -626,29 +692,31 @@ namespace Widget {
       
       // Caps
       {
-          unsigned caps_new = SP_CSS_FONT_VARIANT_CAPS_NORMAL;
+          //unsigned caps_new;
           Glib::ustring css_string;
           if( _caps_normal.get_active() ) {
               css_string = "normal";
-              caps_new = SP_CSS_FONT_VARIANT_CAPS_NORMAL;
+          //    caps_new = SP_CSS_FONT_VARIANT_CAPS_NORMAL;
           } else if( _caps_small.get_active() ) {
               css_string = "small-caps";
-              caps_new = SP_CSS_FONT_VARIANT_CAPS_SMALL;
+          //    caps_new = SP_CSS_FONT_VARIANT_CAPS_SMALL;
           } else if( _caps_all_small.get_active() ) {
               css_string = "all-small-caps";
-              caps_new = SP_CSS_FONT_VARIANT_CAPS_ALL_SMALL;
+          //    caps_new = SP_CSS_FONT_VARIANT_CAPS_ALL_SMALL;
           } else if( _caps_petite.get_active() ) {
               css_string = "petite";
-              caps_new = SP_CSS_FONT_VARIANT_CAPS_PETITE;
+          //    caps_new = SP_CSS_FONT_VARIANT_CAPS_PETITE;
           } else if( _caps_all_petite.get_active() ) {
               css_string = "all-petite";
-              caps_new = SP_CSS_FONT_VARIANT_CAPS_ALL_PETITE;
+          //    caps_new = SP_CSS_FONT_VARIANT_CAPS_ALL_PETITE;
           } else if( _caps_unicase.get_active() ) {
               css_string = "unicase";
-              caps_new = SP_CSS_FONT_VARIANT_CAPS_UNICASE;
+          //    caps_new = SP_CSS_FONT_VARIANT_CAPS_UNICASE;
           } else if( _caps_titling.get_active() ) {
               css_string = "titling";
-              caps_new = SP_CSS_FONT_VARIANT_CAPS_TITLING;
+          //    caps_new = SP_CSS_FONT_VARIANT_CAPS_TITLING;
+          //} else {
+          //    caps_new = SP_CSS_FONT_VARIANT_CAPS_NORMAL;
           }
 
           // May not be necessary... need to test.

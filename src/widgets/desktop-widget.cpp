@@ -51,7 +51,7 @@
 #include "preferences.h"
 #include "sp-image.h"
 #include "sp-item.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "ui/dialog/swatches.h"
 #include "ui/icon-names.h"
 #include "ui/widget/dock.h"

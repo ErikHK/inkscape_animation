@@ -44,7 +44,7 @@
 #include "sp-path.h"
 #include "sp-use.h"
 #include "sp-item-group.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "live_effects/lpe-powerstroke.h"
 #include "style.h"
 #include "ui/control-manager.h"

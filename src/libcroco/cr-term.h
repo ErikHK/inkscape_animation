@@ -123,6 +123,11 @@ struct _CRTerm
         } ext_content ;
 
         /**
+         *A flag to indicate if there is an n as in the nth child expression 'an+b'.
+         */
+        gboolean n;
+
+        /**
          *A spare pointer, just in case.
          *Can be used by the application.
          */

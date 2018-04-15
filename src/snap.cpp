@@ -18,7 +18,7 @@
 #include <utility>
 #include <2geom/transforms.h>
 
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "snap.h"
 #include "snap-enums.h"
 #include "snapped-line.h"

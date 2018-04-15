@@ -10,7 +10,7 @@
 
 #include <2geom/point.h>
 #include <gtkmm.h>
-#include "live_effects/parameter/filletchamferpointarray.h"
+#include "live_effects/parameter/satellitesarray.h"
 
 class SPDesktop;
 
@@ -27,11 +27,12 @@ public:
         return "LayerPropertiesDialog";
     }
 
-    static void showDialog(SPDesktop *desktop, Geom::Point knotpoint,
+    static void showDialog(SPDesktop *desktop, double _amount,
                            const Inkscape::LivePathEffect::
-                           FilletChamferPointArrayParamKnotHolderEntity *pt,
-                           bool use_distance,
-                           bool aprox_radius);
+                           FilletChamferKnotHolderEntity *pt,
+                           bool _use_distance,
+                           bool _aprox_radius,
+                           Satellite _satellite);
 
 protected:
 

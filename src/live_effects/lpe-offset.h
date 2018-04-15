@@ -8,6 +8,7 @@
 /*
  * Authors:
  *   Maximilian Albert
+ *   Jabiertxo Arraiza
  *
  * Copyright (C) Johan Engelen 2007 <j.b.c.engelen@utwente.nl>
  * Copyright (C) Maximilian Albert 2008 <maximilian.albert@gmail.com>
@@ -15,23 +16,46 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
+#include "live_effects/lpegroupbbox.h"
 #include "live_effects/effect.h"
-#include "live_effects/parameter/point.h"
+#include "live_effects/parameter/parameter.h"
 
 namespace Inkscape {
 namespace LivePathEffect {
 
-class LPEOffset : public Effect {
+namespace OfS {
+// we need a separate namespace to avoid clashes with other LPEs
+class KnotHolderEntityOffsetPoint;
+}
+
+class LPEOffset : public Effect, GroupBBoxEffect {
 public:
     LPEOffset(LivePathEffectObject *lpeobject);
     virtual ~LPEOffset();
-
-    virtual void doOnApply (SPLPEItem const* lpeitem);
-
-    virtual Geom::Piecewise<Geom::D2<Geom::SBasis> > doEffect_pwd2 (Geom::Piecewise<Geom::D2<Geom::SBasis> > const & pwd2_in);
+    virtual void doBeforeEffect (SPLPEItem const* lpeitem);
+    virtual Geom::PathVector doEffect_path (Geom::PathVector const & path_in);
+    virtual void doOnApply(SPLPEItem const* lpeitem);
+    virtual Gtk::Widget *newWidget();
+    void calculateOffset (Geom::PathVector const & path_in);
+    void drawHandle(Geom::Point p);
+    virtual void addKnotHolderEntities(KnotHolder * knotholder, SPItem * item);
+    friend class OfS::KnotHolderEntityOffsetPoint;
+protected:
+    void addCanvasIndicators(SPLPEItem const */*lpeitem*/, std::vector<Geom::PathVector> &hp_vec);
 
 private:
-    PointParam offset_pt;
+    ScalarParam offset;
+    EnumParam<unsigned> linejoin_type;
+    ScalarParam miter_limit;
+    BoolParam attempt_force_join;
+    BoolParam update_on_knot_move;
+    Geom::PathVector hp;
+    Geom::Point offset_pt;
+    Geom::Point origin;
+    bool evenodd;
+    KnotHolderEntity * _knot_entity;
+    Geom::PathVector original_pathv;
+    Inkscape::UI::Widget::Scalar *offset_widget;
 
     LPEOffset(const LPEOffset&);
     LPEOffset& operator=(const LPEOffset&);

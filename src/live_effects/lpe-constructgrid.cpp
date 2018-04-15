@@ -10,12 +10,9 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include <glibmm/i18n.h>
-
 #include "live_effects/lpe-constructgrid.h"
-
-#include <2geom/path.h>
-#include <2geom/transforms.h>
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -27,8 +24,8 @@ LPEConstructGrid::LPEConstructGrid(LivePathEffectObject *lpeobject) :
     nr_x(_("Size _X:"), _("The size of the grid in X direction."), "nr_x", &wr, this, 5),
     nr_y(_("Size _Y:"), _("The size of the grid in Y direction."), "nr_y", &wr, this, 5)
 {
-    registerParameter( dynamic_cast<Parameter *>(&nr_x) );
-    registerParameter( dynamic_cast<Parameter *>(&nr_y) );
+    registerParameter(&nr_x);
+    registerParameter(&nr_y);
 
     nr_x.param_make_integer();
     nr_y.param_make_integer();

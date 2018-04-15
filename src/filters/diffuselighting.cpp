@@ -18,7 +18,7 @@
 
 #include "attributes.h"
 #include "svg/svg.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "svg/svg-color.h"
 #include "svg/svg-icc-color.h"
 #include "filters/diffuselighting.h"

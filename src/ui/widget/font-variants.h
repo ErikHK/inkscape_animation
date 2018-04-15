@@ -2,7 +2,7 @@
  * Author:
  *   Tavmjong Bah <tavmjong@free.fr>
  *
- * Copyright (C) 2015 Tavmong Bah
+ * Copyright (C) 2015, 2018 Tavmong Bah
  *
  * Released under GNU GPL.  Read the file 'COPYING' for more information.
  */
@@ -14,6 +14,7 @@
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/radiobutton.h>
 #include <gtkmm/entry.h>
+#include <gtkmm/grid.h>
 
 class SPDesktop;
 class SPObject;
@@ -40,11 +41,15 @@ public:
 protected:
     // To start, use four check buttons.
     Gtk::Expander       _ligatures_frame;
-    Gtk::VBox           _ligatures_vbox;
+    Gtk::Grid           _ligatures_grid;
     Gtk::CheckButton    _ligatures_common;
     Gtk::CheckButton    _ligatures_discretionary;
     Gtk::CheckButton    _ligatures_historical;
     Gtk::CheckButton    _ligatures_contextual;
+    Gtk::Label          _ligatures_label_common;
+    Gtk::Label          _ligatures_label_discretionary;
+    Gtk::Label          _ligatures_label_historical;
+    Gtk::Label          _ligatures_label_contextual;
 
     // Exclusive options
     Gtk::Expander       _position_frame;
@@ -86,13 +91,15 @@ protected:
     Gtk::VBox           _feature_vbox;
     Gtk::Entry          _feature_entry;
     Gtk::Label          _feature_label;
-    
+    Gtk::Label          _feature_list;
+    Gtk::Label          _feature_substitutions;
+
 private:
     void ligatures_init();
     void ligatures_callback();
 
     void position_init();
-    void position_callback();
+    bool position_callback(GdkEventButton *event);
 
     void caps_init();
     void caps_callback();

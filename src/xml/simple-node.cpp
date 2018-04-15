@@ -21,14 +21,11 @@
 
 #include "preferences.h"
 
-#include "xml/node.h"
 #include "xml/simple-node.h"
 #include "xml/node-event-vector.h"
 #include "xml/node-fns.h"
-#include "xml/repr.h"
 #include "debug/event-tracker.h"
 #include "debug/simple-event.h"
-#include "util/share.h"
 #include "util/format.h"
 
 #include "attribute-rel-util.h"
@@ -39,7 +36,7 @@ namespace XML {
 
 namespace {
 
-Util::ptr_shared<char> stringify_node(Node const &node) {
+Util::ptr_shared stringify_node(Node const &node) {
     gchar *string;
     switch (node.type()) {
     case ELEMENT_NODE: {
@@ -62,7 +59,7 @@ Util::ptr_shared<char> stringify_node(Node const &node) {
     default:
         string = g_strdup_printf("unknown(%p)", &node);
     }
-    Util::ptr_shared<char> result=Util::share_string(string);
+    Util::ptr_shared result=Util::share_string(string);
     g_free(string);
     return result;
 }
@@ -71,7 +68,7 @@ typedef Debug::SimpleEvent<Debug::Event::XML> DebugXML;
 
 class DebugXMLNode : public DebugXML {
 public:
-    DebugXMLNode(Node const &node, Util::ptr_shared<char> name)
+    DebugXMLNode(Node const &node, Util::ptr_shared name)
     : DebugXML(name)
     {
         _addProperty("node", stringify_node(node));
@@ -118,7 +115,7 @@ public:
 class DebugSetContent : public DebugXMLNode {
 public:
     DebugSetContent(Node const &node,
-                    Util::ptr_shared<char> content)
+                    Util::ptr_shared content)
     : DebugXMLNode(node, Util::share_static_string("set-content"))
     {
         _addProperty("content", content);
@@ -136,7 +133,7 @@ class DebugSetAttribute : public DebugXMLNode {
 public:
     DebugSetAttribute(Node const &node,
                       GQuark name,
-                      Util::ptr_shared<char> value)
+                      Util::ptr_shared value)
     : DebugXMLNode(node, Util::share_static_string("set-attribute"))
     {
         _addProperty("name", Util::share_static_string(g_quark_to_string(name)));
@@ -293,8 +290,8 @@ void SimpleNode::_setParent(SimpleNode *parent) {
 }
 
 void SimpleNode::setContent(gchar const *content) {
-    ptr_shared<char> old_content=_content;
-    ptr_shared<char> new_content = ( content ? share_string(content) : ptr_shared<char>() );
+    ptr_shared old_content=_content;
+    ptr_shared new_content = ( content ? share_string(content) : ptr_shared() );
 
     Debug::EventTracker<> tracker;
     if (new_content) {
@@ -368,9 +365,9 @@ SimpleNode::setAttribute(gchar const *name, gchar const *value, bool const /*is_
     }
     Debug::EventTracker<> tracker;
 
-    ptr_shared<char> old_value=( existing ? existing->value : ptr_shared<char>() );
+    ptr_shared old_value=( existing ? existing->value : ptr_shared() );
 
-    ptr_shared<char> new_value=ptr_shared<char>();
+    ptr_shared new_value=ptr_shared();
     if (cleaned_value) {
         new_value = share_string(cleaned_value);
         tracker.set<DebugSetAttribute>(*this, key, new_value);

@@ -27,7 +27,7 @@
 #include "live_effects/effect.h"
 #include "display/curve.h"
 #include "snap.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-clippath.h"
 #include "sp-item-group.h"
 #include "sp-mask.h"

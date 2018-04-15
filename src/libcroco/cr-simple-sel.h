@@ -40,9 +40,10 @@ G_BEGIN_DECLS
 enum Combinator
 {
         NO_COMBINATOR,
-        COMB_WS,/*whitespace: descendent*/
-        COMB_PLUS,/*'+': preceded by*/
-        COMB_GT/*greater than ('>'): child*/
+        COMB_WS,    /*whitespace: descendent*/
+        COMB_PLUS,  /*'+': immediately preceded by*/
+        COMB_TILDE, /*'~': preceded by, CSS 3*/
+        COMB_GT     /*greater than ('>'): child*/
 } ;
 
 enum SimpleSelectorType

@@ -24,7 +24,7 @@
 #include "verbs.h"
 
 #include "ui/tools/pen-tool.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "desktop.h"
 
 #include "selection.h"

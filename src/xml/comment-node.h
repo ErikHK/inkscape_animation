@@ -26,7 +26,7 @@ namespace XML {
  * @brief Comment node, e.g. &lt;!-- Some comment --&gt;
  */
 struct CommentNode : public SimpleNode {
-    CommentNode(Util::ptr_shared<char> content, Document *doc)
+    CommentNode(Util::ptr_shared content, Document *doc)
     : SimpleNode(g_quark_from_static_string("comment"), doc)
     {
         setContent(content);

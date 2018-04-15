@@ -12,7 +12,7 @@
 #include "layer-manager.h"
 #include "layer-model.h"
 //#include "ui/previewable.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "ui/tool/event-utils.h"
 
 #include "sp-path.h"

@@ -13,23 +13,18 @@
  */
 
 #include "ui/widget/scalar.h"
-#include <glibmm/i18n.h>
-
 #include "live_effects/lpe-curvestitch.h"
 
-#include "sp-item.h"
-#include "sp-path.h"
+#include "object/sp-path.h"
+
 #include "svg/svg.h"
 #include "xml/repr.h"
 
-#include <2geom/path.h>
-#include <2geom/piecewise.h>
-#include <2geom/sbasis.h>
-#include <2geom/sbasis-geometric.h>
 #include <2geom/bezier-to-sbasis.h>
-#include <2geom/sbasis-to-bezier.h>
-#include <2geom/d2.h>
-#include <2geom/affine.h>
+
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
+
 
 namespace Inkscape {
 namespace LivePathEffect {
@@ -47,20 +42,21 @@ LPECurveStitch::LPECurveStitch(LivePathEffectObject *lpeobject) :
     prop_scale(_("Scale _width:"), _("Scale the width of the stitch path"), "prop_scale", &wr, this, 1),
     scale_y_rel(_("Scale _width relative to length"), _("Scale the width of the stitch path relative to its length"), "scale_y_rel", &wr, this, false)
 {
-    registerParameter( dynamic_cast<Parameter *>(&nrofpaths) );
-    registerParameter( dynamic_cast<Parameter *>(&startpoint_edge_variation) );
-    registerParameter( dynamic_cast<Parameter *>(&startpoint_spacing_variation) );
-    registerParameter( dynamic_cast<Parameter *>(&endpoint_edge_variation) );
-    registerParameter( dynamic_cast<Parameter *>(&endpoint_spacing_variation) );
-    registerParameter( dynamic_cast<Parameter *>(&strokepath) );
-    registerParameter( dynamic_cast<Parameter *>(&prop_scale) );
-    registerParameter( dynamic_cast<Parameter *>(&scale_y_rel) );
+    registerParameter(&nrofpaths);
+    registerParameter(&startpoint_edge_variation);
+    registerParameter(&startpoint_spacing_variation);
+    registerParameter(&endpoint_edge_variation);
+    registerParameter(&endpoint_spacing_variation);
+    registerParameter(&strokepath );
+    registerParameter(&prop_scale);
+    registerParameter(&scale_y_rel);
 
     nrofpaths.param_make_integer();
     nrofpaths.param_set_range(2, Geom::infinity());
 
     prop_scale.param_set_digits(3);
     prop_scale.param_set_increments(0.01, 0.10);
+    transformed = false;
 }
 
 LPECurveStitch::~LPECurveStitch()
@@ -113,8 +109,9 @@ LPECurveStitch::doEffect_path (Geom::PathVector const & path_in)
         
                 if (!Geom::are_near(start,end)) {
                     gdouble scaling_y = 1.0;
-                    if (scale_y_rel.get_value()) {
+                    if (scale_y_rel.get_value() || transformed) {
                         scaling_y = (L2(end-start)/scaling)*prop_scale;
+                        transformed = false;
                     } else {
                         scaling_y = prop_scale;
                     }
@@ -200,12 +197,8 @@ LPECurveStitch::transform_multiply(Geom::Affine const& postmul, bool set)
     if (postmul.isTranslation()) {
         strokepath.param_transform_multiply(postmul, set);
     } else if (!scale_y_rel.get_value()) {
-  // this basically means that for this transformation, the result should be the same as normal scaling the result path
-  // don't know how to do this yet.
-//        Geom::Affine new_postmul;
-        //new_postmul.setIdentity();
-//        new_postmul.setTranslation(postmul.translation());
-//        Effect::transform_multiply(new_postmul, set);
+        transformed = true;
+        strokepath.param_transform_multiply(postmul, set);
     }
 }
 

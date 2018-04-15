@@ -8,7 +8,7 @@
 #include "layer-manager.h"
 #include "layer-model.h"
 //#include "ui/previewable.h"
-//#include "sp-namedview.h"
+//#include "object/sp-namedview.h"
 #include "keyframe-bar.h"
 #include "keyframe-widget.h"
 #include <gdkmm/general.h>

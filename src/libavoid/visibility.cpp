@@ -27,14 +27,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Michael Wybrow <mjwybrow@users.sourceforge.net>
+ * Author(s):  Michael Wybrow
 */
 
 
 #include <algorithm>
 #include <cfloat>
-#define _USE_MATH_DEFINES
-#include <cmath>
 
 #include "libavoid/shape.h"
 #include "libavoid/debug.h"
@@ -45,27 +43,24 @@
 #include "libavoid/router.h"
 #include "libavoid/assertions.h"
 
-#ifdef LINEDEBUG
-  #include "SDL_gfxPrimitives.h"
-#endif
 
 namespace Avoid {
 
 
-void shapeVis(ShapeRef *shape)
-{
-    Router *router = shape->router();
+static void vertexSweep(VertInf *vert);
 
-    if ( !(router->InvisibilityGrph) )
+void Obstacle::computeVisibilityNaive(void)
+{
+    if ( !(router()->InvisibilityGrph) )
     {
         // Clear shape from graph.
-        shape->removeFromGraph();
+        removeFromGraph();
     }
 
-    VertInf *shapeBegin = shape->firstVert();
-    VertInf *shapeEnd = shape->lastVert()->lstNext;
+    VertInf *shapeBegin = firstVert();
+    VertInf *shapeEnd = lastVert()->lstNext;
 
-    VertInf *pointsBegin = router->vertices.connsBegin();
+    VertInf *pointsBegin = router()->vertices.connsBegin();
     for (VertInf *curr = shapeBegin; curr != shapeEnd; curr = curr->lstNext)
     {
         bool knownNew = true;
@@ -85,7 +80,7 @@ void shapeVis(ShapeRef *shape)
         }
 
         db_printf("\tSecond Half:\n");
-        VertInf *pointsEnd = router->vertices.end();
+        VertInf *pointsEnd = router()->vertices.end();
         for (VertInf *k = shapeEnd; k != pointsEnd; k = k->lstNext)
         {
             if (k->id == dummyOrthogID)
@@ -99,18 +94,16 @@ void shapeVis(ShapeRef *shape)
 }
 
 
-void shapeVisSweep(ShapeRef *shape)
+void Obstacle::computeVisibilitySweep(void)
 {
-    Router *router = shape->router();
-
-    if ( !(router->InvisibilityGrph) )
+    if ( !(router()->InvisibilityGrph) )
     {
         // Clear shape from graph.
-        shape->removeFromGraph();
+        removeFromGraph();
     }
 
-    VertInf *startIter = shape->firstVert();
-    VertInf *endIter = shape->lastVert()->lstNext;
+    VertInf *startIter = firstVert();
+    VertInf *endIter = lastVert()->lstNext;
 
     for (VertInf *i = startIter; i != endIter; i = i->lstNext)
     {
@@ -126,14 +119,14 @@ void vertexVisibility(VertInf *point, VertInf *partner, bool knownNew,
     const VertID& pID = point->id;
 
     // Make sure we're only doing ptVis for endpoints.
-    COLA_ASSERT(!(pID.isShape));
+    COLA_ASSERT(pID.isConnPt());
 
     if ( !(router->InvisibilityGrph) )
     {
         point->removeFromGraph();
     }
 
-    if (gen_contains && !(pID.isShape))
+    if (gen_contains && pID.isConnPt())
     {
         router->generateContains(point);
     }
@@ -145,12 +138,19 @@ void vertexVisibility(VertInf *point, VertInf *partner, bool knownNew,
     else
     {
         VertInf *shapesEnd = router->vertices.end();
-        for (VertInf *k = router->vertices.shapesBegin(); k != shapesEnd;
+        for (VertInf *k = router->vertices.connsBegin(); k != shapesEnd;
                 k = k->lstNext)
         {
             if (k->id == dummyOrthogID)
             {
                 // Don't include orthogonal dummy vertices.
+                continue;
+            }
+            else if (k->id.isConnPt() && !k->id.isConnectionPin() &&
+                    !(k->id.isConnCheckpoint() && k->id.objID == pID.objID))
+            {
+                // Include connection pins, but not connectors.
+                // Also include checkpoints with same ID as sweep point.
                 continue;
             }
             EdgeInf::checkEdgeVisibility(point, k, knownNew);
@@ -167,21 +167,15 @@ void vertexVisibility(VertInf *point, VertInf *partner, bool knownNew,
 //  SWEEP CODE
 //
 
-static VertInf *centerInf;
-static Point centerPoint;
-static VertID centerID;
-
 
 class PointPair
 {
     public:
-        PointPair(VertInf *inf)
-            : vInf(inf)
+        PointPair(const Point& centerPoint, VertInf *inf)
+            : vInf(inf),
+              centerPoint(centerPoint)
         {
-            double x = vInf->point.x - centerPoint.x;
-            double y = vInf->point.y - centerPoint.y;
-
-            angle = pos_to_angle(x, y);
+            angle = rotationalAngle(vInf->point - centerPoint);
             distance = euclideanDist(centerPoint, vInf->point);
         }
         bool operator<(const PointPair& rhs) const
@@ -206,38 +200,12 @@ class PointPair
             }
             return angle < rhs.angle;
         }
-        static double pos_to_angle(double x, double y)
-        {
-            if (y == 0)
-            {
-                return ((x < 0) ? 180 : 0);
-            }
-            else if (x == 0)
-            {
-                return ((y < 0) ? 270 : 90);
-            }
-            
-            double ang = atan(y / x);
-            ang = (ang * 180) / M_PI;
-
-            if (x < 0)
-            {
-                ang += 180;
-            }
-            else if (y < 0)
-            {
-                ang += 360;
-            }
-            COLA_ASSERT(ang >= 0);
-            COLA_ASSERT(ang <= 360);
-            return ang;
-        }
 
         VertInf    *vInf;
         double     angle;
         double     distance;
+        Point      centerPoint;
 };
-
 
 typedef std::set<PointPair > VertSet;
 
@@ -245,21 +213,26 @@ typedef std::set<PointPair > VertSet;
 class EdgePair
 {
     public:
-        EdgePair() :
-            vInf1(NULL), vInf2(NULL), dist1(0.0), dist2(0.0), angle(0.0),
-            angleDist(0.0)
+        EdgePair() 
+            : vInf1(NULL), 
+              vInf2(NULL), 
+              dist1(0.0),
+              dist2(0.0),
+              angle(0.0),
+              angleDist(0.0)
         {
             // The default constuctor should never be called.  
             // This is defined to appease the MSVC compiler.
             COLA_ASSERT(false);
         }
-        EdgePair(const PointPair& p1, VertInf *v) : 
-                vInf1(p1.vInf), 
-                vInf2(v),
-                dist1(p1.distance),
-                dist2(euclideanDist(vInf2->point, centerPoint)),
-                angle(p1.angle),
-                angleDist(p1.distance)
+        EdgePair(const PointPair& p1, VertInf *v) 
+            : vInf1(p1.vInf), 
+              vInf2(v),
+              dist1(p1.distance),
+              dist2(euclideanDist(vInf2->point, p1.centerPoint)),
+              angle(p1.angle),
+              angleDist(p1.distance),
+              centerPoint(p1.centerPoint)
         {
         }
         bool operator<(const EdgePair& rhs) const
@@ -337,6 +310,7 @@ class EdgePair
         double dist2;
         double angle;
         double angleDist;
+        Point centerPoint;
 };
 
 typedef std::list<EdgePair> SweepEdgeList;
@@ -355,7 +329,7 @@ class isBoundingShape
         // The following is an overloading of the function call operator.
         bool operator () (const PointPair& pp)
         {
-            if (pp.vInf->id.isShape &&
+            if (!(pp.vInf->id.isConnPt()) &&
                     (ss.find(pp.vInf->id.objID) != ss.end()))
             {
                 return true;
@@ -404,7 +378,7 @@ static bool sweepVisible(SweepEdgeList& T, const PointPair& point,
         return true;
     }
 
-    if (! point.vInf->id.isShape )
+    if (point.vInf->id.isConnPt())
     {
         // It's a connector endpoint, so we have to ignore 
         // edges of containing shapes for determining visibility.
@@ -454,33 +428,20 @@ static bool sweepVisible(SweepEdgeList& T, const PointPair& point,
     if (!visible)
     {
         *blocker = (*closestIt).vInf1->id.objID;
-#ifdef LINEDEBUG
-        Point &e1 = (*closestIt).vInf1->point;
-        Point &e2 = (*closestIt).vInf2->point;
-
-        if (router->avoid_screen)
-        {
-            int canx = 151;
-            int cany = 55;
-            lineRGBA(router->avoid_screen, e1.x + canx, e1.y + cany,
-                    e2.x + canx, e2.y + cany, 0, 0, 225, 255);
-        }
-#endif
     }
     return visible;
 }
 
 
-void vertexSweep(VertInf *vert)
+static void vertexSweep(VertInf *vert)
 {
     Router *router = vert->_router;
     VertID& pID = vert->id;
     Point& pPoint = vert->point;
 
-    centerInf = vert;
-    centerID = pID;
-    centerPoint = pPoint;
-    Point centerPt = pPoint;
+    VertInf *centerInf = vert;
+    VertID centerID = pID;
+    Point centerPoint = pPoint;
 
     // List of shape (and maybe endpt) vertices, except p
     // Sort list, around
@@ -503,7 +464,8 @@ void vertexSweep(VertInf *vert)
             continue;
         }
 
-        if (!(centerID.isShape) && (ss.find(inf->id.objID) != ss.end()))
+        if (centerID.isConnPt() && (ss.find(inf->id.objID) != ss.end()) &&
+                !inf->id.isConnPt())
         {
             // Don't include edge points of containing shapes.
             unsigned int shapeID = inf->id.objID;
@@ -511,31 +473,38 @@ void vertexSweep(VertInf *vert)
                     shapeID);
             continue;
         }
-
-        if (inf->id.isShape)
-        {
-            // Add shape vertex.
-            v.insert(inf);
-        }
-        else
+        
+        if (inf->id.isConnPt())
         {
             // Add connector endpoint.
-            if (centerID.isShape)
+            if (centerID.isConnPt())
             {
-                // Center is a shape vertex, so add all endpoint vertices.
-                v.insert(inf);
+                if (inf->id.isConnectionPin())
+                {
+                    v.insert(PointPair(centerPoint, inf));
+                }
+                else if (centerID.isConnectionPin())
+                {
+                    // Connection pins have visibility to everything.
+                    v.insert(PointPair(centerPoint, inf));
+                }
+                else if (inf->id.objID == centerID.objID)
+                {
+                    // Center is an endpoint, so only include the other
+                    // endpoints or checkpoints from the matching connector.
+                    v.insert(PointPair(centerPoint, inf));
+                }
             }
             else
             {
-                // Center is an endpoint, so only include the other
-                // endpoint from the matching connector.
-                VertID partnerID = VertID(centerID.objID, false,
-                        (centerID.vn == 1) ? 2 : 1);
-                if (inf->id == partnerID)
-                {
-                    v.insert(inf);
-                }
+                // Center is a shape vertex, so add all endpoint vertices.
+                v.insert(PointPair(centerPoint, inf));
             }
+        }
+        else
+        {
+            // Add shape vertex.
+            v.insert(PointPair(centerPoint, inf));
         }
     }
     std::set<unsigned int> onBorderIDs;
@@ -544,14 +513,12 @@ void vertexSweep(VertInf *vert)
     SweepEdgeList e;
     VertSet::const_iterator vbegin = v.begin();
     VertSet::const_iterator vend = v.end();
+    const Point xaxis(DBL_MAX, centerInf->point.y);
     for (VertSet::const_iterator t = vbegin; t != vend; ++t)
     {
         VertInf *k = t->vInf;
 
         COLA_ASSERT(centerInf != k);
-        COLA_ASSERT(centerID.isShape || (ss.find(k->id.objID) == ss.end()));
-
-        Point xaxis(DBL_MAX, centerInf->point.y);
 
         VertInf *kPrev = k->shPrev;
         VertInf *kNext = k->shNext;
@@ -564,8 +531,7 @@ void vertexSweep(VertInf *vert)
                 EdgePair intPair = EdgePair(*t, kPrev);
                 e.push_back(intPair);
             }
-            if ((vecDir(kPrev->point, k->point, centerInf->point) == 0) &&
-                    inBetween(kPrev->point, k->point, centerInf->point))
+            if (pointOnLine(kPrev->point, k->point, centerInf->point))
             {
                 // Record that centerPoint is on an obstacle line.
                 onBorderIDs.insert(k->id.objID);
@@ -580,8 +546,7 @@ void vertexSweep(VertInf *vert)
                 EdgePair intPair = EdgePair(*t, kNext);
                 e.push_back(intPair);
             }
-            if ((vecDir(kNext->point, k->point, centerInf->point) == 0) &&
-                    inBetween(kNext->point, k->point, centerInf->point))
+            if (pointOnLine(kNext->point, k->point, centerInf->point))
             {
                 // Record that centerPoint is on an obstacle line.
                 onBorderIDs.insert(k->id.objID);
@@ -604,17 +569,6 @@ void vertexSweep(VertInf *vert)
         VertID& currID = currInf->id;
         Point&  currPt = currInf->point;
 
-#ifdef LINEDEBUG
-        Sint16 ppx = (int) centerPt.x;
-        Sint16 ppy = (int) centerPt.y;
-
-        Sint16 cx = (int) currPt.x;
-        Sint16 cy = (int) currPt.y;
-
-        int canx = 151;
-        int cany = 55;
-#endif
-
         const double& currDist = (*t).distance;
 
         EdgeInf *edge = EdgeInf::existingEdge(centerInf, currInf);
@@ -634,13 +588,13 @@ void vertexSweep(VertInf *vert)
         bool currVisible = sweepVisible(e, *t, onBorderIDs, &blocker);
 
         bool cone1 = true, cone2 = true;
-        if (centerID.isShape)
+        if (!(centerID.isConnPt()))
         {
             cone1 = inValidRegion(router->IgnoreRegions,
                     centerInf->shPrev->point, centerPoint,
                     centerInf->shNext->point, currInf->point);
         }
-        if (currInf->id.isShape)
+        if (!(currInf->id.isConnPt()))
         {
             cone2 = inValidRegion(router->IgnoreRegions,
                     currInf->shPrev->point, currInf->point,
@@ -660,14 +614,6 @@ void vertexSweep(VertInf *vert)
         {
             if (currVisible)
             {
-#ifdef LINEDEBUG
-                if (router->avoid_screen)
-                {
-                    lineRGBA(router->avoid_screen, ppx + canx, ppy + cany,
-                            cx + canx, cy + cany, 255, 0, 0, 75);
-                    SDL_Delay(1000);
-                }
-#endif
                 db_printf("\tSetting visibility edge... \n\t\t");
                 edge->setDist(currDist);
                 edge->db_print();
@@ -686,14 +632,14 @@ void vertexSweep(VertInf *vert)
             edge = NULL;
         }
 
-        if (currID.isShape)
+        if (!(currID.isConnPt()))
         {
             // This is a shape edge
 
             if (currInf->shPrev != centerInf)
             {
                 Point& prevPt = currInf->shPrev->point;
-                int prevDir = vecDir(centerPt, currPt, prevPt);
+                int prevDir = vecDir(centerPoint, currPt, prevPt);
                 EdgePair prevPair = EdgePair(*t, currInf->shPrev);
 
                 if (prevDir == BEHIND)
@@ -709,7 +655,7 @@ void vertexSweep(VertInf *vert)
             if (currInf->shNext != centerInf)
             {
                 Point& nextPt = currInf->shNext->point;
-                int nextDir = vecDir(centerPt, currPt, nextPt);
+                int nextDir = vecDir(centerPoint, currPt, nextPt);
                 EdgePair nextPair = EdgePair(*t, currInf->shNext);
 
                 if (nextDir == BEHIND)
@@ -722,12 +668,6 @@ void vertexSweep(VertInf *vert)
                 }
             }
         }
-#ifdef LINEDEBUG
-        if (router->avoid_screen)
-        {
-            SDL_Flip(router->avoid_screen);
-        }
-#endif
     }
 }
 

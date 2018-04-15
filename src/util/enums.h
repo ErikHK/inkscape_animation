@@ -19,7 +19,7 @@ namespace Util {
  * Simplified management of enumerations of svg items with UI labels.
  * IMPORTANT:
  *  When initializing the EnumData struct, you cannot use _(...) to translate strings.
- * Instead, one must use N_(...) and do the translation every time the string is retreived.
+ * Instead, one must use N_(...) and do the translation every time the string is retrieved.
  */
 template<typename E>
 struct EnumData

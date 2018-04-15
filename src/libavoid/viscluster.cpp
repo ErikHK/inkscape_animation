@@ -19,75 +19,95 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Michael Wybrow <mjwybrow@users.sourceforge.net>
+ * Author(s):  Michael Wybrow
 */
 
+#include <cstdlib>
 
 #include "libavoid/viscluster.h"
 #include "libavoid/router.h"
 #include "libavoid/assertions.h"
+#include "libavoid/debug.h"
 
 
 namespace Avoid {
 
 
-ClusterRef::ClusterRef(Router *router, unsigned int id, Polygon& ply)
-    : _router(router)
-    , _poly(ply, router)
-    , _active(false)
+ClusterRef::ClusterRef(Router *router, Polygon& polygon, const unsigned int id)
+    : m_router(router),
+      m_polygon(polygon, router),
+      m_rectangular_polygon(m_polygon.boundingRectPolygon()),
+      m_active(false)
 {
-    _id = router->assignId(id);
+    COLA_ASSERT(m_router != NULL);
+    m_id = m_router->assignId(id);
+
+    m_router->addCluster(this);
 }
 
 
 ClusterRef::~ClusterRef()
 {
+    if (m_router->m_currently_calling_destructors == false)
+    {
+        err_printf("ERROR: ClusterRef::~ClusterRef() shouldn't be called directly.\n");
+        err_printf("       It is owned by the router.  Call Router::deleteCluster() instead.\n");
+        abort();
+    }
 }
 
 
 void ClusterRef::makeActive(void)
 {
-    COLA_ASSERT(!_active);
+    COLA_ASSERT(!m_active);
     
-    // Add to connRefs list.
-    _pos = _router->clusterRefs.insert(_router->clusterRefs.begin(), this);
+    // Add to clusterRefs list.
+    m_clusterrefs_pos = m_router->clusterRefs.insert(
+            m_router->clusterRefs.begin(), this);
 
-    _active = true;
+    m_active = true;
 }
 
 
 void ClusterRef::makeInactive(void)
 {
-    COLA_ASSERT(_active);
+    COLA_ASSERT(m_active);
     
-    // Remove from connRefs list.
-    _router->clusterRefs.erase(_pos);
+    // Remove from clusterRefs list.
+    m_router->clusterRefs.erase(m_clusterrefs_pos);
 
-    _active = false;
+    m_active = false;
 }
     
 
 void ClusterRef::setNewPoly(Polygon& poly)
 {
-    _poly = ReferencingPolygon(poly, _router);
+    m_polygon = ReferencingPolygon(poly, m_router);
+    m_rectangular_polygon = m_polygon.boundingRectPolygon();
 }
 
 
-unsigned int ClusterRef::id(void)
+unsigned int ClusterRef::id(void) const
 {
-    return _id;
+    return m_id;
 }
 
 
 ReferencingPolygon& ClusterRef::polygon(void)
 {
-    return _poly;
+    return m_polygon;
 }
 
 
-Router *ClusterRef::router(void)
+Polygon& ClusterRef::rectangularPolygon(void)
 {
-    return _router;
+    return m_rectangular_polygon;
+}
+
+
+Router *ClusterRef::router(void) const
+{
+    return m_router;
 }
 
 

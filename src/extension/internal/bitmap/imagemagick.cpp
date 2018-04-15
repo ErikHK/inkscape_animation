@@ -23,7 +23,7 @@
 #include "desktop.h"
 
 #include "selection.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 
 #include "extension/effect.h"
 #include "extension/system.h"

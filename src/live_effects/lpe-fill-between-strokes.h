@@ -19,13 +19,18 @@ class LPEFillBetweenStrokes : public Effect {
 public:
     LPEFillBetweenStrokes(LivePathEffectObject *lpeobject);
     virtual ~LPEFillBetweenStrokes();
-    
+    virtual void transform_multiply(Geom::Affine const& postmul, bool set);
     virtual void doEffect (SPCurve * curve);
 
 private:
     OriginalPathParam  linked_path;
     OriginalPathParam  second_path;
     BoolParam reverse_second;
+    BoolParam fuse;
+    BoolParam allow_transforms;
+    BoolParam join;
+    BoolParam close;
+    bool transformmultiply;
 
 private:
     LPEFillBetweenStrokes(const LPEFillBetweenStrokes&);

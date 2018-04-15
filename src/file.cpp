@@ -59,7 +59,7 @@
 #include "rdf.h"
 #include "selection-chemistry.h"
 #include "selection.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "style.h"
 #include "ui/view/view-widget.h"
 #include "uri.h"
@@ -81,9 +81,9 @@
 
 using Inkscape::DocumentUndo;
 
-#ifdef WITH_GNOME_VFS
-# include <libgnomevfs/gnome-vfs.h>
-#endif
+//#ifdef WITH_GNOME_VFS
+//# include <libgnomevfs/gnome-vfs.h>
+//#endif
 
 #ifdef WITH_DBUS
 #include "extension/dbus/dbus-init.h"
@@ -1149,13 +1149,14 @@ file_save(Gtk::Window &parentWindow, SPDocument *doc, const Glib::ustring &uri,
  */
 bool
 file_save_remote(SPDocument */*doc*/,
-    #ifdef WITH_GNOME_VFS
-                 const Glib::ustring &uri,
-    #else
+    //#ifdef WITH_GNOME_VFS
+    //             const Glib::ustring &uri,
+    //#else
                  const Glib::ustring &/*uri*/,
-    #endif
+    //#endif
                  Inkscape::Extension::Extension */*key*/, bool /*saveas*/, bool /*official*/)
 {
+/*
 #ifdef WITH_GNOME_VFS
 
 #define BUF_SIZE 8192
@@ -1223,9 +1224,10 @@ file_save_remote(SPDocument */*doc*/,
     }
     return true;
 #else
+*/
     // in case we do not have GNOME_VFS
     return false;
-#endif
+//#endif
 
 }
 

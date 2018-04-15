@@ -1,6 +1,6 @@
 /** \file
  *
- * Inkscape::Extension::Extension: 
+ * Inkscape::Extension::Extension:
  * the ability to have features that are more modular so that they
  * can be added and removed easily.  This is the basis for defining
  * those actions.
@@ -16,18 +16,13 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#include <config.h>
 #endif
 
 #include <gtkmm/box.h>
 #include <gtkmm/label.h>
 #include <gtkmm/frame.h>
-
-#if WITH_GTKMM_3_0
-# include <gtkmm/grid.h>
-#else
-# include <gtkmm/table.h>
-#endif
+#include <gtkmm/table.h>
 
 #include <glibmm/i18n.h>
 #include "inkscape.h"
@@ -38,13 +33,13 @@
 #include "dependency.h"
 #include "timer.h"
 #include "param/parameter.h"
+#include "io/resource.h"
 
 namespace Inkscape {
 namespace Extension {
 
 /* Inkscape::Extension::Extension */
 
-std::vector<const gchar *> Extension::search_path;
 std::ofstream Extension::error_file;
 
 /**
@@ -62,6 +57,7 @@ Extension::Extension (Inkscape::XML::Node * in_repr, Implementation::Implementat
     : _help(NULL)
     , silent(false)
     , _gui(true)
+    , execution_env(NULL)
 {
     repr = in_repr;
     Inkscape::GC::anchor(in_repr);
@@ -69,7 +65,6 @@ Extension::Extension (Inkscape::XML::Node * in_repr, Implementation::Implementat
     id = NULL;
     name = NULL;
     _state = STATE_UNLOADED;
-    parameters = NULL;
 
     if (in_imp == NULL) {
         imp = new Implementation::Implementation();
@@ -102,7 +97,7 @@ Extension::Extension (Inkscape::XML::Node * in_repr, Implementation::Implementat
                 Parameter * param;
                 param = Parameter::make(child_repr, this);
                 if (param != NULL)
-                    parameters = g_slist_append(parameters, param);
+                    parameters.push_back(param);
             } /* param || _param */
             if (!strcmp(chname, "dependency")) {
                 _deps.push_back(new Dependency(child_repr));
@@ -149,15 +144,12 @@ Extension::~Extension (void)
     delete timer;
     timer = NULL;
     /** \todo Need to do parameters here */
-    
-    // delete parameters: 
-    for (GSList * list = parameters; list != NULL; list = g_slist_next(list)) {
-        Parameter * param = reinterpret_cast<Parameter *>(list->data);
+
+    // delete parameters:
+    for (auto param:parameters) {
         delete param;
     }
-    g_slist_free(parameters);
-    
-    
+
     for (unsigned int i = 0 ; i < _deps.size(); i++) {
         delete _deps[i];
     }
@@ -245,9 +237,9 @@ Extension::loaded (void)
     \brief   A function to check the validity of the extension
 
     This function chekcs to make sure that there is an id, a name, a
-    repr and an implemenation for this extension.  Then it checks all
+    repr and an implementation for this extension.  Then it checks all
     of the dependencies to see if they pass.  Finally, it asks the
-    implmentation to do a check of itself.
+    implementation to do a check of itself.
 
     On each check, if there is a failure, it will print a message to the
     error log for that failure.  It is important to note that the function
@@ -335,7 +327,7 @@ Extension::get_repr (void)
 }
 
 /**
-    \return  bool 
+    \return  bool
     \brief   Whether this extension should hide the "working, please wait" dialog
 */
 bool
@@ -374,7 +366,7 @@ Extension::get_name (void)
     mark to the world that it has been deactivated.  It also removes
     the current implementation and replaces it with a standard one.  This
     makes it so that we don't have to continually check if there is an
-    implementation, but we are gauranteed to have a benign one.
+    implementation, but we are guaranteed to have a benign one.
 
     \warning It is important to note that there is no 'activate' function.
     Running this function is irreversable.
@@ -407,14 +399,11 @@ Parameter *Extension::get_param(gchar const *name)
     if (name == NULL) {
         throw Extension::param_not_exist();
     }
-    if (this->parameters == NULL) {
-        // the list of parameters is empty
+    if (this->parameters.empty()) {
         throw Extension::param_not_exist();
     }
 
-    for (GSList * list = this->parameters; list != NULL; list =
-g_slist_next(list)) {
-        Parameter * param = static_cast<Parameter*>(list->data);
+    for( auto param:this->parameters) {
         if (!strcmp(param->name(), name)) {
             return param;
         } else {
@@ -449,7 +438,7 @@ Extension::get_param_enum (const gchar * name, const SPDocument * doc, const Ink
 
 /**
  * This is useful to find out, if a given string \c value is selectable in a ComboBox named \cname.
- * 
+ *
  * @param name The name of the enum parameter to get.
  * @param doc The document to look in for document specific parameters.
  * @param node The node to look in for a specific parameter.
@@ -663,7 +652,7 @@ Extension::set_param_color (const gchar * name, guint32 color, SPDocument * doc,
 void
 Extension::error_file_open (void)
 {
-    gchar * ext_error_file = Inkscape::Application::profile_path(EXTENSION_ERROR_LOG_FILENAME);
+    gchar * ext_error_file = Inkscape::IO::Resource::log_path(EXTENSION_ERROR_LOG_FILENAME);
     gchar * filename = g_filename_from_utf8( ext_error_file, -1, NULL, NULL, NULL );
     error_file.open(filename);
     if (!error_file.is_open()) {
@@ -718,7 +707,7 @@ public:
     a Gtk::VBox, which is then returned to the calling function.
 
     If there are no visible parameters, this function just returns NULL.
-    If all parameters are gui_visible = false NULL is returned as well.    
+    If all parameters are gui_hidden = true NULL is returned as well.
 */
 Gtk::Widget *
 Extension::autogui (SPDocument * doc, Inkscape::XML::Node * node, sigc::signal<void> * changeSignal)
@@ -726,16 +715,17 @@ Extension::autogui (SPDocument * doc, Inkscape::XML::Node * node, sigc::signal<v
     if (!_gui || param_visible_count() == 0) return NULL;
 
     AutoGUI * agui = Gtk::manage(new AutoGUI());
+    agui->set_border_width(Parameter::GUI_BOX_MARGIN);
+    agui->set_spacing(Parameter::GUI_BOX_SPACING);
 
     //go through the list of parameters to see if there are any non-hidden ones
-    for (GSList * list = parameters; list != NULL; list = g_slist_next(list)) {
-        Parameter * param = reinterpret_cast<Parameter *>(list->data);
-        if (param->get_gui_hidden()) continue; //Ignore hidden parameters
+    for (auto param:parameters) {
+        if (param->get_hidden()) continue; //Ignore hidden parameters
         Gtk::Widget * widg = param->get_widget(doc, node, changeSignal);
         gchar const * tip = param->get_tooltip();
         agui->addWidget(widg, tip);
-    }    
-    
+    }
+
     agui->show();
     return agui;
 };
@@ -748,8 +738,7 @@ Extension::autogui (SPDocument * doc, Inkscape::XML::Node * node, sigc::signal<v
 void
 Extension::paramListString (std::list <std::string> &retlist)
 {
-    for (GSList * list = parameters; list != NULL; list = g_slist_next(list)) {
-        Parameter * param = reinterpret_cast<Parameter *>(list->data);
+    for(auto param:parameters) {
         param->string(retlist);
     }
 
@@ -766,11 +755,7 @@ Extension::get_info_widget(void)
     Gtk::Frame * info = Gtk::manage(new Gtk::Frame("General Extension Information"));
     retval->pack_start(*info, true, true, 5);
 
-#if WITH_GTKMM_3_0
-    Gtk::Grid * table = Gtk::manage(new Gtk::Grid());
-#else
-    Gtk::Table * table = Gtk::manage(new Gtk::Table());
-#endif
+    auto table = Gtk::manage(new Gtk::Table());
 
     info->add(*table);
 
@@ -784,26 +769,18 @@ Extension::get_info_widget(void)
     return retval;
 }
 
-#if WITH_GTKMM_3_0
-void Extension::add_val(Glib::ustring labelstr, Glib::ustring valuestr, Gtk::Grid * table, int * row)
-#else
 void Extension::add_val(Glib::ustring labelstr, Glib::ustring valuestr, Gtk::Table * table, int * row)
-#endif
 {
     Gtk::Label * label;
     Gtk::Label * value;
 
-    (*row)++; 
+    (*row)++;
     label = Gtk::manage(new Gtk::Label(labelstr));
     value = Gtk::manage(new Gtk::Label(valuestr));
 
-#if WITH_GTKMM_3_0
-    table->attach(*label, 0, (*row) - 1, 1, 1);
-    table->attach(*value, 1, (*row) - 1, 1, 1);
-#else
-    table->attach(*label, 0, 1, (*row) - 1, *row);
-    table->attach(*value, 1, 2, (*row) - 1, *row);
-#endif
+	table->attach(*label, 0, 1, (*row) - 1, *row);
+	table->attach(*value, 1, 2, (*row) - 1, *row);
+
 
     label->show();
     value->show();
@@ -842,13 +819,12 @@ Extension::get_params_widget(void)
     return retval;
 }
 
-unsigned int Extension::param_visible_count ( ) 
+unsigned int Extension::param_visible_count ( )
 {
     unsigned int _visible_count = 0;
-    for (GSList * list = parameters; list != NULL; list = g_slist_next(list)) {
-        Parameter * param = reinterpret_cast<Parameter *>(list->data);
-        if (!param->get_gui_hidden()) _visible_count++;
-    }    
+    for (auto param:parameters) {
+        if (!param->get_hidden()) _visible_count++;
+    }
     return _visible_count;
 }
 

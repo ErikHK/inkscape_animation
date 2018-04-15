@@ -16,7 +16,7 @@
 #include "document.h"
 #include "inkscape.h"
 #include "preferences.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "sp-root.h"
 #include "xml/repr.h"
 

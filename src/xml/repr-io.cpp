@@ -11,7 +11,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #include <cstring>
@@ -39,7 +39,6 @@
 #include "preferences.h"
 
 #include <glibmm/miscutils.h>
-#include <map>
 
 using Inkscape::IO::Writer;
 using Inkscape::Util::List;
@@ -67,11 +66,6 @@ static void sp_repr_write_stream_element(Node *repr, Writer &out,
                                          int inlineattrs, int indent,
                                          gchar const *old_href_abs_base,
                                          gchar const *new_href_abs_base);
-
-#ifdef HAVE_LIBWMF
-static xmlDocPtr sp_wmf_convert (const char * file_name);
-static char * sp_wmf_image_name (void * context);
-#endif /* HAVE_LIBWMF */
 
 
 class XmlSource
@@ -324,19 +318,18 @@ int XmlSource::close()
 }
 
 /**
- * Reads XML from a file, including WMF files, and returns the Document.
+ * Reads XML from a file, and returns the Document.
  * The default namespace can also be specified, if desired.
  */
 Document *sp_repr_read_file (const gchar * filename, const gchar *default_ns)
 {
-    // g_warning( "Reading file: %s", filename );
     xmlDocPtr doc = 0;
     Document * rdoc = 0;
 
     xmlSubstituteEntitiesDefault(1);
 
-    g_return_val_if_fail (filename != NULL, NULL);
-    if (!Inkscape::IO::file_test( filename, G_FILE_TEST_EXISTS )) {
+    g_return_val_if_fail(filename != NULL, NULL);
+    if (!Inkscape::IO::file_test(filename, G_FILE_TEST_EXISTS)) {
         g_warning("Can't open file: %s (doesn't exist)", filename);
         return NULL;
     }
@@ -349,45 +342,32 @@ Document *sp_repr_read_file (const gchar * filename, const gchar *default_ns)
     gsize bytesWritten = 0;
     GError* error = NULL;
     // TODO: need to replace with our own fopen and reading
-    gchar* localFilename = g_filename_from_utf8 ( filename,
-                                 -1,  &bytesRead,  &bytesWritten, &error);
-    g_return_val_if_fail( localFilename != NULL, NULL );
+    gchar* localFilename = g_filename_from_utf8(filename, -1, &bytesRead, &bytesWritten, &error);
+    g_return_val_if_fail(localFilename != NULL, NULL);
 
-    Inkscape::IO::dump_fopen_call( filename, "N" );
+    Inkscape::IO::dump_fopen_call(filename, "N");
 
-#ifdef HAVE_LIBWMF
-    if (strlen (localFilename) > 4) {
-        if ( (strcmp (localFilename + strlen (localFilename) - 4,".wmf") == 0)
-             || (strcmp (localFilename + strlen (localFilename) - 4,".WMF") == 0)) {
-            doc = sp_wmf_convert (localFilename);
-        }
-    }
-#endif // !HAVE_LIBWMF
+    XmlSource src;
 
-    if ( !doc ) {
-        XmlSource src;
-
-        if ( (src.setFile(filename) == 0) ) {
+    if (src.setFile(filename) == 0) {
+        doc = src.readXml();
+        rdoc = sp_repr_do_read(doc, default_ns);
+        // For some reason, failed ns loading results in this
+        // We try a system check version of load with NOENT for adobe
+        if (rdoc && strcmp(rdoc->root()->name(), "ns:svg") == 0) {
+            xmlFreeDoc(doc);
+            src.setFile(filename, true);
             doc = src.readXml();
-            rdoc = sp_repr_do_read( doc, default_ns );
-            // For some reason, failed ns loading results in this
-            // We try a system check version of load with NOENT for adobe
-            if(rdoc && strcmp(rdoc->root()->name(), "ns:svg") == 0) {
-                xmlFreeDoc( doc );
-                src.setFile(filename, true);
-                doc = src.readXml();
-                rdoc = sp_repr_do_read( doc, default_ns );
-            }
+            rdoc = sp_repr_do_read(doc, default_ns);
         }
     }
 
-
-    if ( doc ) {
-        xmlFreeDoc( doc );
+    if (doc) {
+        xmlFreeDoc(doc);
     }
 
-    if ( localFilename ) {
-        g_free( localFilename );
+    if (localFilename) {
+        g_free(localFilename);
     }
 
     return rdoc;
@@ -405,7 +385,12 @@ Document *sp_repr_read_mem (const gchar * buffer, gint length, const gchar *defa
 
     g_return_val_if_fail (buffer != NULL, NULL);
 
-    doc = xmlParseMemory (const_cast<gchar *>(buffer), length);
+    int parser_options = XML_PARSE_HUGE | XML_PARSE_RECOVER;
+    parser_options |= XML_PARSE_NONET; // TODO: should we allow network access?
+                                       // proper solution would be to check the preference "/options/externalresources/xml/allow_net_access"
+                                       // as done in XmlSource::readXml which gets called by the analogous sp_repr_read_file()
+                                       // but sp_repr_read_mem() seems to be called in locations where Inkscape::Preferences::get() fails badly
+    doc = xmlReadMemory (const_cast<gchar *>(buffer), length, NULL, NULL, parser_options);
 
     rdoc = sp_repr_do_read (doc, default_ns);
     if (doc) {
@@ -576,7 +561,10 @@ static Node *sp_repr_svg_read_node (Document *xml_doc, xmlNodePtr node, const gc
             return NULL; // empty text node
         }
 
-        bool preserve = (xmlNodeGetSpacePreserve (node) == 1);
+        // Since libxml2 2.9.0, only element nodes are checked, thus check parent.
+        // Note: this only handles XML's rules for white space. SVG's specific rules
+        // are handled in sp-string.cpp.
+        bool preserve = (xmlNodeGetSpacePreserve (node->parent) == 1);
 
         xmlChar *p;
         for (p = node->content; *p && g_ascii_isspace (*p) && !preserve; p++)
@@ -808,7 +796,7 @@ static void repr_write_comment( Writer &out, const gchar * val, bool addWhitespa
 namespace {
 
 typedef std::map<Glib::QueryQuark, gchar const *, Inkscape::compare_quark_ids> LocalNameMap;
-typedef std::map<Glib::QueryQuark, Inkscape::Util::ptr_shared<char>, Inkscape::compare_quark_ids> NSMap;
+typedef std::map<Glib::QueryQuark, Inkscape::Util::ptr_shared, Inkscape::compare_quark_ids> NSMap;
 
 gchar const *qname_local_name(Glib::QueryQuark qname) {
     static LocalNameMap local_name_map;
@@ -842,7 +830,7 @@ void add_ns_map_entry(NSMap &ns_map, Glib::QueryQuark prefix) {
                 g_warning("No namespace known for normalized prefix %s", g_quark_to_string(prefix));
             }
         } else {
-            ns_map.insert(NSMap::value_type(prefix, ptr_shared<char>()));
+            ns_map.insert(NSMap::value_type(prefix, ptr_shared()));
         }
     }
 }
@@ -901,7 +889,7 @@ static void sp_repr_write_stream_root_element(Node *repr, Writer &out,
     for ( NSMap::iterator iter=ns_map.begin() ; iter != ns_map.end() ; ++iter ) 
     {
         Glib::QueryQuark prefix=(*iter).first;
-        ptr_shared<char> ns_uri=(*iter).second;
+        ptr_shared ns_uri=(*iter).second;
 
         if (prefix.id()) {
             if ( prefix != xml_prefix ) {
@@ -1007,28 +995,6 @@ void sp_repr_write_stream_element( Node * repr, Writer & out,
     gchar const *xml_space_attr = repr->attribute("xml:space");
     if (xml_space_attr != NULL && !strcmp(xml_space_attr, "preserve")) {
         add_whitespace = false;
-    }
-
-    // THIS DOESN'T APPEAR TO DO ANYTHING. Can it be commented out or deleted?
-    {
-        GQuark const href_key = g_quark_from_static_string("xlink:href");
-        //GQuark const absref_key = g_quark_from_static_string("sodipodi:absref");
-
-        gchar const *xxHref = 0;
-        //gchar const *xxAbsref = 0;
-        for ( List<AttributeRecord const> ai(attributes); ai; ++ai ) {
-            if ( ai->key == href_key ) {
-                xxHref = ai->value;
-            //} else if ( ai->key == absref_key ) {
-                //xxAbsref = ai->value;
-            }
-        }
-
-        // Might add a special case for absref but no href.
-        if ( old_href_base && new_href_base && xxHref ) {
-            //g_message("href rebase test with [%s] and [%s]", xxHref, xxAbsref);
-            //std::string newOne = rebase_href_attrs( old_href_base, new_href_base, xxHref, xxAbsref );
-        }
     }
 
     for ( List<AttributeRecord const> iter = rebase_href_attrs(old_href_base, new_href_base,

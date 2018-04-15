@@ -26,13 +26,13 @@ namespace XML {
  * @brief Text node, e.g. "Some text" in &lt;group&gt;Some text&lt;/group&gt;
  */
 struct TextNode : public SimpleNode {
-    TextNode(Util::ptr_shared<char> content, Document *doc)
+    TextNode(Util::ptr_shared content, Document *doc)
     : SimpleNode(g_quark_from_static_string("string"), doc)
     {
         setContent(content);
         _is_CData = false;
     }
-    TextNode(Util::ptr_shared<char> content, Document *doc, bool is_CData)
+    TextNode(Util::ptr_shared content, Document *doc, bool is_CData)
     : SimpleNode(g_quark_from_static_string("string"), doc)
     {
         setContent(content);

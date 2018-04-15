@@ -17,30 +17,36 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
+#include <vector>
+#include <map>
+
 #include "style-enums.h"
 
 #include "color.h"
+
+#include "object/sp-marker-loc.h"
+#include "object/sp-filter.h"
+#include "object/sp-filter-reference.h"
+#include "object/sp-paint-server-reference.h"
+#include "object/uri.h"
+
 #include "svg/svg-icc-color.h"
-#include "sp-marker-loc.h"
-#include "sp-filter.h"
-#include "sp-filter-reference.h"
-#include "sp-paint-server-reference.h"
-#include "uri.h"
+
 #include "xml/repr.h"
 
-#include <vector>
 
 struct SPStyleEnum;
 
 static const unsigned SP_STYLE_FLAG_ALWAYS (1 << 2);
 static const unsigned SP_STYLE_FLAG_IFSET  (1 << 0);
 static const unsigned SP_STYLE_FLAG_IFDIFF (1 << 1);
+static const unsigned SP_STYLE_FLAG_IFSRC  (1 << 3); // If source matches
 
 enum SPStyleSrc {
     SP_STYLE_SRC_UNSET,
-    SP_STYLE_SRC_STYLE_PROP,
-    SP_STYLE_SRC_STYLE_SHEET,
-    SP_STYLE_SRC_ATTRIBUTE
+    SP_STYLE_SRC_ATTRIBUTE,   // fill="red"
+    SP_STYLE_SRC_STYLE_PROP,  // style="fill:red"
+    SP_STYLE_SRC_STYLE_SHEET, // .red { fill:red; }
 };
 
 /* General comments:
@@ -56,6 +62,10 @@ enum SPStyleSrc {
  *   A later property overrides an earlier property. This is implemented by
  *   reading in the properties backwards. If a property is already set, it
  *   prevents an earlier property from being read.
+ *
+ *   A declaration with an "!important" rule overrides any other declarations (except those that
+ *   also have an "!important" rule). Attributes can not use the "!important" rule and the rule
+ *   is not inherited.
  *
  *   In order for cascading to work, each element in the tree must be read in from top to bottom
  *   (parent before child). At each step, if a style property is not explicitly set, the property
@@ -77,6 +87,7 @@ enum SPStyleSrc {
  *       IFSET:  Write a property if 'set' flag is true, otherwise return empty string.
  *       IFDIFF: Write a property if computed values are different, otherwise return empty string,
  *               This is only used for text!!
+ *       IFSRC   Write a property if the source matches the requested source (style sheet, etc.).
  *
  *   read():     Set a property value from a string.
  *   clear():    Set a property to its default value and set the 'set' flag to false.
@@ -96,12 +107,12 @@ enum SPStyleSrc {
  *   The C structures that these classes are evolved from were designed to be embedded in to the
  *   style structure (i.e they are "internal" and thus have an "I" in the SPI prefix). However,
  *   they should be reasonably stand-alone and can provide some functionality outside of the style
- *   stucture (i.e. reading and writing style strings). Some properties do need access to other
+ *   structure (i.e. reading and writing style strings). Some properties do need access to other
  *   properties from the same object (e.g. SPILength sometimes needs to know font size) to
- *   calculate 'computed' values. Inheritence, of course, requires access to the parent object's
+ *   calculate 'computed' values. Inheritance, of course, requires access to the parent object's
  *   style class.
  *
- *   The only real outside dependancy is SPObject... which is needed in the cases of SPIPaint and
+ *   The only real outside dependency is SPObject... which is needed in the cases of SPIPaint and
  *   SPIFilter for setting up the "href". (Currently, SPDocument is needed but this dependency
  *   should be removed as an "href" only needs the SPDocument for attaching an external document to
  *   the XML tree [see uri-references.cpp]. If SPDocument is really needed, it can be obtained from
@@ -109,7 +120,7 @@ enum SPStyleSrc {
  *
  */
 
-/// Virtual base class for all SPStyle interal classes
+/// Virtual base class for all SPStyle internal classes
 class SPIBase
 {
 
@@ -119,7 +130,8 @@ public:
           inherits(inherits),
           set(false),
           inherit(false),
-          style_src(SP_STYLE_SRC_UNSET),
+          important(false),
+          style_src(SP_STYLE_SRC_STYLE_PROP), // Default to property, see bug 1662285.
           style(NULL)
     {}
 
@@ -127,20 +139,52 @@ public:
     {}
 
     virtual void read( gchar const *str ) = 0;
-    virtual void readIfUnset( gchar const *str ) {
-        if ( !set ) {
-            read( str );
+    virtual void readIfUnset( gchar const *str, SPStyleSrc const &source = SP_STYLE_SRC_STYLE_PROP ) {
+        if (!str) return;
+
+        bool has_important = false;
+        Glib::ustring stripped = strip_important(str, has_important); // Sets 'has_important'
+        // '!important' is invalid on attributes, don't read.
+        if (source == SP_STYLE_SRC_ATTRIBUTE && has_important){
+            return;
+        }
+
+        if ( !set || (has_important && !important) ) {
+            read( stripped.c_str() );
+            if ( set ) {
+                style_src = source;
+                if (has_important) {
+                    important = true;
+                }
+            }
         }
     }
 
+    Glib::ustring important_str() const {
+        return Glib::ustring(important ? " !important" : "");
+    }
+
+    Glib::ustring strip_important( gchar const *str, bool &important ) {
+        assert (str != NULL);
+        Glib::ustring string = Glib::ustring(str);
+        auto pos = string.rfind( " !important" );
+        important = false;
+        if (pos != std::string::npos) {
+            important = true;
+            string.erase(pos);
+        }
+        return string;
+    }
+
     virtual void readAttribute( Inkscape::XML::Node *repr ) {
-        readIfUnset( repr->attribute( name.c_str() ) );
+        readIfUnset( repr->attribute( name.c_str() ), SP_STYLE_SRC_ATTRIBUTE );
     }
 
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const = 0;
     virtual void clear() {
-        set = false, inherit = false;
+        set = false, inherit = false, important = false;
     }
 
     virtual void cascade( const SPIBase* const parent ) = 0;
@@ -155,6 +199,7 @@ public:
         name        = rhs.name;
         inherits    = rhs.inherits;
         set         = rhs.set;
+        important   = rhs.important;
         inherit     = rhs.inherit;
         style_src   = rhs.style_src;
         style       = rhs.style;
@@ -176,7 +221,8 @@ public:
     unsigned inherits : 1;    // Property inherits by default from parent.
     unsigned set : 1;         // Property has been explicitly set (vs. inherited).
     unsigned inherit : 1;     // Property value set to 'inherit'.
-    SPStyleSrc style_src : 2; // Source (attribute, style attribute, style-sheet). NOT USED YET FIX ME
+    unsigned important : 1;   // Property rule 'important' has been explicitly set.
+    SPStyleSrc style_src : 2; // Source (attribute, style attribute, style-sheet).
 
   // To do: make private after g_asserts removed
 public:
@@ -202,6 +248,7 @@ public:
     virtual ~SPIFloat() {}
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPIBase::clear();
@@ -283,6 +330,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPIBase::clear();
@@ -355,6 +403,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPIBase::clear();
@@ -411,6 +460,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPILength::clear();
@@ -434,6 +484,60 @@ public:
   // To do: make private
 public:
     bool normal : 1;
+};
+
+
+/// Extended length type internal to SPStyle.
+// Used for: font-variation-settings
+class SPIFontVariationSettings : public SPIBase
+{
+
+public:
+    SPIFontVariationSettings()
+        : SPIBase( "anonymous_fontvariationsettings" ),
+          normal(true)
+    {}
+
+    SPIFontVariationSettings( Glib::ustring const &name )
+        : SPIBase( name ),
+          normal(true)
+    {}
+
+    virtual ~SPIFontVariationSettings()
+    {}
+
+    virtual void read( gchar const *str );
+    virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
+                                       SPIBase const *const base = NULL ) const;
+    virtual void clear() {
+        SPIBase::clear();
+        axes.clear();
+        normal = true;
+    }
+
+    virtual void cascade( const SPIBase* const parent );
+    virtual void merge(   const SPIBase* const parent );
+
+    SPIFontVariationSettings& operator=(const SPIFontVariationSettings& rhs) {
+        SPIBase::operator=(rhs);
+        axes = rhs.axes;
+        normal = rhs.normal;
+        return *this;
+    }
+
+    virtual bool operator==(const SPIBase& rhs);
+    virtual bool operator!=(const SPIBase& rhs) {
+        return !(*this == rhs);
+    }
+
+    virtual const Glib::ustring toString() const;
+
+  // To do: make private
+public:
+    bool normal : 1;
+    bool inherit : 1;
+    std::map<Glib::ustring, float> axes;
 };
 
 
@@ -474,6 +578,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPIBase::clear();
@@ -528,6 +633,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
 
 };
@@ -554,6 +660,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
 };
 
@@ -577,6 +684,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
 };
 
@@ -606,6 +714,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear(); // TODO check about value and value_default
     virtual void cascade( const SPIBase* const parent );
@@ -631,7 +740,7 @@ public:
     gchar *value_default;
 };
 
-/// Color type interal to SPStyle, FIXME Add string value to store SVG named color.
+/// Color type internal to SPStyle, FIXME Add string value to store SVG named color.
 class SPIColor : public SPIBase
 {
 
@@ -653,6 +762,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPIBase::clear();
@@ -734,6 +844,7 @@ public:
     virtual void read( gchar const *str );
     virtual void read( gchar const *str, SPStyle &style, SPDocument *document = 0);
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear();
     virtual void reset( bool init ); // Used internally when reading or cascading
@@ -764,7 +875,7 @@ public:
     }
 
     bool isNone() const {
-        return (paintOrigin == SP_CSS_PAINT_ORIGIN_NORMAL) && !colorSet && !isPaintserver();
+        return !colorSet && !isPaintserver() && (paintOrigin == SP_CSS_PAINT_ORIGIN_NORMAL);
     } // TODO refine
 
     bool isColor() const {
@@ -833,6 +944,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPIBase::clear();
@@ -885,6 +997,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPIBase::clear();
@@ -924,6 +1037,7 @@ public:
     virtual ~SPIFilter();
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear();
     virtual void cascade( const SPIBase* const parent );
@@ -968,6 +1082,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPIBase::clear();
@@ -1024,6 +1139,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPIBase::clear();
@@ -1068,6 +1184,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPIBase::clear();
@@ -1124,6 +1241,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPIBase::clear();
@@ -1171,6 +1289,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPIBase::clear();
@@ -1227,6 +1346,7 @@ public:
 
     virtual void read( gchar const *str );
     virtual const Glib::ustring write( guint const flags = SP_STYLE_FLAG_IFSET,
+                                       SPStyleSrc const &style_src_req = SP_STYLE_SRC_STYLE_PROP,
                                        SPIBase const *const base = NULL ) const;
     virtual void clear() {
         SPIBase::clear();

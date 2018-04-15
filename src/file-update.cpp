@@ -14,7 +14,7 @@
 #include "sp-tspan.h"
 #include "sp-flowdiv.h"
 #include "sp-flowtext.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "sp-item.h"
 #include "style.h"
 #include "document.h"

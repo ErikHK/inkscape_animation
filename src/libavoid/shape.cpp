@@ -3,7 +3,7 @@
  *
  * libavoid - Fast, Incremental, Object-avoiding Line Router
  *
- * Copyright (C) 2004-2008  Monash University
+ * Copyright (C) 2004-2013  Monash University
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,287 +19,262 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
  *
- * Author(s):   Michael Wybrow <mjwybrow@users.sourceforge.net>
+ * Author(s):  Michael Wybrow
 */
 
+#include <cstdlib>
 
 #include "libavoid/shape.h"
-#include "libavoid/graph.h"  // For alertConns
 #include "libavoid/vertices.h"
 #include "libavoid/router.h"
+#include "libavoid/connend.h"
 #include "libavoid/debug.h"
 #include "libavoid/assertions.h"
+#include "libavoid/connectionpin.h"
 
 
 namespace Avoid {
 
 
 ShapeRef::ShapeRef(Router *router, Polygon& ply, const unsigned int id)
-    : _router(router)
-    , _poly(ply)
-    , _active(false)
-    , _inMoveList(false)
-    , _firstVert(NULL)
-    , _lastVert(NULL)
+    : Obstacle(router, ply, id)
 {
-    _id = router->assignId(id);
-
-    bool isShape = true;
-    VertID i = VertID(_id, isShape, 0);
-    
-    const bool addToRouterNow = false;
-    VertInf *last = NULL;
-    VertInf *node = NULL;
-    for (size_t pt_i = 0; pt_i < _poly.size(); ++pt_i)
-    {
-        node = new VertInf(_router, i, _poly.ps[pt_i], addToRouterNow);
-
-        if (!_firstVert)
-        {
-            _firstVert = node;
-        }
-        else
-        {
-            node->shPrev = last;
-            last->shNext = node;
-            //node->lstPrev = last;
-            //last->lstNext = node;
-        }
-        
-        last = node;
-        i++;
-    }
-    _lastVert = node;
-    
-    _lastVert->shNext = _firstVert;
-    _firstVert->shPrev = _lastVert;
+    m_router->addShape(this);
 }
 
 
 ShapeRef::~ShapeRef()
 {
-    COLA_ASSERT(!_router->shapeInQueuedActionList(this));
-
-    if (_active)
+    if (m_router->m_currently_calling_destructors == false)
     {
-        // Destroying a shape without calling removeShape(), so do it now.
-        _router->removeShape(this);
-        _router->processTransaction();
+        err_printf("ERROR: ShapeRef::~ShapeRef() shouldn't be called directly.\n");
+        err_printf("       It is owned by the router.  Call Router::deleteShape() instead.\n");
+        abort();
     }
+}
 
-    COLA_ASSERT(_firstVert != NULL);
-    
-    VertInf *it = _firstVert;
-    do
+
+void ShapeRef::moveAttachedConns(const Polygon& newPoly)
+{
+    // Update positions of attached connector ends.
+    for (std::set<ConnEnd *>::iterator curr = m_following_conns.begin();
+            curr != m_following_conns.end(); ++curr)
     {
-        VertInf *tmp = it;
-        it = it->shNext;
-
-        delete tmp;
+        ConnEnd *connEnd = *curr;
+        COLA_ASSERT(connEnd->m_conn_ref != NULL);
+        bool connPinUpdate = true;
+        m_router->modifyConnector(connEnd->m_conn_ref, connEnd->endpointType(), 
+                *connEnd, connPinUpdate);
     }
-    while (it != _firstVert);
-    _firstVert = _lastVert = NULL;
-}
-
-
-void ShapeRef::setNewPoly(const Polygon& poly)
-{
-    COLA_ASSERT(_firstVert != NULL);
-    COLA_ASSERT(_poly.size() == poly.size());
-    
-    VertInf *curr = _firstVert;
-    for (size_t pt_i = 0; pt_i < _poly.size(); ++pt_i)
+    for (ShapeConnectionPinSet::iterator curr = 
+            m_connection_pins.begin(); curr != m_connection_pins.end(); ++curr)
     {
-        COLA_ASSERT(curr->visListSize == 0);
-        COLA_ASSERT(curr->invisListSize == 0);
-
-        // Reset with the new polygon point.
-        curr->Reset(poly.ps[pt_i]);
-        curr->pathNext = NULL;
-        
-        curr = curr->shNext;
+        ShapeConnectionPin *pin = *curr;
+        pin->updatePosition(newPoly);
     }
-    COLA_ASSERT(curr == _firstVert);
-        
-    _poly = poly;
 }
 
-
-void ShapeRef::makeActive(void)
+static double absoluteOffsetInverse(double offset,
+        const Box& shapeBox, size_t toDim)
 {
-    COLA_ASSERT(!_active);
-    
-    // Add to shapeRefs list.
-    _pos = _router->shapeRefs.insert(_router->shapeRefs.begin(), this);
-
-    // Add points to vertex list.
-    VertInf *it = _firstVert;
-    do
+    if (offset == ATTACH_POS_MIN_OFFSET)
     {
-        VertInf *tmp = it;
-        it = it->shNext;
-
-        _router->vertices.addVertex(tmp);
+        return ATTACH_POS_MAX_OFFSET;
     }
-    while (it != _firstVert);
     
-    _active = true;
-}
-
-
-void ShapeRef::makeInactive(void)
-{
-    COLA_ASSERT(_active);
-    
-    // Remove from shapeRefs list.
-    _router->shapeRefs.erase(_pos);
-
-    // Remove points from vertex list.
-    VertInf *it = _firstVert;
-    do
+    if (offset == ATTACH_POS_MAX_OFFSET)
     {
-        VertInf *tmp = it;
-        it = it->shNext;
-
-        _router->vertices.removeVertex(tmp);
+        return ATTACH_POS_MIN_OFFSET;
     }
-    while (it != _firstVert);
     
-    _active = false;
+    return shapeBox.length(toDim) - offset;
 }
 
-
-bool ShapeRef::isActive(void) const
+void ShapeRef::transformConnectionPinPositions(
+        ShapeTransformationType transform)
 {
-    return _active;
-}
+    for (ShapeConnectionPinSet::iterator curr = 
+            m_connection_pins.begin(); curr != m_connection_pins.end(); ++curr)
+    {
+        ShapeConnectionPin *pin = *curr;
+        double usingProportionalOffsets = pin->m_using_proportional_offsets;
+        double& xOffset = pin->m_x_offset;
+        double& yOffset = pin->m_y_offset;
+        ConnDirFlags& visDirs =  pin->m_visibility_directions;
+        double tmpOffset;
 
+        // Number of clockwise 90 degree rotations;
+        unsigned int rotationN = 0;
 
-VertInf *ShapeRef::firstVert(void)
-{
-    return _firstVert;
-}
+        if (usingProportionalOffsets)
+        {
+            // Translate to Origin.
+            xOffset -= 0.5;
+            yOffset -= 0.5;
 
+            switch (transform)
+            {
+                case TransformationType_CW90:
+                    rotationN = 3;
+                    // Y <- inverse X, X <- inverse Y
+                    tmpOffset = yOffset;
+                    yOffset = xOffset;
+                    xOffset = -tmpOffset;
+                    break;
+                case TransformationType_CW180:
+                    rotationN = 2;
+                    // Y <- inverse Y, X <- inverse X
+                    yOffset = -yOffset;
+                    xOffset = -xOffset;
+                    break;
+                case TransformationType_CW270:
+                    rotationN = 1;
+                    // Y <- X, X <- Y
+                    tmpOffset = yOffset;
+                    yOffset = -xOffset;
+                    xOffset = tmpOffset;
+                    break;
+                case TransformationType_FlipX:
+                    // Y <- Y, X <- inverse X
+                    xOffset = -xOffset;
+                    break;
+                case TransformationType_FlipY:
+                    // X <- inverse X, Y <- Y
+                    yOffset = -yOffset;
+                    break;
+            }
+            // Translate back.
+            xOffset += 0.5;
+            yOffset += 0.5;
+        }
+        else
+        {
+            // Using absolute offsets for pin.
+            
+            const Box shapeBox = pin->m_shape->polygon().offsetBoundingBox(0.0);
+            switch (transform)
+            {
+                case TransformationType_CW90:
+                    rotationN = 3;
+                    // Y <- inverse X, X <- inverse Y
+                    tmpOffset = yOffset;
+                    yOffset = xOffset;
+                    xOffset = absoluteOffsetInverse(tmpOffset, shapeBox, XDIM);
+                    break;
+                case TransformationType_CW180:
+                    rotationN = 2;
+                    // Y <- inverse Y, X <- inverse X
+                    yOffset = absoluteOffsetInverse(yOffset, shapeBox, YDIM);
+                    xOffset = absoluteOffsetInverse(xOffset, shapeBox, XDIM);
+                    break;
+                case TransformationType_CW270:
+                    rotationN = 1;
+                    // Y <- X, X <- Y
+                    tmpOffset = yOffset;
+                    yOffset = absoluteOffsetInverse(xOffset, shapeBox, YDIM);
+                    xOffset = tmpOffset;
+                    break;
+                case TransformationType_FlipX:
+                    // Y <- Y, X <- inverse X
+                    xOffset = absoluteOffsetInverse(xOffset, shapeBox, XDIM);
+                    break;
+                case TransformationType_FlipY:
+                    // X <- inverse X, Y <- Y
+                    yOffset = absoluteOffsetInverse(yOffset, shapeBox, YDIM);
+                    break;
+            }
+        }
 
-VertInf *ShapeRef::lastVert(void)
-{
-    return _lastVert;
-}
+        if ( (visDirs & ConnDirAll) && (visDirs != ConnDirAll) )
+        {
+            // Visibility is set, but not in all directions.
+            
+            const unsigned int dirU = 0;
+            const unsigned int dirR = 1;
+            const unsigned int dirD = 2;
+            const unsigned int dirL = 3;
 
+            bool visInDir[4] = { false };
+            if (visDirs & ConnDirUp)    visInDir[dirU] = true;
+            if (visDirs & ConnDirRight) visInDir[dirR] = true;
+            if (visDirs & ConnDirDown)  visInDir[dirD] = true;
+            if (visDirs & ConnDirLeft)  visInDir[dirL] = true;
 
-unsigned int ShapeRef::id(void) const
-{
-    return _id;
+            if (transform == TransformationType_FlipY)
+            {
+                bool tmpBool = visInDir[dirU];
+                visInDir[dirU] = visInDir[dirD];
+                visInDir[dirD] = tmpBool;
+            }
+            else if (transform == TransformationType_FlipX)
+            {
+                bool tmpBool = visInDir[dirL];
+                visInDir[dirL] = visInDir[dirR];
+                visInDir[dirR] = tmpBool;
+            }
+            
+            visDirs = ConnDirNone;
+            if (visInDir[(rotationN + dirU) % 4])  visDirs |= ConnDirUp;
+            if (visInDir[(rotationN + dirR) % 4])  visDirs |= ConnDirRight;
+            if (visInDir[(rotationN + dirD) % 4])  visDirs |= ConnDirDown;
+            if (visInDir[(rotationN + dirL) % 4])  visDirs |= ConnDirLeft;
+        }
+        pin->updatePositionAndVisibility();
+        m_router->modifyConnectionPin(pin);
+    }
 }
 
 
 const Polygon& ShapeRef::polygon(void) const
 {
-    return _poly;
+    return m_polygon;
 }
 
 
-Router *ShapeRef::router(void) const
+void ShapeRef::outputCode(FILE *fp) const
 {
-    return _router;
-}
-
-
-void ShapeRef::boundingBox(BBox& bbox)
-{
-    COLA_ASSERT(!_poly.empty());
-
-    bbox.a = bbox.b = _poly.ps[0];
-    Point& a = bbox.a;
-    Point& b = bbox.b;
-
-    for (size_t i = 1; i < _poly.size(); ++i)
+    fprintf(fp, "    // shapeRef%u\n", id());
+    fprintf(fp, "    polygon = Polygon(%lu);\n", (unsigned long) polygon().size());
+    for (size_t i = 0; i < polygon().size(); ++i)
     {
-        const Point& p = _poly.ps[i];
-
-        a.x = std::min(p.x, a.x);
-        a.y = std::min(p.y, a.y);
-        b.x = std::max(p.x, b.x);
-        b.y = std::max(p.y, b.y);
+        fprintf(fp, "    polygon.ps[%lu] = Point(%" PREC "g, %" PREC "g);\n", 
+                (unsigned long) i, polygon().at(i).x, polygon().at(i).y);
     }
-}
 
-
-void ShapeRef::removeFromGraph(void)
-{
-    for (VertInf *iter = firstVert(); iter != lastVert()->lstNext; )
+    fprintf(fp, "    ");
+    if (!m_connection_pins.empty())
     {
-        VertInf *tmp = iter;
-        iter = iter->lstNext;
-        
-        // For each vertex.
-        EdgeInfList& visList = tmp->visList;
-        EdgeInfList::const_iterator finish = visList.end();
-        EdgeInfList::const_iterator edge;
-        while ((edge = visList.begin()) != finish)
-        {
-            // Remove each visibility edge
-            (*edge)->alertConns();
-            delete (*edge);
-        }
-
-        EdgeInfList& invisList = tmp->invisList;
-        finish = invisList.end();
-        while ((edge = invisList.begin()) != finish)
-        {
-            // Remove each invisibility edge
-            delete (*edge);
-        }
-
-        EdgeInfList& orthogList = tmp->orthogVisList;
-        finish = orthogList.end();
-        while ((edge = orthogList.begin()) != finish)
-        {
-            // Remove each orthogonal visibility edge
-            (*edge)->alertConns();
-            delete (*edge);
-        }
+        fprintf(fp, "ShapeRef *shapeRef%u = ", id());
     }
-}
-
-
-void ShapeRef::markForMove(void)
-{
-    if (!_inMoveList)
+    fprintf(fp, "new ShapeRef(router, polygon, %u);\n", id());
+    for (ShapeConnectionPinSet::const_iterator curr = 
+            m_connection_pins.begin(); 
+            curr != m_connection_pins.end(); ++curr)
     {
-        _inMoveList = true;
+        (*curr)->outputCode(fp);
     }
-    else
-    {
-        db_printf("WARNING: two moves queued for same shape prior to rerouting."
-                "\n         This is not safe.\n");
-    }
+    fprintf(fp, "\n");
 }
 
 
-void ShapeRef::clearMoveMark(void)
+Point ShapeRef::position(void) const
 {
-    _inMoveList = false;
+    Box bBox = routingBox();
+
+    Point centre;
+
+    centre.x = bBox.min.x + (0.5 * (bBox.max.x - bBox.min.x));
+    centre.y = bBox.min.y + (0.5 * (bBox.max.y - bBox.min.y));
+
+    return centre;
 }
 
 
-VertInf *ShapeRef::getPointVertex(const Point& point)
+void ShapeRef::setCentrePos(const Point& newCentre)
 {
-    VertInf *curr = _firstVert;
-    do
-    {
-        if (curr->point == point)
-        {
-            return curr;
-        }
-        curr = curr->shNext;
-    }
-    while (curr != _firstVert);
-
-    return NULL;
+    Point diff = newCentre - position();
+    m_polygon.translate(diff.x, diff.y);
 }
 
-
 }
-
 

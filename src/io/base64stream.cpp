@@ -268,7 +268,7 @@ void Base64OutputStream::flush()
 {
     if (closed)
         return;
-    //dont flush here.  do it on close()    
+    //don't flush here.  do it on close()    
     destination.flush();
 }
 

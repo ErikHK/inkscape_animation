@@ -38,9 +38,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#if HAVE_LIBINTL_H
 #include <libintl.h>
-#endif // HAVE_LIBINTL_H
 
 #if !defined(_)
 #define _(s) gettext(s)

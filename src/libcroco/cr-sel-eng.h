@@ -44,6 +44,14 @@ G_BEGIN_DECLS
 
 typedef struct _CRSelEng CRSelEng ;
 typedef struct _CRSelEngPriv CRSelEngPriv ;
+typedef struct _CRArguments CRArguments ;
+
+//stores arguments of function of type an+b
+struct _CRArguments
+{
+  int a;
+  int b;
+} ;
 
 /**
  *The Selection engine class.

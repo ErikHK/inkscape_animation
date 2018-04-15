@@ -35,7 +35,7 @@
 #include "display/canvas-bpath.h"
 #include <glibmm/i18n.h>
 #include "context-fns.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "xml/repr.h"
 #include "document.h"
 #include "desktop-style.h"

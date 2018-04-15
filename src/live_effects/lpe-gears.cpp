@@ -7,15 +7,9 @@
  */
 
 #include "live_effects/lpe-gears.h"
-
-#include <vector>
-
-#include <glibmm/i18n.h>
-
-#include <2geom/d2.h>
-#include <2geom/sbasis.h>
 #include <2geom/bezier-to-sbasis.h>
-#include <2geom/path.h>
+// TODO due to internal breakage in glibmm headers, this must be last:
+#include <glibmm/i18n.h>
 
 using std::vector;
 using namespace Geom;
@@ -258,10 +252,10 @@ LPEGears::doEffect_path (Geom::PathVector const &path_in)
     path_out.push_back( gear->path());
     
     for (++it; it != gearpath.end() ; ++it) {
-        // iterate through Geom::Curve in path_in
         if (are_near((*it).initialPoint(), (*it).finalPoint())) {
             continue;
         }
+        // iterate through Geom::Curve in path_in
         Gear* gearnew = new Gear(gear->spawn( (*it).finalPoint() ));
         path_out.push_back( gearnew->path() );
         delete gear;

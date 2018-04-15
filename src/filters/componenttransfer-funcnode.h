@@ -15,7 +15,7 @@
  * Released under GNU GPL, read the file 'COPYING' for more information
  */
 
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "display/nr-filter-component-transfer.h"
 
 #define SP_FEFUNCNODE(obj) (dynamic_cast<SPFeFuncNode*>((SPObject*)obj))

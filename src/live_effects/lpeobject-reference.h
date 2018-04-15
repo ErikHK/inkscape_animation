@@ -11,9 +11,10 @@
 
 #include <sigc++/sigc++.h>
 
-#include "uri-references.h"
+#include "object/uri-references.h"
 
 namespace Inkscape {
+
 namespace XML {
 class Node;
 }
@@ -32,7 +33,7 @@ public:
 
     SPObject       *owner;
 
-    // concerning the LPEObject that is refered to:
+    // concerning the LPEObject that is referred to:
     char                 *lpeobject_href;
     Inkscape::XML::Node  *lpeobject_repr;
     LivePathEffectObject *lpeobject;

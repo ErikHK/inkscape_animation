@@ -6,7 +6,7 @@
 //#include "keyframe-widget.h"
 //#include "animation-control.h"
 #include <gdk/gdk.h>
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 
 class KeyframeWidget;
 //class AnimationControl;

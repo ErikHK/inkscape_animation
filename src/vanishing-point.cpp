@@ -25,7 +25,7 @@
 #include "perspective-line.h"
 #include "ui/shape-editor.h"
 #include "snap.h"
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "ui/control-manager.h"
 #include "document-undo.h"
 #include "verbs.h"

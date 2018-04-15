@@ -4,7 +4,6 @@ set(ui_SRC
 	dialog-events.cpp
 	draw-anchor.cpp
 	interface.cpp
-	object-edit.cpp
 	previewholder.cpp
 	selected-color.cpp
 	shape-editor.cpp
@@ -179,7 +178,6 @@ set(ui_SRC
 	draw-anchor.h
 	icon-names.h
 	interface.h
-	object-edit.h
 	previewable.h
 	previewfillable.h
 	previewholder.h

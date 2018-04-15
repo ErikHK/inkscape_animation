@@ -20,15 +20,8 @@
 #include <iosfwd>
 #include <stdexcept>
 #include <cstddef>
-
-#if __cplusplus >= 201103L
 #include <functional>
-#else
-#include <tr1/functional>
-#endif
 
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/shared_ptr.hpp>
 #include "ui/tool/selectable-control-point.h"
 #include "snapped-point.h"
 #include "ui/tool/node-types.h"
@@ -40,17 +33,6 @@ namespace UI {
 template <typename> class NodeIterator;
 }
 }
-
-/*
-#if HAVE_TR1_UNORDERED_SET
-namespace std {
-namespace tr1 {
-template <typename N> struct hash< Inkscape::UI::NodeIterator<N> >;
-}
-}
-#endif
-#endif
-*/
 
 namespace Inkscape {
 namespace UI {
@@ -362,7 +344,7 @@ private:
     friend class NodeList;
 };
 
-class NodeList : ListNode, boost::noncopyable, public boost::enable_shared_from_this<NodeList> {
+class NodeList : ListNode, boost::noncopyable {
 public:
     typedef std::size_t size_type;
     typedef Node &reference;
@@ -470,9 +452,9 @@ private:
  * List of node lists. Represents an editable path.
  * Editable path composed of one or more subpaths.
  */
-class SubpathList : public std::list< boost::shared_ptr<NodeList> > {
+class SubpathList : public std::list< std::shared_ptr<NodeList> > {
 public:
-    typedef std::list< boost::shared_ptr<NodeList> > list_type;
+    typedef std::list< std::shared_ptr<NodeList> > list_type;
 
     SubpathList(PathManipulator &pm) : _path_manipulator(pm) {}
     PathManipulator &pm() { return _path_manipulator; }

@@ -19,7 +19,7 @@
 #include "resource-manager.h"
 
 #include "document.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "xml/node.h"
 #include "document-undo.h"
 #include "verbs.h"

@@ -68,7 +68,7 @@
 #include "document.h"
 #include "layer-model.h"
 #include "selection.h"
-#include "sp-object.h"
+#include "object/sp-object.h"
 #include "ui/interface.h"
 #include "print.h"
 #include "color.h"
@@ -82,7 +82,7 @@
 #include "inkscape.h"
 #include "inkscape-version.h"
 
-#include "sp-namedview.h"
+#include "object/sp-namedview.h"
 #include "sp-guide.h"
 #include "xml/repr.h"
 
@@ -1489,13 +1489,10 @@ do_query_all_recurse (SPObject *o)
         }
     }
 
-    SPObject *child = o->children;
-    while (child) {
-        do_query_all_recurse (child);
-        child = child->next;
+    for(auto& child: o->children) {
+        do_query_all_recurse (&child);
     }
 }
-
 
 static int sp_do_export_png(SPDocument *doc)
 {

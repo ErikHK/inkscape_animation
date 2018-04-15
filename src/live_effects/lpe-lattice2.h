@@ -9,7 +9,7 @@
  * Authors:
  *   Johan Engelen
  *   Steren Giannini
- *   Noé Falzon
+ *   NoÃ© Falzon
  *   Victor Navez
  *   ~suv
  *   Jabiertxo Arraiza
@@ -45,17 +45,17 @@ public:
 
     virtual Gtk::Widget * newWidget();
 
-    virtual void calculateCurve(Geom::Point a,Geom::Point b, SPCurve *c, bool horizontal, bool move);
+    void calculateCurve(Geom::Point a,Geom::Point b, SPCurve *c, bool horizontal, bool move);
 
-    virtual void vertical(PointParam &paramA,PointParam &paramB, Geom::Line vert);
+    void vertical(PointParam &paramA,PointParam &paramB, Geom::Line vert);
 
-    virtual void horizontal(PointParam &paramA,PointParam &paramB,Geom::Line horiz);
+    void horizontal(PointParam &paramA,PointParam &paramB,Geom::Line horiz);
 
-    virtual void setDefaults();
+    void setDefaults();
 
-    virtual void onExpanderChanged();
+    void onExpanderChanged();
 
-    virtual void resetGrid();
+    void resetGrid();
 
 protected:
     void addCanvasIndicators(SPLPEItem const */*lpeitem*/, std::vector<Geom::PathVector> &hp_vec);
@@ -63,6 +63,7 @@ private:
 
     BoolParam horizontal_mirror;
     BoolParam vertical_mirror;
+    BoolParam perimetral;
     BoolParam live_update;
     PointParam grid_point_0;
     PointParam grid_point_1;
