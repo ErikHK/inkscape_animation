@@ -2,42 +2,24 @@ if(UNIX)
     #The install directive for the binaries and libraries are found in src/CMakeList.txt
     install(FILES
       ${CMAKE_BINARY_DIR}/inkscape.desktop
-      DESTINATION ${CMAKE_INSTALL_PREFIX}/${SHARE_INSTALL}/applications)
+      DESTINATION ${SHARE_INSTALL}/applications)
 endif()
 
 if(WIN32)
-  install(PROGRAMS
-    ${EXECUTABLE_OUTPUT_PATH}/inkscape.exe
-    ${EXECUTABLE_OUTPUT_PATH}/inkview.exe
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
-  )
-
-  install(PROGRAMS
-	${EXECUTABLE_OUTPUT_PATH}/inkscape_com.exe
-	DESTINATION ${CMAKE_INSTALL_PREFIX}
-	RENAME inkscape.com
-  )
-
-  install(FILES
-    ${LIBRARY_OUTPUT_PATH}/libinkscape_base.dll
-    ${LIBRARY_OUTPUT_PATH}/libgrid2.dll
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
-  )
-
   install(FILES
     AUTHORS
     COPYING
     NEWS
-    README
+    README.md
     TRANSLATORS
-    DESTINATION ${CMAKE_INSTALL_PREFIX})
+	GPL2.txt
+	GPL3.txt
+	LGPL2.1.txt
+    DESTINATION .)
 
-  install(FILES
-    GPL2.txt
-    GPL3.txt
-    LGPL2.1.txt
-    DESTINATION ${CMAKE_INSTALL_PREFIX})
-
+  install(DIRECTORY doc
+    DESTINATION .)
+    
   # devlibs and mingw dlls
 
   # There are differences in the devlibs for 64-Bit and 32-Bit build environments.
@@ -54,9 +36,11 @@ if(WIN32)
       ${DEVLIBS_BIN}/libatk-1.0-0.dll
       ${DEVLIBS_BIN}/libatkmm-1.6-1.dll
       ${DEVLIBS_BIN}/libcairo-2.dll
+      ${DEVLIBS_BIN}/libcairo-gobject-2.dll
       ${DEVLIBS_BIN}/libcairomm-1.0-1.dll
       ${DEVLIBS_BIN}/libcdr-0.1.dll
       ${DEVLIBS_BIN}/libcurl-4.dll
+      ${DEVLIBS_BIN}/libepoxy-0.dll
       ${DEVLIBS_BIN}/libexif-12.dll
       ${DEVLIBS_BIN}/libexpat-1.dll
       ${DEVLIBS_BIN}/libexslt-0.dll
@@ -67,6 +51,7 @@ if(WIN32)
       ${DEVLIBS_BIN}/libgdk-win32-2.0-0.dll
       ${DEVLIBS_BIN}/libgdk_pixbuf-2.0-0.dll
       ${DEVLIBS_BIN}/libgdkmm-2.4-1.dll
+      ${DEVLIBS_BIN}/libgdl-3-5.dll
       ${DEVLIBS_BIN}/libgio-2.0-0.dll
       ${DEVLIBS_BIN}/libgiomm-2.4-1.dll
       ${DEVLIBS_BIN}/libglib-2.0-0.dll
@@ -76,8 +61,8 @@ if(WIN32)
       ${DEVLIBS_BIN}/libgsl-19.dll
       ${DEVLIBS_BIN}/libgslcblas-0.dll
       ${DEVLIBS_BIN}/libgthread-2.0-0.dll
-      ${DEVLIBS_BIN}/libgtk-win32-2.0-0.dll
-      ${DEVLIBS_BIN}/libgtkmm-2.4-1.dll
+	  ${DEVLIBS_BIN}/libgtk-win32-2.0-0.dll
+	  ${DEVLIBS_BIN}/libgtkmm-2.4-1.dll
       ${DEVLIBS_BIN}/libharfbuzz-0.dll
       ${DEVLIBS_BIN}/libiconv-2.dll
       ${DEVLIBS_BIN}/libintl-8.dll
@@ -109,7 +94,7 @@ if(WIN32)
       ${MINGW_BIN}/libwinpthread-1.dll
       ${MINGW_BIN}/libgcc_s_seh-1.dll
       ${MINGW_BIN}/libgomp-1.dll
-      DESTINATION ${CMAKE_INSTALL_PREFIX})
+      DESTINATION .)
   else()
     install(FILES
       ${DEVLIBS_BIN}/bzip2.dll
@@ -176,85 +161,68 @@ if(WIN32)
       ${DEVLIBS_BIN}/zlib1.dll
       ${MINGW_BIN}/mingwm10.dll
       ${MINGW_BIN}/libgomp-1.dll
-      DESTINATION ${CMAKE_INSTALL_PREFIX})
+      DESTINATION .)
   endif()
 
-  # Setup application data directories, poppler files, locales, icons and themes
-  file(MAKE_DIRECTORY
-    data
-    doc
-    modules
-    plugins)
-
-  install(DIRECTORY
-    data
-    doc
-    modules
-    plugins
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
-    PATTERN Adwaita EXCLUDE               # NOTE: The theme is not used on Windows.
-    PATTERN hicolor/index.theme EXCLUDE   # NOTE: Empty index.theme in hicolor icon theme causes SIGSEGV.
-    PATTERN CMakeLists.txt EXCLUDE
-    PATTERN *.am EXCLUDE)
-
   # Generate a dummy file in hicolor/index.theme to avoid bug 1635207
-  file(GENERATE OUTPUT ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/index.theme
+  file(GENERATE OUTPUT share/icons/hicolor/index.theme
     CONTENT "[Icon Theme]\nName=hicolor\nDirectories=")
 
-  install(DIRECTORY ${DEVLIBS_PATH}/share/themes
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/share)
-
-  install(DIRECTORY ${DEVLIBS_PATH}/share/locale
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/share
-    PATTERN "*gtk30.mo" EXCLUDE)
+  install(DIRECTORY ${DEVLIBS_PATH}/share/icons/Adwaita
+    DESTINATION share/icons)
 
   install(DIRECTORY ${DEVLIBS_PATH}/share/poppler
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/share)
+    DESTINATION share)
+
+  install(DIRECTORY ${DEVLIBS_PATH}/share/glib-2.0/schemas
+    DESTINATION share/glib-2.0)
 
   install(DIRECTORY ${DEVLIBS_PATH}/etc/fonts
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/etc)
-
+    DESTINATION etc)
+	
   install(DIRECTORY ${DEVLIBS_PATH}/etc/gtk-2.0
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/etc)
+    DESTINATION etc)
 
   # GTK 2.0
   install(DIRECTORY ${DEVLIBS_LIB}/gtk-2.0
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+    DESTINATION lib
     FILES_MATCHING
     PATTERN "*.dll"
     PATTERN "*.cache")
 
+
+
   install(DIRECTORY ${DEVLIBS_LIB}/gdk-pixbuf-2.0
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+    DESTINATION lib
     FILES_MATCHING
     PATTERN "*.dll"
     PATTERN "*.cache")
 
   # Aspell dictionaries
   install(DIRECTORY ${DEVLIBS_LIB}/aspell-0.60
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+    DESTINATION lib)
 
   # Necessary to run extensions on windows if it is not in the path
   if (HAVE_MINGW64)
     install(FILES
       ${DEVLIBS_BIN}/gspawn-win64-helper.exe
       ${DEVLIBS_BIN}/gspawn-win64-helper-console.exe
-      DESTINATION ${CMAKE_INSTALL_PREFIX})
+      DESTINATION .)
   else()
     install(FILES
       ${DEVLIBS_BIN}/gspawn-win32-helper.exe
       ${DEVLIBS_BIN}/gspawn-win32-helper-console.exe
-      DESTINATION ${CMAKE_INSTALL_PREFIX})
+      DESTINATION .)
   endif()
 
   # Perl
   install(FILES
     ${DEVLIBS_PATH}/perl/bin/perl58.dll
-    DESTINATION ${CMAKE_INSTALL_PREFIX})
+    DESTINATION .)
 
   # Python
   install(DIRECTORY ${DEVLIBS_PATH}/python
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    DESTINATION .
     PATTERN "python/include" EXCLUDE
     PATTERN "python/libs" EXCLUDE
     PATTERN "*.pyc" EXCLUDE)

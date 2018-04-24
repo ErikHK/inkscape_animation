@@ -4,10 +4,12 @@
 if(WIN32)
   message("-- Windows build detected, setting default features")
 
-  include(mingwenv.cmake)
+  include(CMakeScripts/ConfigEnvMinGW.cmake)
   
-  list(INSERT CMAKE_SYSTEM_INCLUDE_PATH 0 ${DEVLIBS_PATH})
-  list(INSERT CMAKE_SYSTEM_LIBRARY_PATH 0 ${DEVLIBS_PATH})
+  if(NOT HAVE_MSYS2)
+    list(INSERT CMAKE_SYSTEM_INCLUDE_PATH 0 ${DEVLIBS_PATH})
+    list(INSERT CMAKE_SYSTEM_LIBRARY_PATH 0 ${DEVLIBS_PATH})
+  endif()
   
   set(CMAKE_C_COMPILER "${MINGW_BIN}/gcc.exe")
   set(CMAKE_C_LINK_EXECUTABLE "${MINGW_BIN}/gcc.exe")
@@ -45,10 +47,8 @@ if(APPLE)
   if(DEFINED ENV{GTKMM_BASEPATH})
     message("GTKMM_BASEPATH: $ENV{GTKMM_BASEPATH}")
   endif()
-
-  # detect current GTK+ backend
+  
+    # detect current GTK+ backend
   pkg_check_variable(gtk+-2.0 target)
   message("GTK2 backend: ${GTK+_2.0_TARGET}")
 endif()
-
-include(CMakeScripts/ConfigPaths.cmake)

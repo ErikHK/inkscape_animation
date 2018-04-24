@@ -1,4 +1,3 @@
-
 set(INKSCAPE_LIBS "")
 set(INKSCAPE_INCS "")
 set(INKSCAPE_INCS_SYS "")
@@ -12,79 +11,88 @@ list(APPEND INKSCAPE_INCS ${PROJECT_SOURCE_DIR}
 )
 
 # ----------------------------------------------------------------------------
+# Add C++11 standard compliance
+# TODO: Add a proper check for compiler compliance here
+# ----------------------------------------------------------------------------
+#list(APPEND INKSCAPE_CXX_FLAGS "-std=c++11")
+
+
+# Define the flags for profiling if desired:
+#if(WITH_PROFILING)
+#    set(BUILD_SHARED_LIBS off)
+#    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
+#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+#endif()
+
+
+# ----------------------------------------------------------------------------
 # Files we include
 # ----------------------------------------------------------------------------
 if(WIN32)
 	# Set the link and include directories
 	get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-	
-	# MinGW supplied STL does not define these floating point constants.. :/
-	add_definitions(-DFLT_EPSILON=1e-9)
-	add_definitions(-DFLT_MAX=1e+37)
-	add_definitions(-DFLT_MIN=1e-37)
 
 	list(APPEND INKSCAPE_LIBS "-lmscms")
 
 	list(APPEND INKSCAPE_CXX_FLAGS "-mwindows")
 	list(APPEND INKSCAPE_CXX_FLAGS "-mthreads")
-	
+
+	list(APPEND INKSCAPE_LIBS "-lgomp")
+	list(APPEND INKSCAPE_LIBS "-lwinpthread")
+
 	if(HAVE_MINGW64)
-		list(APPEND INKSCAPE_LIBS "-lgomp")
-		list(APPEND INKSCAPE_LIBS "-lwinpthread")
-	
 		list(APPEND INKSCAPE_CXX_FLAGS "-m64")
 	else()
 		list(APPEND INKSCAPE_CXX_FLAGS "-m32")
 	endif()
 endif()
 
-pkg_check_modules(INKSCAPE_DEP REQUIRED pangocairo pangoft2 fontconfig gthread-2.0 gsl gmodule-2.0)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(INKSCAPE_DEP REQUIRED
+	          harfbuzz
+	          pangocairo
+		  pangoft2
+		  fontconfig
+		  gthread-2.0
+		  gsl
+		  gmodule-2.0)
 
 list(APPEND INKSCAPE_LIBS ${INKSCAPE_DEP_LDFLAGS})
 list(APPEND INKSCAPE_INCS_SYS ${INKSCAPE_DEP_INCLUDE_DIRS})
 list(APPEND INKSCAPE_LIBS ${INKSCAPE_DEP_LIBRARIES})
+
 add_definitions(${INKSCAPE_DEP_CFLAGS_OTHER})
 
 if(APPLE AND DEFINED ENV{CMAKE_PREFIX_PATH})
     list(APPEND INKSCAPE_LIBS "-L$ENV{CMAKE_PREFIX_PATH}/lib")
 endif()
-if(APPLE)
-    if(${GTK+_2.0_TARGET} MATCHES "x11")
-    pkg_check_modules(x11 REQUIRED x11)
-    list(APPEND INKSCAPE_LIBS ${x11_LDFLAGS})
-    endif()
-elseif(WIN32)
-# X11 not available on windows
-else()
-    pkg_check_modules(x11 REQUIRED x11)
-    list(APPEND INKSCAPE_LIBS ${x11_LDFLAGS})
 
-endif()
 
-if(WITH_GNOME_VFS)
-    find_package(GnomeVFS2)
-    if(GNOMEVFS2_FOUND)
-	list(APPEND INKSCAPE_INCS_SYS ${GNOMEVFS2_INCLUDE_DIR})
-	list(APPEND INKSCAPE_LIBS ${GNOMEVFS-2_LIBRARY})
+if(WITH_JEMALLOC)
+    find_package(JeMalloc)
+    if (JEMALLOC_FOUND)
+        list(APPEND INKSCAPE_LIBS ${JEMALLOC_LIBRARIES})
     else()
-	set(WITH_GNOME_VFS OFF)
+        set(WITH_JEMALLOC OFF)
     endif()
 endif()
 
 if(ENABLE_LCMS)
+    unset(HAVE_LIBLCMS1)
+    unset(HAVE_LIBLCMS2)
     find_package(LCMS2)
     if(LCMS2_FOUND)
 	list(APPEND INKSCAPE_INCS_SYS ${LCMS2_INCLUDE_DIRS})
 	list(APPEND INKSCAPE_LIBS ${LCMS2_LIBRARIES})
 	add_definitions(${LCMS2_DEFINITIONS})
-        set (HAVE_LIBLCMS2 1)
+        set (HAVE_LIBLCMS2 ON)
     else()
         find_package(LCMS)
         if(LCMS_FOUND)
             list(APPEND INKSCAPE_INCS_SYS ${LCMS_INCLUDE_DIRS})
             list(APPEND INKSCAPE_LIBS ${LCMS_LIBRARIES})
             add_definitions(${LCMS_DEFINITIONS})
-            set (HAVE_LIBLCMS1 1)
+            set (HAVE_LIBLCMS1 ON)
         else()
             set(ENABLE_LCMS OFF)
         endif()
@@ -112,7 +120,7 @@ if(ENABLE_POPPLER)
 	set(HAVE_POPPLER ON)
 	if(ENABLE_POPPLER_CAIRO)
 	    if(POPPLER_CAIRO_FOUND AND POPPLER_GLIB_FOUND)
-		set(HAVE_POPPLER_CAIRO ON)	  
+		set(HAVE_POPPLER_CAIRO ON)
 	    endif()
 	    if(POPPLER_GLIB_FOUND AND CAIRO_SVG_FOUND)
 		set(HAVE_POPPLER_GLIB ON)
@@ -125,6 +133,10 @@ if(ENABLE_POPPLER)
 	if(POPPLER_VERSION VERSION_GREATER "0.29.0" OR
 		POPPLER_VERSION VERSION_EQUAL   "0.29.0")
 	    set(POPPLER_EVEN_NEWER_NEW_COLOR_SPACE_API ON)
+	endif()
+	if(POPPLER_VERSION VERSION_GREATER "0.58.0" OR
+		POPPLER_VERSION VERSION_EQUAL   "0.58.0")
+            set(POPPLER_NEW_OBJECT_API ON)
 	endif()
     else()
 	set(ENABLE_POPPLER_CAIRO OFF)
@@ -212,7 +224,7 @@ if(WITH_DBUS)
     list(APPEND INKSCAPE_INCS_SYS ${DBUS_INCLUDE_DIRS} ${CMAKE_BINARY_DIR}/src/extension/dbus/)
     list(APPEND INKSCAPE_LIBS ${DBUS_LIBRARIES})
     add_definitions(${DBUS_CFLAGS_OTHER})
-    
+
     else()
 	set(WITH_DBUS OFF)
     endif()
@@ -230,9 +242,7 @@ else()
 	add_definitions(-UWITH_LPETOOL -ULPE_ENABLE_TEST_EFFECTS)
 endif()
 
-# ----------------------------------------------------------------------------
-# CMake's builtin
-# ----------------------------------------------------------------------------
+
 
 set(TRY_GTKSPELL 1)
 # Include dependencies:
@@ -318,6 +328,8 @@ else()
         )
 endif()
 
+
+
 find_package(Freetype REQUIRED)
 list(APPEND INKSCAPE_INCS_SYS ${FREETYPE_INCLUDE_DIRS})
 list(APPEND INKSCAPE_LIBS ${FREETYPE_LIBRARIES})
@@ -397,18 +409,40 @@ if(WITH_NLS)
     endif(GETTEXT_FOUND)
 endif(WITH_NLS)
 
-#sets c++11 for newer sigc++ if required when pkg-config does not detect it
+#pkg_check_modules(SIGC++ REQUIRED sigc++-2.0 )
 find_package(SigC++ REQUIRED)
-
-pkg_check_modules(SIGC++ REQUIRED sigc++-2.0 )
 list(APPEND INKSCAPE_LIBS ${SIGC++_LDFLAGS})
 
 list(APPEND INKSCAPE_CXX_FLAGS ${SIGC++_CFLAGS_OTHER})
 
+if(WITH_YAML)
+    find_package(yaml)
+    if(YAML_FOUND)
+        set (WITH_YAML ON)
+        list(APPEND INKSCAPE_INCS_SYS ${YAML_INCLUDE_DIRS})
+        list(APPEND INKSCAPE_LIBS ${YAML_LIBRARIES})
+        add_definitions(-DWITH_YAML)
+    else(YAML_FOUND)
+        set(WITH_YAML OFF)
+        message(STATUS "Could not locate the yaml library headers: xverb feature will be disabled")
+    endif()
+endif()
+
 list(REMOVE_DUPLICATES INKSCAPE_CXX_FLAGS)
+list(REMOVE_DUPLICATES INKSCAPE_LIBS)
+list(REMOVE_DUPLICATES INKSCAPE_INCS_SYS)
+
 foreach(flag ${INKSCAPE_CXX_FLAGS})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}" CACHE STRING "" FORCE)
 endforeach()
+
+# Some linkers, like gold, don't find symbols recursively. So we have to link against X11 explicitly
+find_package(X11)
+if(X11_FOUND)
+    list(APPEND INKSCAPE_INCS_SYS ${X11_INCLUDE_DIRS})
+    list(APPEND INKSCAPE_LIBS ${X11_LIBRARIES})
+endif(X11_FOUND)
+
 # end Dependencies
 
 list(REMOVE_DUPLICATES INKSCAPE_LIBS)

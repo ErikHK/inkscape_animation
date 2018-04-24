@@ -1,10 +1,13 @@
 message(STATUS "Creating build files in: ${CMAKE_CURRENT_BINARY_DIR}")
 
 if(WIN32)
-  set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/inkscape")
+  if(${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/inkscape"
+        CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
+  endif()
   
   set(INKSCAPE_LIBDIR "\\\\lib")
-  set(INKSCAPE_DATADIR "")
+  set(INKSCAPE_DATADIR "") # can be set via the evironment variable INKSCAPE_DATADIR at runtime
   
   set(PACKAGE_LOCALE_DIR "\\\\share\\\\locale")
   

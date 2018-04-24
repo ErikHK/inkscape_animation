@@ -83,7 +83,6 @@ set(sp_SRC
   sp-use.cpp
   splivarot.cpp
   viewbox.cpp
-  timeline-item.cpp
 
   # -------
   # Headers
@@ -177,7 +176,6 @@ set(sp_SRC
   sp-use-reference.h
   sp-use.h
   viewbox.h
-  timeline-item.h
 )
 
 set(inkscape_SRC
@@ -428,18 +426,14 @@ set(inkscape_SRC
 # Generate version file
 # -----------------------------------------------------------------------------
 
-# a custom target that is always built
-add_custom_target(
-    inkscape_version ALL
+# a custom command that is always built (as run_always.txt is never actually created)
+add_custom_command(
+    OUTPUT inkscape-version.cpp run_always.txt
     COMMAND ${CMAKE_COMMAND}
-    -DINKSCAPE_SOURCE_DIR=${CMAKE_SOURCE_DIR}
-    -DINKSCAPE_BINARY_DIR=${CMAKE_BINARY_DIR}
-    -P ${CMAKE_SOURCE_DIR}/CMakeScripts/inkscape-version.cmake)
-
-# buildinfo.h is a generated file
-set_source_files_properties(
-    ${CMAKE_BINARY_DIR}/src/inkscape-version.cpp
-    PROPERTIES GENERATED TRUE)
+        -DINKSCAPE_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -DINKSCAPE_BINARY_DIR=${CMAKE_BINARY_DIR}
+        -P ${CMAKE_SOURCE_DIR}/CMakeScripts/inkscape-version.cmake
+    COMMENT "Generating inkscape-version.cpp")
 
 list(APPEND inkscape_SRC
   ${CMAKE_BINARY_DIR}/src/inkscape-version.cpp
@@ -489,38 +483,47 @@ set(inkscape_SRC
 # -----------------------------------------------------------------------------
 # Setup the executable
 # -----------------------------------------------------------------------------
-#add_inkscape_lib(sp_LIB "${sp_SRC}")
-#add_inkscape_lib(inkscape_LIB "${inkscape_SRC}")
-
-set(inkview_SRC
-  inkview.cpp
-)
+set(main_SRC main.cpp)
+set(view_SRC inkview.cpp)
 
 if(WIN32)
   # Sources for the inkscape executable on Windows.
-  set(main_SRC
+  list(APPEND main_SRC
     registrytool.h
     registrytool.cpp
-    main.cpp
     winmain.cpp
-    #winconsole.cpp
   )
+
+  # Configure and add the platform specific resource files (enabling the app icon).
+  string(TIMESTAMP COPYRIGHT_YEAR %Y)
   
-  # Add the platform specific resource files (enabling the app icon).
-  if(${HAVE_MINGW64})
-    list(APPEND main_SRC inkscape-x64.rc)
-    list(APPEND inkview_SRC inkview-x64.rc)
-  else()
-    list(APPEND main_SRC inkscape.rc)
-    list(APPEND inkview_SRC inkview.rc)
-  endif()
+  set(FILE_NAME inkscape)
+  set(PROGRAM_NAME Inkscape)
+  set(PROGRAM_DESCRIPTION "Inkscape vector graphics editor")
+  configure_file(inkscape.rc ${CMAKE_BINARY_DIR}/src/inkscape.rc)
+  configure_file(inkscape-manifest.xml ${CMAKE_BINARY_DIR}/src/inkscape-manifest.xml)  
+  list(APPEND main_SRC ${CMAKE_BINARY_DIR}/src/inkscape.rc)
+
+  set(FILE_NAME inkview)
+  set(PROGRAM_NAME Inkview)
+  set(PROGRAM_DESCRIPTION "Inkview vector graphics viewer")
+  configure_file(inkscape.rc ${CMAKE_BINARY_DIR}/src/inkview.rc)
+  configure_file(inkscape-manifest.xml ${CMAKE_BINARY_DIR}/src/inkview-manifest.xml)
+  list(APPEND view_SRC ${CMAKE_BINARY_DIR}/src/inkview.rc)
   
-  # Build the windows MS-DOS console executable.
+  # Build console applications as wrappers around inkscape/inkview.exe as GUI applications can't print to the console.
   add_executable(inkscape_com winconsole.cpp)
   set_target_properties(inkscape_com
-                        PROPERTIES LINK_FLAGS "-mconsole")
-else()
-  set(main_SRC main.cpp)
+                        PROPERTIES
+                          LINK_FLAGS "-mconsole"
+                          OUTPUT_NAME "inkscape"
+                          SUFFIX ".com")
+  add_executable(inkview_com winconsole.cpp)
+  set_target_properties(inkview_com
+                        PROPERTIES
+                          LINK_FLAGS "-mconsole"
+                          OUTPUT_NAME "inkview"
+                          SUFFIX ".com")
 endif()
 
 # Build everything except main and inkview.c in a shared library.
@@ -528,9 +531,7 @@ add_library(inkscape_base SHARED ${inkscape_SRC} ${sp_SRC})
 
 # make executables for inkscape and inkview
 add_executable(inkscape ${main_SRC})
-add_executable(inkview ${inkview_SRC})
-
-add_dependencies(inkscape_base inkscape_version)
+add_executable(inkview ${view_SRC})
 
 if(WITH_DBUS)
     add_dependencies(inkscape_base inkscape_dbus)
@@ -568,8 +569,10 @@ target_link_libraries(inkscape_base ${INKSCAPE_TARGET_LIBS})
 target_link_libraries(inkscape inkscape_base)
 target_link_libraries(inkview inkscape_base)
 
+
+
+#Define the installation
 if(NOT WIN32)
-  #Define the installation
   install(TARGETS
     inkscape_base
     inkscape
@@ -577,4 +580,12 @@ if(NOT WIN32)
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib/inkscape
     ARCHIVE DESTINATION lib/inkscape)
+else()
+  install(TARGETS
+    inkscape_base
+    inkscape
+    inkscape_com
+    inkview
+    inkview_com
+    RUNTIME DESTINATION .)
 endif()

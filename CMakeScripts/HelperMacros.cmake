@@ -29,15 +29,15 @@ macro(add_inkscape_lib
 	name
 	sources)
 
-    add_library(${name} ${sources})
+    add_library(${name} STATIC ${sources})
 
     # works fine without having the includes
     # listed is helpful for IDE's (QtCreator/MSVC)
     inkscape_source_group("${sources}")
-    install(TARGETS ${name} 
-        LIBRARY DESTINATION lib/inkscape
-        ARCHIVE DESTINATION lib/inkscape
-        )
+    #install(TARGETS ${name} 
+    #    LIBRARY DESTINATION lib/inkscape
+    #    ARCHIVE DESTINATION lib/inkscape
+    #    )
 
 endmacro()
 

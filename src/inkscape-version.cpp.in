@@ -3,5 +3,5 @@
 #endif
 
 namespace Inkscape {
-    char const *version_string = VERSION " " "${INKSCAPE_REVISION}";
+    char const *version_string = "@INKSCAPE_VERSION@" " " "(${INKSCAPE_REVISION})";
 }
