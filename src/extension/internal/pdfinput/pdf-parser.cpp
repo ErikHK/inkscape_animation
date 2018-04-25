@@ -2732,7 +2732,7 @@ void PdfParser::opXObject(Object args[], int /*numArgs*/)
 {
   Object obj1, obj2, obj3, refObj;
 
-  char *name = args[0].getName();
+  char *name = const_cast<char*> ( args[0].getName() );
 #if defined(POPPLER_NEW_OBJECT_API)
   if ((obj1 = res->lookupXObject(name)).isNull()) {
 #else

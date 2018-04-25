@@ -14,15 +14,15 @@ list(APPEND INKSCAPE_INCS ${PROJECT_SOURCE_DIR}
 # Add C++11 standard compliance
 # TODO: Add a proper check for compiler compliance here
 # ----------------------------------------------------------------------------
-#list(APPEND INKSCAPE_CXX_FLAGS "-std=c++11")
+list(APPEND INKSCAPE_CXX_FLAGS "-std=c++11")
 
 
 # Define the flags for profiling if desired:
-#if(WITH_PROFILING)
-#    set(BUILD_SHARED_LIBS off)
-#    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
-#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
-#endif()
+if(WITH_PROFILING)
+    set(BUILD_SHARED_LIBS off)
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+endif()
 
 
 # ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ if(WIN32)
 
 	list(APPEND INKSCAPE_LIBS "-lgomp")
 	list(APPEND INKSCAPE_LIBS "-lwinpthread")
-
+	
 	if(HAVE_MINGW64)
 		list(APPEND INKSCAPE_CXX_FLAGS "-m64")
 	else()
@@ -48,25 +48,38 @@ if(WIN32)
 endif()
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(INKSCAPE_DEP REQUIRED
-	          harfbuzz
-	          pangocairo
-		  pangoft2
-		  fontconfig
-		  gthread-2.0
-		  gsl
-		  gmodule-2.0)
+pkg_check_modules(INKSCAPE_DEP REQUIRED pangocairo pangoft2 fontconfig gthread-2.0 gsl gmodule-2.0)
 
 list(APPEND INKSCAPE_LIBS ${INKSCAPE_DEP_LDFLAGS})
 list(APPEND INKSCAPE_INCS_SYS ${INKSCAPE_DEP_INCLUDE_DIRS})
 list(APPEND INKSCAPE_LIBS ${INKSCAPE_DEP_LIBRARIES})
-
 add_definitions(${INKSCAPE_DEP_CFLAGS_OTHER})
 
 if(APPLE AND DEFINED ENV{CMAKE_PREFIX_PATH})
     list(APPEND INKSCAPE_LIBS "-L$ENV{CMAKE_PREFIX_PATH}/lib")
 endif()
+if(APPLE)
+    if(${GTK+_2.0_TARGET} MATCHES "x11")
+    pkg_check_modules(x11 REQUIRED x11)
+    list(APPEND INKSCAPE_LIBS ${x11_LDFLAGS})
+    endif()
+elseif(WIN32)
+# X11 not available on windows
+else()
+    pkg_check_modules(x11 REQUIRED x11)
+    list(APPEND INKSCAPE_LIBS ${x11_LDFLAGS})
 
+endif()
+
+#if(WITH_GNOME_VFS)
+#    find_package(GnomeVFS2)
+#    if(GNOMEVFS2_FOUND)
+#	list(APPEND INKSCAPE_INCS_SYS ${GNOMEVFS2_INCLUDE_DIR})
+#	list(APPEND INKSCAPE_LIBS ${GNOMEVFS-2_LIBRARY})
+#    else()
+#	set(WITH_GNOME_VFS OFF)
+#    endif()
+#endif()
 
 if(WITH_JEMALLOC)
     find_package(JeMalloc)
@@ -77,22 +90,21 @@ if(WITH_JEMALLOC)
     endif()
 endif()
 
+
 if(ENABLE_LCMS)
-    unset(HAVE_LIBLCMS1)
-    unset(HAVE_LIBLCMS2)
     find_package(LCMS2)
     if(LCMS2_FOUND)
 	list(APPEND INKSCAPE_INCS_SYS ${LCMS2_INCLUDE_DIRS})
 	list(APPEND INKSCAPE_LIBS ${LCMS2_LIBRARIES})
 	add_definitions(${LCMS2_DEFINITIONS})
-        set (HAVE_LIBLCMS2 ON)
+        set (HAVE_LIBLCMS2 1)
     else()
         find_package(LCMS)
         if(LCMS_FOUND)
             list(APPEND INKSCAPE_INCS_SYS ${LCMS_INCLUDE_DIRS})
             list(APPEND INKSCAPE_LIBS ${LCMS_LIBRARIES})
             add_definitions(${LCMS_DEFINITIONS})
-            set (HAVE_LIBLCMS1 ON)
+            set (HAVE_LIBLCMS1 1)
         else()
             set(ENABLE_LCMS OFF)
         endif()
@@ -120,7 +132,7 @@ if(ENABLE_POPPLER)
 	set(HAVE_POPPLER ON)
 	if(ENABLE_POPPLER_CAIRO)
 	    if(POPPLER_CAIRO_FOUND AND POPPLER_GLIB_FOUND)
-		set(HAVE_POPPLER_CAIRO ON)
+		set(HAVE_POPPLER_CAIRO ON)	  
 	    endif()
 	    if(POPPLER_GLIB_FOUND AND CAIRO_SVG_FOUND)
 		set(HAVE_POPPLER_GLIB ON)
@@ -224,7 +236,7 @@ if(WITH_DBUS)
     list(APPEND INKSCAPE_INCS_SYS ${DBUS_INCLUDE_DIRS} ${CMAKE_BINARY_DIR}/src/extension/dbus/)
     list(APPEND INKSCAPE_LIBS ${DBUS_LIBRARIES})
     add_definitions(${DBUS_CFLAGS_OTHER})
-
+    
     else()
 	set(WITH_DBUS OFF)
     endif()
@@ -242,7 +254,9 @@ else()
 	add_definitions(-UWITH_LPETOOL -ULPE_ENABLE_TEST_EFFECTS)
 endif()
 
-
+# ----------------------------------------------------------------------------
+# CMake's builtin
+# ----------------------------------------------------------------------------
 
 set(TRY_GTKSPELL 1)
 # Include dependencies:
@@ -279,6 +293,7 @@ if("${WITH_GTK3_EXPERIMENTAL}")
 
     if("${GDL_3_6_FOUND}")
         message("Using GDL 3.6 or higher")
+		add_definitions(-DWITH_GDL_3_6)
         set (WITH_GDL_3_6 1)
     endif()
 
@@ -302,11 +317,20 @@ if("${WITH_GTK3_EXPERIMENTAL}")
         ${GTKSPELL3_LIBRARIES}
     )
 else()
+pkg_check_modules(GDL_3_6 gdl-3.0>=3.6)
+if("${GDL_3_6_FOUND}")
+        message("Using GDL 3.6 or higher")
+		add_definitions(-DWITH_GDL_3_6)
+        set (WITH_GDL_3_6 1)
+    endif()
+
+	set(WITH_EXT_GDL 1)
     pkg_check_modules(GTK REQUIRED
                      gtkmm-2.4>=2.24
                      gdkmm-2.4
                      gtk+-2.0
                      gdk-2.0
+					 gdl-3.0>=3.4
                      )
     list(APPEND INKSCAPE_CXX_FLAGS ${GTK_CFLAGS_OTHER})
     pkg_check_modules(GTKSPELL2 gtkspell-2.0)
@@ -327,8 +351,6 @@ else()
         ${GTKSPELL2_LIBRARIES}
         )
 endif()
-
-
 
 find_package(Freetype REQUIRED)
 list(APPEND INKSCAPE_INCS_SYS ${FREETYPE_INCLUDE_DIRS})
@@ -409,7 +431,7 @@ if(WITH_NLS)
     endif(GETTEXT_FOUND)
 endif(WITH_NLS)
 
-#pkg_check_modules(SIGC++ REQUIRED sigc++-2.0 )
+# find sigc++ and set -std=c++11 if required
 find_package(SigC++ REQUIRED)
 list(APPEND INKSCAPE_LIBS ${SIGC++_LDFLAGS})
 
@@ -428,21 +450,11 @@ if(WITH_YAML)
     endif()
 endif()
 
-list(REMOVE_DUPLICATES INKSCAPE_CXX_FLAGS)
-list(REMOVE_DUPLICATES INKSCAPE_LIBS)
-list(REMOVE_DUPLICATES INKSCAPE_INCS_SYS)
 
+list(REMOVE_DUPLICATES INKSCAPE_CXX_FLAGS)
 foreach(flag ${INKSCAPE_CXX_FLAGS})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}" CACHE STRING "" FORCE)
 endforeach()
-
-# Some linkers, like gold, don't find symbols recursively. So we have to link against X11 explicitly
-find_package(X11)
-if(X11_FOUND)
-    list(APPEND INKSCAPE_INCS_SYS ${X11_INCLUDE_DIRS})
-    list(APPEND INKSCAPE_LIBS ${X11_LIBRARIES})
-endif(X11_FOUND)
-
 # end Dependencies
 
 list(REMOVE_DUPLICATES INKSCAPE_LIBS)

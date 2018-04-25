@@ -44,6 +44,7 @@ if(WIN32)
     ${MINGW_BIN}/libgdk-win32-2.0-[0-9]*.dll
     ${MINGW_BIN}/libgdk_pixbuf-2.0-[0-9]*.dll
 	${MINGW_BIN}/libgdkmm-2.4-[0-9]*.dll
+	${MINGW_BIN}/libgdl-3-[0-9]*.dll
     ${MINGW_BIN}/libgfortran-[0-9]*.dll
     ${MINGW_BIN}/libgio-2.0-[0-9]*.dll
     ${MINGW_BIN}/libgiomm-2.4-[0-9]*.dll
@@ -95,7 +96,6 @@ if(WIN32)
     ${MINGW_BIN}/librevenge-stream-0.[0-9]*.dll
     ${MINGW_BIN}/librsvg-2-[0-9]*.dll
     ${MINGW_BIN}/libsigc-2.0-[0-9]*.dll
-    ${MINGW_BIN}/libsoup-2.4-[0-9]*.dll
     ${MINGW_BIN}/libsqlite3-[0-9]*.dll
     ${MINGW_BIN}/libstdc++-[0-9]*.dll
     ${MINGW_BIN}/libtermcap-[0-9]*.dll
@@ -110,7 +110,6 @@ if(WIN32)
     ${MINGW_BIN}/libwpg-0.[0-9]*.dll
     ${MINGW_BIN}/libxml2-[0-9]*.dll
     ${MINGW_BIN}/libxslt-[0-9]*.dll
-    ${MINGW_BIN}/libyaml-0-[0-9]*.dll
     ${MINGW_BIN}/nss[0-9]*.dll
     ${MINGW_BIN}/nssutil[0-9]*.dll
     ${MINGW_BIN}/smime[0-9]*.dll
