@@ -289,12 +289,12 @@ if("${WITH_GTK3_EXPERIMENTAL}")
         set (WITH_GTKMM_3_10 1)
     endif()
 
-    pkg_check_modules(GDL_3_6 gdl-3.0>=3.6)
+    pkg_check_modules(GDL_2_31 gdl-1.0)
 
-    if("${GDL_3_6_FOUND}")
+    if("${GDL_2_31_FOUND}")
         message("Using GDL 3.6 or higher")
-		add_definitions(-DWITH_GDL_3_6)
-        set (WITH_GDL_3_6 1)
+		add_definitions(-DWITH_GDL_2_31)
+        set (WITH_GDL_2_31 1)
     endif()
 
     set(TRY_GTKSPELL )
@@ -317,11 +317,11 @@ if("${WITH_GTK3_EXPERIMENTAL}")
         ${GTKSPELL3_LIBRARIES}
     )
 else()
-pkg_check_modules(GDL_3_6 gdl-3.0>=3.6)
-if("${GDL_3_6_FOUND}")
-        message("Using GDL 3.6 or higher")
-		add_definitions(-DWITH_GDL_3_6)
-        set (WITH_GDL_3_6 1)
+pkg_check_modules(GDL_2_31 gdl-1.0)
+if("${GDL_2_31_FOUND}")
+        message("Using GDL 2.3 or higher")
+		add_definitions(-DWITH_GDL_2_31)
+        set (WITH_GDL_2_31 1)
     endif()
 
 	set(WITH_EXT_GDL 1)
@@ -330,7 +330,7 @@ if("${GDL_3_6_FOUND}")
                      gdkmm-2.4
                      gtk+-2.0
                      gdk-2.0
-					 gdl-3.0>=3.4
+					 gdl-1.0
                      )
     list(APPEND INKSCAPE_CXX_FLAGS ${GTK_CFLAGS_OTHER})
     pkg_check_modules(GTKSPELL2 gtkspell-2.0)
