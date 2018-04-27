@@ -38,6 +38,8 @@
 #include "widgets/ege-output-action.h"
 #include "widgets/ege-select-one-action.h"
 #include "widgets/ink-action.h"
+#include "widgets/ink-radio-action.h"
+#include "widgets/ink-toggle-action.h"
 #include "mod360.h"
 #include "preferences.h"
 #include "selection.h"
@@ -303,7 +305,7 @@ void sp_arc_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObjec
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
 
     EgeAdjustmentAction* eact = 0;
-    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
 
 
     {

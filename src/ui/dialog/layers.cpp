@@ -15,6 +15,7 @@
 
 #include "layers.h"
 #include <gtkmm/widget.h>
+#include <gtkmm/image.h>
 #include <gtkmm/icontheme.h>
 #include <gtkmm/imagemenuitem.h>
 #include <gtkmm/separatormenuitem.h>
@@ -90,7 +91,7 @@ void LayersPanel::_styleButton( Gtk::Button& btn, SPDesktop *desktop, unsigned i
     bool set = false;
 
     if ( iconName ) {
-        GtkWidget *child = sp_icon_new( Inkscape::ICON_SIZE_SMALL_TOOLBAR, iconName );
+        GtkWidget *child = gtk_image_new_from_icon_name( iconName, GTK_ICON_SIZE_SMALL_TOOLBAR );
         gtk_widget_show( child );
         btn.add( *Gtk::manage(Glib::wrap(child)) );
         btn.set_relief(Gtk::RELIEF_NONE);
@@ -102,7 +103,7 @@ void LayersPanel::_styleButton( Gtk::Button& btn, SPDesktop *desktop, unsigned i
         if ( verb ) {
             SPAction *action = verb->get_action(Inkscape::ActionContext(desktop));
             if ( !set && action && action->image ) {
-                GtkWidget *child = sp_icon_new( Inkscape::ICON_SIZE_SMALL_TOOLBAR, action->image );
+                GtkWidget *child = gtk_image_new_from_icon_name( action->image, GTK_ICON_SIZE_SMALL_TOOLBAR );
                 gtk_widget_show( child );
                 btn.add( *Gtk::manage(Glib::wrap(child)) );
                 set = true;
@@ -122,11 +123,12 @@ void LayersPanel::_styleButton( Gtk::Button& btn, SPDesktop *desktop, unsigned i
 
 Gtk::MenuItem& LayersPanel::_addPopupItem( SPDesktop *desktop, unsigned int code, char const* iconName, char const* fallback, int id )
 {
-    GtkWidget* iconWidget = 0;
+    Gtk::Image* iconWidget = 0;
     const char* label = 0;
 
     if ( iconName ) {
-        iconWidget = sp_icon_new( Inkscape::ICON_SIZE_MENU, iconName );
+        iconWidget = Gtk::manage(new Gtk::Image());
+        iconWidget->set_from_icon_name( iconName, Gtk::ICON_SIZE_MENU );
     }
 
     if ( desktop ) {
@@ -134,7 +136,8 @@ Gtk::MenuItem& LayersPanel::_addPopupItem( SPDesktop *desktop, unsigned int code
         if ( verb ) {
             SPAction *action = verb->get_action(Inkscape::ActionContext(desktop));
             if ( !iconWidget && action && action->image ) {
-                iconWidget = sp_icon_new( Inkscape::ICON_SIZE_MENU, action->image );
+                iconWidget = Gtk::manage(new Gtk::Image());
+                iconWidget->set_from_icon_name( action->image, Gtk::ICON_SIZE_MENU );
             }
 
             if ( action ) {
@@ -147,20 +150,21 @@ Gtk::MenuItem& LayersPanel::_addPopupItem( SPDesktop *desktop, unsigned int code
         label = fallback;
     }
 
+	/*
     Gtk::Widget* wrapped = 0;
     if ( iconWidget ) {
         wrapped = Gtk::manage(Glib::wrap(iconWidget));
         wrapped->show();
     }
-
+*/
 
     Gtk::MenuItem* item = 0;
 
-    if (wrapped) {
-        item = Gtk::manage(new Gtk::ImageMenuItem(*wrapped, label, true));
-    } else {
+    //if (wrapped) {
+    //    item = Gtk::manage(new Gtk::ImageMenuItem(*wrapped, label, true));
+    //} else {
 	item = Gtk::manage(new Gtk::MenuItem(label, true));
-    }
+    //}
 
     item->signal_activate().connect(sigc::bind(sigc::mem_fun(*this, &LayersPanel::_takeAction), id));
     _popupMenu.append(*item);

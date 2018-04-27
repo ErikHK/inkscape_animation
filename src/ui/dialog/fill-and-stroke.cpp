@@ -196,8 +196,9 @@ Gtk::HBox&
 FillAndStroke::_createPageTabLabel(const Glib::ustring& label, const char *label_image)
 {
     Gtk::HBox *_tab_label_box = Gtk::manage(new Gtk::HBox(false, 4));
-    _tab_label_box->pack_start(*Glib::wrap(sp_icon_new(Inkscape::ICON_SIZE_DECORATION,
-                                                       label_image)));
+    auto img = Gtk::manage(new Gtk::Image());
+    img->set_from_icon_name(label_image, Gtk::ICON_SIZE_MENU);
+    _tab_label_box->pack_start(*img);
 
     Gtk::Label *_tab_label = Gtk::manage(new Gtk::Label(label, true));
     _tab_label_box->pack_start(*_tab_label);

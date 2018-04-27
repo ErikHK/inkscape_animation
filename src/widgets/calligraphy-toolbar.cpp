@@ -37,6 +37,8 @@
 #include "widgets/ege-adjustment-action.h"
 #include "widgets/ege-select-one-action.h"
 #include "widgets/ink-action.h"
+#include "widgets/ink-toggle-action.h"
+#include "widgets/ink-radio-action.h"
 #include "preferences.h"
 #include "toolbox.h"
 #include "ui/icon-names.h"
@@ -565,7 +567,7 @@ void sp_calligraphy_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions
                                                           _("Trace Background"),
                                                           _("Trace the lightness of the background by the width of the pen (white - minimum width, black - maximum width)"),
                                                           INKSCAPE_ICON("draw-trace-background"),
-                                                          Inkscape::ICON_SIZE_DECORATION );
+                                                          GTK_ICON_SIZE_MENU );
             gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
             PrefPusher *pusher = new PrefPusher(GTK_TOGGLE_ACTION(act), "/tools/calligraphic/tracebackground", update_presets_list, holder);
             g_signal_connect( holder, "destroy", G_CALLBACK(delete_prefspusher), pusher);
@@ -578,7 +580,7 @@ void sp_calligraphy_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions
                                                           _("Pressure"),
                                                           _("Use the pressure of the input device to alter the width of the pen"),
                                                           INKSCAPE_ICON("draw-use-pressure"),
-                                                          Inkscape::ICON_SIZE_DECORATION );
+                                                          GTK_ICON_SIZE_MENU );
             gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
             PrefPusher *pusher = new PrefPusher(GTK_TOGGLE_ACTION(act), "/tools/calligraphic/usepressure", update_presets_list, holder);
             g_signal_connect( holder, "destroy", G_CALLBACK(delete_prefspusher), pusher);
@@ -591,7 +593,7 @@ void sp_calligraphy_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions
                                                           _("Tilt"),
                                                           _("Use the tilt of the input device to alter the angle of the pen's nib"),
                                                           INKSCAPE_ICON("draw-use-tilt"),
-                                                          Inkscape::ICON_SIZE_DECORATION );
+                                                          GTK_ICON_SIZE_MENU );
             gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
             PrefPusher *pusher = new PrefPusher(GTK_TOGGLE_ACTION(act), "/tools/calligraphic/usetilt", update_presets_list, holder);
             g_signal_connect( holder, "destroy", G_CALLBACK(delete_prefspusher), pusher);
@@ -622,7 +624,7 @@ void sp_calligraphy_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions
                                               _("Add/Edit Profile"),
                                               _("Add or edit calligraphic profile"),
                                               INKSCAPE_ICON("document-properties"),
-                                              Inkscape::ICON_SIZE_DECORATION );
+                                              GTK_ICON_SIZE_MENU );
             g_object_set( inky, "short_label", _("Edit"), NULL );
             g_signal_connect_after( G_OBJECT(inky), "activate", G_CALLBACK(sp_ddc_edit_profile), (GObject*)holder );
             gtk_action_group_add_action( mainActions, GTK_ACTION(inky) );

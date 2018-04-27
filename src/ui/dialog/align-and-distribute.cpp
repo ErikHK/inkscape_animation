@@ -71,7 +71,8 @@ Action::Action(const Glib::ustring &id,
     _id(id),
     _parent(parent)
 {
-    Gtk::Widget*  pIcon = Gtk::manage( sp_icon_get_icon( _id, Inkscape::ICON_SIZE_LARGE_TOOLBAR) );
+    Gtk::Image*  pIcon = Gtk::manage(new Gtk::Image());
+    pIcon->set_from_icon_name( _id, Gtk::ICON_SIZE_LARGE_TOOLBAR);
     Gtk::Button * pButton = Gtk::manage(new Gtk::Button());
     pButton->set_relief(Gtk::RELIEF_NONE);
     pIcon->show();

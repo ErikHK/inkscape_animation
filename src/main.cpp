@@ -1128,7 +1128,7 @@ sp_main_gui(int argc, char const **argv)
     // Set default window icon. Obeys the theme.
     gtk_window_set_default_icon_name("inkscape");
     // Do things that were previously in inkscape_gtk_stock_init().
-    sp_icon_get_phys_size(GTK_ICON_SIZE_MENU);
+    //sp_icon_get_phys_size(GTK_ICON_SIZE_MENU);
     Inkscape::UI::Widget::Panel::prep();
 
     gboolean create_new = TRUE;

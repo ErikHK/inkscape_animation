@@ -47,6 +47,7 @@
 #include "../helper/action-context.h"
 #include "icon.h"
 #include "ink-action.h"
+#include "ink-toggle-action.h"
 #include "ink-comboboxentry-action.h"
 #include "../inkscape.h"
 #include "ui/interface.h"
@@ -123,12 +124,12 @@ enum BarId {
 static GtkWidget *sp_empty_toolbox_new(SPDesktop *desktop);
 
 
-Inkscape::IconSize ToolboxFactory::prefToSize( Glib::ustring const &path, int base ) {
-    static Inkscape::IconSize sizeChoices[] = {
-        Inkscape::ICON_SIZE_LARGE_TOOLBAR,
-        Inkscape::ICON_SIZE_SMALL_TOOLBAR,
-        Inkscape::ICON_SIZE_MENU,
-        Inkscape::ICON_SIZE_DIALOG
+GtkIconSize ToolboxFactory::prefToSize( Glib::ustring const &path, int base ) {
+    static GtkIconSize sizeChoices[] = {
+        GTK_ICON_SIZE_LARGE_TOOLBAR,
+        GTK_ICON_SIZE_SMALL_TOOLBAR,
+        GTK_ICON_SIZE_MENU,
+        GTK_ICON_SIZE_DIALOG
     };
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
     int index = prefs->getIntLimited( path, base, 0, G_N_ELEMENTS(sizeChoices) );
@@ -617,7 +618,7 @@ static void update_aux_toolbox(SPDesktop *desktop, ToolBase *eventcontext, GtkWi
 static void setup_commands_toolbox(GtkWidget *toolbox, SPDesktop *desktop);
 static void update_commands_toolbox(SPDesktop *desktop, ToolBase *eventcontext, GtkWidget *toolbox);
 
-static GtkToolItem * sp_toolbox_button_item_new_from_verb_with_doubleclick( GtkWidget *t, Inkscape::IconSize size, SPButtonType type,
+static GtkToolItem * sp_toolbox_button_item_new_from_verb_with_doubleclick( GtkWidget *t, GtkIconSize size, SPButtonType type,
                                                                      Inkscape::Verb *verb, Inkscape::Verb *doubleclick_verb,
                                                                      Inkscape::UI::View::View *view);
 
@@ -675,9 +676,9 @@ VerbAction::~VerbAction()
 Gtk::Widget* VerbAction::create_menu_item_vfunc()
 {
 // First call in to get the icon rendered if present in SVG
-    Gtk::Widget *widget = sp_icon_get_icon( property_stock_id().get_value().get_string(), Inkscape::ICON_SIZE_MENU );
-    delete widget;
-    widget = 0;
+    //Gtk::Widget *widget = sp_icon_get_icon( property_stock_id().get_value().get_string(), GTK_ICON_SIZE_MENU );
+    //delete widget;
+    //widget = 0;
 
     Gtk::Widget* widg = Gtk::Action::create_menu_item_vfunc();
 //     g_message("create_menu_item_vfunc() = %p  for '%s'", widg, verb->get_id());
@@ -687,7 +688,7 @@ Gtk::Widget* VerbAction::create_menu_item_vfunc()
 Gtk::Widget* VerbAction::create_tool_item_vfunc()
 {
 //     Gtk::Widget* widg = Gtk::Action::create_tool_item_vfunc();
-    Inkscape::IconSize toolboxSize = ToolboxFactory::prefToSize("/toolbox/tools/small");
+    GtkIconSize toolboxSize = ToolboxFactory::prefToSize("/toolbox/tools/small");
     GtkWidget* toolbox = 0;
     GtkToolItem *button_toolitem = sp_toolbox_button_item_new_from_verb_with_doubleclick( toolbox, toolboxSize,
                                                                                       SP_BUTTON_TYPE_TOGGLE,
@@ -825,7 +826,7 @@ void delete_prefspusher(GObject * /*obj*/, PrefPusher *watcher )
 // ------------------------------------------------------
 
 
-GtkToolItem * sp_toolbox_button_item_new_from_verb_with_doubleclick(GtkWidget *t, Inkscape::IconSize size, SPButtonType type,
+GtkToolItem * sp_toolbox_button_item_new_from_verb_with_doubleclick(GtkWidget *t, GtkIconSize size, SPButtonType type,
                                                              Inkscape::Verb *verb, Inkscape::Verb *doubleclick_verb,
                                                              Inkscape::UI::View::View *view)
 {
@@ -877,7 +878,7 @@ static void trigger_sp_action( GtkAction* /*act*/, gpointer user_data )
     }
 }
 
-static GtkAction* create_action_for_verb( Inkscape::Verb* verb, Inkscape::UI::View::View* view, Inkscape::IconSize size )
+static GtkAction* create_action_for_verb( Inkscape::Verb* verb, Inkscape::UI::View::View* view, GtkIconSize size )
 {
     GtkAction* act = 0;
 
@@ -958,7 +959,7 @@ static Glib::RefPtr<Gtk::ActionGroup> create_or_fetch_actions( SPDesktop* deskto
         SP_VERB_ZOOM_SELECTION
     };
 
-    Inkscape::IconSize toolboxSize = ToolboxFactory::prefToSize("/toolbox/small");
+    GtkIconSize toolboxSize = ToolboxFactory::prefToSize("/toolbox/small");
     Glib::RefPtr<Gtk::ActionGroup> mainActions;
     if (desktop == NULL)
     {
@@ -1234,7 +1235,7 @@ static void setupToolboxCommon( GtkWidget *toolbox,
         gtk_toolbar_set_style( GTK_TOOLBAR(toolBar), GTK_TOOLBAR_ICONS );
     }
 
-    Inkscape::IconSize toolboxSize = ToolboxFactory::prefToSize(sizePref);
+    GtkIconSize toolboxSize = ToolboxFactory::prefToSize(sizePref);
     gtk_toolbar_set_icon_size( GTK_TOOLBAR(toolBar), static_cast<GtkIconSize>(toolboxSize) );
 
     GtkPositionType pos = static_cast<GtkPositionType>(GPOINTER_TO_INT(g_object_get_data( G_OBJECT(toolbox), HANDLE_POS_MARK )));
@@ -1468,7 +1469,7 @@ void setup_aux_toolbox(GtkWidget *toolbox, SPDesktop *desktop)
                 gtk_toolbar_set_style( GTK_TOOLBAR(toolBar), GTK_TOOLBAR_ICONS );
             }
 
-            Inkscape::IconSize toolboxSize = ToolboxFactory::prefToSize("/toolbox/small");
+            GtkIconSize toolboxSize = ToolboxFactory::prefToSize("/toolbox/small");
             gtk_toolbar_set_icon_size( GTK_TOOLBAR(toolBar), static_cast<GtkIconSize>(toolboxSize) );
 
 #if GTK_CHECK_VERSION(3,0,0)
@@ -1738,7 +1739,7 @@ void setup_snap_toolbox(GtkWidget *toolbox, SPDesktop *desktop)
         "  </toolbar>"
         "</ui>";
 
-    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
 
     {
         // TODO: This is a cludge. On the one hand we have verbs+actions,

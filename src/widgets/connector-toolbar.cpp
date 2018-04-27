@@ -39,6 +39,8 @@
 #include "enums.h"
 #include "graphlayout.h"
 #include "widgets/ink-action.h"
+#include "widgets/ink-toggle-action.h"
+#include "widgets/ink-radio-action.h"
 #include "inkscape.h"
 #include "preferences.h"
 #include "selection.h"
@@ -300,7 +302,7 @@ static void sp_connector_toolbox_selection_changed(Inkscape::Selection *selectio
 void sp_connector_toolbox_prep( SPDesktop *desktop, GtkActionGroup* mainActions, GObject* holder )
 {
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
 
     {
         InkAction* inky = ink_action_new( "ConnectorAvoidAction",
@@ -328,7 +330,7 @@ void sp_connector_toolbox_prep( SPDesktop *desktop, GtkActionGroup* mainActions,
                                                       _("Orthogonal"),
                                                       _("Make connector orthogonal or polyline"),
                                                       INKSCAPE_ICON("connector-orthogonal"),
-                                                      Inkscape::ICON_SIZE_DECORATION );
+                                                      GTK_ICON_SIZE_MENU );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
 
         bool tbuttonstate = prefs->getBool("/tools/connector/orthogonal");
@@ -389,7 +391,7 @@ void sp_connector_toolbox_prep( SPDesktop *desktop, GtkActionGroup* mainActions,
                                                       _("Downwards"),
                                                       _("Make connectors with end-markers (arrows) point downwards"),
                                                       INKSCAPE_ICON("distribute-graph-directed"),
-                                                      Inkscape::ICON_SIZE_DECORATION );
+                                                      GTK_ICON_SIZE_MENU );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
 
         bool tbuttonstate = prefs->getBool("/tools/connector/directedlayout");
@@ -405,7 +407,7 @@ void sp_connector_toolbox_prep( SPDesktop *desktop, GtkActionGroup* mainActions,
                                                       _("Remove overlaps"),
                                                       _("Do not allow overlapping shapes"),
                                                       INKSCAPE_ICON("distribute-remove-overlaps"),
-                                                      Inkscape::ICON_SIZE_DECORATION );
+                                                      GTK_ICON_SIZE_MENU );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
 
         bool tbuttonstate = prefs->getBool("/tools/connector/avoidoverlaplayout");

@@ -35,9 +35,11 @@ set(widgets_SRC
 	gradient-selector.cpp
 	gradient-toolbar.cpp
 	gradient-vector.cpp
-	icon.cpp
 	ink-action.cpp
 	ink-comboboxentry-action.cpp
+	ink-radio-action.cpp
+	ink-toggle-action.cpp
+	ink-tool-menu-action.cpp
 	paint-selector.cpp
 	ruler.cpp
 	select-toolbar.cpp
@@ -93,9 +95,11 @@ set(widgets_SRC
 	gradient-selector.h
 	gradient-toolbar.h
 	gradient-vector.h
-	icon.h
-        ink-action.h
-        ink-comboboxentry-action.h
+    ink-action.h
+	ink-comboboxentry-action.h
+	ink-radio-action.h
+	ink-toggle-action.h
+	ink-tool-menu-action.h
 	paint-selector.h
 	ruler.h
 	select-toolbar.h

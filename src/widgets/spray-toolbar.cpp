@@ -37,6 +37,8 @@
 #include "widgets/ege-adjustment-action.h"
 #include "widgets/ege-select-one-action.h"
 #include "widgets/ink-action.h"
+#include "widgets/ink-radio-action.h"
+#include "widgets/ink-toggle-action.h"
 #include "preferences.h"
 #include "toolbox.h"
 #include "ui/dialog/clonetiler.h"
@@ -287,7 +289,7 @@ static void sp_toggle_pick_inverse_value( GtkToggleAction* act, gpointer data )
 
 void sp_spray_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObject* holder)
 {
-    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
     {
         /* Width */
@@ -311,7 +313,7 @@ void sp_spray_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObj
                                                       _("Pressure"),
                                                       _("Use the pressure of the input device to alter the width of spray area"),
                                                       INKSCAPE_ICON("draw-use-pressure"),
-                                                      Inkscape::ICON_SIZE_DECORATION );
+                                                      GTK_ICON_SIZE_MENU );
         gtk_action_group_add_action( mainActions, GTK_ACTION(act) );
         PrefPusher *pusher = new PrefPusher(GTK_TOGGLE_ACTION(act), "/tools/spray/usepressurewidth");
         g_signal_connect(holder, "destroy", G_CALLBACK(delete_prefspusher), pusher);
@@ -427,7 +429,7 @@ void sp_spray_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObj
                                                       _("Pressure"),
                                                       _("Use the pressure of the input device to alter the amount of sprayed objects"),
                                                       INKSCAPE_ICON("draw-use-pressure"),
-                                                      Inkscape::ICON_SIZE_DECORATION );
+                                                      GTK_ICON_SIZE_MENU );
         gtk_action_group_add_action( mainActions, GTK_ACTION(act) );
         PrefPusher *pusher = new PrefPusher(GTK_TOGGLE_ACTION(act), "/tools/spray/usepressurepopulation");
         g_signal_connect(holder, "destroy", G_CALLBACK(delete_prefspusher), pusher);
@@ -476,7 +478,7 @@ void sp_spray_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObj
                                                       _("Pressure"),
                                                       _("Use the pressure of the input device to alter the scale of new items"),
                                                       INKSCAPE_ICON("draw-use-pressure"),
-                                                      Inkscape::ICON_SIZE_DECORATION);
+                                                      GTK_ICON_SIZE_MENU);
         gtk_toggle_action_set_active( GTK_TOGGLE_ACTION(act), prefs->getBool("/tools/spray/usepressurescale", false) );
         g_object_set_data( holder, "usepressurescale", act );
         g_signal_connect_after( G_OBJECT(act), "toggled", G_CALLBACK(sp_toggle_pressure_scale), holder) ;

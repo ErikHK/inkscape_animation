@@ -186,12 +186,12 @@ static void sp_button_perform_action(SPButton *button, gpointer /*data*/)
     }
 }
 
-GtkWidget *sp_button_new(Inkscape::IconSize size, SPButtonType type, SPAction *action, SPAction *doubleclick_action)
+GtkWidget *sp_button_new(GtkIconSize size, SPButtonType type, SPAction *action, SPAction *doubleclick_action)
 {
     SPButton *button = SP_BUTTON(g_object_new(SP_TYPE_BUTTON, NULL));
 
     button->type = type;
-    button->lsize = CLAMP(size, Inkscape::ICON_SIZE_MENU, Inkscape::ICON_SIZE_DECORATION);
+    button->lsize = CLAMP(size, GTK_ICON_SIZE_MENU, GTK_ICON_SIZE_MENU);
 
     sp_button_set_action(button, action);
     if (doubleclick_action)
@@ -243,7 +243,7 @@ static void sp_button_set_action(SPButton *button, SPAction *action)
         button->c_set_sensitive = action->signal_set_sensitive.connect(
             sigc::bind<0>(sigc::ptr_fun(&gtk_widget_set_sensitive), GTK_WIDGET(button)));
         if (action->image) {
-            child = sp_icon_new(button->lsize, action->image);
+            child = gtk_image_new_from_icon_name(action->image, button->lsize);
             gtk_widget_show(child);
             gtk_container_add(GTK_CONTAINER(button), child);
         }
@@ -287,7 +287,7 @@ static void sp_button_set_composed_tooltip(GtkWidget *widget, SPAction *action)
     }
 }
 
-GtkWidget *sp_button_new_from_data(Inkscape::IconSize size, SPButtonType type, Inkscape::UI::View::View *view,
+GtkWidget *sp_button_new_from_data(GtkIconSize size, SPButtonType type, Inkscape::UI::View::View *view,
                                    const gchar *name, const gchar *tip)
 {
     GtkWidget *button;

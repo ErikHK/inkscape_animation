@@ -94,10 +94,10 @@ TextEdit::TextEdit()
     fontsel_hbox.pack_start(*Gtk::manage(Glib::wrap(fontsel)), true, true);
 
     /* Align buttons */
-    styleButton(&align_left,    _("Align left"),                 INKSCAPE_ICON("format-justify-left"),    NULL);
-    styleButton(&align_center,  _("Align center"),               INKSCAPE_ICON("format-justify-center"), &align_left);
-    styleButton(&align_right,   _("Align right"),                INKSCAPE_ICON("format-justify-right"),  &align_left);
-    styleButton(&align_justify, _("Justify (only flowed text)"), INKSCAPE_ICON("format-justify-fill"),   &align_left);
+    //styleButton(&align_left,    _("Align left"),                 INKSCAPE_ICON("format-justify-left"),    NULL);
+    //styleButton(&align_center,  _("Align center"),               INKSCAPE_ICON("format-justify-center"), &align_left);
+    //styleButton(&align_right,   _("Align right"),                INKSCAPE_ICON("format-justify-right"),  &align_left);
+    //styleButton(&align_justify, _("Justify (only flowed text)"), INKSCAPE_ICON("format-justify-fill"),   &align_left);
 
 #if WITH_GTKMM_3_0
     align_sep.set_orientation(Gtk::ORIENTATION_VERTICAL);
@@ -106,8 +106,8 @@ TextEdit::TextEdit()
     layout_hbox.pack_start(align_sep, false, false, 10);
 
     /* Direction buttons */
-    styleButton(&text_horizontal, _("Horizontal text"), INKSCAPE_ICON("format-text-direction-horizontal"), NULL);
-    styleButton(&text_vertical, _("Vertical text"), INKSCAPE_ICON("format-text-direction-vertical"), &text_horizontal);
+    //styleButton(&text_horizontal, _("Horizontal text"), INKSCAPE_ICON("format-text-direction-horizontal"), NULL);
+    //styleButton(&text_vertical, _("Vertical text"), INKSCAPE_ICON("format-text-direction-vertical"), &text_horizontal);
 
 #if WITH_GTKMM_3_0
     text_sep.set_orientation(Gtk::ORIENTATION_VERTICAL);
@@ -120,7 +120,7 @@ TextEdit::TextEdit()
 
     /* Line Spacing */
     /* Commented out as this does not handle non-percentage values
-    GtkWidget *px = sp_icon_new( Inkscape::ICON_SIZE_SMALL_TOOLBAR, INKSCAPE_ICON("text_line_spacing") );
+    GtkWidget *px = sp_icon_new( GTK_ICON_SIZE_SMALL_TOOLBAR, INKSCAPE_ICON("text_line_spacing") );
     layout_hbox.pack_start(*Gtk::manage(Glib::wrap(px)), false, false);
 
     spacing_combo = gtk_combo_box_text_new_with_entry ();
@@ -257,9 +257,10 @@ TextEdit::~TextEdit()
     fontVariantChangedConn.disconnect();
 }
 
+/*
 void TextEdit::styleButton(Gtk::RadioButton *button, gchar const *tooltip, gchar const *icon_name, Gtk::RadioButton *group_button )
 {
-    GtkWidget *icon = sp_icon_new( Inkscape::ICON_SIZE_SMALL_TOOLBAR, icon_name );
+    GtkWidget *icon = sp_icon_new( GTK_ICON_SIZE_SMALL_TOOLBAR, icon_name );
     if (!GTK_IS_IMAGE(icon)) {
         icon = gtk_image_new_from_icon_name ( icon_name, GTK_ICON_SIZE_SMALL_TOOLBAR );
     }
@@ -276,7 +277,7 @@ void TextEdit::styleButton(Gtk::RadioButton *button, gchar const *tooltip, gchar
     button->signal_clicked().connect(sigc::mem_fun(*this, &TextEdit::onToggle));
 
     layout_hbox.pack_start(*button, false, false);
-}
+}*/
 
 void TextEdit::onSelectionModified(guint flags )
 {

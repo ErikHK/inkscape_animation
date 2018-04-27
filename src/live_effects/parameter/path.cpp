@@ -172,47 +172,59 @@ PathParam::param_newWidget()
     Gtk::Label* pLabel = Gtk::manage(new Gtk::Label(param_label));
     static_cast<Gtk::HBox*>(_widget)->pack_start(*pLabel, true, true);
     pLabel->set_tooltip_text(param_tooltip);
+/*
+	{
+		Gtk::Image*  pIcon = Gtk::manage(new Gtk::Image());
+		pIcon->set_from_icon_name( INKSCAPE_ICON("tool-node-editor"), Gtk::ICON_SIZE_BUTTON);
+		Gtk::Button * pButton = Gtk::manage(new Gtk::Button());
+		pButton->set_relief(Gtk::RELIEF_NONE);
+		pIcon->show();
+		pButton->add(*pIcon);
+		pButton->show();
+		pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_edit_button_click));
+		static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
+		pButton->set_tooltip_text(_("Edit on-canvas"));
+	}
 
-    Gtk::Widget*  pIcon = Gtk::manage( sp_icon_get_icon( INKSCAPE_ICON("tool-node-editor"), Inkscape::ICON_SIZE_BUTTON) );
-    Gtk::Button * pButton = Gtk::manage(new Gtk::Button());
-    pButton->set_relief(Gtk::RELIEF_NONE);
-    pIcon->show();
-    pButton->add(*pIcon);
-    pButton->show();
-    pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_edit_button_click));
-    static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
-    pButton->set_tooltip_text(_("Edit on-canvas"));
+	{
+		Gtk::Image* pIcon = Gtk::manage(new Gtk::Image());
+		pIcon->set_from_icon_name( INKSCAPE_ICON("edit-copy"), Gtk::ICON_SIZE_BUTTON);
+		Gtk::Button * pButton = Gtk::manage(new Gtk::Button());
+		pButton->set_relief(Gtk::RELIEF_NONE);
+		pIcon->show();
+		pButton->add(*pIcon);
+		pButton->show();
+		pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_copy_button_click));
+		static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
+		pButton->set_tooltip_text(_("Copy path"));
+	}
 
-    pIcon = Gtk::manage( sp_icon_get_icon( INKSCAPE_ICON("edit-copy"), Inkscape::ICON_SIZE_BUTTON) );
-    pButton = Gtk::manage(new Gtk::Button());
-    pButton->set_relief(Gtk::RELIEF_NONE);
-    pIcon->show();
-    pButton->add(*pIcon);
-    pButton->show();
-    pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_copy_button_click));
-    static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
-    pButton->set_tooltip_text(_("Copy path"));
+	{
+		Gtk::Image* pIcon = Gtk::manage(new Gtk::Image());
+		pIcon->set_from_icon_name( INKSCAPE_ICON("edit-paste"), Gtk::ICON_SIZE_BUTTON);
+		Gtk::Button * pButton = Gtk::manage(new Gtk::Button());
+		pButton->set_relief(Gtk::RELIEF_NONE);
+		pIcon->show();
+		pButton->add(*pIcon);
+		pButton->show();
+		pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_paste_button_click));
+		static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
+		pButton->set_tooltip_text(_("Paste path"));
+	}
 
-    pIcon = Gtk::manage( sp_icon_get_icon( INKSCAPE_ICON("edit-paste"), Inkscape::ICON_SIZE_BUTTON) );
-    pButton = Gtk::manage(new Gtk::Button());
-    pButton->set_relief(Gtk::RELIEF_NONE);
-    pIcon->show();
-    pButton->add(*pIcon);
-    pButton->show();
-    pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_paste_button_click));
-    static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
-    pButton->set_tooltip_text(_("Paste path"));
-
-    pIcon = Gtk::manage( sp_icon_get_icon( INKSCAPE_ICON("edit-clone"), Inkscape::ICON_SIZE_BUTTON) );
-    pButton = Gtk::manage(new Gtk::Button());
-    pButton->set_relief(Gtk::RELIEF_NONE);
-    pIcon->show();
-    pButton->add(*pIcon);
-    pButton->show();
-    pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_link_button_click));
-    static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
-    pButton->set_tooltip_text(_("Link to path on clipboard"));
-
+	{
+		Gtk::Image* pIcon = Gtk::manage(new Gtk::Image());
+		pIcon->set_from_icon_name( INKSCAPE_ICON("edit-clone"), Gtk::ICON_SIZE_BUTTON);
+		Gtk::Button * pButton = Gtk::manage(new Gtk::Button());
+		pButton->set_relief(Gtk::RELIEF_NONE);
+		pIcon->show();
+		pButton->add(*pIcon);
+		pButton->show();
+		pButton->signal_clicked().connect(sigc::mem_fun(*this, &PathParam::on_link_button_click));
+		static_cast<Gtk::HBox*>(_widget)->pack_start(*pButton, true, true);
+		pButton->set_tooltip_text(_("Link to path on clipboard"));
+	}
+*/
     static_cast<Gtk::HBox*>(_widget)->show_all_children();
 
     return dynamic_cast<Gtk::Widget *> (_widget);

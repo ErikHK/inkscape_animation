@@ -14,6 +14,7 @@
 #include <gtkmm/box.h>
 
 namespace Gtk {
+class Image;
 class Label;
 }
 
@@ -64,7 +65,7 @@ protected:
     Gtk::Widget  *_widget;
     Gtk::Label   *_label;
     Gtk::Label   *_suffix;
-    Gtk::Widget  *_icon;
+    Gtk::Image  *_icon;
 };
 
 } // namespace Widget

@@ -36,6 +36,9 @@
 #include "document-undo.h"
 #include "widgets/ege-adjustment-action.h"
 #include "widgets/ink-action.h"
+#include "widgets/ink-radio-action.h"
+#include "widgets/ink-toggle-action.h"
+#include "widgets/ink-tool-menu-action.h"
 #include "inkscape.h"
 #include "preferences.h"
 #include "selection-chemistry.h"
@@ -334,7 +337,7 @@ void sp_node_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObje
     tracker->setActiveUnit(&doc_units);
     g_object_set_data( holder, "tracker", tracker );
 
-    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
 
     {
         InkToolMenuAction* inky = ink_tool_menu_action_new( "NodeInsertAction",

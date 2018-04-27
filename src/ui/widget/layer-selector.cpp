@@ -42,22 +42,25 @@ namespace {
 
 class AlternateIcons : public Gtk::HBox {
 public:
-    AlternateIcons(Inkscape::IconSize size, gchar const *a, gchar const *b)
+    AlternateIcons(Gtk::IconSize size, Glib::ustring const &a, Glib::ustring const &b)
     : _a(NULL), _b(NULL)
     {
         set_name("AlternateIcons");
-        if (a) {
-            _a = Gtk::manage(sp_icon_get_icon(a, size));
+        if (!a.empty()) {
+            _a = Gtk::manage(new Gtk::Image());
+            _a->set_from_icon_name(a, size);
             _a->set_no_show_all(true);
             add(*_a);
         }
-        if (b) {
-            _b = Gtk::manage(sp_icon_get_icon(b, size));
+        if (!b.empty()) {
+            _b = Gtk::manage(new Gtk::Image());
+            _b->set_from_icon_name(b, size);
             _b->set_no_show_all(true);
             add(*_b);
         }
         setState(false);
     }
+
 
     bool state() const { return _state; }
     void setState(bool state) {
@@ -80,8 +83,8 @@ public:
     }
 
 private:
-    Gtk::Widget *_a;
-    Gtk::Widget *_b;
+    Gtk::Image *_a;
+    Gtk::Image *_b;
     bool _state;
 };
 
@@ -98,7 +101,7 @@ LayerSelector::LayerSelector(SPDesktop *desktop)
     set_name("LayerSelector");
     AlternateIcons *label;
 
-    label = Gtk::manage(new AlternateIcons(Inkscape::ICON_SIZE_DECORATION,
+    label = Gtk::manage(new AlternateIcons(Gtk::ICON_SIZE_MENU,
         INKSCAPE_ICON("object-visible"), INKSCAPE_ICON("object-hidden")));
     _visibility_toggle.add(*label);
     _visibility_toggle.signal_toggled().connect(
@@ -118,7 +121,7 @@ LayerSelector::LayerSelector(SPDesktop *desktop)
     _visibility_toggle.set_tooltip_text(_("Toggle current layer visibility"));
     pack_start(_visibility_toggle, Gtk::PACK_EXPAND_PADDING);
 
-    label = Gtk::manage(new AlternateIcons(Inkscape::ICON_SIZE_DECORATION,
+    label = Gtk::manage(new AlternateIcons(Gtk::ICON_SIZE_MENU,
         INKSCAPE_ICON("object-unlocked"), INKSCAPE_ICON("object-locked")));
     _lock_toggle.add(*label);
 	

@@ -37,6 +37,8 @@
 #include "widgets/ege-output-action.h"
 #include "widgets/ege-select-one-action.h"
 #include "widgets/ink-action.h"
+#include "widgets/ink-radio-action.h"
+#include "widgets/ink-toggle-action.h"
 #include "preferences.h"
 #include "toolbox.h"
 #include "ui/icon-names.h"
@@ -117,7 +119,7 @@ static void tweak_toggle_doo(GtkToggleAction *act, gpointer /*data*/) {
 
 void sp_tweak_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObject* holder)
 {
-    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
 
     {
@@ -286,7 +288,7 @@ void sp_tweak_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObj
                                                       _("Hue"),
                                                       _("In color mode, act on objects' hue"),
                                                       NULL,
-                                                      Inkscape::ICON_SIZE_DECORATION );
+                                                      GTK_ICON_SIZE_MENU );
         //TRANSLATORS:  "H" here stands for hue
         g_object_set( act, "short_label", C_("Hue", "H"), NULL );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
@@ -302,7 +304,7 @@ void sp_tweak_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObj
                                                       _("Saturation"),
                                                       _("In color mode, act on objects' saturation"),
                                                       NULL,
-                                                      Inkscape::ICON_SIZE_DECORATION );
+                                                      GTK_ICON_SIZE_MENU );
         //TRANSLATORS: "S" here stands for Saturation
         g_object_set( act, "short_label", C_("Saturation", "S"), NULL );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
@@ -318,7 +320,7 @@ void sp_tweak_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObj
                                                       _("Lightness"),
                                                       _("In color mode, act on objects' lightness"),
                                                       NULL,
-                                                      Inkscape::ICON_SIZE_DECORATION );
+                                                      GTK_ICON_SIZE_MENU );
         //TRANSLATORS: "L" here stands for Lightness
         g_object_set( act, "short_label", C_("Lightness", "L"), NULL );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
@@ -334,7 +336,7 @@ void sp_tweak_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObj
                                                       _("Opacity"),
                                                       _("In color mode, act on objects' opacity"),
                                                       NULL,
-                                                      Inkscape::ICON_SIZE_DECORATION );
+                                                      GTK_ICON_SIZE_MENU );
         //TRANSLATORS: "O" here stands for Opacity
         g_object_set( act, "short_label", C_("Opacity", "O"), NULL );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
@@ -372,7 +374,7 @@ void sp_tweak_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObj
                                                       _("Pressure"),
                                                       _("Use the pressure of the input device to alter the force of tweak action"),
                                                       INKSCAPE_ICON("draw-use-pressure"),
-                                                      Inkscape::ICON_SIZE_DECORATION );
+                                                      GTK_ICON_SIZE_MENU );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
         g_signal_connect_after( G_OBJECT(act), "toggled", G_CALLBACK(sp_tweak_pressure_state_changed), NULL);
         gtk_toggle_action_set_active( GTK_TOGGLE_ACTION(act), prefs->getBool("/tools/tweak/usepressure", true) );

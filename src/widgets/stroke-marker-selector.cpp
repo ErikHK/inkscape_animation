@@ -60,8 +60,8 @@ MarkerComboBox::MarkerComboBox(gchar const *id, int l) :
     set_cell_data_func(image_renderer, sigc::mem_fun(*this, &MarkerComboBox::prepareImageRenderer));
     gtk_combo_box_set_row_separator_func(GTK_COMBO_BOX(gobj()), MarkerComboBox::separator_cb, NULL, NULL);
 
-    empty_image = new Gtk::Image( Glib::wrap(
-        sp_pixbuf_new( Inkscape::ICON_SIZE_SMALL_TOOLBAR, INKSCAPE_ICON("no-marker") ) ) );
+    empty_image = new Gtk::Image();
+    empty_image->set_from_icon_name("no-marker", Gtk::ICON_SIZE_SMALL_TOOLBAR);
 
     sandbox = ink_markers_preview_doc ();
     desktop = SP_ACTIVE_DESKTOP;

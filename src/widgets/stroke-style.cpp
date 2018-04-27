@@ -114,7 +114,8 @@ StrokeStyle::StrokeStyleButton::StrokeStyleButton(Gtk::RadioButtonGroup &grp,
     show();
     set_mode(false);
         
-    Gtk::Widget *px = Gtk::manage(Glib::wrap(sp_icon_new(Inkscape::ICON_SIZE_LARGE_TOOLBAR, icon)));
+    auto px = Gtk::manage(new Gtk::Image());
+    px->set_from_icon_name(icon, Gtk::ICON_SIZE_LARGE_TOOLBAR);
     g_assert(px != NULL);
     px->show();
     add(*px);

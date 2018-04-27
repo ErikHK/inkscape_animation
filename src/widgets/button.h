@@ -42,7 +42,7 @@ struct SPBChoiceData {
 struct SPButton {
 	GtkToggleButton widget;
 	SPButtonType type;
-	Inkscape::IconSize lsize;
+	GtkIconSize lsize;
 	unsigned int psize;
 	SPAction *action;
 	SPAction *doubleclick_action;
@@ -59,11 +59,11 @@ struct SPButtonClass {
 
 GType sp_button_get_type (void);
 
-GtkWidget *sp_button_new (Inkscape::IconSize size, SPButtonType type, SPAction *action, SPAction *doubleclick_action);
+GtkWidget *sp_button_new (GtkIconSize size, SPButtonType type, SPAction *action, SPAction *doubleclick_action);
 
 void sp_button_toggle_set_down (SPButton *button, gboolean down);
 
-GtkWidget *sp_button_new_from_data (Inkscape::IconSize size,
+GtkWidget *sp_button_new_from_data (GtkIconSize size,
 				    SPButtonType type,
 				    Inkscape::UI::View::View *view,
 				    const gchar *name,

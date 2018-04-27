@@ -319,14 +319,19 @@ void Transformation::layoutPageRotate()
     _scalar_rotate.setDigits(3);
     _scalar_rotate.setIncrements(0.1, 1.0);
 
-    _counterclockwise_rotate.add(*manage( Glib::wrap(
-            sp_icon_new(Inkscape::ICON_SIZE_SMALL_TOOLBAR, INKSCAPE_ICON("object-rotate-left")))));
+	
+	    auto object_rotate_left_icon = Gtk::manage(new Gtk::Image());
+    object_rotate_left_icon->set_from_icon_name("object-rotate-left", Gtk::ICON_SIZE_SMALL_TOOLBAR);
+    _counterclockwise_rotate.add(*object_rotate_left_icon);
     _counterclockwise_rotate.set_mode(false);
     _counterclockwise_rotate.set_relief(Gtk::RELIEF_NONE);
     _counterclockwise_rotate.set_tooltip_text(_("Rotate in a counterclockwise direction"));
+	
+	
+	auto object_rotate_right_icon = Gtk::manage(new Gtk::Image());
+    object_rotate_right_icon->set_from_icon_name("object-rotate-right", Gtk::ICON_SIZE_SMALL_TOOLBAR);
 
-    _clockwise_rotate.add(*manage( Glib::wrap(
-            sp_icon_new(Inkscape::ICON_SIZE_SMALL_TOOLBAR, INKSCAPE_ICON("object-rotate-right")))));
+    _clockwise_rotate.add(*object_rotate_right_icon);
     _clockwise_rotate.set_mode(false);
     _clockwise_rotate.set_relief(Gtk::RELIEF_NONE);
     _clockwise_rotate.set_tooltip_text(_("Rotate in a clockwise direction"));

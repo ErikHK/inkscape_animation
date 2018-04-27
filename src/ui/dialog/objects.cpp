@@ -236,7 +236,7 @@ public:
  */
 void ObjectsPanel::_styleButton(Gtk::Button& btn, char const* iconName, char const* tooltip)
 {
-    GtkWidget *child = sp_icon_new( Inkscape::ICON_SIZE_SMALL_TOOLBAR, iconName );
+    GtkWidget *child = gtk_image_new_from_icon_name( iconName, GTK_ICON_SIZE_SMALL_TOOLBAR );
     gtk_widget_show( child );
     btn.add( *Gtk::manage(Glib::wrap(child)) );
     btn.set_relief(Gtk::RELIEF_NONE);
@@ -254,11 +254,12 @@ void ObjectsPanel::_styleButton(Gtk::Button& btn, char const* iconName, char con
  */
 Gtk::MenuItem& ObjectsPanel::_addPopupItem( SPDesktop *desktop, unsigned int code, char const* iconName, char const* fallback, int id )
 {
-    GtkWidget* iconWidget = 0;
+    Gtk::Image* iconWidget = nullptr;
     const char* label = 0;
 
     if ( iconName ) {
-        iconWidget = sp_icon_new( Inkscape::ICON_SIZE_MENU, iconName );
+        iconWidget = Gtk::manage(new Gtk::Image());
+        iconWidget->set_from_icon_name( iconName, Gtk::ICON_SIZE_MENU );
     }
 
     if ( desktop ) {
@@ -266,7 +267,8 @@ Gtk::MenuItem& ObjectsPanel::_addPopupItem( SPDesktop *desktop, unsigned int cod
         if ( verb ) {
             SPAction *action = verb->get_action(desktop);
             if ( !iconWidget && action && action->image ) {
-                iconWidget = sp_icon_new( Inkscape::ICON_SIZE_MENU, action->image );
+                iconWidget = Gtk::manage(new Gtk::Image());
+                iconWidget->set_from_icon_name( action->image, Gtk::ICON_SIZE_MENU );
             }
 
             if ( action ) {
@@ -279,20 +281,20 @@ Gtk::MenuItem& ObjectsPanel::_addPopupItem( SPDesktop *desktop, unsigned int cod
         label = fallback;
     }
 
-    Gtk::Widget* wrapped = 0;
-    if ( iconWidget ) {
-        wrapped = Gtk::manage(Glib::wrap(iconWidget));
-        wrapped->show();
-    }
+//    Gtk::Widget* wrapped = 0;
+//    if ( iconWidget ) {
+//        wrapped = Gtk::manage(Glib::wrap(iconWidget));
+//        wrapped->show();
+//    }
 
 
     Gtk::MenuItem* item = 0;
 
-    if (wrapped) {
-        item = Gtk::manage(new Gtk::ImageMenuItem(*wrapped, label, true));
-    } else {
+    //if (wrapped) {
+    //    item = Gtk::manage(new Gtk::ImageMenuItem(*wrapped, label, true));
+    //} else {
 	item = Gtk::manage(new Gtk::MenuItem(label, true));
-    }
+    //}
 
     item->signal_activate().connect(sigc::bind(sigc::mem_fun(*this, &ObjectsPanel::_takeAction), id));
     _popupMenu.append(*item);

@@ -37,6 +37,8 @@
 #include "widgets/ege-adjustment-action.h"
 #include "widgets/ege-output-action.h"
 #include "widgets/ink-action.h"
+#include "widgets/ink-radio-action.h"
+#include "widgets/ink-toggle-action.h"
 #include "preferences.h"
 #include "selection.h"
 #include "sp-spiral.h"
@@ -228,7 +230,7 @@ static void sp_spiral_toolbox_selection_changed(Inkscape::Selection *selection, 
 void sp_spiral_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObject* holder)
 {
     EgeAdjustmentAction* eact = 0;
-    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
 
     {
         EgeOutputAction* act = ege_output_action_new( "SpiralStateAction", _("<b>New:</b>"), "", 0 );

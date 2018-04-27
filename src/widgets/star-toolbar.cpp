@@ -38,6 +38,8 @@
 #include "widgets/ege-output-action.h"
 #include "widgets/ege-select-one-action.h"
 #include "widgets/ink-action.h"
+#include "widgets/ink-radio-action.h"
+#include "widgets/ink-toggle-action.h"
 #include "selection.h"
 #include "sp-star.h"
 #include "toolbox.h"
@@ -438,7 +440,7 @@ static void star_toolbox_watch_ec(SPDesktop* dt, Inkscape::UI::Tools::ToolBase* 
 
 void sp_star_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObject* holder)
 {
-    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
 
     {
         EgeOutputAction* act = ege_output_action_new( "StarStateAction", _("<b>New:</b>"), "", 0 );
@@ -476,7 +478,7 @@ void sp_star_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObje
             g_object_set_data( holder, "flat_action", act );
 
             ege_select_one_action_set_appearance( act, "full" );
-            ege_select_one_action_set_radio_action_type( act, INK_RADIO_ACTION_TYPE );
+            //ege_select_one_action_set_radio_action_type( act, INK_RADIO_ACTION_TYPE );
             g_object_set( G_OBJECT(act), "icon-property", "iconId", NULL );
             ege_select_one_action_set_icon_column( act, 2 );
             ege_select_one_action_set_icon_size( act, secondarySize );
@@ -564,7 +566,7 @@ void sp_star_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObje
                                              _("Defaults"),
                                              _("Reset shape parameters to defaults (use Inkscape Preferences > Tools to change defaults)"),
                                              INKSCAPE_ICON("edit-clear"),
-                                             Inkscape::ICON_SIZE_SMALL_TOOLBAR);
+                                             GTK_ICON_SIZE_SMALL_TOOLBAR);
             g_signal_connect_after( G_OBJECT(inky), "activate", G_CALLBACK(sp_stb_defaults), holder );
             gtk_action_group_add_action( mainActions, GTK_ACTION(inky) );
             gtk_action_set_sensitive( GTK_ACTION(inky), TRUE );

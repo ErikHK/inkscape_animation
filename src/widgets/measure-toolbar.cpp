@@ -41,6 +41,8 @@
 #include "preferences.h"
 #include "toolbox.h"
 #include "widgets/ink-action.h"
+#include "widgets/ink-radio-action.h"
+#include "widgets/ink-toggle-action.h"
 #include "ui/icon-names.h"
 #include "ui/tools/measure-tool.h"
 #include "ui/widget/unit-tracker.h"
@@ -266,7 +268,7 @@ void sp_measure_toolbox_prep(SPDesktop * desktop, GtkActionGroup* mainActions, G
     g_object_set_data( holder, "tracker", tracker );
 
     EgeAdjustmentAction *eact = 0;
-    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
 
     /* Font Size */
     {

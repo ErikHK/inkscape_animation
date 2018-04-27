@@ -49,7 +49,7 @@ static const int PANEL_SETTING_NEXTFREE = 5;
 
 void Panel::prep() {
     GtkIconSize sizes[] = {
-        Inkscape::getRegisteredIconSize(Inkscape::ICON_SIZE_DECORATION),
+        //Inkscape::getRegisteredIconSize(Inkscape::ICON_SIZE_DECORATION),
         GTK_ICON_SIZE_MENU,
         GTK_ICON_SIZE_SMALL_TOOLBAR,
         GTK_ICON_SIZE_BUTTON,
@@ -274,9 +274,9 @@ void Panel::_init()
         gint width = 0;
         gint height = 0;
 
-        if ( gtk_icon_size_lookup( Inkscape::getRegisteredIconSize(Inkscape::ICON_SIZE_DECORATION), &width, &height ) ) {
-            _temp_arrow.set_size_request(width, height);
-        }
+        //if ( gtk_icon_size_lookup( Inkscape::getRegisteredIconSize(Inkscape::ICON_SIZE_DECORATION), &width, &height ) ) {
+        //    _temp_arrow.set_size_request(width, height);
+        //}
 
         _menu_popper.add(_temp_arrow);
         _menu_popper.signal_button_press_event().connect_notify(sigc::mem_fun(*this, &Panel::_popper));

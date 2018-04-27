@@ -164,7 +164,7 @@ protected:
      * @param iconname string identifying the icon to be shown
      * @param group_button group to which the radio button belongs to
      */
-    void styleButton(Gtk::RadioButton *button, gchar const *tooltip, gchar const *iconname, Gtk::RadioButton *group_button  );
+    //void styleButton(Gtk::RadioButton *button, gchar const *tooltip, gchar const *iconname, Gtk::RadioButton *group_button  );
 
     /**
      * Can be invoked for setting the desktop. Currently not used.

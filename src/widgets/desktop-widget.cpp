@@ -437,7 +437,7 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
     ToolboxFactory::setOrientation( dtw->tool_toolbox, GTK_ORIENTATION_VERTICAL );
     gtk_box_pack_start( GTK_BOX(dtw->hbox), dtw->tool_toolbox, FALSE, TRUE, 0 );
     // Lock guides button
-    dtw->guides_lock = sp_button_new_from_data( Inkscape::ICON_SIZE_DECORATION,
+    dtw->guides_lock = sp_button_new_from_data( GTK_ICON_SIZE_MENU,
                                                SP_BUTTON_TYPE_TOGGLE,
                                                NULL,
                                                INKSCAPE_ICON("object-locked"),
@@ -532,7 +532,7 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
 #endif
 
     // Sticky zoom button
-    dtw->sticky_zoom = sp_button_new_from_data ( Inkscape::ICON_SIZE_DECORATION,
+    dtw->sticky_zoom = sp_button_new_from_data ( GTK_ICON_SIZE_MENU,
                                                  SP_BUTTON_TYPE_TOGGLE,
                                                  NULL,
                                                  INKSCAPE_ICON("zoom-original"),
@@ -570,7 +570,7 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
             tip = act->tip;
         }
     }
-    dtw->cms_adjust = sp_button_new_from_data( Inkscape::ICON_SIZE_DECORATION,
+    dtw->cms_adjust = sp_button_new_from_data( GTK_ICON_SIZE_MENU,
                                                SP_BUTTON_TYPE_TOGGLE,
                                                NULL,
                                                INKSCAPE_ICON("color-management"),

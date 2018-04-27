@@ -35,12 +35,14 @@ AddToIcon::AddToIcon() :
 //    _property_pixbuf_add(*this, "pixbuf_on", Glib::RefPtr<Gdk::Pixbuf>(0))
 {
     property_mode() = Gtk::CELL_RENDERER_MODE_ACTIVATABLE;
-    phys = sp_icon_get_phys_size((int)Inkscape::ICON_SIZE_BUTTON);
+    gint width, height;
+    gtk_icon_size_lookup(GTK_ICON_SIZE_BUTTON, &width, &height);
+    phys = width; // Assumes that we have a square icon?
 
 //    Glib::RefPtr<Gtk::IconTheme> icon_theme = Gtk::IconTheme::get_default();
 //
 //    if (!icon_theme->has_icon(_pixAddName)) {
-//        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixAddName.data()), Inkscape::ICON_SIZE_DECORATION );
+//        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixAddName.data()), GTK_ICON_SIZE_MENU );
 //    }
 //    if (icon_theme->has_icon(_pixAddName)) {
 //        _property_pixbuf_add = icon_theme->load_icon(_pixAddName, phys, (Gtk::IconLookupFlags)0);
@@ -139,8 +141,10 @@ void AddToIcon::set_pixbuf()
 {
     bool active = property_active().get_value();
 
-    GdkPixbuf *pixbuf = sp_pixbuf_new(Inkscape::ICON_SIZE_BUTTON, active ? INKSCAPE_ICON("list-add") : INKSCAPE_ICON("edit-delete"));
-    property_pixbuf() = Glib::wrap(pixbuf);
+    auto icon_theme = Gtk::IconTheme::get_default();
+
+    property_pixbuf() = icon_theme->load_icon(active ? "list-add" : "edit-delete",
+                                              phys);
 }
 
 

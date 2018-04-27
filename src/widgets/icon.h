@@ -34,7 +34,7 @@ GType sp_icon_get_type() G_GNUC_CONST;
 struct SPIcon {
     GtkWidget widget;
 
-    Inkscape::IconSize lsize;
+    GtkIconSize lsize;
     int psize;
     gchar *name;
 
@@ -44,17 +44,17 @@ struct SPIcon {
 };
 
 
-GtkWidget *sp_icon_new( Inkscape::IconSize size, const gchar *name );
-GdkPixbuf *sp_pixbuf_new( Inkscape::IconSize size, const gchar *name );
+GtkWidget *sp_icon_new( GtkIconSize size, const gchar *name );
+GdkPixbuf *sp_pixbuf_new( GtkIconSize size, const gchar *name );
 
 // Might return a wrapped SPIcon, or Gtk::Image
-Gtk::Widget *sp_icon_get_icon( const Glib::ustring &oid, Inkscape::IconSize size = Inkscape::ICON_SIZE_BUTTON );
+Gtk::Widget *sp_icon_get_icon( const Glib::ustring &oid, GtkIconSize size = GTK_ICON_SIZE_BUTTON );
 
 void sp_icon_fetch_pixbuf( SPIcon *icon );
 int sp_icon_get_phys_size(int size);
 
 namespace Inkscape {
-    void queueIconPrerender( Glib::ustring const &oid, Inkscape::IconSize size = Inkscape::ICON_SIZE_BUTTON );
+    void queueIconPrerender( Glib::ustring const &oid, GtkIconSize size = GTK_ICON_SIZE_BUTTON );
 }
 
 #endif // SEEN_SP_ICON_H

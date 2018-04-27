@@ -405,6 +405,7 @@ sp_ui_menu_deselect(gpointer object)
 /**
  * Creates and attaches a scaled icon to the given menu item.
  */
+ /*
 static void
 sp_ui_menuitem_add_icon( GtkWidget *item, gchar *icon_name )
 {
@@ -415,7 +416,7 @@ sp_ui_menuitem_add_icon( GtkWidget *item, gchar *icon_name )
     }
     GtkWidget *icon;
 
-    icon = sp_icon_new( Inkscape::ICON_SIZE_MENU, icon_name );
+    icon = sp_icon_new( GTK_ICON_SIZE_MENU, icon_name );
     gtk_widget_show(icon);
 #if GTK_CHECK_VERSION(3,0,0)
     image_menu_item_set_image((ImageMenuItem *) item, icon);
@@ -423,6 +424,7 @@ sp_ui_menuitem_add_icon( GtkWidget *item, gchar *icon_name )
     gtk_image_menu_item_set_image((GtkImageMenuItem *) item, icon);
 #endif
 } // end of sp_ui_menu_add_icon
+*/
 
 void
 sp_ui_dialog_title_string(Inkscape::Verb *verb, gchar *c)
@@ -503,7 +505,7 @@ static GtkWidget *sp_ui_menu_append_item_from_verb(GtkMenu *menu, Inkscape::Verb
         }
 
         if (action->image) {
-            sp_ui_menuitem_add_icon(item, action->image);
+            //sp_ui_menuitem_add_icon(item, action->image);
         }
         gtk_widget_set_events(item, GDK_KEY_PRESS_MASK);
         g_object_set_data(G_OBJECT(item), "view", (gpointer) view);
@@ -1583,7 +1585,7 @@ void ContextMenu::AppendItemFromVerb(Inkscape::Verb *verb)//, SPDesktop *view)//
         }
 
         if (action->image) {
-            sp_ui_menuitem_add_icon((GtkWidget*)item->gobj(), action->image);
+            //sp_ui_menuitem_add_icon((GtkWidget*)item->gobj(), action->image);
         }
         item->set_events(Gdk::KEY_PRESS_MASK);
         item->signal_activate().connect(sigc::bind(sigc::ptr_fun(sp_ui_menu_activate),item,action));

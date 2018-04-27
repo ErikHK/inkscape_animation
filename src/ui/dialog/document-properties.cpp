@@ -89,7 +89,7 @@ static Inkscape::XML::NodeEventVector const _repr_events = {
 
 static void docprops_style_button(Gtk::Button& btn, char const* iconName)
 {
-    GtkWidget *child = sp_icon_new(Inkscape::ICON_SIZE_SMALL_TOOLBAR, iconName);
+    GtkWidget *child = gtk_image_new_from_icon_name(iconName, GTK_ICON_SIZE_SMALL_TOOLBAR);
     gtk_widget_show( child );
     btn.add(*Gtk::manage(Glib::wrap(child)));
     btn.set_relief(Gtk::RELIEF_NONE);
@@ -1573,8 +1573,8 @@ DocumentProperties::_createPageTabLabel(const Glib::ustring& label, const char *
 {
     Gtk::HBox *_tab_label_box = Gtk::manage(new Gtk::HBox(false, 0));
     _tab_label_box->set_spacing(4);
-    _tab_label_box->pack_start(*Glib::wrap(sp_icon_new(Inkscape::ICON_SIZE_DECORATION,
-                                                       label_image)));
+    _tab_label_box->pack_start(*Glib::wrap(gtk_image_new_from_icon_name(label_image, GTK_ICON_SIZE_MENU
+                                                       )));
 
     Gtk::Label *_tab_label = Gtk::manage(new Gtk::Label(label, true));
     _tab_label_box->pack_start(*_tab_label);

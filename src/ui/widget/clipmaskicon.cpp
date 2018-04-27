@@ -37,17 +37,20 @@ ClipMaskIcon::ClipMaskIcon() :
 {
     
     property_mode() = Gtk::CELL_RENDERER_MODE_ACTIVATABLE;
-    phys = sp_icon_get_phys_size((int)Inkscape::ICON_SIZE_DECORATION);
+    gint width, height;
+    gtk_icon_size_lookup(GTK_ICON_SIZE_MENU, &width, &height);
+    phys = width;
     Glib::RefPtr<Gtk::IconTheme> icon_theme = Gtk::IconTheme::get_default();
 
+	/*
     if (!icon_theme->has_icon(_pixClipName)) {
-        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixClipName.data()), Inkscape::ICON_SIZE_DECORATION );
+        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixClipName.data()), GTK_ICON_SIZE_MENU );
     }
     if (!icon_theme->has_icon(_pixInverseName)) {
-        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixInverseName.data()), Inkscape::ICON_SIZE_DECORATION );
+        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixInverseName.data()), GTK_ICON_SIZE_MENU );
     }
     if (!icon_theme->has_icon(_pixMaskName)) {
-        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixMaskName.data()), Inkscape::ICON_SIZE_DECORATION );
+        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixMaskName.data()), GTK_ICON_SIZE_MENU );
     }
 
     if (icon_theme->has_icon(_pixClipName)) {
@@ -59,7 +62,7 @@ ClipMaskIcon::ClipMaskIcon() :
     if (icon_theme->has_icon(_pixMaskName)) {
         _property_pixbuf_mask = icon_theme->load_icon(_pixMaskName, phys, (Gtk::IconLookupFlags)0);
     }
-
+*/
     property_pixbuf() = Glib::RefPtr<Gdk::Pixbuf>(0);
 }
 

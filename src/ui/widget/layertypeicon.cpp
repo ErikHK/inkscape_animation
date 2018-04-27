@@ -38,28 +38,14 @@ LayerTypeIcon::LayerTypeIcon() :
 {
     
     property_mode() = Gtk::CELL_RENDERER_MODE_ACTIVATABLE;
-    int phys = sp_icon_get_phys_size((int)Inkscape::ICON_SIZE_DECORATION);
+    gint width, height;
+    gtk_icon_size_lookup(GTK_ICON_SIZE_MENU, &width, &height);
+    int phys = width;
+
     Glib::RefPtr<Gtk::IconTheme> icon_theme = Gtk::IconTheme::get_default();
-
-    if (!icon_theme->has_icon(_pixLayerName)) {
-        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixLayerName.data()), Inkscape::ICON_SIZE_DECORATION );
-    }
-    if (!icon_theme->has_icon(_pixGroupName)) {
-        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixGroupName.data()), Inkscape::ICON_SIZE_DECORATION );
-    }
-    if (!icon_theme->has_icon(_pixPathName)) {
-        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixPathName.data()), Inkscape::ICON_SIZE_DECORATION );
-    }
-
-    if (icon_theme->has_icon(_pixLayerName)) {
-        _property_pixbuf_layer = icon_theme->load_icon(_pixLayerName, phys, (Gtk::IconLookupFlags)0);
-    }
-    if (icon_theme->has_icon(_pixGroupName)) {
-        _property_pixbuf_group = icon_theme->load_icon(_pixGroupName, phys, (Gtk::IconLookupFlags)0);
-    }
-    if (icon_theme->has_icon(_pixPathName)) {
-        _property_pixbuf_path = icon_theme->load_icon(_pixPathName, phys, (Gtk::IconLookupFlags)0);
-    }
+    _property_pixbuf_layer = icon_theme->load_icon(_pixLayerName, phys, (Gtk::IconLookupFlags)0);
+    _property_pixbuf_group = icon_theme->load_icon(_pixGroupName, phys, (Gtk::IconLookupFlags)0);
+    _property_pixbuf_path = icon_theme->load_icon(_pixPathName, phys, (Gtk::IconLookupFlags)0);
 
     property_pixbuf() = _property_pixbuf_path.get_value();
 }
