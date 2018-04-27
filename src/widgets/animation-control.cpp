@@ -794,10 +794,11 @@ void AnimationControl::rebuildUi()
 void AnimationControl::_styleButton(Gtk::Button& btn, char const* iconName, char const* tooltip)
 {
     //GtkWidget *child = sp_icon_new( GTK_ICON_SIZE_SMALL_TOOLBAR, iconName );
-    //gtk_widget_show( child );
-    //btn.add( *Gtk::manage(Glib::wrap(child)) );
-    //btn.set_relief(Gtk::RELIEF_NONE);
-    //btn.set_tooltip_text (tooltip);
+	GtkWidget * child = gtk_image_new_from_icon_name(iconName, GTK_ICON_SIZE_SMALL_TOOLBAR);
+    gtk_widget_show( child );
+    btn.add( *Gtk::manage(Glib::wrap(child)) );
+    btn.set_relief(Gtk::RELIEF_NONE);
+    btn.set_tooltip_text (tooltip);
 }
 
 SPObject * AnimationControl::getAssociatedLayer()
