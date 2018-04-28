@@ -448,8 +448,8 @@ list(APPEND inkscape_SRC
 # these call add_inkscape_source
 add_subdirectory(debug)
 add_subdirectory(display)
-add_subdirectory(extension)
-add_subdirectory(filters)
+add_subdirectory(extension) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+add_subdirectory(filters)  #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 add_subdirectory(helper)
 add_subdirectory(io)
 add_subdirectory(live_effects)
@@ -526,7 +526,10 @@ if(WIN32)
 endif()
 
 # Build everything except main and inkview.c in a shared library.
+
+#add_library(sp_base SHARED ${sp_SRC})
 add_library(inkscape_base SHARED ${inkscape_SRC} ${sp_SRC})
+#add_library(inkscape_base SHARED ${inkscape_SRC})
 
 # make executables for inkscape and inkview
 add_executable(inkscape ${main_SRC})
@@ -534,6 +537,7 @@ add_executable(inkview ${view_SRC})
 
 if(WITH_DBUS)
     add_dependencies(inkscape_base inkscape_dbus)
+	add_dependencies(sp_base inkscape_dbus)
 endif()
 
 set(INKSCAPE_TARGET_LIBS
@@ -563,17 +567,23 @@ endif()
 
 # Link the inkscape_base library against all external dependencies
 target_link_libraries(inkscape_base ${INKSCAPE_TARGET_LIBS})
+#target_link_libraries(sp_base ${INKSCAPE_TARGET_LIBS})
+
 
 # Link inkscape and inkview against inkscape_base
 target_link_libraries(inkscape inkscape_base)
 target_link_libraries(inkview inkscape_base)
 
+#target_link_libraries(inkscape sp_base)
+#target_link_libraries(inkview sp_base)
 
+#target_link_libraries(inkscape_base sp_base)
 
 #Define the installation
 if(NOT WIN32)
   install(TARGETS
     inkscape_base
+	#sp_base
     inkscape
     inkview 
     RUNTIME DESTINATION bin
@@ -582,6 +592,7 @@ if(NOT WIN32)
 else()
   install(TARGETS
     inkscape_base
+	#sp_base
     inkscape
     inkscape_com
     inkview
