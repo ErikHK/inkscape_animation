@@ -1384,7 +1384,7 @@ bool IconImpl::prerenderIcon(gchar const *name, GtkIconSize lsize, unsigned psiz
     if (!cacheValidated) {
         cacheValidated = true;
         if ( useCache ) {
-            validateCache();
+            //validateCache();
         }
     }
 
