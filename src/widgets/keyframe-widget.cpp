@@ -1223,7 +1223,7 @@ static void linearTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * e
 
 	int j = 0;
 
-	SPItem * item = createGuide(kw, start_x, start_y, end_x, end_y);
+	SPItem * item;// = createGuide(kw, start_x, start_y, end_x, end_y);
 
 	while(layer->next)
 	{

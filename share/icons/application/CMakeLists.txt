@@ -6,4 +6,4 @@ foreach(pixmap_size ${PIXMAP_SIZES})
 endforeach(pixmap_size)
 
 # I hope that this is actually run after installing the files.
-install(CODE "execute_process(COMMAND gtk-update-icon-cache -f -t ${CMAKE_INSTALL_PREFIX}/${SHARE_INSTALL}/icons/${THEME})")
+#install(CODE "execute_process(COMMAND gtk-update-icon-cache -f -t ${CMAKE_INSTALL_PREFIX}/${SHARE_INSTALL}/icons/${THEME})")

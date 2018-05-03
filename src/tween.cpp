@@ -116,7 +116,7 @@ void Tween::createGuide(float start_x, float start_y, float end_x, float end_y)
 		
 		//SPItem *item = SP_ITEM(SP_ACTIVE_DESKTOP->currentLayer()->parent->appendChildRepr(repr));
 		//SP_ACTIVE_DESKTOP->currentLayer()->parent->appendChild(repr);
-		Inkscape::GC::release(repr);
+		//Inkscape::GC::release(repr);
 
     }
 
@@ -225,7 +225,6 @@ void Tween::copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
 
 	}
 	
-	SP_ACTIVE_DESKTOP->getSelection()->emit();
 	SP_ACTIVE_DESKTOP->getSelection()->emit();
 	
 }
