@@ -17,7 +17,7 @@ BEGIN
             VALUE "FileDescription",  "${PROGRAM_DESCRIPTION}"
             VALUE "FileVersion",      "${INKSCAPE_VERSION}"
             VALUE "InternalName",     "${PROGRAM_NAME}"
-            VALUE "LegalCopyright",   "Â© ${COPYRIGHT_YEAR} Inkscape project"
+            VALUE "LegalCopyright",   "© ${COPYRIGHT_YEAR} Inkscape project"
             VALUE "OriginalFilename", "${FILE_NAME}.exe"
             VALUE "ProductName",      "${PROGRAM_NAME}"
             VALUE "ProductVersion",   "${INKSCAPE_VERSION}"

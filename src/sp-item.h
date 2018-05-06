@@ -212,8 +212,8 @@ public:
 
     Geom::Affine getRelativeTransform(SPObject const *obj) const;
 
-    void raiseOne();
-    void lowerOne();
+    bool raiseOne();
+    bool lowerOne();
     void raiseToTop();
     void lowerToBottom();
 

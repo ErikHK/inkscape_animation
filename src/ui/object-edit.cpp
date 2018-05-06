@@ -132,6 +132,13 @@ public:
     virtual void knot_set(Geom::Point const &p, Geom::Point const &origin, unsigned int state);
 };
 
+/* handle for position */
+class RectKnotHolderEntityCenter : public KnotHolderEntity {
+public:
+    virtual Geom::Point knot_get() const;
+    virtual void knot_set(Geom::Point const &p, Geom::Point const &origin, unsigned int state);
+};
+
 Geom::Point
 RectKnotHolderEntityRX::knot_get() const
 {
@@ -438,6 +445,32 @@ RectKnotHolderEntityXY::knot_set(Geom::Point const &p, Geom::Point const &origin
     rect->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
 }
 
+Geom::Point
+RectKnotHolderEntityCenter::knot_get() const
+{
+    SPRect *rect = dynamic_cast<SPRect *>(item);
+    g_assert(rect != NULL);
+
+    return Geom::Point(rect->x.computed + (rect->width.computed / 2.), rect->y.computed + (rect->height.computed / 2.));
+}
+
+void
+RectKnotHolderEntityCenter::knot_set(Geom::Point const &p, Geom::Point const &/*origin*/, unsigned int state)
+{
+    SPRect *rect = dynamic_cast<SPRect *>(item);
+    g_assert(rect != NULL);
+
+    Geom::Point const s = snap_knot_position(p, state);
+
+    rect->x = s[Geom::X] - (rect->width.computed / 2.);
+    rect->y = s[Geom::Y] - (rect->height.computed / 2.);
+
+    // No need to call sp_rect_clamp_radii(): width and height haven't changed.
+    // No need to call update_knot(): the knot is set directly by the user.
+
+    rect->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+}
+
 RectKnotHolder::RectKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler) :
     KnotHolder(desktop, item, relhandler)
 {
@@ -445,6 +478,7 @@ RectKnotHolder::RectKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderRel
     RectKnotHolderEntityRY *entity_ry = new RectKnotHolderEntityRY();
     RectKnotHolderEntityWH *entity_wh = new RectKnotHolderEntityWH();
     RectKnotHolderEntityXY *entity_xy = new RectKnotHolderEntityXY();
+    RectKnotHolderEntityCenter *entity_center = new RectKnotHolderEntityCenter();
 
     entity_rx->create(desktop, item, this, Inkscape::CTRL_TYPE_ROTATE,
                       _("Adjust the <b>horizontal rounding</b> radius; with <b>Ctrl</b> "
@@ -466,10 +500,15 @@ RectKnotHolder::RectKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderRel
                         "to lock ratio or stretch in one dimension only"),
                       SP_KNOT_SHAPE_SQUARE, SP_KNOT_MODE_XOR);
 
+    entity_center->create(desktop, item, this, Inkscape::CTRL_TYPE_POINT,
+                          _("Drag to move the rectangle"),
+                          SP_KNOT_SHAPE_CROSS);
+
     entity.push_back(entity_rx);
     entity.push_back(entity_ry);
     entity.push_back(entity_wh);
     entity.push_back(entity_xy);
+    entity.push_back(entity_center);
 
     add_pattern_knotholder();
 }
@@ -787,6 +826,12 @@ public:
     virtual void knot_click(unsigned int state);
 };
 
+class ArcKnotHolderEntityCenter : public KnotHolderEntity {
+public:
+    virtual Geom::Point knot_get() const;
+    virtual void knot_set(Geom::Point const &p, Geom::Point const &origin, unsigned int state);
+};
+
 /*
  * return values:
  *   1  : inside
@@ -984,6 +1029,30 @@ ArcKnotHolderEntityRY::knot_click(unsigned int state)
     }
 }
 
+void
+ArcKnotHolderEntityCenter::knot_set(Geom::Point const &p, Geom::Point const &/*origin*/, unsigned int state)
+{
+    SPGenericEllipse *ge = dynamic_cast<SPGenericEllipse *>(item);
+    g_assert(ge != NULL);
+
+    Geom::Point const s = snap_knot_position(p, state);
+
+    ge->cx = s[Geom::X];
+    ge->cy = s[Geom::Y];
+
+    item->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+}
+
+Geom::Point
+ArcKnotHolderEntityCenter::knot_get() const
+{
+    SPGenericEllipse const *ge = dynamic_cast<SPGenericEllipse *>(item);
+    g_assert(ge != NULL);
+
+    return Geom::Point(ge->cx.computed, ge->cy.computed);
+}
+
+
 ArcKnotHolder::ArcKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderReleasedFunc relhandler) :
     KnotHolder(desktop, item, relhandler)
 {
@@ -991,6 +1060,7 @@ ArcKnotHolder::ArcKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderRelea
     ArcKnotHolderEntityRY *entity_ry = new ArcKnotHolderEntityRY();
     ArcKnotHolderEntityStart *entity_start = new ArcKnotHolderEntityStart();
     ArcKnotHolderEntityEnd *entity_end = new ArcKnotHolderEntityEnd();
+    ArcKnotHolderEntityCenter *entity_center = new ArcKnotHolderEntityCenter();
 
     entity_rx->create(desktop, item, this, Inkscape::CTRL_TYPE_SIZER,
                       _("Adjust ellipse <b>width</b>, with <b>Ctrl</b> to make circle"),
@@ -1012,10 +1082,15 @@ ArcKnotHolder::ArcKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderRelea
                          "ellipse for arc, <b>outside</b> for segment"),
                        SP_KNOT_SHAPE_CIRCLE, SP_KNOT_MODE_XOR);
 
+    entity_center->create(desktop, item, this, Inkscape::CTRL_TYPE_POINT,
+                          _("Drag to move the ellipse"),
+                          SP_KNOT_SHAPE_CROSS);
+
     entity.push_back(entity_rx);
     entity.push_back(entity_ry);
     entity.push_back(entity_start);
     entity.push_back(entity_end);
+    entity.push_back(entity_center);
 
     add_pattern_knotholder();
 }
@@ -1034,6 +1109,12 @@ public:
     virtual Geom::Point knot_get() const;
     virtual void knot_set(Geom::Point const &p, Geom::Point const &origin, unsigned int state);
     virtual void knot_click(unsigned int state);
+};
+
+class StarKnotHolderEntityCenter : public KnotHolderEntity {
+public:
+    virtual Geom::Point knot_get() const;
+    virtual void knot_set(Geom::Point const &p, Geom::Point const &origin, unsigned int state);
 };
 
 void
@@ -1093,6 +1174,17 @@ StarKnotHolderEntity2::knot_set(Geom::Point const &p, Geom::Point const &/*origi
     }
 }
 
+void
+StarKnotHolderEntityCenter::knot_set(Geom::Point const &p, Geom::Point const &/*origin*/, unsigned int state)
+{
+    SPStar *star = dynamic_cast<SPStar *>(item);
+    g_assert(star != NULL);
+
+    star->center = snap_knot_position(p, state);
+
+    item->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+}
+
 Geom::Point
 StarKnotHolderEntity1::knot_get() const
 {
@@ -1114,6 +1206,17 @@ StarKnotHolderEntity2::knot_get() const
     g_assert(star != NULL);
 
     return sp_star_get_xy(star, SP_STAR_POINT_KNOT2, 0);
+}
+
+Geom::Point
+StarKnotHolderEntityCenter::knot_get() const
+{
+    g_assert(item != NULL);
+
+    SPStar const *star = dynamic_cast<SPStar const *>(item);
+    g_assert(star != NULL);
+
+    return star->center;
 }
 
 static void
@@ -1166,6 +1269,12 @@ StarKnotHolder::StarKnotHolder(SPDesktop *desktop, SPItem *item, SPKnotHolderRel
                           "radial (no skew); with <b>Shift</b> to round; with <b>Alt</b> to randomize"));
         entity.push_back(entity2);
     }
+
+    StarKnotHolderEntityCenter *entity_center = new StarKnotHolderEntityCenter();
+    entity_center->create(desktop, item, this, Inkscape::CTRL_TYPE_POINT,
+                          _("Drag to move the star"),
+                          SP_KNOT_SHAPE_CROSS);
+    entity.push_back(entity_center);
 
     add_pattern_knotholder();
 }

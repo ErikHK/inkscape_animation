@@ -223,6 +223,7 @@ void LayerManager::renameLayer( SPObject* obj, gchar const *label, bool uniquify
 }
 
 
+
 void LayerManager::_setDocument(SPDocument *document) {
     if (_document) {
         _resource_connection.disconnect();

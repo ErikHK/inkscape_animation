@@ -47,7 +47,7 @@ DockItem::DockItem(Dock& dock, const Glib::ustring& name, const Glib::ustring& l
         Glib::RefPtr<Gtk::IconTheme> iconTheme = Gtk::IconTheme::get_default();
 
         if (!iconTheme->has_icon(icon_name)) {
-            //Inkscape::queueIconPrerender( INKSCAPE_ICON(icon_name.data()), GTK_ICON_SIZE_MENU );
+            Inkscape::queueIconPrerender( INKSCAPE_ICON(icon_name.data()), Inkscape::ICON_SIZE_MENU );
         }
         // Icon might be in the icon theme, or might be a stock item. Check the proper source:
         if ( iconTheme->has_icon(icon_name) ) {

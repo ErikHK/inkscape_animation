@@ -213,7 +213,9 @@ bool ColorSlider::on_button_press_event(GdkEventButton *event)
         signal_grabbed.emit();
         _dragging = true;
         _oldvalue = _value;
-        ColorScales::setScaled(_adjustment->gobj(), CLAMP((gfloat)(event->x - cx) / cw, 0.0, 1.0));
+        gfloat value = CLAMP((gfloat)(event->x - cx) / cw, 0.0, 1.0);
+        bool constrained = event->state & GDK_CONTROL_MASK;
+        ColorScales::setScaled(_adjustment->gobj(), value, constrained);
         signal_dragged.emit();
 
 #if GTK_CHECK_VERSION(3, 0, 0)
@@ -262,7 +264,9 @@ bool ColorSlider::on_motion_notify_event(GdkEventMotion *event)
         cx = get_style()->get_xthickness();
 #endif
         cw = allocation.get_width() - 2 * cx;
-        ColorScales::setScaled(_adjustment->gobj(), CLAMP((gfloat)(event->x - cx) / cw, 0.0, 1.0));
+        gfloat value = CLAMP((gfloat)(event->x - cx) / cw, 0.0, 1.0);
+        bool constrained = event->state & GDK_CONTROL_MASK;
+        ColorScales::setScaled(_adjustment->gobj(), value, constrained);
         signal_dragged.emit();
     }
 

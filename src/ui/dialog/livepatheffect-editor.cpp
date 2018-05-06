@@ -72,7 +72,7 @@ static void lpeeditor_selection_modified (Inkscape::Selection * selection, guint
 
 static void lpe_style_button(Gtk::Button& btn, char const* iconName)
 {
-    GtkWidget *child = gtk_image_new_from_icon_name(iconName, GTK_ICON_SIZE_SMALL_TOOLBAR);
+    GtkWidget *child = sp_icon_new(Inkscape::ICON_SIZE_SMALL_TOOLBAR, iconName);
     gtk_widget_show( child );
     btn.add(*Gtk::manage(Glib::wrap(child)));
     btn.set_relief(Gtk::RELIEF_NONE);
@@ -460,7 +460,7 @@ LivePathEffectEditor::onAdd()
                         item = NULL;
 
                         // run sp_selection_clone_original_path_lpe 
-                        sp_selection_clone_original_path_lpe(current_desktop);
+                        sp_selection_clone_original_path_lpe(current_desktop, true);
 
                         SPItem *new_item = sel->singleItem();
                         // Check that the cloning was successful. We don't want to change the ID of the original referenced path!

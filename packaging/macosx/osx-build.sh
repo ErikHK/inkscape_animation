@@ -10,11 +10,12 @@
 #	Jean-Olivier Irisson <jo.irisson@gmail.com>
 #	Liam P. White <inkscapebrony@gmail.com>
 #	~suv <suv-sf@users.sourceforge.net>
+#	Tim Sheridan <tghs@tghs.net>
 # with information from
 #	Kees Cook
 #	Michael Wybrow
 #
-# Copyright (C) 2006-2014
+# Copyright (C) 2006-2017
 # Released under GNU GPL, read the file 'COPYING' for more information
 #
 
@@ -171,23 +172,28 @@ OSXVERSION="$(/usr/bin/sw_vers | grep ProductVersion | cut -f2)"
 OSXMINORVER="$(cut -d. -f 1,2 <<< $OSXVERSION)"
 OSXMINORNO="$(cut -d. -f2 <<< $OSXVERSION)"
 OSXPOINTNO="$(cut -d. -f3 <<< $OSXVERSION)"
-ARCH="$(uname -a | awk '{print $NF;}')"
+HOSTARCH="$(uname -a | awk '{print $NF;}')"
 
 # MacPorts for dependencies
 [[ -x $LIBPREFIX/bin/port && -d $LIBPREFIX/etc/macports ]] && export use_port="t"
 
-# guess default build_arch (MacPorts)
-if [ "$OSXMINORNO" -ge "6" ]; then
-	if [ "$(sysctl -n hw.cpu64bit_capable 2>/dev/null)" = "1" ]; then
-		_build_arch="x86_64"
-	else
-		_build_arch="i386"
-	fi
+if [ "$ARCH" != "" ]; then
+	# explicit build_arch
+	_build_arch="$ARCH"
 else
-	if [ $ARCH = "powerpc" ]; then
-		_build_arch="ppc"
+	# guess default build_arch (MacPorts)
+	if [ "$OSXMINORNO" -ge "6" ]; then
+		if [ "$(sysctl -n hw.cpu64bit_capable 2>/dev/null)" = "1" ]; then
+			_build_arch="x86_64"
+		else
+			_build_arch="i386"
+		fi
 	else
-		_build_arch="i386"
+		if [ $HOSTARCH = "powerpc" ]; then
+			_build_arch="ppc"
+		else
+			_build_arch="i386"
+		fi
 	fi
 fi
 
@@ -221,60 +227,89 @@ elif [ "$OSXMINORNO" -eq "5" ]; then
 	TARGETVERSION="10.5"
 	export CC="/usr/bin/gcc-4.2"
 	export CXX="/usr/bin/g++-4.2"
-	#export CLAGS="$CFLAGS -arch $_build_arch"
+	export CFLAGS="$CFLAGS -arch $_build_arch"
 	export CXXFLAGS="$CFLAGS"
 	CONFFLAGS="--disable-openmp $CONFFLAGS"
+	CONFFLAGS="--disable-strict-build $CONFFLAGS" # Workaround for https://bugs.launchpad.net/inkscape/+bug/1606018
 elif [ "$OSXMINORNO" -eq "6" ]; then
 	## Apple's LLVM-GCC 4.2.1 on Snow Leopard
 	TARGETNAME="SNOW LEOPARD"
 	TARGETVERSION="10.6"
 	export CC="/usr/bin/llvm-gcc-4.2"
 	export CXX="/usr/bin/llvm-g++-4.2"
-	#export CLAGS="$CFLAGS -arch $_build_arch"
+	export CFLAGS="$CFLAGS -arch $_build_arch"
 	export CXXFLAGS="$CFLAGS"
 	CONFFLAGS="--disable-openmp $CONFFLAGS"
+	CONFFLAGS="--disable-strict-build $CONFFLAGS" # Workaround for https://bugs.launchpad.net/inkscape/+bug/1606018
 elif [ "$OSXMINORNO" -eq "7" ]; then
 	## Apple's clang on Lion and later
 	TARGETNAME="LION"
 	TARGETVERSION="10.7"
 	export CC="/usr/bin/clang"
 	export CXX="/usr/bin/clang++"
-	#export CLAGS="$CFLAGS -arch $_build_arch"
+	export CFLAGS="$CFLAGS -arch $_build_arch"
 	export CXXFLAGS="$CFLAGS -Wno-mismatched-tags -Wno-cast-align" #-stdlib=libstdc++ -std=c++11
+	CONFFLAGS="--disable-strict-build $CONFFLAGS" # Workaround for https://bugs.launchpad.net/inkscape/+bug/1606018
 elif [ "$OSXMINORNO" -eq "8" ]; then
 	## Apple's clang on Mountain Lion
 	TARGETNAME="MOUNTAIN LION"
 	TARGETVERSION="10.8"
 	export CC="/usr/bin/clang"
 	export CXX="/usr/bin/clang++"
-	#export CLAGS="$CFLAGS -arch $_build_arch"
+	export CFLAGS="$CFLAGS -arch $_build_arch"
 	export CXXFLAGS="$CFLAGS -Wno-mismatched-tags -Wno-cast-align -std=c++11 -stdlib=libstdc++"
+	CONFFLAGS="--disable-strict-build $CONFFLAGS" # Workaround for https://bugs.launchpad.net/inkscape/+bug/1606018
 elif [ "$OSXMINORNO" -eq "9" ]; then
 	## Apple's clang on Mavericks
 	TARGETNAME="MAVERICKS"
 	TARGETVERSION="10.9"
 	export CC="/usr/bin/clang"
 	export CXX="/usr/bin/clang++"
-	#export CLAGS="$CFLAGS -arch $_build_arch"
-	export CXXFLAGS="$CLAGS -Wno-mismatched-tags -Wno-cast-align -std=c++11 -stdlib=libc++"
+	export CFLAGS="$CFLAGS -arch $_build_arch"
+	export CXXFLAGS="$CFLAGS -Wno-mismatched-tags -Wno-cast-align -std=c++11 -stdlib=libc++"
+	CONFFLAGS="--disable-strict-build $CONFFLAGS" # Workaround for https://bugs.launchpad.net/inkscape/+bug/1606018
 elif [ "$OSXMINORNO" -eq "10" ]; then
 	## Apple's clang on Yosemite
 	TARGETNAME="YOSEMITE"
 	TARGETVERSION="10.10"
 	export CC="/usr/bin/clang"
 	export CXX="/usr/bin/clang++"
-	#export CLAGS="$CFLAGS -arch $_build_arch"
-	export CXXFLAGS="$CLAGS -Wno-mismatched-tags -Wno-cast-align -std=c++11 -stdlib=libc++"
+	export CFLAGS="$CFLAGS -arch $_build_arch"
+	export CXXFLAGS="$CFLAGS -Wno-mismatched-tags -Wno-cast-align -std=c++11 -stdlib=libc++"
+	CONFFLAGS="--disable-strict-build $CONFFLAGS" # Workaround for https://bugs.launchpad.net/inkscape/+bug/1606018
 	echo "Note: Detected version of OS X: $TARGETNAME $OSXVERSION"
 	echo "      Inkscape packaging has not been tested on ${TARGETNAME}."
-else # if [ "$OSXMINORNO" -ge "11" ]; then
-	## Apple's clang after Yosemite?
+elif [ "$OSXMINORNO" -eq "11" ]; then
+	## Apple's clang on El Capitan
+	TARGETNAME="EL_CAPITAN"
+	TARGETVERSION="10.11"
+	export CC="/usr/bin/clang"
+	export CXX="/usr/bin/clang++"
+	export CFLAGS="$CFLAGS -arch $_build_arch"
+	export CXXFLAGS="$CFLAGS -Wno-mismatched-tags -Wno-cast-align -std=c++11 -stdlib=libc++"
+	CONFFLAGS="--disable-strict-build $CONFFLAGS" # Workaround for https://bugs.launchpad.net/inkscape/+bug/1606018
+	echo "Note: Detected version of OS X: $TARGETNAME $OSXVERSION"
+	echo "      Inkscape packaging has not been tested on ${TARGETNAME}."
+elif [ "$OSXMINORNO" -eq "12" ]; then
+	## Apple's clang on Sierra
+	TARGETNAME="SIERRA"
+	TARGETVERSION="10.12"
+	export CC="/usr/bin/clang"
+	export CXX="/usr/bin/clang++"
+	export CFLAGS="$CFLAGS -arch $_build_arch"
+	export CXXFLAGS="$CFLAGS -Wno-mismatched-tags -Wno-cast-align -std=c++11 -stdlib=libc++"
+	CONFFLAGS="--disable-strict-build $CONFFLAGS" # Workaround for https://bugs.launchpad.net/inkscape/+bug/1606018
+	echo "Note: Detected version of OS X: $TARGETNAME $OSXVERSION"
+	echo "      Inkscape packaging has not been tested on ${TARGETNAME}."
+else # if [ "$OSXMINORNO" -ge "13" ]; then
+	## Apple's clang after Sierra?
 	TARGETNAME="UNKNOWN"
 	TARGETVERSION="10.XX"
 	export CC="/usr/bin/clang"
 	export CXX="/usr/bin/clang++"
-	#export CLAGS="$CFLAGS -arch $_build_arch"
-	export CXXFLAGS="$CLAGS -Wno-mismatched-tags -Wno-cast-align -std=c++11 -stdlib=libc++"
+	export CFLAGS="$CFLAGS -arch $_build_arch"
+	export CXXFLAGS="$CFLAGS -Wno-mismatched-tags -Wno-cast-align -std=c++11 -stdlib=libc++"
+	CONFFLAGS="--disable-strict-build $CONFFLAGS" # Workaround for https://bugs.launchpad.net/inkscape/+bug/1606018
 	echo "Note: Detected version of OS X: $TARGETNAME $OSXVERSION"
 	echo "      Inkscape packaging has not been tested on this unknown version of OS X (${OSXVERSION})."
 fi
@@ -391,25 +426,20 @@ Included dependency versions (build or runtime):
 	Libexif               $(checkversion libexif libexif)
 	JPEG                  $(checkversion jpeg jpeg)
 	Icu                   $(checkversion icu-uc icu)
-	LibWPD                $(checkversion libwpd-0.9 libwpd)
-	LibWPG                $(checkversion libwpg-0.2 libwpg)
-	Libcdr                $(checkversion libcdr-0.0 libcdr)
-	Libvisio              $(checkversion libvisio-0.0 libvisio)
+	LibRevenge            $(checkversion librevenge-0.0 librevenge)
+	LibWPD                $(checkversion libwpd-0.10 libwpd-0.10)
+	LibWPG                $(checkversion libwpg-0.3 libwpg-0.3)
+	Libcdr                $(checkversion libcdr-0.1 libcdr-0.1)
+	Libvisio              $(checkversion libvisio-0.1 libvisio-0.1)
 	Potrace               $(checkversion potrace potrace)
 Included python modules:
 	lxml                  $(checkversion py27-lxml py27-lxml)
 	numpy                 $(checkversion py27-numpy py27-numpy)
+	scour                 $(checkversion py27-scour py27-scour)
 	sk1libs               $(checkversion py27-sk1libs py27-sk1libs)
 	UniConvertor          $(checkversion py27-uniconvertor py27-uniconvertor)
 	Pillow                $(checkversion py27-Pillow py27-Pillow)
 " > $INFOFILE
-
-	## TODO: Pending merge adds support for:
-	#LibRevenge            $(checkversion librevenge-0.0 librevenge-devel)
-	#LibWPD                $(checkversion libwpd-0.10 libwpd-10.0)
-	#LibWPG                $(checkversion libwpg-0.3 libwpg-0.3)
-	#Libcdr                $(checkversion libcdr-0.1 libcdr-0.1)
-	#Libvisio              $(checkversion libvisio-0.1 libvisio-0.1)
 
 	## TODO: add support for gtk-mac-integration (see osxmenu branch)
 	#Gtk-mac-integration   $(checkversion gtk-mac-integration gtk-osx-application)

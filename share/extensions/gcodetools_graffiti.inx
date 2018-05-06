@@ -37,7 +37,7 @@ different X/Y scale)</_option>
 				<_item value="G20 (All units in inches)">in</_item>
 			</param>
 
-			<_param name="help" type="description">
+			<_param name="help" type="description" xml:space="preserve">
 Orientation points are used to calculate transformation (offset,scale,mirror,rotation in XY plane) of the path.
 3-points mode only: do not put all three into one line (use 2-points mode instead).
 
@@ -88,7 +88,7 @@ Now press apply to create control points (independent set for each layer).
 		</page>
 
 		<page name='help' _gui-text='Help'>
-			<_param name="fullhelp" type="description">
+			<_param name="fullhelp" type="description" xml:space="preserve">
 Gcodetools plug-in: converts paths to Gcode (using circular interpolation), makes offset paths and engraves sharp corners using cone cutters. 
 This plug-in calculates Gcode for paths using circular interpolation or linear motion when needed.
 

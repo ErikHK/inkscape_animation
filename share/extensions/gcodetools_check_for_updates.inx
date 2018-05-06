@@ -12,7 +12,7 @@
 	</page>
 
 		<page name='help' _gui-text='Help'>
-			<_param name="fullhelp" type="description">
+			<_param name="fullhelp" type="description" xml:space="preserve">
 Gcodetools plug-in: converts paths to Gcode (using circular interpolation), makes offset paths and engraves sharp corners using cone cutters. 
 This plug-in calculates Gcode for paths using circular interpolation or linear motion when needed.
 

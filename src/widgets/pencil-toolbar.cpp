@@ -37,8 +37,6 @@
 #include "widgets/ege-adjustment-action.h"
 #include "widgets/ege-select-one-action.h"
 #include "widgets/ink-action.h"
-#include "widgets/ink-radio-action.h"
-#include "widgets/ink-toggle-action.h"
 #include "preferences.h"
 #include "toolbox.h"
 #include "ui/tools-switch.h"
@@ -95,7 +93,7 @@ static void sp_add_freehand_mode_toggle(GtkActionGroup* mainActions, GObject* ho
     {
         Inkscape::Preferences *prefs = Inkscape::Preferences::get();
         guint freehandMode = prefs->getInt(( tool_is_pencil ? "/tools/freehand/pencil/freehand-mode" : "/tools/freehand/pen/freehand-mode" ), 0);
-        GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+        Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
 
         {
             GtkListStore* model = gtk_list_store_new( 3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING );
@@ -404,7 +402,7 @@ void sp_pencil_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GOb
                                           _("Defaults"),
                                           _("Reset pencil parameters to defaults (use Inkscape Preferences > Tools to change defaults)"),
                                           INKSCAPE_ICON("edit-clear"),
-                                          GTK_ICON_SIZE_SMALL_TOOLBAR );
+                                          Inkscape::ICON_SIZE_SMALL_TOOLBAR );
         g_signal_connect_after( G_OBJECT(inky), "activate", G_CALLBACK(sp_pencil_tb_defaults), holder );
         gtk_action_group_add_action( mainActions, GTK_ACTION(inky) );
     }
@@ -415,7 +413,7 @@ void sp_pencil_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GOb
                                                         _("LPE based interactive simplify"),
                                                         _("LPE based interactive simplify"),
                                                         INKSCAPE_ICON("interactive_simplify"),
-                                                        GTK_ICON_SIZE_SMALL_TOOLBAR );
+                                                        Inkscape::ICON_SIZE_SMALL_TOOLBAR );
         gtk_toggle_action_set_active(GTK_TOGGLE_ACTION(itact), prefs->getInt("/tools/freehand/pencil/simplify", 0) );
         g_signal_connect_after(  G_OBJECT(itact), "toggled", G_CALLBACK(freehand_simplify_lpe), holder) ;
         gtk_action_group_add_action( mainActions, GTK_ACTION(itact) );
@@ -426,7 +424,7 @@ void sp_pencil_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GOb
                                           _("LPE simplify flatten"),
                                           _("LPE simplify flatten"),
                                           INKSCAPE_ICON("flatten_simplify"),
-                                          GTK_ICON_SIZE_SMALL_TOOLBAR );
+                                          Inkscape::ICON_SIZE_SMALL_TOOLBAR );
         g_signal_connect_after( G_OBJECT(inky), "activate", G_CALLBACK(sp_simplify_flatten), holder );
         gtk_action_group_add_action( mainActions, GTK_ACTION(inky) );
         g_object_set_data( holder, "flatten_simplify", inky );

@@ -150,11 +150,11 @@ LPECopyRotate::doBeforeEffect (SPLPEItem const* lpeitem)
         num_copies.param_set_increments(1,1);
     }
 
-    if (dist_angle_handle < 1.0) {
-        dist_angle_handle = 1.0;
-    }
     A = Point(boundingbox_X.min(), boundingbox_Y.middle());
     B = Point(boundingbox_X.middle(), boundingbox_Y.middle());
+    if (Geom::are_near(A, B, 0.01)) {
+        B += Geom::Point(1.0, 0.0);
+    }
     dir = unit_vector(B - A);
     // I first suspected the minus sign to be a bug in 2geom but it is
     // likely due to SVG's choice of coordinate system orientation (max)
@@ -166,6 +166,9 @@ LPECopyRotate::doBeforeEffect (SPLPEItem const* lpeitem)
         } else {
             dist_angle_handle = L2(starting_point - origin);
         }
+    }
+    if (dist_angle_handle < 1.0) {
+        dist_angle_handle = 1.0;
     }
     start_pos = origin + dir * Rotate(-rad_from_deg(starting_angle)) * dist_angle_handle;
     rot_pos = origin + dir * Rotate(-rad_from_deg(rotation_angle+starting_angle)) * dist_angle_handle;

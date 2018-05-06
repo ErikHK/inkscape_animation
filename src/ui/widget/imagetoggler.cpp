@@ -32,16 +32,14 @@ ImageToggler::ImageToggler( char const* on, char const* off) :
     _property_pixbuf_off(*this, "pixbuf_off", Glib::RefPtr<Gdk::Pixbuf>(0))
 {
     property_mode() = Gtk::CELL_RENDERER_MODE_ACTIVATABLE;
-    gint width, height;
-    gtk_icon_size_lookup(GTK_ICON_SIZE_MENU, &width, &height);
-    int phys = width;
+    int phys = sp_icon_get_phys_size((int)Inkscape::ICON_SIZE_DECORATION);
     Glib::RefPtr<Gtk::IconTheme> icon_theme = Gtk::IconTheme::get_default();
 
     if (!icon_theme->has_icon(_pixOnName)) {
-        //Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixOnName.data()), GTK_ICON_SIZE_MENU );
+        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixOnName.data()), Inkscape::ICON_SIZE_DECORATION );
     }
     if (!icon_theme->has_icon(_pixOffName)) {
-        //Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixOffName.data()), GTK_ICON_SIZE_MENU );
+        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixOffName.data()), Inkscape::ICON_SIZE_DECORATION );
     }
 
 

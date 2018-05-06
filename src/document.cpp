@@ -312,8 +312,6 @@ SPDocument *SPDocument::createDoc(Inkscape::XML::Document *rdoc,
                                   SPDocument *parent)
 {
     SPDocument *document = new SPDocument();
-	
-	//SPObject * new_layer = Inkscape::create_layer(document->currentRoot(), document->layers->currentLayer(), Inkscape::LPOS_BELOW);
 
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
     Inkscape::XML::Node *rroot = rdoc->root();
@@ -465,6 +463,11 @@ SPDocument *SPDocument::createDoc(Inkscape::XML::Document *rdoc,
     /** Fix font names in legacy documents (pre-92 files) **/
     if ( sp_version_inside_range( document->root->version.inkscape, 0, 1, 0, 92 ) ) {
         sp_file_convert_font_name(document);
+    }
+
+    /** Fix dpi (pre-92 files) **/
+    if ( !(INKSCAPE.use_gui()) && sp_version_inside_range( document->root->version.inkscape, 0, 1, 0, 92 ) ) {
+        sp_file_convert_dpi(document);
     }
 
     return document;
@@ -1421,7 +1424,9 @@ static SPItem *find_group_at_point(unsigned int dkey, SPGroup *group, Geom::Poin
         if (SP_IS_GROUP(o) && SP_GROUP(o)->effectiveLayerMode(dkey) != SPGroup::LAYER ) {
             SPItem *child = SP_ITEM(o);
             Inkscape::DrawingItem *arenaitem = child->get_arenaitem(dkey);
-            arenaitem->drawing().update();
+            if (arenaitem) {
+                arenaitem->drawing().update();
+            }
 
             // seen remembers the last (topmost) of groups pickable at this point
             if (arenaitem && arenaitem->pick(p, delta, 1) != NULL) {

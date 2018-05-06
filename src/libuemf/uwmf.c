@@ -1517,8 +1517,9 @@ int  wmf_start(
     \brief Release memory for an wmf structure in memory. Call this after wmf_finish().
     \return 0 on success, >=1 on failure
     \param wt WMF in memory
+    Renamed to uwmf_free to avoid conflict with libwmf
 */
-int wmf_free(
+int uwmf_free(
       WMFTRACK **wt
    ){    
    WMFTRACK *wtl;

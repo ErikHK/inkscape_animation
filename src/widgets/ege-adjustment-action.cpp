@@ -115,7 +115,7 @@ struct _EgeAdjustmentActionPrivate
     GList* descriptions;
     gchar* appearance;
     gchar* iconId;
-    GtkIconSize iconSize;
+    Inkscape::IconSize iconSize;
     Inkscape::UI::Widget::UnitTracker *unitTracker;
 };
 
@@ -232,9 +232,9 @@ static void ege_adjustment_action_class_init( EgeAdjustmentActionClass* klass )
                                          g_param_spec_int( "iconSize",
                                                            "Icon Size",
                                                            "The size the icon",
-                                                           (int)GTK_ICON_SIZE_MENU,
-                                                           (int)GTK_ICON_SIZE_MENU,
-                                                           (int)GTK_ICON_SIZE_SMALL_TOOLBAR,
+                                                           (int)Inkscape::ICON_SIZE_MENU,
+                                                           (int)Inkscape::ICON_SIZE_DECORATION,
+                                                           (int)Inkscape::ICON_SIZE_SMALL_TOOLBAR,
                                                            (GParamFlags)(G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT) ) );
 
         g_object_class_install_property( objClass,
@@ -272,7 +272,7 @@ static void ege_adjustment_action_init( EgeAdjustmentAction* action )
     action->private_data->descriptions = 0;
     action->private_data->appearance = 0;
     action->private_data->iconId = 0;
-    action->private_data->iconSize = GTK_ICON_SIZE_SMALL_TOOLBAR;
+    action->private_data->iconSize = Inkscape::ICON_SIZE_SMALL_TOOLBAR;
     action->private_data->unitTracker = NULL;
 }
 
@@ -463,7 +463,7 @@ void ege_adjustment_action_set_property( GObject* obj, guint propId, const GValu
 
         case PROP_ICON_SIZE:
         {
-            action->private_data->iconSize = (GtkIconSize)g_value_get_int( value );
+            action->private_data->iconSize = (Inkscape::IconSize)g_value_get_int( value );
         }
         break;
 
@@ -861,7 +861,7 @@ static GtkWidget* create_tool_item( GtkAction* action )
 
             /* Use an icon if available or use short-label */
             if ( act->private_data->iconId && strcmp( act->private_data->iconId, "" ) != 0 ) {
-                GtkWidget* icon = gtk_image_new_from_icon_name( act->private_data->iconId, act->private_data->iconSize );
+                GtkWidget* icon = sp_icon_new( act->private_data->iconSize, act->private_data->iconId );
                 gtk_box_pack_start( GTK_BOX(hb), icon, FALSE, FALSE, 0 );
             } else {
                 GtkWidget* lbl = gtk_label_new( g_value_get_string( &value ) ? g_value_get_string( &value ) : "wwww" );

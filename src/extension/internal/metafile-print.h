@@ -101,6 +101,7 @@ protected:
     static void swapRBinRGBA(char *px, int pixels);
 
     int         hold_gradient(void *gr, int mode);
+    static int  sprintf_dots(char * s, const char * format, ...);
     static Geom::PathVector center_ellipse_as_SVG_PathV(Geom::Point ctr, double rx, double ry, double F);
     static Geom::PathVector center_elliptical_ring_as_SVG_PathV(Geom::Point ctr, double rx1, double ry1, double rx2, double ry2, double F);
     static Geom::PathVector center_elliptical_hole_as_SVG_PathV(Geom::Point ctr, double rx, double ry, double F);

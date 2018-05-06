@@ -75,11 +75,6 @@ void SwatchSelector::_changedCb()
         SPStop* stop = ngr->getFirstStop();
         if (stop) {
             SPColor color = _selected_color.color();
-			
-			color.set(0x000000ff);
-			
-			
-			
             gfloat alpha = _selected_color.alpha();
             guint32 rgb = color.toRGBA32( 0x00 );
 
@@ -130,8 +125,7 @@ void SwatchSelector::setVector(SPDocument */*doc*/, SPGradient *vector)
 
         guint32 const colorVal = stop->get_rgba32();
         _updating_color = true;
-        //_selected_color.setValue(colorVal);
-		_selected_color.setValue(0x000000ff);
+        _selected_color.setValue(colorVal);
         _updating_color = false;
         // gtk_widget_show_all( GTK_WIDGET(_csel) );
     } else {

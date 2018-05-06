@@ -85,10 +85,13 @@ SPDocument *WpgInput::open(Inkscape::Extension::Input * /*mod*/, const gchar * u
         // RVNGFileStream uses fopen() internally which unfortunately only uses ANSI encoding on Windows
         // therefore attempt to convert uri to the system codepage
         // even if this is not possible the alternate short (8.3) file name will be used if available
-        uri = g_win32_locale_filename_from_utf8(uri);
+        gchar * converted_uri = g_win32_locale_filename_from_utf8(uri);
+        RVNGInputStream* input = new RVNGFileStream(converted_uri);
+        g_free(converted_uri);
+    #else
+        RVNGInputStream* input = new RVNGFileStream(uri);
     #endif
 
-    RVNGInputStream* input = new RVNGFileStream(uri);
 #if WITH_LIBWPG03
     if (input->isStructured()) {
         RVNGInputStream* olestream = input->getSubStreamByName("PerfectOffice_MAIN");

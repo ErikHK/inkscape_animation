@@ -20,7 +20,6 @@
 #include <glibmm/i18n.h>
 
 #include <gtkmm/button.h>
-#include <gtkmm/image.h>
 
 namespace Inkscape {
 namespace UI {
@@ -75,8 +74,7 @@ void Random::setStartSeed(long newseed)
 
 void Random::addReseedButton()
 {
-    Gtk::Image* pIcon = Gtk::manage(new Gtk::Image());
-    pIcon->set_from_icon_name( "randomize", Gtk::ICON_SIZE_BUTTON);
+    Gtk::Widget*  pIcon = Gtk::manage( sp_icon_get_icon( "randomize", Inkscape::ICON_SIZE_BUTTON) );
     Gtk::Button * pButton = Gtk::manage(new Gtk::Button());
     pButton->set_relief(Gtk::RELIEF_NONE);
     pIcon->show();

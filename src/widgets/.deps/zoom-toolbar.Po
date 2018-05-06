@@ -1,6 +1,0 @@
-widgets/zoom-toolbar.o: widgets/zoom-toolbar.cpp ../config.h \
- widgets/zoom-toolbar.h
-
-../config.h:
-
-widgets/zoom-toolbar.h:

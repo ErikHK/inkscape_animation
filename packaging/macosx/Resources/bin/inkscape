@@ -95,6 +95,10 @@ export XDG_DATA_DIRS="$TOP/share"
 export ASPELL_CONF="prefix $TOP;"
 export POPPLER_DATADIR="$TOP/share/poppler"
 
+# Using fontconfig backend for slightly crisper UI text rendering
+export PANGOCAIRO_BACKEND="fontconfig"
+#export PANGOCAIRO_BACKEND="coretext"
+
 # no DBUS for now
 unset DBUS_LAUNCHD_SESSION_BUS_SOCKET
 unset DBUS_SESSION_BUS_ADDRESS
@@ -140,7 +144,7 @@ then
 	export LANG="en_US.UTF-8"
 else
 	tmpLANG="`grep \"\`echo $LANGSTR\`_\" /usr/share/locale/locale.alias | \
-		tail -n1 | sed 's/\./ /' | awk '{print $2}'`"
+		tail -n1 | awk '{print $2}' | sed 's/\./ /' | awk '{print $1}'`"
 	if [ "x$tmpLANG" == "x" ]
 	then
 		# override broken script

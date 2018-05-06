@@ -287,7 +287,7 @@ private:
   void opMoveShowText(Object args[], int numArgs);
   void opMoveSetShowText(Object args[], int numArgs);
   void opShowSpaceText(Object args[], int numArgs);
-  void doShowText(GooString *s);
+  void doShowText(const GooString *s);
 
   // XObject operators
   void opXObject(Object args[], int numArgs);

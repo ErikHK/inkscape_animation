@@ -23,7 +23,7 @@
 
 			</param>
 			
-			<_param name="help" type="description">
+			<_param name="help" type="description" xml:space="preserve">
 Selected tool type fills appropriate default values. You can change these values using the Text tool later on.
 
 The topmost (z order) tool in the active layer is used. If there is no tool inside the current layer it is taken from the upper layer.
@@ -33,7 +33,7 @@ Press Apply to create new tool.
 	</page>
 
 		<page name='help' _gui-text='Help'>
-			<_param name="fullhelp" type="description">
+			<_param name="fullhelp" type="description" xml:space="preserve">
 Gcodetools plug-in: converts paths to Gcode (using circular interpolation), makes offset paths and engraves sharp corners using cone cutters. 
 This plug-in calculates Gcode for paths using circular interpolation or linear motion when needed.
 

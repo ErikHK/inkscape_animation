@@ -323,11 +323,10 @@ void KeyframeBar::rebuildUi()
 		widgets.push_back(kw);
 		
 		
-		kw->add_events(Gdk::ALL_EVENTS_MASK);
+		//kw->add_events(Gdk::ALL_EVENTS_MASK);
 		
-		//kw->signal_focus_in_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_focus_in_event));
-		kw->signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_button_press_event));
-		kw->signal_motion_notify_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_mouse_));
+		//kw->signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_button_press_event));
+		//kw->signal_motion_notify_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_mouse_));
 		
 		kw->set_can_focus(true);
 	}

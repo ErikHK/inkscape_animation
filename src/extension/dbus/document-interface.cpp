@@ -1361,7 +1361,6 @@ gchar *document_interface_layer_new(DocumentInterface *doc_interface, GError ** 
     Inkscape::LayerModel * layers = doc_interface->target.getSelection()->layers();
     SPObject *new_layer = Inkscape::create_layer(layers->currentRoot(), layers->currentLayer(), Inkscape::LPOS_BELOW);
     layers->setCurrentLayer(new_layer);
-	
     return g_strdup(get_name_from_object(new_layer));
 }
 

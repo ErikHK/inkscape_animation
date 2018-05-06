@@ -737,7 +737,7 @@ void SPNamedView::show(SPDesktop *desktop)
 
 namespace {
 
-gint const MIN_ONSCREEN_DISTANCE = 50;
+gint const MIN_ONSCREEN_DISTANCE = 100;
 gdouble const NEWDOC_X_SCALE = 0.75;
 gdouble const NEWDOC_Y_SCALE = NEWDOC_X_SCALE;
 
@@ -757,12 +757,6 @@ Geom::Point calcAnchorPoint(gint const x, gint const y,
 
 } // namespace
 
-void SPNamedView::writeNewGrid(SPDocument *document,int gridtype)
-{
-    g_assert(this->getRepr() != NULL);
-    Inkscape::CanvasGrid::writeNewGridToRepr(this->getRepr(),document,static_cast<Inkscape::GridType>(gridtype));
-}
-
 /*
  * Restores window geometry from the document settings or defaults in prefs
  */
@@ -771,22 +765,42 @@ void sp_namedview_window_from_document(SPDesktop *desktop)
     SPNamedView *nv = desktop->namedview;
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
     bool geometry_from_file = (1 == prefs->getInt("/options/savewindowgeometry/value", 0));
+    bool geometry_from_last = (2 == prefs->getInt("/options/savewindowgeometry/value", 0));
     gint default_geometry = prefs->getInt("/options/defaultwindowsize/value", 1);
     bool new_document = (nv->window_width <= 0) || (nv->window_height <= 0);
     bool show_dialogs = true;
 
     // restore window size and position stored with the document
-    bool sizeSet = false;
-
-    if ((geometry_from_file && nv->window_maximized) || (new_document && (default_geometry == 2))) {
+    if (geometry_from_last) {
+        // do nothing, as we already have code for that in interface.cpp
+        // TODO: Probably should not do similar things in two places
+    } else if ((geometry_from_file && nv->window_maximized) || (new_document && (default_geometry == 2))) {
         Gtk::Window *win = desktop->getToplevel();
         if (win) {
             win->maximize();
         }
-        sizeSet = true;
-    } else if (geometry_from_file && !nv->window_maximized) {
-        gint w = MIN(gdk_screen_width(), nv->window_width);
-        gint h = MIN(gdk_screen_height(), nv->window_height);
+    } else {
+        // gdk_screen_width() / gdk_screen_height() return the dimensions of all displays combined
+        // therefore we have to get the dimensions of one monitor explicitly (currently the primary monitor)
+        // TODO: account for multi-monitor setups (i.e. on which monitor do we want to display Inkscape?)
+        gint monitor_number;
+        GdkRectangle monitor_geometry;
+        monitor_number = gdk_screen_get_primary_monitor(gdk_screen_get_default());
+        gdk_screen_get_monitor_geometry(gdk_screen_get_default(), monitor_number, &monitor_geometry);
+
+        gint w = monitor_geometry.width;
+        gint h = monitor_geometry.height;
+        bool move_to_screen = false;
+        if (geometry_from_file and !new_document) {
+            w = MIN(w, nv->window_width);
+            h = MIN(h, nv->window_height);          
+            move_to_screen = true;
+        } else if (default_geometry == 1) {
+            w *= NEWDOC_X_SCALE;
+            h *= NEWDOC_Y_SCALE;
+        } else if (default_geometry == 0) {
+            w = h = 0; // use the smallest possible window size; could be a factor like NEWDOC_X_SCALE in future
+        } 
         if ((w > 0) && (h > 0)) {
 #ifndef WIN32
             gint dx= 0;
@@ -800,20 +814,12 @@ void sp_namedview_window_from_document(SPDesktop *desktop)
                 show_dialogs = FALSE;
             }
 #endif
-            Geom::Point origin = calcAnchorPoint(nv->window_x, nv->window_y, w, h, MIN_ONSCREEN_DISTANCE);
             desktop->setWindowSize(w, h);
-            desktop->setWindowPosition(origin);
-            sizeSet = true;
+            if (move_to_screen) {
+                Geom::Point origin = calcAnchorPoint(nv->window_x, nv->window_y, w, h, MIN_ONSCREEN_DISTANCE);
+                desktop->setWindowPosition(origin);
+            }
         }
-    }
-
-    if (!sizeSet && new_document && (default_geometry == 1))
-    {
-        gint w = gdk_screen_width() * NEWDOC_X_SCALE;
-        gint h = gdk_screen_height() * NEWDOC_Y_SCALE;
-        Geom::Point origin = calcAnchorPoint(nv->window_x, nv->window_y, w, h, MIN_ONSCREEN_DISTANCE);
-        desktop->setWindowSize(w, h);
-        desktop->setWindowPosition(origin);
     }
 
     // restore zoom and view
@@ -831,6 +837,12 @@ void sp_namedview_window_from_document(SPDesktop *desktop)
     if (show_dialogs) {
         desktop->show_dialogs();
     }
+}
+
+void SPNamedView::writeNewGrid(SPDocument *document,int gridtype)
+{
+    g_assert(this->getRepr() != NULL);
+    Inkscape::CanvasGrid::writeNewGridToRepr(this->getRepr(),document,static_cast<Inkscape::GridType>(gridtype));
 }
 
 bool SPNamedView::getSnapGlobal() const

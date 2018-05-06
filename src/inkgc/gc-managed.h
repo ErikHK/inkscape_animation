@@ -30,7 +30,6 @@ public:
     void *operator new(std::size_t size,
                        ScanPolicy scan=default_scan,
                        CollectionPolicy collect=default_collect)
-    throw (std::bad_alloc)
     {
         return ::operator new(size, scan, collect);
     }
@@ -38,7 +37,6 @@ public:
     void *operator new[](std::size_t size,
                          ScanPolicy scan=default_scan,
                          CollectionPolicy collect=default_collect)
-    throw (std::bad_alloc)
     {
         return ::operator new[](size, scan, collect);
     }

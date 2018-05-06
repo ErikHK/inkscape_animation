@@ -61,11 +61,6 @@
 #include "util/ege-appear-time-tracker.h"
 #include "sp-root.h"
 
-#include "layer-fns.h"
-//#include "layer-manager.h"
-
-//#include "timeline-item.h"
-
 // We're in the "widgets" directory, so no need to explicitly prefix these:
 #include "button.h"
 #include "ruler.h"
@@ -82,17 +77,14 @@
 #include <gtkmm/paned.h>
 #include <gtkmm/messagedialog.h>
 
-#include <gtkmm/scrolledwindow.h>
-
 #include <gtk/gtk.h>
-
-
-
 
 #if defined (SOLARIS) && (SOLARIS == 8)
 #include "round.h"
 using Inkscape::round;
 #endif
+
+
 
 using Inkscape::UI::Widget::UnitTracker;
 using Inkscape::UI::UXManager;
@@ -100,6 +92,7 @@ using Inkscape::UI::ToolboxFactory;
 using ege::AppearTimeTracker;
 using Inkscape::Util::unit_table;
 using Inkscape::UI::Dialogs::AnimationControl;
+
 enum {
     ACTIVATE,
     DEACTIVATE,
@@ -142,9 +135,6 @@ static void sp_dtw_zoom_page (GtkMenuItem *item, gpointer data);
 static void sp_dtw_zoom_drawing (GtkMenuItem *item, gpointer data);
 static void sp_dtw_zoom_selection (GtkMenuItem *item, gpointer data);
 static void sp_dtw_sticky_zoom_toggled (GtkMenuItem *item, gpointer data);
-
-static void gotFocus(GtkWidget* , GdkEventKey *event);
-static void gotClicked(GtkWidget*);
 
 SPViewWidgetClass *dtw_parent_class;
 
@@ -375,9 +365,6 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
     //gtk_widget_set_usize (dtw->statusbar, -1, BOTTOM_BAR_HEIGHT);
     gtk_box_pack_end (GTK_BOX (dtw->vbox), dtw->statusbar, FALSE, TRUE, 0);
 
-	
-	
-	
     {
         using Inkscape::UI::Dialogs::SwatchesPanel;
 
@@ -403,15 +390,8 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
 		AnimationControl * ac = new AnimationControl();
 		
 		//gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(scroller->gobj()), FALSE, TRUE, 0 );
-		gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(ac->gobj()), FALSE, TRUE, 0 );
-		
+		gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(ac->gobj()), FALSE, TRUE, 0 );	
     }
-	
-	
-		
-		//TimelineItem * ti = new TimelineItem();	
-		//ti->show();
-		//gtk_box_pack_end( GTK_BOX( dtw->vbox ), GTK_WIDGET(ti->gobj()), FALSE, TRUE, 0 );
 
 #if GTK_CHECK_VERSION(3,0,0)
     dtw->hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -437,7 +417,7 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
     ToolboxFactory::setOrientation( dtw->tool_toolbox, GTK_ORIENTATION_VERTICAL );
     gtk_box_pack_start( GTK_BOX(dtw->hbox), dtw->tool_toolbox, FALSE, TRUE, 0 );
     // Lock guides button
-    dtw->guides_lock = sp_button_new_from_data( GTK_ICON_SIZE_MENU,
+    dtw->guides_lock = sp_button_new_from_data( Inkscape::ICON_SIZE_DECORATION,
                                                SP_BUTTON_TYPE_TOGGLE,
                                                NULL,
                                                INKSCAPE_ICON("object-locked"),
@@ -532,7 +512,7 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
 #endif
 
     // Sticky zoom button
-    dtw->sticky_zoom = sp_button_new_from_data ( GTK_ICON_SIZE_MENU,
+    dtw->sticky_zoom = sp_button_new_from_data ( Inkscape::ICON_SIZE_DECORATION,
                                                  SP_BUTTON_TYPE_TOGGLE,
                                                  NULL,
                                                  INKSCAPE_ICON("zoom-original"),
@@ -570,7 +550,7 @@ void SPDesktopWidget::init( SPDesktopWidget *dtw )
             tip = act->tip;
         }
     }
-    dtw->cms_adjust = sp_button_new_from_data( GTK_ICON_SIZE_MENU,
+    dtw->cms_adjust = sp_button_new_from_data( Inkscape::ICON_SIZE_DECORATION,
                                                SP_BUTTON_TYPE_TOGGLE,
                                                NULL,
                                                INKSCAPE_ICON("color-management"),
@@ -905,45 +885,6 @@ static void sp_desktop_widget_dispose(GObject *object)
         (* G_OBJECT_CLASS (dtw_parent_class)->dispose) (object);
     }
 }
-
-static void gotClicked(GtkWidget*)
-{
-	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
-	//LayerManager * lm = desktop->layer_manager;
-	
-	//Glib::ustring strr = Glib::ustring::format(id);
-	//Glib::ustring ids("layer" + strr);
-	//ids = lm->getNextLayerName(NULL, desktop->currentLayer()->label());
-	
-	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
-	{
-		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
-		//desktop->layer_manager->setCurrentLayer(lay);
-	}
-	
-}
-
-
-static void gotFocus(GtkWidget* , GdkEventKey *event)
-{
-	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-	//SPDocument *doc = SP_ACTIVE_DOCUMENT;
-	//LayerManager * lm = desktop->layer_manager;
-	
-	//Glib::ustring strr = Glib::ustring::format(id);
-	//Glib::ustring ids("layer" + strr);
-	//ids = lm->getNextLayerName(NULL, desktop->currentLayer()->label());
-	
-	while(desktop->getDocument()->getReprRoot()->childCount() < 100)
-	{
-		SPObject * lay = Inkscape::create_layer(desktop->currentRoot(), desktop->currentLayer(), Inkscape::LPOS_ABOVE);
-		//desktop->layer_manager->setCurrentLayer(lay);
-	}
-	
-}
-
-
 
 
 /**

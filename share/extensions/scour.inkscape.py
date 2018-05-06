@@ -4,7 +4,14 @@ import sys, platform, inkex
 
 try:
     import scour
-    from scour.scour import scourString
+    try:
+        from scour.scour import scourString
+    except ImportError:  # compatibility for very old Scour (<= 0.26) - deprecated!
+        try:
+            from scour import scourString
+            scour.__version__ = scour.VER
+        except:
+            raise
 except Exception as e:
     inkex.errormsg("Failed to import Python module 'scour'.\nPlease make sure it is installed (e.g. using 'pip install scour' or 'sudo apt-get install python-scour') and try again.")
     inkex.errormsg("\nDetails:\n" + str(e))

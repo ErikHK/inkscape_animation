@@ -44,7 +44,7 @@
 #include "ui/icon-names.h"
 
 struct IconImpl {
-    static GtkWidget *newFull( GtkIconSize lsize, gchar const *name );
+    static GtkWidget *newFull( Inkscape::IconSize lsize, gchar const *name );
 
     static void dispose(GObject *object);
 
@@ -77,7 +77,7 @@ struct IconImpl {
 
     static gboolean prerenderTask(gpointer data);
     static void addPreRender( GtkIconSize lsize, gchar const *name );
-    static GdkPixbuf* renderup( gchar const* name, GtkIconSize lsize, unsigned psize );
+    static GdkPixbuf* renderup( gchar const* name, Inkscape::IconSize lsize, unsigned psize );
 
 
     static GdkPixbuf *loadPixmap(gchar const *name, unsigned lsize, unsigned psize);
@@ -122,7 +122,7 @@ static GtkIconSize iconSizeLookup[] = {
     GTK_ICON_SIZE_BUTTON,
     GTK_ICON_SIZE_DND,
     GTK_ICON_SIZE_DIALOG,
-    GTK_ICON_SIZE_MENU, // for GTK_ICON_SIZE_MENU
+    GTK_ICON_SIZE_MENU, // for Inkscape::ICON_SIZE_DECORATION
 };
 
 class IconCacheItem
@@ -166,7 +166,7 @@ static void
 sp_icon_init(SPIcon *icon)
 {
     gtk_widget_set_has_window (GTK_WIDGET (icon), FALSE);
-    icon->lsize = GTK_ICON_SIZE_BUTTON;
+    icon->lsize = Inkscape::ICON_SIZE_BUTTON;
     icon->psize = 0;
     icon->name = NULL;
     icon->pb = NULL;
@@ -339,7 +339,7 @@ void IconImpl::fetchPixbuf( SPIcon *icon )
     }
 }
 
-GdkPixbuf* IconImpl::renderup( gchar const* name, GtkIconSize lsize, unsigned psize ) {
+GdkPixbuf* IconImpl::renderup( gchar const* name, Inkscape::IconSize lsize, unsigned psize ) {
     GtkIconTheme *theme = gtk_icon_theme_get_default();
 
     GdkPixbuf *pb = NULL;
@@ -798,7 +798,7 @@ void IconImpl::setupLegacyNaming() {
     legacyNames["zoom"] ="sticky_zoom";
 }
 
-GtkWidget *IconImpl::newFull( GtkIconSize lsize, gchar const *name )
+GtkWidget *IconImpl::newFull( Inkscape::IconSize lsize, gchar const *name )
 {
     static bool dump = Inkscape::Preferences::get()->getBool("/debug/icons/dumpGtk");
 
@@ -863,23 +863,23 @@ GtkWidget *IconImpl::newFull( GtkIconSize lsize, gchar const *name )
 }
 
 // PUBLIC CALL:
-GtkWidget *sp_icon_new( GtkIconSize lsize, gchar const *name )
+GtkWidget *sp_icon_new( Inkscape::IconSize lsize, gchar const *name )
 {
     return IconImpl::newFull( lsize, name );
 }
 
 // PUBLIC CALL for when you REALLY need a pixbuf
-GdkPixbuf *sp_pixbuf_new( GtkIconSize lsize, gchar const *name )
+GdkPixbuf *sp_pixbuf_new( Inkscape::IconSize lsize, gchar const *name )
 {
     int psize = IconImpl::getPhysSize(lsize);
     return IconImpl::renderup(name, lsize, psize);
 }
 
 // PUBLIC CALL:
-Gtk::Widget *sp_icon_get_icon( Glib::ustring const &oid, GtkIconSize size )
+Gtk::Widget *sp_icon_get_icon( Glib::ustring const &oid, Inkscape::IconSize size )
 {
     Gtk::Widget *result = NULL;
-    GtkWidget *widget = IconImpl::newFull( static_cast<GtkIconSize>(Inkscape::getRegisteredIconSize(size)), oid.c_str() );
+    GtkWidget *widget = IconImpl::newFull( static_cast<Inkscape::IconSize>(Inkscape::getRegisteredIconSize(size)), oid.c_str() );
 
     if ( widget ) {
         if ( GTK_IS_IMAGE(widget) ) {
@@ -909,7 +909,7 @@ void IconImpl::injectCustomSize()
                 if ( dump ) {
                     g_message("Registered (%d, %d) <= (%d, %d) as index %d", newWidth, newHeight, width, height, newSizeEnum);
                 }
-                guint index = static_cast<guint>(GTK_ICON_SIZE_MENU);
+                guint index = static_cast<guint>(Inkscape::ICON_SIZE_DECORATION);
                 if ( index < G_N_ELEMENTS(iconSizeLookup) ) {
                     iconSizeLookup[index] = newSizeEnum;
                 } else if ( dump ) {
@@ -921,12 +921,12 @@ void IconImpl::injectCustomSize()
     }
 }
 
-GtkIconSize Inkscape::getRegisteredIconSize( GtkIconSize size )
+GtkIconSize Inkscape::getRegisteredIconSize( Inkscape::IconSize size )
 {
     GtkIconSize other = GTK_ICON_SIZE_MENU;
     IconImpl::injectCustomSize();
-    size = CLAMP( size, GTK_ICON_SIZE_MENU, GTK_ICON_SIZE_MENU );
-    if ( size == GTK_ICON_SIZE_MENU ) {
+    size = CLAMP( size, Inkscape::ICON_SIZE_MENU, Inkscape::ICON_SIZE_DECORATION );
+    if ( size == Inkscape::ICON_SIZE_DECORATION ) {
         other = gtk_icon_size_from_name("inkscape-decoration");
     } else {
         other = static_cast<GtkIconSize>(size);
@@ -945,10 +945,10 @@ int sp_icon_get_phys_size(int size)
 int IconImpl::getPhysSize(int size)
 {
     static bool init = false;
-    static int lastSys[GTK_ICON_SIZE_MENU + 1];
-    static int vals[GTK_ICON_SIZE_MENU + 1];
+    static int lastSys[Inkscape::ICON_SIZE_DECORATION + 1];
+    static int vals[Inkscape::ICON_SIZE_DECORATION + 1];
 
-    size = CLAMP( size, static_cast<int>(GTK_ICON_SIZE_MENU), static_cast<int>(GTK_ICON_SIZE_MENU) );
+    size = CLAMP( size, static_cast<int>(GTK_ICON_SIZE_MENU), static_cast<int>(Inkscape::ICON_SIZE_DECORATION) );
 
     if ( !sizeMapDone ) {
         injectCustomSize();
@@ -962,12 +962,12 @@ int IconImpl::getPhysSize(int size)
             GTK_ICON_SIZE_BUTTON,
             GTK_ICON_SIZE_DND,
             GTK_ICON_SIZE_DIALOG,
-            static_cast<guint>(GTK_ICON_SIZE_MENU) < G_N_ELEMENTS(iconSizeLookup) ?
-                iconSizeLookup[static_cast<int>(GTK_ICON_SIZE_MENU)] :
+            static_cast<guint>(Inkscape::ICON_SIZE_DECORATION) < G_N_ELEMENTS(iconSizeLookup) ?
+                iconSizeLookup[static_cast<int>(Inkscape::ICON_SIZE_DECORATION)] :
                 GTK_ICON_SIZE_MENU
         };
         for (unsigned i = 0; i < G_N_ELEMENTS(gtkSizes) && init; ++i) {
-            guint const val_ix = (gtkSizes[i] <= GTK_ICON_SIZE_DIALOG) ? (guint)gtkSizes[i] : (guint)GTK_ICON_SIZE_MENU;
+            guint const val_ix = (gtkSizes[i] <= GTK_ICON_SIZE_DIALOG) ? (guint)gtkSizes[i] : (guint)Inkscape::ICON_SIZE_DECORATION;
 
             g_assert( val_ix < G_N_ELEMENTS(vals) );
 
@@ -994,8 +994,8 @@ int IconImpl::getPhysSize(int size)
             GTK_ICON_SIZE_BUTTON,
             GTK_ICON_SIZE_DND,
             GTK_ICON_SIZE_DIALOG,
-            static_cast<guint>(GTK_ICON_SIZE_MENU) < G_N_ELEMENTS(iconSizeLookup) ?
-                iconSizeLookup[static_cast<int>(GTK_ICON_SIZE_MENU)] :
+            static_cast<guint>(Inkscape::ICON_SIZE_DECORATION) < G_N_ELEMENTS(iconSizeLookup) ?
+                iconSizeLookup[static_cast<int>(Inkscape::ICON_SIZE_DECORATION)] :
                 GTK_ICON_SIZE_MENU
         };
         gchar const *const names[] = {
@@ -1009,7 +1009,7 @@ int IconImpl::getPhysSize(int size)
         };
 
         for (unsigned i = 0; i < G_N_ELEMENTS(gtkSizes); ++i) {
-            guint const val_ix = (gtkSizes[i] <= GTK_ICON_SIZE_DIALOG) ? (guint)gtkSizes[i] : (guint)GTK_ICON_SIZE_MENU;
+            guint const val_ix = (gtkSizes[i] <= GTK_ICON_SIZE_DIALOG) ? (guint)gtkSizes[i] : (guint)Inkscape::ICON_SIZE_DECORATION;
 
             g_assert( val_ix < G_N_ELEMENTS(vals) );
 
@@ -1346,7 +1346,7 @@ static void addToIconSet(GdkPixbuf* pb, gchar const* name, GtkIconSize lsize, un
     }
 }
 
-void Inkscape::queueIconPrerender( Glib::ustring const &name, GtkIconSize lsize )
+void Inkscape::queueIconPrerender( Glib::ustring const &name, Inkscape::IconSize lsize )
 {
     gboolean themedFound = gtk_icon_theme_has_icon(gtk_icon_theme_get_default(), name.c_str());
     if ( !themedFound ) {

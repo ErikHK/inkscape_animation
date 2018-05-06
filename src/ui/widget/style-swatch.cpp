@@ -251,7 +251,6 @@ StyleSwatch::setWatchedTool(const char *path, bool synthesize)
 
 void StyleSwatch::setStyle(SPCSSAttr *css)
 {
-	/*
     if (_css)
         sp_repr_css_attr_unref (_css);
 
@@ -269,17 +268,8 @@ void StyleSwatch::setStyle(SPCSSAttr *css)
         style.mergeString(css_string.c_str());
     }
     setStyle (&style);
-	*/
 }
 
-void StyleSwatch::setStyle(SPStyle *query)
-{
-	
-}
-
-
-
-/*
 void StyleSwatch::setStyle(SPStyle *query)
 {
     _place[SS_FILL].remove();
@@ -388,8 +378,6 @@ void StyleSwatch::setStyle(SPStyle *query)
 
     show_all();
 }
-
-*/
 
 } // namespace Widget
 } // namespace UI

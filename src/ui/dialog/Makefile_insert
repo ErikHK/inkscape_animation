@@ -5,8 +5,6 @@ ink_common_sources +=		\
 	ui/dialog/aboutbox.h			\
 	ui/dialog/align-and-distribute.cpp	\
 	ui/dialog/align-and-distribute.h	\
-	ui/dialog/animation-dialog.cpp	\
-	ui/dialog/animation-dialog.h	\
 	ui/dialog/arrange-tab.h			\
 	ui/dialog/behavior.h			\
 	ui/dialog/calligraphic-profile-rename.h	\

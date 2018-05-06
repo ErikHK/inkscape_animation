@@ -640,8 +640,8 @@ static SPStyleEnum const enum_image_rendering[] = {
     {"auto",                  SP_CSS_IMAGE_RENDERING_AUTO},
     {"optimizeSpeed",         SP_CSS_IMAGE_RENDERING_OPTIMIZESPEED},
     {"optimizeQuality",       SP_CSS_IMAGE_RENDERING_OPTIMIZEQUALITY},
-    {"-inkscape-crisp-edges", SP_CSS_IMAGE_RENDERING_CRISPEDGES},
-    {"-inkscape-pixelated",   SP_CSS_IMAGE_RENDERING_PIXELATED},
+    {"crisp-edges",           SP_CSS_IMAGE_RENDERING_CRISPEDGES},
+    {"pixelated",             SP_CSS_IMAGE_RENDERING_PIXELATED},
     {NULL, -1}
 };
 

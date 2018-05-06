@@ -72,7 +72,7 @@ class CairoRenderContext {
 public:
     CairoRenderContext *cloneMe(void) const;
     CairoRenderContext *cloneMe(double width, double height) const;
-    bool finish(void);
+    bool finish(bool finish_surface = true);
 
     CairoRenderer *getRenderer(void) const;
     cairo_t *getCairoContext(void) const;

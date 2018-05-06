@@ -8,4 +8,4 @@ add_custom_command(
 )
 add_custom_target(templates_h ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/templates.h)
 
-install(FILES ${_FILES} "templates.h" "README" DESTINATION ${INKSCAPE_SHARE_INSTALL}/templates)
+install(FILES ${_FILES} "README" DESTINATION ${INKSCAPE_SHARE_INSTALL}/templates)

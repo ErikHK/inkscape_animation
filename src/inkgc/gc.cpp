@@ -173,7 +173,7 @@ public:
     {}
 };
 
-Ops const &get_ops() throw (InvalidGCModeError) {
+Ops const &get_ops() {
     char *mode_string=std::getenv("_INKSCAPE_GC");
     if (mode_string) {
         if (!std::strcmp(mode_string, "enable")) {

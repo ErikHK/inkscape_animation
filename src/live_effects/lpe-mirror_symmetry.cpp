@@ -152,20 +152,24 @@ LPEMirrorSymmetry::doBeforeEffect (SPLPEItem const* lpeitem)
         }
     } else if ( mode == MT_V){
         SPDocument * document = SP_ACTIVE_DOCUMENT;
-        Geom::Affine transform = i2anc_affine(SP_OBJECT(lpeitem), NULL).inverse();
-        Geom::Point sp = Geom::Point(document->getWidth().value("px")/2.0, 0) * transform;
-        start_point.param_setValue(sp, true);
-        Geom::Point ep = Geom::Point(document->getWidth().value("px")/2.0, document->getHeight().value("px")) * transform;
-        end_point.param_setValue(ep, true);
-        center_point.param_setValue(Geom::middle_point((Geom::Point)start_point, (Geom::Point)end_point), true);
+        if (document) {
+            Geom::Affine transform = i2anc_affine(SP_OBJECT(lpeitem), NULL).inverse();
+            Geom::Point sp = Geom::Point(document->getWidth().value("px")/2.0, 0) * transform;
+            start_point.param_setValue(sp, true);
+            Geom::Point ep = Geom::Point(document->getWidth().value("px")/2.0, document->getHeight().value("px")) * transform;
+            end_point.param_setValue(ep, true);
+            center_point.param_setValue(Geom::middle_point((Geom::Point)start_point, (Geom::Point)end_point), true);
+        }
     } else { //horizontal page
         SPDocument * document = SP_ACTIVE_DOCUMENT;
-        Geom::Affine transform = i2anc_affine(SP_OBJECT(lpeitem), NULL).inverse();
-        Geom::Point sp = Geom::Point(0, document->getHeight().value("px")/2.0) * transform;
-        start_point.param_setValue(sp, true);
-        Geom::Point ep = Geom::Point(document->getWidth().value("px"), document->getHeight().value("px")/2.0) * transform;
-        end_point.param_setValue(ep, true);
-        center_point.param_setValue(Geom::middle_point((Geom::Point)start_point, (Geom::Point)end_point), true);
+        if (document) {
+            Geom::Affine transform = i2anc_affine(SP_OBJECT(lpeitem), NULL).inverse();
+            Geom::Point sp = Geom::Point(0, document->getHeight().value("px")/2.0) * transform;
+            start_point.param_setValue(sp, true);
+            Geom::Point ep = Geom::Point(document->getWidth().value("px"), document->getHeight().value("px")/2.0) * transform;
+            end_point.param_setValue(ep, true);
+            center_point.param_setValue(Geom::middle_point((Geom::Point)start_point, (Geom::Point)end_point), true);
+        }
     }
     previous_center = center_point;
 }

@@ -192,7 +192,7 @@ sodipodi:docname="filters.svg">
 <feConvolveMatrix targetY="1" targetX="1" in="SourceGraphic" divisor="1" kernelMatrix="0 -0.3 0 -0.3 2.2 -0.3 0 -0.3 0" order="3 3" result="result1" />
 <feBlend in2="SourceGraphic" mode="normal" result="result2" />
 </filter>
-<filter id="f020" inkscape:label="Oil painting" inkscape:menu="Image Paint and Draw" inkscape:menu-tooltip="Simulate oil painting style" style="color-interpolation-filters:sRGB;">
+<filter id="f020" inkscape:label="Oil Painting" inkscape:menu="Image Paint and Draw" inkscape:menu-tooltip="Simulate oil painting style" style="color-interpolation-filters:sRGB;">
 <feMorphology radius="2" in="SourceGraphic" result="result0" />
 <feTurbulence numOctaves="1" baseFrequency="0.078" result="result91" />
 <feDisplacementMap in="result0" scale="6.3" xChannelSelector="R" yChannelSelector="G" in2="result91" />
@@ -1258,7 +1258,7 @@ sodipodi:docname="filters.svg">
 <feConvolveMatrix order="3 3" kernelMatrix="2 0 0 1 1 -1 0 0 -2 " targetX="1" targetY="1" result="result8" />
 <feBlend mode="darken" in="result7" result="result6" in2="result8" />
 </filter>
-<filter id="f125" x="-0.25" width="1.5" y="-0.5" height="2" inkscape:menu-tooltip="Comics shader with creamy waves transparency" inkscape:menu="Non realistic 3D shaders" inkscape:label="Comics Cream" style="color-interpolation-filters:sRGB;">
+<filter id="f125" x="-0.25" width="1.5" y="-0.5" height="2" inkscape:menu-tooltip="Comics shader with creamy waves transparency" inkscape:menu="Non-realistic 3D Shaders" inkscape:label="Comics Cream" style="color-interpolation-filters:sRGB;">
 <feGaussianBlur result="result8" stdDeviation="7" in="SourceGraphic" />
 <feTurbulence baseFrequency="0.04" numOctaves="1" type="turbulence" result="result7" seed="0" />
 <feComposite in2="result7" in="result8" operator="xor" result="result6" />
@@ -1275,7 +1275,7 @@ sodipodi:docname="filters.svg">
 <feComposite operator="in" in="result4" result="fbSourceGraphic" in2="result2" />
 <feBlend in2="SourceGraphic" in="fbSourceGraphic" mode="normal" result="result5" />
 </filter>
-<filter id="f128" y="-0.25" height="1.5" inkscape:menu-tooltip="Darkens the edge with an inner blur and adds a flexible glow" inkscape:menu="Shadows and Glows" inkscape:label="Dark And Glow" style="color-interpolation-filters:sRGB;">
+<filter id="f128" y="-0.25" height="1.5" inkscape:menu-tooltip="Darkens the edge with an inner blur and adds a flexible glow" inkscape:menu="Shadows and Glows" inkscape:label="Dark and Glow" style="color-interpolation-filters:sRGB;">
 <feGaussianBlur stdDeviation="5" result="result6" id="feGaussianBlur2933" />
 <feComposite result="result8" in="SourceGraphic" operator="atop" in2="result6" />
 <feComposite result="result9" operator="over" in2="SourceAlpha" in="result8" />
@@ -1760,7 +1760,7 @@ sodipodi:docname="filters.svg">
 <feColorMatrix type="saturate" values="1" />
 <feColorMatrix type="matrix" values="2 -1 0 0 0 0 2 -1 0 0 -1 0 2 0 0 0 0 0 1 0 " />
 </filter>
-<filter id="f171" inkscape:label="Pixellize" inkscape:menu="Pixel tools" inkscape:menu-tooltip="Reduce or remove antialiasing around shapes" style="color-interpolation-filters:sRGB;">
+<filter id="f171" inkscape:label="Pixellize" inkscape:menu="Pixel Tools" inkscape:menu-tooltip="Reduce or remove antialiasing around shapes" style="color-interpolation-filters:sRGB;">
 <feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1000 -500 " />
 </filter>
 <!-- empty filter
@@ -2199,7 +2199,7 @@ sodipodi:docname="filters.svg">
 </feMerge>
 <feComposite in2="SourceGraphic" operator="in" result="result11" />
 </filter>
-<filter id="f217" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non realistic 3D shaders" inkscape:menu-tooltip="Aluminium effect with sharp brushed reflections" inkscape:label="Aluminium" style="color-interpolation-filters:sRGB">
+<filter id="f217" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non-realistic 3D Shaders" inkscape:menu-tooltip="Aluminium effect with sharp brushed reflections" inkscape:label="Aluminium" style="color-interpolation-filters:sRGB">
 <feGaussianBlur result="result8" stdDeviation="5" in="SourceGraphic" />
 <feComposite operator="xor" in2="SourceGraphic" result="result22" />
 <feComposite k2="1" operator="arithmetic" result="result20" in2="result22" in="result22" />
@@ -2211,7 +2211,7 @@ sodipodi:docname="filters.svg">
 <feComposite in2="SourceGraphic" operator="in" result="result18" />
 <feComposite result="result19" in2="SourceGraphic" operator="in" in="result18" />
 </filter>
-<filter id="f218" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non realistic 3D shaders" inkscape:menu-tooltip="Comics cartoon drawing effect" inkscape:label="Comics" style="color-interpolation-filters:sRGB">
+<filter id="f218" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non-realistic 3D Shaders" inkscape:menu-tooltip="Comics cartoon drawing effect" inkscape:label="Comics" style="color-interpolation-filters:sRGB">
 <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="result8" />
 <feComposite in2="result8" operator="xor" result="result19" />
 <feComposite k2="1" operator="arithmetic" result="result17" in2="result8" />
@@ -2222,7 +2222,7 @@ sodipodi:docname="filters.svg">
 <feComposite in2="SourceGraphic" operator="in" result="result15" />
 <feComposite result="result16" in2="SourceGraphic" operator="in" in="result15" />
 </filter>
-<filter id="f219" inkscape:label="Comics Draft" inkscape:menu-tooltip="Draft painted cartoon shading with a glassy look" inkscape:menu="Non realistic 3D shaders" height="1.5" y="-0.25" width="1.5" x="-0.25" style="color-interpolation-filters:sRGB">
+<filter id="f219" inkscape:label="Comics Draft" inkscape:menu-tooltip="Draft painted cartoon shading with a glassy look" inkscape:menu="Non-realistic 3D Shaders" height="1.5" y="-0.25" width="1.5" x="-0.25" style="color-interpolation-filters:sRGB">
 <feGaussianBlur stdDeviation="5" result="result8" in="SourceGraphic" />
 <feComposite in2="result8" operator="xor" />
 <feComposite k2="1" operator="arithmetic" result="result16" in2="result8" />
@@ -2234,7 +2234,7 @@ sodipodi:docname="filters.svg">
 <feComposite in2="SourceGraphic" operator="in" result="result14" />
 <feComposite result="result15" in2="SourceGraphic" operator="in" in="result14" />
 </filter>
-<filter id="f220" inkscape:label="Comics Fading" inkscape:menu-tooltip="Cartoon paint style with some fading at the edges" inkscape:menu="Non realistic 3D shaders" height="1.5" y="-0.25" width="1.5" x="-0.25" style="color-interpolation-filters:sRGB">
+<filter id="f220" inkscape:label="Comics Fading" inkscape:menu-tooltip="Cartoon paint style with some fading at the edges" inkscape:menu="Non-realistic 3D Shaders" height="1.5" y="-0.25" width="1.5" x="-0.25" style="color-interpolation-filters:sRGB">
 <feGaussianBlur stdDeviation="5" result="result8" in="SourceGraphic" />
 <feComposite operator="xor" result="result18" in2="result8" />
 <feComposite k2="1" operator="arithmetic" result="result16" in2="result18" in="result8" />
@@ -2245,7 +2245,7 @@ sodipodi:docname="filters.svg">
 <feComposite in2="SourceGraphic" operator="in" result="result14" />
 <feComposite result="result15" in2="SourceGraphic" operator="in" in="result14" />
 </filter>
-<filter id="f221" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non realistic 3D shaders" inkscape:menu-tooltip="Satiny metal surface effect" inkscape:label="Brushed Metal" style="color-interpolation-filters:sRGB">
+<filter id="f221" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non-realistic 3D Shaders" inkscape:menu-tooltip="Satiny metal surface effect" inkscape:label="Brushed Metal" style="color-interpolation-filters:sRGB">
 <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="result8" />
 <feComposite in2="result8" operator="xor" result="result19" />
 <feComposite k2="1" operator="arithmetic" result="result17" in2="result8" />
@@ -2256,7 +2256,7 @@ sodipodi:docname="filters.svg">
 <feComposite in2="SourceGraphic" operator="in" result="result15" />
 <feComposite result="result16" in2="SourceGraphic" operator="in" in="result15" />
 </filter>
-<filter id="f222" inkscape:label="Opaline" inkscape:menu-tooltip="Contouring version of smooth shader" inkscape:menu="Non realistic 3D shaders" height="1.5" y="-0.25" width="1.5" x="-0.25" style="color-interpolation-filters:sRGB">
+<filter id="f222" inkscape:label="Opaline" inkscape:menu-tooltip="Contouring version of smooth shader" inkscape:menu="Non-realistic 3D Shaders" height="1.5" y="-0.25" width="1.5" x="-0.25" style="color-interpolation-filters:sRGB">
 <feGaussianBlur stdDeviation="5" result="result8" in="SourceGraphic" />
 <feComposite in2="result8" operator="xor" />
 <feComposite k2="1" operator="arithmetic" result="result16" in2="result8" />
@@ -2268,7 +2268,7 @@ sodipodi:docname="filters.svg">
 <feComposite in2="SourceGraphic" operator="in" result="result14" />
 <feComposite result="result15" in2="SourceGraphic" operator="in" in="result14" />
 </filter>
-<filter id="f223" inkscape:label="Chrome" inkscape:menu-tooltip="Bright chrome effect" inkscape:menu="Non realistic 3D shaders" height="1.5" y="-0.25" width="1.5" x="-0.25" style="color-interpolation-filters:sRGB">
+<filter id="f223" inkscape:label="Chrome" inkscape:menu-tooltip="Bright chrome effect" inkscape:menu="Non-realistic 3D Shaders" height="1.5" y="-0.25" width="1.5" x="-0.25" style="color-interpolation-filters:sRGB">
 <feGaussianBlur stdDeviation="5" result="result8" in="SourceGraphic" />
 <feComposite in2="result8" operator="xor" />
 <feComposite k2="1" operator="arithmetic" result="result17" in2="result8" />
@@ -2279,7 +2279,7 @@ sodipodi:docname="filters.svg">
 <feComposite in2="SourceGraphic" operator="in" result="result15" />
 <feComposite result="result16" in2="SourceGraphic" operator="in" in="result15" />
 </filter>
-<filter id="f224" style="color-interpolation-filters:sRGB" inkscape:label="Deep Chrome" inkscape:menu-tooltip="Dark chrome effect" inkscape:menu="Non realistic 3D shaders" height="1.5" y="-0.25" width="1.5" x="-0.25">
+<filter id="f224" style="color-interpolation-filters:sRGB" inkscape:label="Deep Chrome" inkscape:menu-tooltip="Dark chrome effect" inkscape:menu="Non-realistic 3D Shaders" height="1.5" y="-0.25" width="1.5" x="-0.25">
 <feGaussianBlur result="result8" stdDeviation="5" in="SourceGraphic" />
 <feComposite result="result19" operator="xor" in2="result8" />
 <feComposite in2="result8" result="result17" operator="arithmetic" k2="1" />
@@ -2290,7 +2290,7 @@ sodipodi:docname="filters.svg">
 <feComposite result="result15" operator="in" in2="SourceGraphic" />
 <feComposite in="result15" operator="in" in2="SourceGraphic" result="result16" />
 </filter>
-<filter id="f225" style="color-interpolation-filters:sRGB" inkscape:label="Emboss Shader" inkscape:menu-tooltip="Combination of satiny and emboss effect" inkscape:menu="Non realistic 3D shaders" height="1.5" y="-0.25" width="1.5" x="-0.25">
+<filter id="f225" style="color-interpolation-filters:sRGB" inkscape:label="Emboss Shader" inkscape:menu-tooltip="Combination of satiny and emboss effect" inkscape:menu="Non-realistic 3D Shaders" height="1.5" y="-0.25" width="1.5" x="-0.25">
 <feGaussianBlur result="result8" stdDeviation="5" in="SourceGraphic" />
 <feComposite result="result19" operator="xor" in2="result8" />
 <feComposite in2="result8" result="result17" operator="arithmetic" k2="1" />
@@ -2301,7 +2301,7 @@ sodipodi:docname="filters.svg">
 <feComposite result="result15" operator="in" in2="fbSourceGraphic" />
 <feComposite in="result15" operator="in" in2="result8" result="result16" />
 </filter>
-<filter id="f226" style="color-interpolation-filters:sRGB" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non realistic 3D shaders" inkscape:menu-tooltip="Chrome effect with darkened edges" inkscape:label="Sharp Metal">
+<filter id="f226" style="color-interpolation-filters:sRGB" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non-realistic 3D Shaders" inkscape:menu-tooltip="Chrome effect with darkened edges" inkscape:label="Sharp Metal">
 <feGaussianBlur id="feGaussianBlur929" result="result8" stdDeviation="5" in="SourceGraphic" />
 <feComposite in="result8" result="result19" in2="result8" operator="xor" />
 <feComposite k2="1" operator="arithmetic" result="result17" in2="result8" />
@@ -2313,7 +2313,7 @@ sodipodi:docname="filters.svg">
 <feComposite in2="result19" operator="over" result="result15" />
 <feComposite result="result16" in2="SourceGraphic" operator="in" in="result15" />
 </filter>
-<filter id="f227" style="color-interpolation-filters:sRGB" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non realistic 3D shaders" inkscape:menu-tooltip="Draft painted cartoon shading with a glassy look" inkscape:label="Brush Draw">
+<filter id="f227" style="color-interpolation-filters:sRGB" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non-realistic 3D Shaders" inkscape:menu-tooltip="Draft painted cartoon shading with a glassy look" inkscape:label="Brush Draw">
 <feGaussianBlur in="SourceGraphic" result="result8" stdDeviation="5" />
 <feComposite operator="xor" in2="result8" />
 <feComposite in2="result8" result="result16" operator="arithmetic" k2="1" />
@@ -2325,7 +2325,7 @@ sodipodi:docname="filters.svg">
 <feComposite result="result14" operator="over" in2="fbSourceGraphic" />
 <feComposite in="result14" operator="in" in2="result2" result="result15" />
 </filter>
-<filter id="f228" style="color-interpolation-filters:sRGB" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non realistic 3D shaders" inkscape:menu-tooltip="Embossed chrome effect" inkscape:label="Chrome Emboss">
+<filter id="f228" style="color-interpolation-filters:sRGB" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non-realistic 3D Shaders" inkscape:menu-tooltip="Embossed chrome effect" inkscape:label="Chrome Emboss">
 <feGaussianBlur in="SourceGraphic" result="result8" stdDeviation="5" />
 <feComposite result="result18" operator="xor" in2="result8" />
 <feComposite in2="result18" result="result16" operator="arithmetic" k1="1" k3="0.5" />
@@ -2337,7 +2337,7 @@ sodipodi:docname="filters.svg">
 <feComposite result="result14" operator="over" in2="fbSourceGraphic" />
 <feComposite in="result14" operator="in" in2="result2" result="result15" />
 </filter>
-<filter id="f229" style="color-interpolation-filters:sRGB" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non realistic 3D shaders" inkscape:menu-tooltip="Satiny and embossed contour effect" inkscape:label="Contour Emboss">
+<filter id="f229" style="color-interpolation-filters:sRGB" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non-realistic 3D Shaders" inkscape:menu-tooltip="Satiny and embossed contour effect" inkscape:label="Contour Emboss">
 <feGaussianBlur in="SourceGraphic" result="result8" stdDeviation="5" />
 <feComposite result="result18" operator="xor" in2="result8" in="result8" />
 <feComposite in2="result8" id="feComposite311" result="result16" operator="arithmetic" k2="0.5" k1="1" in="result18" />
@@ -2349,7 +2349,7 @@ sodipodi:docname="filters.svg">
 <feComposite result="result14" operator="over" in2="fbSourceGraphic" in="fbSourceGraphic" />
 <feComposite in="result14" operator="in" in2="result17" result="result15" />
 </filter>
-<filter id="f230" style="color-interpolation-filters:sRGB" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non realistic 3D shaders" inkscape:menu-tooltip="Unrealistic reflections with sharp edges" inkscape:label="Sharp Deco">
+<filter id="f230" style="color-interpolation-filters:sRGB" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non-realistic 3D Shaders" inkscape:menu-tooltip="Unrealistic reflections with sharp edges" inkscape:label="Sharp Deco">
 <feGaussianBlur result="result8" stdDeviation="5" in="SourceGraphic" />
 <feComposite in="SourceGraphic" result="result19" in2="result8" operator="out" />
 <feComposite k2="1" operator="arithmetic" result="result17" in2="result8" />
@@ -2361,7 +2361,7 @@ sodipodi:docname="filters.svg">
 <feComposite in2="result18" operator="xor" result="result15" />
 <feComposite result="result16" in2="SourceGraphic" operator="in" in="result15" />
 </filter>
-<filter id="f231" style="color-interpolation-filters:sRGB" inkscape:label="Deep Metal" inkscape:menu-tooltip="Deep and dark metal shading" inkscape:menu="Non realistic 3D shaders" height="1.5" y="-0.25" width="1.5" x="-0.25">
+<filter id="f231" style="color-interpolation-filters:sRGB" inkscape:label="Deep Metal" inkscape:menu-tooltip="Deep and dark metal shading" inkscape:menu="Non-realistic 3D Shaders" height="1.5" y="-0.25" width="1.5" x="-0.25">
 <feGaussianBlur result="result8" stdDeviation="5" in="SourceGraphic" />
 <feComposite result="result19" operator="xor" in2="result8" />
 <feComposite in2="result8" result="result17" operator="arithmetic" k2="1" />
@@ -2373,7 +2373,7 @@ sodipodi:docname="filters.svg">
 <feComposite result="result15" operator="xor" in2="SourceGraphic" in="fbSourceGraphic" />
 <feComposite in="result15" operator="in" in2="result8" result="result16" />
 </filter>
-<filter id="f232" inkscape:label="Aluminium Emboss" inkscape:menu-tooltip="Satiny aluminium effect with embossing" inkscape:menu="Non realistic 3D shaders" height="1.5" y="-0.25" width="1.5" x="-0.25" style="color-interpolation-filters:sRGB">
+<filter id="f232" inkscape:label="Aluminium Emboss" inkscape:menu-tooltip="Satiny aluminium effect with embossing" inkscape:menu="Non-realistic 3D Shaders" height="1.5" y="-0.25" width="1.5" x="-0.25" style="color-interpolation-filters:sRGB">
 <feGaussianBlur stdDeviation="5" result="result8" in="SourceGraphic" />
 <feComposite in2="result8" operator="xor" result="result18" />
 <feComposite k3="0.5" k1="1" operator="arithmetic" result="result16" in2="result18" />
@@ -2385,7 +2385,7 @@ sodipodi:docname="filters.svg">
 <feComposite in2="fbSourceGraphic" operator="xor" result="result14" />
 <feComposite result="result15" in2="result2" operator="in" in="result14" />
 </filter>
-<filter id="f233" inkscape:label="Refractive Glass" inkscape:menu-tooltip="Double reflection through glass with some refraction" inkscape:menu="Non realistic 3D shaders" height="1.5" y="-0.25" width="1.5" x="-0.25" style="color-interpolation-filters:sRGB">
+<filter id="f233" inkscape:label="Refractive Glass" inkscape:menu-tooltip="Double reflection through glass with some refraction" inkscape:menu="Non-realistic 3D Shaders" height="1.5" y="-0.25" width="1.5" x="-0.25" style="color-interpolation-filters:sRGB">
 <feGaussianBlur stdDeviation="5" result="result8" in="SourceGraphic" />
 <feComposite in="result8" in2="result8" operator="xor" result="result18" />
 <feComposite in="result8" k1="1" k2="0.5" operator="arithmetic" result="result16" in2="result18" />
@@ -2397,7 +2397,7 @@ sodipodi:docname="filters.svg">
 <feComposite in="fbSourceGraphic" in2="fbSourceGraphic" operator="over" result="result14" />
 <feComposite result="result15" in2="SourceGraphic" operator="in" in="result14" />
 </filter>
-<filter id="f234" style="color-interpolation-filters:sRGB" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non realistic 3D shaders" inkscape:menu-tooltip="Satiny glass effect" inkscape:label="Frosted Glass">
+<filter id="f234" style="color-interpolation-filters:sRGB" x="-0.25" width="1.5" y="-0.25" height="1.5" inkscape:menu="Non-realistic 3D Shaders" inkscape:menu-tooltip="Satiny glass effect" inkscape:label="Frosted Glass">
 <feGaussianBlur in="SourceGraphic" result="result8" stdDeviation="5" />
 <feComposite result="result18" operator="xor" in2="result8" in="SourceGraphic" />
 <feComposite in2="result18" result="result16" operator="arithmetic" k2="0.5" k1="1" in="result8" />
@@ -2543,7 +2543,7 @@ sodipodi:docname="filters.svg">
 <feColorMatrix result="result1" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 -1 1 0 " in="SourceGraphic" />
 <feBlend in2="result4" mode="multiply" result="result5" in="result1" />
 </filter>
-<filter id="filter581" inkscape:menu="Morphology" inkscape:menu-tooltip="Blurred multiple contours for objects" y="-0.2" x="-0.34" width="1.6" height="1.4" inkscape:label="Contouring table" style="color-interpolation-filters:sRGB">
+<filter id="filter581" inkscape:menu="Morphology" inkscape:menu-tooltip="Blurred multiple contours for objects" y="-0.2" x="-0.34" width="1.6" height="1.4" inkscape:label="Contouring Table" style="color-interpolation-filters:sRGB">
 <feFlood result="result2" flood-color="rgb(255,255,255)" />
 <feGaussianBlur result="result1" in="SourceAlpha" stdDeviation="17" />
 <feComposite in2="result1" result="result17" operator="in" />
@@ -2577,7 +2577,7 @@ sodipodi:docname="filters.svg">
 </feComponentTransfer>
 <feComposite in2="colormatrix" operator="in" />
 </filter>
-<filter id="filter672" inkscape:menu="Morphology" inkscape:menu-tooltip="Sharp multiple contour for objects" style="color-interpolation-filters:sRGB" inkscape:label="Contouring discrete" height="1.4" width="1.6" x="-0.34" y="-0.2">
+<filter id="filter672" inkscape:menu="Morphology" inkscape:menu-tooltip="Sharp multiple contour for objects" style="color-interpolation-filters:sRGB" inkscape:label="Contouring Discrete" height="1.4" width="1.6" x="-0.34" y="-0.2">
 <feFlood flood-color="rgb(255,255,255)" result="result2" />
 <feGaussianBlur stdDeviation="14" in="SourceAlpha" result="result1" />
 <feComposite in2="result1" operator="in" result="result17" />

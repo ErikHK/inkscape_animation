@@ -21,6 +21,7 @@
 #include "config.h"
 #endif
 
+#include <cmath>
 #include "trace/potrace/inkscape-potrace.h"
 #include <2geom/pathvector.h>
 #include <gdk/gdkkeysyms.h>
@@ -73,7 +74,6 @@ using Inkscape::DocumentUndo;
 using Inkscape::Display::ExtractARGB32;
 using Inkscape::Display::ExtractRGB32;
 using Inkscape::Display::AssembleARGB32;
-
 
 namespace Inkscape {
 namespace UI {
@@ -197,6 +197,21 @@ inline unsigned char * get_trace_pixel(guchar *trace_px, int x, int y, int width
 }
 
 /**
+ * \brief Check whether two unsigned integers are close to each other
+ *
+ * \param[in] a The 1st unsigned int
+ * \param[in] b The 2nd unsigned int
+ * \param[in] d The threshold for comparison
+ *
+ * \return true if |a-b| <= d; false otherwise
+ */
+static bool compare_guint32(guint32 const a, guint32 const b, guint32 const d)
+{
+    const int difference = std::abs(static_cast<int>(a) - static_cast<int>(b));
+    return difference <= d;
+}
+
+/**
  * Compare a pixel in a pixel buffer with another pixel to determine if a point should be included in the fill operation.
  * @param check The pixel in the pixel buffer to check.
  * @param orig The original selected pixel to use as the fill target color.
@@ -207,7 +222,6 @@ inline unsigned char * get_trace_pixel(guchar *trace_px, int x, int y, int width
  */
 static bool compare_pixels(guint32 check, guint32 orig, guint32 merged_orig_pixel, guint32 dtc, int threshold, PaintBucketChannels method)
 {
-    int diff = 0;
     float hsl_check[3] = {0,0,0}, hsl_orig[3] = {0,0,0};
 
     guint32 ac = 0, rc = 0, gc = 0, bc = 0;
@@ -233,27 +247,35 @@ static bool compare_pixels(guint32 check, guint32 orig, guint32 merged_orig_pixe
     
     switch (method) {
         case FLOOD_CHANNELS_ALPHA:
-            return std::abs(static_cast<long long int>((ac) - ao)) <= threshold;
+            return compare_guint32(ac, ao, threshold);
         case FLOOD_CHANNELS_R:
-            return std::abs(static_cast<int>((ac ? unpremul_alpha(rc, ac) : 0) - (ao ? unpremul_alpha(ro, ao) : 0))) <= threshold;
+            return compare_guint32(ac ? unpremul_alpha(rc, ac) : 0,
+                                   ao ? unpremul_alpha(ro, ao) : 0,
+                                   threshold);
         case FLOOD_CHANNELS_G:
-            return std::abs(static_cast<int>((ac ? unpremul_alpha(gc, ac) : 0) - (ao ? unpremul_alpha(go, ao) : 0))) <= threshold;
+            return compare_guint32(ac ? unpremul_alpha(gc, ac) : 0,
+                                   ao ? unpremul_alpha(go, ao) : 0,
+                                   threshold);
         case FLOOD_CHANNELS_B:
-            return std::abs(static_cast<int>((ac ? unpremul_alpha(bc, ac) : 0) - (ao ? unpremul_alpha(bo, ao) : 0))) <= threshold;
+            return compare_guint32(ac ? unpremul_alpha(bc, ac) : 0,
+                                   ao ? unpremul_alpha(bo, ao) : 0,
+                                   threshold);
         case FLOOD_CHANNELS_RGB:
-            guint32 amc, rmc, bmc, gmc;
-            //amc = 255*255 - (255-ac)*(255-ad); amc = (amc + 127) / 255;
-            //amc = (255-ac)*ad + 255*ac; amc = (amc + 127) / 255;
-            amc = 255; // Why are we looking at desktop? Cairo version ignores destop alpha
-            rmc = (255-ac)*rd + 255*rc; rmc = (rmc + 127) / 255;
-            gmc = (255-ac)*gd + 255*gc; gmc = (gmc + 127) / 255;
-            bmc = (255-ac)*bd + 255*bc; bmc = (bmc + 127) / 255;
+            {
+                guint32 amc, rmc, bmc, gmc;
+                //amc = 255*255 - (255-ac)*(255-ad); amc = (amc + 127) / 255;
+                //amc = (255-ac)*ad + 255*ac; amc = (amc + 127) / 255;
+                amc = 255; // Why are we looking at desktop? Cairo version ignores destop alpha
+                rmc = (255-ac)*rd + 255*rc; rmc = (rmc + 127) / 255;
+                gmc = (255-ac)*gd + 255*gc; gmc = (gmc + 127) / 255;
+                bmc = (255-ac)*bd + 255*bc; bmc = (bmc + 127) / 255;
 
-            diff += std::abs(static_cast<int>((amc ? unpremul_alpha(rmc, amc) : 0) - (amop ? unpremul_alpha(rmop, amop) : 0)));
-            diff += std::abs(static_cast<int>((amc ? unpremul_alpha(gmc, amc) : 0) - (amop ? unpremul_alpha(gmop, amop) : 0)));
-            diff += std::abs(static_cast<int>((amc ? unpremul_alpha(bmc, amc) : 0) - (amop ? unpremul_alpha(bmop, amop) : 0)));
-            return ((diff / 3) <= ((threshold * 3) / 4));
-        
+                int diff = 0; // The total difference between each of the 3 color components
+                diff += std::abs(static_cast<int>(amc ? unpremul_alpha(rmc, amc) : 0) - static_cast<int>(amop ? unpremul_alpha(rmop, amop) : 0));
+                diff += std::abs(static_cast<int>(amc ? unpremul_alpha(gmc, amc) : 0) - static_cast<int>(amop ? unpremul_alpha(gmop, amop) : 0));
+                diff += std::abs(static_cast<int>(amc ? unpremul_alpha(bmc, amc) : 0) - static_cast<int>(amop ? unpremul_alpha(bmop, amop) : 0));
+                return ((diff / 3) <= ((threshold * 3) / 4));
+            }
         case FLOOD_CHANNELS_H:
             return ((int)(fabs(hsl_check[0] - hsl_orig[0]) * 100.0) <= threshold);
         case FLOOD_CHANNELS_S:
@@ -1125,8 +1147,8 @@ bool FloodTool::root_handler(GdkEvent* event) {
     case GDK_MOTION_NOTIFY:
         if ( dragging && ( event->motion.state & GDK_BUTTON1_MASK ) && !this->space_panning) {
             if ( this->within_tolerance
-                 && ( std::abs( (gint) event->motion.x - this->xp ) < this->tolerance )
-                 && ( std::abs( (gint) event->motion.y - this->yp ) < this->tolerance ) ) {
+                 && ( abs( (gint) event->motion.x - this->xp ) < this->tolerance )
+                 && ( abs( (gint) event->motion.y - this->yp ) < this->tolerance ) ) {
                 break; // do not drag if we're within tolerance from origin
             }
             
@@ -1177,7 +1199,7 @@ bool FloodTool::root_handler(GdkEvent* event) {
         }
         break;
     case GDK_KEY_PRESS:
-        switch (get_group0_keyval (&event->key)) {
+        switch (get_latin_keyval (&event->key)) {
         case GDK_KEY_Up:
         case GDK_KEY_Down:
         case GDK_KEY_KP_Up:

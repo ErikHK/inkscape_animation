@@ -877,18 +877,24 @@ CairoRenderContext::_finishSurfaceSetup(cairo_surface_t *surface, cairo_matrix_t
 }
 
 bool
-CairoRenderContext::finish(void)
+CairoRenderContext::finish(bool finish_surface)
 {
     g_assert( _is_valid );
 
-    if (_vector_based_target)
+    if (_vector_based_target && finish_surface)
         cairo_show_page(_cr);
 
+    cairo_status_t status = cairo_status(_cr);
+    if (status != CAIRO_STATUS_SUCCESS)
+        g_critical("error while rendering output: %s", cairo_status_to_string(status));
+
     cairo_destroy(_cr);
-    cairo_surface_finish(_surface);
-    cairo_status_t status = cairo_surface_status(_surface);
-    cairo_surface_destroy(_surface);
     _cr = NULL;
+    
+    if (finish_surface)
+        cairo_surface_finish(_surface);
+    status = cairo_surface_status(_surface);
+    cairo_surface_destroy(_surface);
     _surface = NULL;
 
     if (_layout)
@@ -1435,9 +1441,40 @@ CairoRenderContext::_prepareRenderGraphic()
 {
     // Only PDFLaTeX supports importing a single page of a graphics file,
     // so only PDF backend gets interleaved text/graphics
-    if (_is_omittext && _target == CAIRO_SURFACE_TYPE_PDF) {
-        if (_omittext_state == NEW_PAGE_ON_GRAPHIC)
+    if (_is_omittext && _target == CAIRO_SURFACE_TYPE_PDF && _render_mode != RENDER_MODE_CLIP) {
+        if (_omittext_state == NEW_PAGE_ON_GRAPHIC) {
+            // better set this immediately (not sure if masks applied during "popLayer" could call
+            // this function, too, triggering the same code again in error
+            _omittext_state = GRAPHIC_ON_TOP;
+
+            // As we can not emit the page in the middle of a layer (aka group) - it will not be fully painted yet! -
+            // the following basically mirrors the calls in CairoRenderer::renderItem (but in reversed order)
+            // - first traverse all saved states in reversed order (i.e. from deepest nesting to the top)
+            //   and apply clipping / masking to layers on the way (this is done in popLayer)
+            // - then emit the page using cairo_show_page()
+            // - finally restore the previous state with proper transforms and appropriate layers again
+            // 
+            // TODO: While this appears to be an ugly hack it seems to work
+            //       Somebody with a more intimate understanding of cairo and the renderer implementation might
+            //       be able to implement this in a cleaner way, though.
+            int stack_size = g_slist_length(_state_stack);
+            for (int i = 0; i < stack_size-1; i++) {
+                if (static_cast<CairoRenderState *>(g_slist_nth_data(_state_stack, i))->need_layer)
+                    popLayer();
+                cairo_restore(_cr);
+                _state = static_cast<CairoRenderState *>(g_slist_nth_data(_state_stack, i+1));
+            }
+
             cairo_show_page(_cr);
+
+            for (int i = stack_size-2; i >= 0; i--) {
+                cairo_save(_cr);
+                _state = static_cast<CairoRenderState *>(g_slist_nth_data(_state_stack, i));
+                if (_state->need_layer)
+                    pushLayer();
+                setTransform(_state->transform);
+            }
+        }
         _omittext_state = GRAPHIC_ON_TOP;
     }
 }
@@ -1581,13 +1618,13 @@ bool CairoRenderContext::renderImage(Inkscape::Pixbuf *pb,
         //      http://www.w3.org/TR/css4-images/#the-image-rendering
         //      style.h/style.cpp
         switch (style->image_rendering.computed) {
-            case SP_CSS_COLOR_RENDERING_AUTO:
-                // Do nothing
-                break;
-            case SP_CSS_COLOR_RENDERING_OPTIMIZEQUALITY:
+            case SP_CSS_IMAGE_RENDERING_AUTO:
+            case SP_CSS_IMAGE_RENDERING_OPTIMIZEQUALITY:
+            case SP_CSS_IMAGE_RENDERING_CRISPEDGES:
                 cairo_pattern_set_filter(cairo_get_source(_cr), CAIRO_FILTER_BEST );
                 break;
-            case SP_CSS_COLOR_RENDERING_OPTIMIZESPEED:
+            case SP_CSS_IMAGE_RENDERING_OPTIMIZESPEED:
+            case SP_CSS_IMAGE_RENDERING_PIXELATED:
             default:
                 cairo_pattern_set_filter(cairo_get_source(_cr), CAIRO_FILTER_NEAREST );
                 break;

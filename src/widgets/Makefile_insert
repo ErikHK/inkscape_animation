@@ -54,8 +54,6 @@ ink_common_sources +=	\
 	widgets/ink-action.h		\
 	widgets/ink-comboboxentry-action.cpp	\
 	widgets/ink-comboboxentry-action.h	\
-	widgets/keyframe-widget.cpp  \
-	widgets/keyframe-widget.h  \
 	widgets/lpe-toolbar.cpp	\
 	widgets/lpe-toolbar.h	   \
 	widgets/measure-toolbar.cpp	\

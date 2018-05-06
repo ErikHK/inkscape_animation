@@ -1951,6 +1951,9 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	next = NULL;
 	prev = NULL;
 	
+	
+	
+	
 	pMenu = new Gtk::Menu();
 	
 	Gtk::MenuItem *pItem3 = new Gtk::MenuItem("Insert keyframe");
@@ -2112,7 +2115,7 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 
 
 	signal_drag_drop().connect(sigc::mem_fun(*this, &KeyframeWidget::on_my_drag_drop));
-
+	
 }
 
 KeyframeWidget::~KeyframeWidget()

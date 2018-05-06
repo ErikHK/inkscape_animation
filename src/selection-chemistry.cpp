@@ -512,6 +512,8 @@ void sp_selection_duplicate(SPDesktop *desktop, bool suppressDone, bool duplicat
             const gchar *id = old_ids[i];
             SPObject *old_clone = doc->getObjectById(id);
             SPUse *use = dynamic_cast<SPUse *>(old_clone);
+            SPOffset *offset = dynamic_cast<SPOffset *>(old_clone);
+            SPText *text = dynamic_cast<SPText *>(old_clone);
             if (use) {
                 SPItem *orig = use->get_original();
                 if (!orig) // orphaned
@@ -525,14 +527,20 @@ void sp_selection_duplicate(SPDesktop *desktop, bool suppressDone, bool duplicat
                         new_clone->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
                     }
                 }
-            } else {
-                SPOffset *offset = dynamic_cast<SPOffset *>(old_clone);
-                if (offset) {
-                    for (guint j = 0; j < old_ids.size(); j++) {
-                        gchar *source_href = offset->sourceHref;
-                        if (source_href && source_href[0]=='#' && !strcmp(source_href+1, old_ids[j])) {
-                            doc->getObjectById(new_ids[i])->getRepr()->setAttribute("xlink:href", Glib::ustring("#") + new_ids[j]);
-                        }
+            } else if (offset) {
+                gchar *source_href = offset->sourceHref;
+                for (guint j = 0; j < old_ids.size(); j++) {
+                    if (source_href && source_href[0]=='#' && !strcmp(source_href+1, old_ids[j])) {
+                        doc->getObjectById(new_ids[i])->getRepr()->setAttribute("xlink:href", Glib::ustring("#") + new_ids[j]);
+                    }
+                }
+            } else if (text) {
+                SPTextPath *textpath = dynamic_cast<SPTextPath *>(text->firstChild());
+                if (!textpath) continue;
+                const gchar *source_href = sp_textpath_get_path_item(textpath)->getId();
+                for (guint j = 0; j < old_ids.size(); j++) {
+                    if (!strcmp(source_href, old_ids[j])) {
+                        doc->getObjectById(new_ids[i])->firstChild()->getRepr()->setAttribute("xlink:href", Glib::ustring("#") + new_ids[j]);
                     }
                 }
             }
@@ -1115,6 +1123,63 @@ void sp_selection_lower(Inkscape::Selection *selection, SPDesktop *desktop)
                        C_("Undo action", "Lower"));
 }
 
+void sp_selection_stack_down(Inkscape::Selection *selection, SPDesktop *desktop)
+{
+    SPDocument *document = selection->layers()->getDocument();
+    std::vector<SPItem*> selected = selection->itemList();
+
+    if (selected.empty()) {
+        selection_display_message(desktop, Inkscape::WARNING_MESSAGE, _("Select <b>object(s)</b> to stack down."));
+        return;
+    }
+
+    /* Construct direct-ordered list of selected children. */
+    std::vector<SPItem*> items(selected);
+    sort(items.begin(),items.end(),sp_item_repr_compare_position_bool);
+
+    for (std::vector<SPItem*>::const_iterator item=items.begin();item!=items.end();++item) {
+        SPItem *item_obj = *item;
+        if(!item_obj->lowerOne()) {
+            DocumentUndo::cancel(document);
+            selection_display_message(desktop, Inkscape::WARNING_MESSAGE, _("We hit bottom."));
+            return;
+        }
+    }
+
+    DocumentUndo::done(document, SP_VERB_SELECTION_STACK_DOWN,
+           //TRANSLATORS: "Lower" means "to lower an object" in the undo history
+           C_("Undo action", "stack down"));
+}
+
+void sp_selection_stack_up(Inkscape::Selection *selection, SPDesktop *desktop)
+{
+    SPDocument *document = selection->layers()->getDocument();
+    std::vector<SPItem*> selected = selection->itemList();
+
+    if (selected.empty()) {
+        selection_display_message(desktop, Inkscape::WARNING_MESSAGE, _("Select <b>object(s)</b> to stack up."));
+        return;
+    }
+
+    /* Construct direct-ordered list of selected children. */
+    std::vector<SPItem*> items(selected);
+    sort(items.begin(),items.end(),sp_item_repr_compare_position_bool);
+    bool cancel = false;
+
+    for (std::vector<SPItem*>::const_reverse_iterator item=items.rbegin();item!=items.rend();++item) {
+        SPItem *item_obj = *item;
+        if (!item_obj->raiseOne()) {
+            DocumentUndo::cancel(document);
+            selection_display_message(desktop, Inkscape::WARNING_MESSAGE, _("We hit top."));
+            return;
+        }
+    }
+
+    DocumentUndo::done(document, SP_VERB_SELECTION_STACK_UP,
+       //TRANSLATORS: "Lower" means "to lower an object" in the undo history
+       C_("Undo action", "stack up"));
+}
+
 void sp_selection_lower_to_bottom(Inkscape::Selection *selection, SPDesktop *desktop)
 {
     SPDocument *document = selection->layers()->getDocument();
@@ -1623,10 +1688,10 @@ void sp_selection_apply_affine(Inkscape::Selection *selection, Geom::Affine cons
             // the same (even though the output itself gets transformed)
             for ( SPObject *region = item->firstChild() ; region ; region = region->getNext() ) {
                 if (dynamic_cast<SPFlowregion *>(region) || dynamic_cast<SPFlowregionExclude *>(region)) {
-                    for ( SPObject *item = region->firstChild() ; item ; item = item->getNext() ) {
-                        SPUse *use = dynamic_cast<SPUse *>(item);
+                    for ( SPObject *obj = region->firstChild() ; obj ; obj = obj->getNext() ) {
+                        SPUse *use = dynamic_cast<SPUse *>(obj);
                         if ( use ) {
-                            use->doWriteTransform(use->getRepr(), use->transform.inverse(), NULL, compensate);
+                            use->doWriteTransform(use->getRepr(), item->transform.inverse(), NULL, compensate);
                         }
                     }
                 }
@@ -2855,7 +2920,7 @@ sp_select_clone_original(SPDesktop *desktop)
 /**
 * This creates a new path, applies the Original Path LPE, and has it refer to the selection.
 */
-void sp_selection_clone_original_path_lpe(SPDesktop *desktop)
+void sp_selection_clone_original_path_lpe(SPDesktop *desktop, bool allow_transforms)
 {
     if (desktop == NULL) {
         return;
@@ -2885,6 +2950,8 @@ void sp_selection_clone_original_path_lpe(SPDesktop *desktop)
         {
             lpe_repr->setAttribute("effect", "fill_between_many");
             lpe_repr->setAttribute("linkedpaths", os.str());
+            gchar const *allow_transforms_str = allow_transforms? "true" : "false";
+            lpe_repr->setAttribute("allow_transforms", allow_transforms_str);
             desktop->doc()->getDefs()->getRepr()->addChild(lpe_repr, NULL); // adds to <defs> and assigns the 'id' attribute
         }
         std::string lpe_id_href = std::string("#") + lpe_repr->attribute("id");
@@ -3175,8 +3242,11 @@ void sp_selection_symbol(SPDesktop *desktop, bool /*apply*/ )
     the_parent_repr->appendChild(clone);
 
     if( single_group && transform.isTranslation() ) {
-        if( !transform.isIdentity() )
-            clone->setAttribute("transform", sp_svg_transform_write( transform ));
+        if( !transform.isIdentity() ) {
+            gchar *c = sp_svg_transform_write( transform );
+            clone->setAttribute("transform", c);
+            g_free(c);
+        }
     }
 
     // Change selection to new <use> element.

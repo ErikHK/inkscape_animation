@@ -2078,7 +2078,7 @@ typedef struct {
 // Prototypes (_set first, then _get)
 char        *wmr_dup(const char *wmr);
 int          wmf_start(const char *name, uint32_t initsize, uint32_t chunksize, WMFTRACK **wt);
-int          wmf_free(WMFTRACK **wt);
+int          uwmf_free(WMFTRACK **wt);
 int          wmf_finish(WMFTRACK *wt);
 int          wmf_append(U_METARECORD *rec, WMFTRACK *wt, int freerec);
 int          wmf_header_append(U_METARECORD *rec,WMFTRACK *et, int freerec);

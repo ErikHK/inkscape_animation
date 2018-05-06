@@ -701,7 +701,7 @@ public:
         if (widg) {
             this->pack_start(*widg, false, false, 2);
             if (tooltip) {
-                widg->set_tooltip_text(_(tooltip));
+                widg->set_tooltip_text(tooltip);
             } else {
                 widg->set_tooltip_text("");
                 widg->set_has_tooltip(false);

@@ -104,7 +104,7 @@ bool URIReference::_acceptObject(SPObject *obj) const
 
 
 
-void URIReference::attach(const URI &uri) throw(BadURIException)
+void URIReference::attach(const URI &uri)
 {
     SPDocument *document = NULL;
 

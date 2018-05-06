@@ -2582,7 +2582,7 @@ void PdfParser::opShowSpaceText(Object args[], int /*numArgs*/)
   }
 }
 
-void PdfParser::doShowText(GooString *s) {
+void PdfParser::doShowText(const GooString *s) {
   GfxFont *font;
   int wMode;
   double riseX, riseY;
@@ -2601,7 +2601,7 @@ void PdfParser::doShowText(GooString *s) {
   font = state->getFont();
   wMode = font->getWMode();
 
-  builder->beginString(state, s);
+  builder->beginString(state);
 
   // handle a Type 3 char
   if (font->getType() == fontType3 && 0) {//out->interpretType3Chars()) {
@@ -2631,7 +2631,7 @@ void PdfParser::doShowText(GooString *s) {
     double lineX = state->getLineX();
     double lineY = state->getLineY();
     oldParser = parser;
-    p = s->getCString();
+    p = g_strdup(s->getCString());
     len = s->getLength();
     while (len > 0) {
       n = font->getNextChar(p, len, &code,
@@ -2686,7 +2686,7 @@ void PdfParser::doShowText(GooString *s) {
 
   } else {
     state->textTransformDelta(0, state->getRise(), &riseX, &riseY);
-    p = s->getCString();
+    p = g_strdup(s->getCString());
     len = s->getLength();
     while (len > 0) {
       n = font->getNextChar(p, len, &code,
@@ -2732,7 +2732,7 @@ void PdfParser::opXObject(Object args[], int /*numArgs*/)
 {
   Object obj1, obj2, obj3, refObj;
 
-  char *name = const_cast<char*> ( args[0].getName() );
+  char *name = g_strdup(args[0].getName());
 #if defined(POPPLER_NEW_OBJECT_API)
   if ((obj1 = res->lookupXObject(name)).isNull()) {
 #else

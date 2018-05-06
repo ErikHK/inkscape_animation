@@ -40,16 +40,17 @@ def directory(root, breadcrumb, level, exclude=[]):
 	files = [ f for f in os.listdir(root) if os.path.isfile(os.path.join(root,f)) and f not in exclude]
 	for file in files:
 		file_key = os.path.join(root, file)
+		file_key = file_key.replace('/', '\\')  # for usage from MSYS2 shell
 		_id = '_%06d' % (len(file_ids.keys()) + 1)
 		file_ids[file_key] = 'component' + _id
 		wxs.write(indent(level)+ "<Component Id='component" + _id + "' Guid='" + str(uuid.uuid4()) + "' DiskId='1' Win64='$(var.Win64)'>\n")
 		if file == 'inkscape.exe':
-			# we refenrence inkscape.exe in inkscape.wxs
+			# we reference inkscape.exe in inkscape.wxs
 			_id = '_inkscape_exe'
 		wxs.write(indent(level + 1)+ "<File Id='file" + _id + "' Name='" + file + "' DiskId='1' Source='" + file_key + "' KeyPath='yes' />\n")
 		wxs.write(indent(level)+ "</Component>\n")
-	# then all directories
 
+	# then all directories
 	dirs = [ f for f in os.listdir(root) if os.path.isdir(os.path.join(root,f)) ]
 	for dir in dirs:
 		directory_key = breadcrumb + '__' + dir
@@ -119,7 +120,8 @@ with open('files.wxs', 'w', encoding='utf-8') as wxs:
 	wxs.write(indent(2) + "</Directory>\n")
 
 	# Python
-	ComponentGroup("Python", 'inkscape\\python\\', 2)
+	ComponentGroup("Python", ['inkscape\\python\\','inkscape\\lib\\python2.7\\',
+	                          'inkscape\\libpython', 'inkscape\\python'], 2)
 	# translations and localized content
 	for lang_code in sorted(locales):
 		ComponentGroup("Translation_" + valid_id(lang_code), ['\\' + lang_code + '\\',
@@ -128,7 +130,7 @@ with open('files.wxs', 'w', encoding='utf-8') as wxs:
 	ComponentGroup("Extensions", 'inkscape\\share\\extensions\\', 2)
 	ComponentGroup("Examples", 'inkscape\\share\\examples\\', 2)
 	ComponentGroup("Tutorials", 'inkscape\\share\\tutorials\\', 2)
-	ComponentGroup("Dictionaries", 'inkscape\\lib\\aspell-0.60\\', 2)
+	ComponentGroup("Dictionaries", ['inkscape\\lib\\aspell-0.60\\', 'inkscape\\lib\\enchant\\'], 2)
 	# everything that is left (which should be the Inkscape core unless inkscape_dist_dir contains unnecessary files or we defined our components poorly)
 	ComponentGroup("AllOther", '', 2)
 

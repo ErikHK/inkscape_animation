@@ -7,7 +7,7 @@ if(WIN32)
   endif()
   
   set(INKSCAPE_LIBDIR "\\\\lib")
-  set(INKSCAPE_DATADIR "") # can be set via the evironment variable INKSCAPE_DATADIR at runtime
+  set(INKSCAPE_DATADIR "")
   
   set(PACKAGE_LOCALE_DIR "\\\\share\\\\locale")
   

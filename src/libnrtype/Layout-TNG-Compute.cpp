@@ -259,8 +259,7 @@ static void dumpUnbrokenSpans(ParagraphInfo *para){
                                UnbrokenSpanPosition const &start_span_pos,
                                ScanlineMaker::ScanRun const &scan_run,
                                std::vector<ChunkInfo> *chunk_info,
-                               FontMetrics *line_height,
-                               FontMetrics const *strut_height) const;
+                               FontMetrics *line_height) const;
 
     /** computes the width of a single UnbrokenSpan (pointed to by span->start.iter_span)
     and outputs its vital statistics into the other fields of \a span.
@@ -715,7 +714,7 @@ static void dumpUnbrokenSpans(ParagraphInfo *para){
                         new_glyph.y =_y_offset;
 
                         // y-coordinate is flipped between vertical and horizontal text... delta_y is common offset but applied with opposite sign
-                        double delta_y = unbroken_span_glyph_info->geometry.y_offset * font_size_multiplier + unbroken_span.baseline_shift;
+                        double delta_y = unbroken_span_glyph_info->geometry.y_offset * font_size_multiplier - unbroken_span.baseline_shift;
                         SPCSSBaseline dominant_baseline = _flow._blockBaseline();
 
                         if (_block_progression == LEFT_TO_RIGHT || _block_progression == RIGHT_TO_LEFT) {
@@ -728,7 +727,7 @@ static void dumpUnbrokenSpans(ParagraphInfo *para){
                                 if( dominant_baseline == SP_CSS_BASELINE_AUTO ) dominant_baseline = SP_CSS_BASELINE_ALPHABETIC;
                             }
 
-                            new_glyph.y += delta_y;
+                            new_glyph.y -= delta_y;
 
                             // TODO: Should also check 'glyph_orientation_vertical' if 'text-orientation' is unset...
                             if( new_span.text_orientation == SP_CSS_TEXT_ORIENTATION_SIDEWAYS ||
@@ -762,7 +761,7 @@ static void dumpUnbrokenSpans(ParagraphInfo *para){
 
                             if( dominant_baseline == SP_CSS_BASELINE_AUTO ) dominant_baseline = SP_CSS_BASELINE_ALPHABETIC;
 
-                            new_glyph.y -= delta_y;
+                            new_glyph.y += delta_y;
                             new_glyph.y += new_span.font_size * para.pango_items[unbroken_span.pango_item_index].font->GetBaselines()[ dominant_baseline ];
                             
                             new_glyph.width = unbroken_span_glyph_info->geometry.width * font_size_multiplier;
@@ -779,12 +778,7 @@ static void dumpUnbrokenSpans(ParagraphInfo *para){
                             for (unsigned rtl_index = glyph_index; rtl_index < it_span->end_glyph_index ; rtl_index++) {
                                 if (unbroken_span.glyph_string->glyphs[rtl_index].attr.is_cluster_start && rtl_index != glyph_index)
                                     break;
-                                if (_block_progression == LEFT_TO_RIGHT || _block_progression == RIGHT_TO_LEFT)
-                                    // Vertical text
-                                    cluster_width += new_span.font_size * para.pango_items[unbroken_span.pango_item_index].font->Advance(unbroken_span.glyph_string->glyphs[rtl_index].glyph, true);
-                                else
-                                    // Horizontal text
-                                    cluster_width += font_size_multiplier * unbroken_span.glyph_string->glyphs[rtl_index].geometry.width;
+                                cluster_width += font_size_multiplier * unbroken_span.glyph_string->glyphs[rtl_index].geometry.width;
                             }
                             new_glyph.x -= cluster_width;
                         }
@@ -1458,12 +1452,19 @@ bool Layout::Calculator::_findChunksForLine(ParagraphInfo const &para,
     TRACE(("    initial line_box_height (em size): %f\n", line_box_height->emSize() ));
 
     UnbrokenSpanPosition span_pos;
+    static int trys = 0;
     for( ; ; ) {
+        // Get regions where one can place one line of text (can be more than one, if filling a
+        // donut for example).
         std::vector<ScanlineMaker::ScanRun> scan_runs;
         scan_runs = _scanline_maker->makeScanline(*line_box_height); // Only one line with "InfiniteScanlineMaker
+
+        // If scan_runs is empty, we must have reached the bottom of a shape. Go to next shape.
         while (scan_runs.empty()) {
             // Only used by ShapeScanlineMaker
             if (!_goToNextWrapShape()) return false;  // no more shapes to wrap in to
+
+            *line_box_height = *strut_height;
             scan_runs = _scanline_maker->makeScanline(*line_box_height);
         }
 
@@ -1474,13 +1475,20 @@ bool Layout::Calculator::_findChunksForLine(ParagraphInfo const &para,
         unsigned scan_run_index;
         span_pos = *start_span_pos;
         for (scan_run_index = 0 ; scan_run_index < scan_runs.size() ; scan_run_index++) {
-            if (!_buildChunksInScanRun(para, span_pos, scan_runs[scan_run_index], chunk_info, line_box_height, strut_height))
+            // Returns false if some text in line requires a taller line_box_height.
+            // (We try again with a larger line_box_height.)
+            if (!_buildChunksInScanRun(para, span_pos, scan_runs[scan_run_index], chunk_info, line_box_height)) {
                 break;
+            }
+
             if (!chunk_info->empty() && !chunk_info->back().broken_spans.empty())
                 span_pos = chunk_info->back().broken_spans.back().end;
         }
+
         if (scan_run_index == scan_runs.size()) break;  // ie when buildChunksInScanRun() succeeded
-    }
+
+    } // End for loop
+
     *start_span_pos = span_pos;
     TRACE(("    final line_box_height: %f\n", line_box_height->emSize() ));
     TRACE(("  end _findChunksForLine: chunks: %lu\n", chunk_info->size()));
@@ -1505,10 +1513,11 @@ bool Layout::Calculator::_buildChunksInScanRun(ParagraphInfo const &para,
                                                UnbrokenSpanPosition const &start_span_pos,
                                                ScanlineMaker::ScanRun const &scan_run,
                                                std::vector<ChunkInfo> *chunk_info,
-                                               FontMetrics *line_height,
-                                               FontMetrics const *strut_height) const
+                                               FontMetrics *line_height) const
 {
     TRACE(("    begin _buildChunksInScanRun: chunks: %lu, em size: %f\n", chunk_info->size(), line_height->emSize() ));
+
+    FontMetrics line_height_saved = *line_height; // Store for recalculating line height if chunks are backed out
 
     ChunkInfo new_chunk;
     new_chunk.text_width = 0.0;
@@ -1554,6 +1563,8 @@ bool Layout::Calculator::_buildChunksInScanRun(ParagraphInfo const &para,
              new_span_height.descent > line_height->descent + std::numeric_limits<float>::epsilon() ) {
             // Take larger of each of the two ascents and two descents per CSS
             line_height->max(new_span_height);
+
+            // Currently always true for flowed text and false for Inkscape multiline text.
             if (!_scanline_maker->canExtendCurrentScanline(*line_height)) {
                 return false;
             }
@@ -1616,7 +1627,7 @@ bool Layout::Calculator::_buildChunksInScanRun(ParagraphInfo const &para,
     }
 
     // Recalculate line_box_height after backing out chunks
-    *line_height = *strut_height;
+    *line_height = line_height_saved;
     for (std::vector<ChunkInfo>::const_iterator it_chunk = chunk_info->begin() ; it_chunk != chunk_info->end() ; it_chunk++) {
         for (std::vector<BrokenSpan>::const_iterator it_span = it_chunk->broken_spans.begin() ; it_span != it_chunk->broken_spans.end() ; it_span++) {
             TRACE(("      brokenspan line_height: %f\n", it_span->start.iter_span->line_height.emSize() ));
@@ -1680,6 +1691,11 @@ bool Layout::Calculator::calculate()
     if( _block_progression == RIGHT_TO_LEFT || _block_progression == LEFT_TO_RIGHT ) {
         // Vertical text, CJK
         pango_context_set_base_gravity(_pango_context, PANGO_GRAVITY_EAST);
+
+        if( _flow._blockTextOrientation() == SP_CSS_TEXT_ORIENTATION_UPRIGHT ) {
+            pango_context_set_gravity_hint(_pango_context, PANGO_GRAVITY_HINT_STRONG);
+        }
+
     } else {
         // Horizontal text
         pango_context_set_base_gravity(_pango_context, PANGO_GRAVITY_AUTO);
@@ -1728,12 +1744,20 @@ bool Layout::Calculator::calculate()
         span_pos.char_byte = 0;
         span_pos.char_index = 0;
 
+        bool keep_going = true;
         do {   // for each line in the paragraph
             TRACE(("begin line\n"));
-            std::vector<ChunkInfo> line_chunk_info;
-            if (!_findChunksForLine(para, &span_pos, &line_chunk_info, &line_box_height, &strut_height ))
-                break;   // out of shapes to wrap in to
 
+            std::vector<ChunkInfo> line_chunk_info;
+            if (!_findChunksForLine(para, &span_pos, &line_chunk_info, &line_box_height, &strut_height )) {
+                keep_going = false;
+                break;   // out of shapes to wrap in to
+            }
+
+            if (line_box_height.emSize() < 0.001 && line_chunk_info.empty()) {
+                keep_going = false;
+                break;   // No room for text and not useful to try again at same place.
+            }
             _outputLine(para, line_box_height, line_chunk_info);
             _scanline_maker->setLineHeight( line_box_height );
             _scanline_maker->completeLine(); // Increments y by line height
@@ -1741,7 +1765,7 @@ bool Layout::Calculator::calculate()
         } while (span_pos.iter_span != para.unbroken_spans.end());
 
         TRACE(("para %lu end\n\n", _flow._paragraphs.size() - 1));
-        if (_scanline_maker != NULL) {
+        if (keep_going) {
             bool is_empty_para = _flow._characters.empty() || _flow._characters.back().line(&_flow).in_paragraph != _flow._paragraphs.size() - 1;
             if ((is_empty_para && para_end_input_index + 1 >= _flow._input_stream.size())
                 || para_end_input_index + 1 < _flow._input_stream.size()) {

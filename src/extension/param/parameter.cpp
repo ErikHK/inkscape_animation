@@ -76,6 +76,14 @@ Parameter *Parameter::make(Inkscape::XML::Node *in_repr, Inkscape::Extension::Ex
     const char *desc = in_repr->attribute("gui-description");
     if (desc == NULL) {
         desc = in_repr->attribute("_gui-description");
+        if (desc != NULL) {
+            const char *context = in_repr->attribute("msgctxt");
+            if (context != NULL) {
+                desc = g_dpgettext2(NULL, context, desc);
+            } else {
+                desc = _(desc);
+            }
+        }
     }
     bool gui_hidden = false;
     {

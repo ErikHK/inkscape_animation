@@ -388,7 +388,8 @@ Geom::PathVector PrintMetafile::center_ellipse_as_SVG_PathV(Geom::Point ctr, dou
     y2 = ctr[Y]  +  sin(F) * rx * cos(M_PI)   +   cos(F)  * ry * sin(M_PI);
 
     char text[256];
-    sprintf(text, " M %f,%f A %f %f %f 0 0 %f %f A %f %f %f 0 0 %f %f z", x1, y1,  rx, ry, F * 360. / (2.*M_PI), x2, y2,   rx, ry, F * 360. / (2.*M_PI), x1, y1);
+    sprintf(text, " M %f,%f A %f %f %f 0 0 %f %f A %f %f %f 0 0 %f %f z",
+            x1, y1,  rx, ry, F * 360. / (2.*M_PI), x2, y2,   rx, ry, F * 360. / (2.*M_PI), x1, y1);
     Geom::PathVector outres =  Geom::parse_svg_path(text);
     return outres;
 }

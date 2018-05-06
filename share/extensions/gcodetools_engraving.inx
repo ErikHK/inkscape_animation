@@ -13,7 +13,7 @@
 			<param name="engraving-newton-iterations" type="int" min="2" max="10" _gui-text="Accuracy factor (2 low to 10 high):">4</param>
 			<param name="engraving-draw-calculation-paths" type="boolean" _gui-text="Draw additional graphics to see engraving path">false</param>
 			
-			<_param name="help" type="description">
+			<_param name="help" type="description" xml:space="preserve">
 This function creates path to engrave letters or any shape with sharp angles.
 Cutter's depth as a function of radius is defined by the tool.
 Depth may be any Python expression. For instance:
@@ -61,7 +61,7 @@ ellipse.(minor axis r, major 4r).....: math.sqrt(max(0,r**2-w**2))*4</_param>
 		</page>
 
 		<page name='help' _gui-text='Help'>
-			<_param name="fullhelp" type="description">
+			<_param name="fullhelp" type="description" xml:space="preserve">
 Gcodetools plug-in: converts paths to Gcode (using circular interpolation), makes offset paths and engraves sharp corners using cone cutters. 
 This plug-in calculates Gcode for paths using circular interpolation or linear motion when needed.
 

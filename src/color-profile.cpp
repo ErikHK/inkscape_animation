@@ -790,7 +790,7 @@ std::vector<std::pair<Glib::ustring, bool> > ColorProfile::getBaseProfileDirs() 
 static bool isIccFile( gchar const *filepath )
 {
     bool isIccFile = false;
-    struct stat st;
+    GStatBuf st;
     if ( g_stat(filepath, &st) == 0 && (st.st_size > 128) ) {
         //0-3 == size
         //36-39 == 'acsp' 0x61637370

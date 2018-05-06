@@ -286,20 +286,25 @@ OSXVERSION="$(/usr/bin/sw_vers | grep ProductVersion | cut -f2)"
 OSXMINORVER="$(cut -d. -f 1,2 <<< $OSXVERSION)"
 OSXMINORNO="$(cut -d. -f2 <<< $OSXVERSION)"
 OSXPOINTNO="$(cut -d. -f3 <<< $OSXVERSION)"
-ARCH="$(uname -a | awk '{print $NF;}')"
+HOSTARCH="$(uname -a | awk '{print $NF;}')"
 
-# guess default build_arch (MacPorts)
-if [ "$OSXMINORNO" -ge "6" ]; then
-	if [ "$(sysctl -n hw.cpu64bit_capable 2>/dev/null)" = "1" ]; then
-		_build_arch="x86_64"
-	else
-		_build_arch="i386"
-	fi
+if [ "$ARCH" != "" ]; then
+	# explicit build_arch
+	_build_arch="$ARCH"
 else
-	if [ $ARCH = "powerpc" ]; then
-		_build_arch="ppc"
+	# guess default build_arch (MacPorts)
+	if [ "$OSXMINORNO" -ge "6" ]; then
+		if [ "$(sysctl -n hw.cpu64bit_capable 2>/dev/null)" = "1" ]; then
+			_build_arch="x86_64"
+		else
+			_build_arch="i386"
+		fi
 	else
-		_build_arch="i386"
+		if [ $HOSTARCH = "powerpc" ]; then
+			_build_arch="ppc"
+		else
+			_build_arch="i386"
+		fi
 	fi
 fi
 
@@ -424,6 +429,7 @@ $cp_cmd "$plist" "$package/Contents/Info.plist"
 if [ $_backend = "quartz" ]; then
 	/usr/libexec/PlistBuddy -x -c "Set :CGDisableCoalescedUpdates 1" "${package}/Contents/Info.plist"
 fi
+/usr/libexec/PlistBuddy -x -c "Set :LSMinimumSystemVersion $OSXMINORVER" "${package}/Contents/Info.plist"
 
 # Share files
 $rsync_cmd "$binary_dir/../share/$binary_name"/* "$pkgshare/$binary_name"
@@ -493,6 +499,9 @@ if [ ${add_python} = "true" ]; then
 		$cp_cmd -RL "$packages_path/uniconvertor" "$pkgpython"
 		# pySerial for HPGL plotting
 		$cp_cmd -RL "$packages_path/serial" "$pkgpython"
+		# scour and its dependency six
+		$cp_cmd -RL "$packages_path/scour" "$pkgpython"
+		$cp_cmd -RL "$packages_path/six.py" "$pkgpython"
 		# PyGTK (optional)
 		$cp_cmd -RL "$packages_path/cairo" "$pkgpython"
 		$cp_cmd -RL "$packages_path/glib" "$pkgpython"
@@ -856,6 +865,20 @@ else
 
 fi    
 
+# Patch files in app bundle
+#----------------------------------------------------------
+
+PATCH_FILE_DIR="app_patches"
+
+if [ -d "$PATCH_FILE_DIR" ]; then
+	echo "Applying patches in '$PATCH_FILE_DIR'"
+	for PATCH in ${PATCH_FILE_DIR}/*.patch; do
+		patch -d ${package} -p0 < $PATCH || {
+			echo "Patch failed!"
+			exit 1
+		}
+	done
+fi
 
 # All done.
 #----------------------------------------------------------

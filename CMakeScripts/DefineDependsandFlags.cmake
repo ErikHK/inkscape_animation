@@ -1,3 +1,4 @@
+
 set(INKSCAPE_LIBS "")
 set(INKSCAPE_INCS "")
 set(INKSCAPE_INCS_SYS "")
@@ -11,21 +12,6 @@ list(APPEND INKSCAPE_INCS ${PROJECT_SOURCE_DIR}
 )
 
 # ----------------------------------------------------------------------------
-# Add C++11 standard compliance
-# TODO: Add a proper check for compiler compliance here
-# ----------------------------------------------------------------------------
-list(APPEND INKSCAPE_CXX_FLAGS "-std=c++11")
-
-
-# Define the flags for profiling if desired:
-if(WITH_PROFILING)
-    set(BUILD_SHARED_LIBS off)
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
-endif()
-
-
-# ----------------------------------------------------------------------------
 # Files we include
 # ----------------------------------------------------------------------------
 if(WIN32)
@@ -36,9 +22,11 @@ if(WIN32)
 
 	list(APPEND INKSCAPE_CXX_FLAGS "-mwindows")
 	list(APPEND INKSCAPE_CXX_FLAGS "-mthreads")
-
-	list(APPEND INKSCAPE_LIBS "-lgomp")
-	list(APPEND INKSCAPE_LIBS "-lwinpthread")
+	
+	if(HAVE_MINGW_W64)
+		list(APPEND INKSCAPE_LIBS "-lgomp")
+		list(APPEND INKSCAPE_LIBS "-lwinpthread")
+	endif()
 	
 	if(HAVE_MINGW64)
 		list(APPEND INKSCAPE_CXX_FLAGS "-m64")
@@ -71,25 +59,15 @@ else()
 
 endif()
 
-#if(WITH_GNOME_VFS)
-#    find_package(GnomeVFS2)
-#    if(GNOMEVFS2_FOUND)
-#	list(APPEND INKSCAPE_INCS_SYS ${GNOMEVFS2_INCLUDE_DIR})
-#	list(APPEND INKSCAPE_LIBS ${GNOMEVFS-2_LIBRARY})
-#    else()
-#	set(WITH_GNOME_VFS OFF)
-#    endif()
-#endif()
-
-if(WITH_JEMALLOC)
-    find_package(JeMalloc)
-    if (JEMALLOC_FOUND)
-        list(APPEND INKSCAPE_LIBS ${JEMALLOC_LIBRARIES})
+if(WITH_GNOME_VFS)
+    find_package(GnomeVFS2)
+    if(GNOMEVFS2_FOUND)
+	list(APPEND INKSCAPE_INCS_SYS ${GNOMEVFS2_INCLUDE_DIR})
+	list(APPEND INKSCAPE_LIBS ${GNOMEVFS-2_LIBRARY})
     else()
-        set(WITH_JEMALLOC OFF)
+	set(WITH_GNOME_VFS OFF)
     endif()
 endif()
-
 
 if(ENABLE_LCMS)
     find_package(LCMS2)
@@ -289,12 +267,11 @@ if("${WITH_GTK3_EXPERIMENTAL}")
         set (WITH_GTKMM_3_10 1)
     endif()
 
-    pkg_check_modules(GDL_2_31 gdl-1.0)
+    pkg_check_modules(GDL_3_6 gdl-3.0>=3.6)
 
-    if("${GDL_2_31_FOUND}")
+    if("${GDL_3_6_FOUND}")
         message("Using GDL 3.6 or higher")
-		add_definitions(-DWITH_GDL_2_31)
-        set (WITH_GDL_2_31 1)
+        set (WITH_GDL_3_6 1)
     endif()
 
     set(TRY_GTKSPELL )
@@ -317,20 +294,11 @@ if("${WITH_GTK3_EXPERIMENTAL}")
         ${GTKSPELL3_LIBRARIES}
     )
 else()
-pkg_check_modules(GDL_2_31 gdl-1.0)
-if("${GDL_2_31_FOUND}")
-        message("Using GDL 2.3 or higher")
-		add_definitions(-DWITH_GDL_2_31)
-        set (WITH_GDL_2_31 1)
-    endif()
-
-	set(WITH_EXT_GDL 1)
     pkg_check_modules(GTK REQUIRED
                      gtkmm-2.4>=2.24
                      gdkmm-2.4
                      gtk+-2.0
                      gdk-2.0
-					 gdl-1.0
                      )
     list(APPEND INKSCAPE_CXX_FLAGS ${GTK_CFLAGS_OTHER})
     pkg_check_modules(GTKSPELL2 gtkspell-2.0)
@@ -436,20 +404,6 @@ find_package(SigC++ REQUIRED)
 list(APPEND INKSCAPE_LIBS ${SIGC++_LDFLAGS})
 
 list(APPEND INKSCAPE_CXX_FLAGS ${SIGC++_CFLAGS_OTHER})
-
-if(WITH_YAML)
-    find_package(yaml)
-    if(YAML_FOUND)
-        set (WITH_YAML ON)
-        list(APPEND INKSCAPE_INCS_SYS ${YAML_INCLUDE_DIRS})
-        list(APPEND INKSCAPE_LIBS ${YAML_LIBRARIES})
-        add_definitions(-DWITH_YAML)
-    else(YAML_FOUND)
-        set(WITH_YAML OFF)
-        message(STATUS "Could not locate the yaml library headers: xverb feature will be disabled")
-    endif()
-endif()
-
 
 list(REMOVE_DUPLICATES INKSCAPE_CXX_FLAGS)
 foreach(flag ${INKSCAPE_CXX_FLAGS})

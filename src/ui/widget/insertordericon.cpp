@@ -31,14 +31,22 @@ InsertOrderIcon::InsertOrderIcon() :
 {
     
     property_mode() = Gtk::CELL_RENDERER_MODE_ACTIVATABLE;
-
-    gint width, height;
-    gtk_icon_size_lookup(GTK_ICON_SIZE_MENU, &width, &height);
-    phys=width;
-
+    phys = sp_icon_get_phys_size((int)Inkscape::ICON_SIZE_DECORATION);
     Glib::RefPtr<Gtk::IconTheme> icon_theme = Gtk::IconTheme::get_default();
-    _property_pixbuf_top = icon_theme->load_icon(_pixTopName, phys, (Gtk::IconLookupFlags)0);
-    _property_pixbuf_bottom = icon_theme->load_icon(_pixBottomName, phys, (Gtk::IconLookupFlags)0);
+
+    if (!icon_theme->has_icon(_pixTopName)) {
+        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixTopName.data()), Inkscape::ICON_SIZE_DECORATION );
+    }
+    if (!icon_theme->has_icon(_pixBottomName)) {
+        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixBottomName.data()), Inkscape::ICON_SIZE_DECORATION );
+    }
+
+    if (icon_theme->has_icon(_pixTopName)) {
+        _property_pixbuf_top = icon_theme->load_icon(_pixTopName, phys, (Gtk::IconLookupFlags)0);
+    }
+    if (icon_theme->has_icon(_pixBottomName)) {
+        _property_pixbuf_bottom = icon_theme->load_icon(_pixBottomName, phys, (Gtk::IconLookupFlags)0);
+    }
 
     property_pixbuf() = Glib::RefPtr<Gdk::Pixbuf>(0);
 }

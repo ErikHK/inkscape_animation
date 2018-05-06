@@ -3,18 +3,21 @@ if(WIN32)
     AUTHORS
     COPYING
     NEWS
-    README.md
+    README
     TRANSLATORS
-	GPL2.txt
-	GPL3.txt
-	LGPL2.1.txt
+    DESTINATION .)
+
+  install(FILES
+    GPL2.txt
+    GPL3.txt
+    LGPL2.1.txt
     DESTINATION .)
 
   install(DIRECTORY doc
     DESTINATION .)
 
   # mingw-w64 dlls
-  #   (use msys2checkdeps.py to list required libraries / check for missing or unused libraries)
+  #   (use msys2checkdeps.py to list required libraries / check for missing libraries)
   file(GLOB MINGW_LIBS
     ${MINGW_BIN}/LIBEAY32.dll
     ${MINGW_BIN}/SSLEAY32.dll
@@ -26,13 +29,11 @@ if(WIN32)
     ${MINGW_BIN}/libbrotlidec.dll
     ${MINGW_BIN}/libbz2-[0-9]*.dll
     ${MINGW_BIN}/libcairo-[0-9]*.dll
-    ${MINGW_BIN}/libcairo-gobject-[0-9]*.dll
     ${MINGW_BIN}/libcairomm-1.0-[0-9]*.dll
     ${MINGW_BIN}/libcdr-0.[0-9]*.dll
     ${MINGW_BIN}/libcroco-0.6-[0-9]*.dll
     ${MINGW_BIN}/libcurl-[0-9]*.dll
     ${MINGW_BIN}/libenchant.dll
-    ${MINGW_BIN}/libepoxy-[0-9]*.dll
     ${MINGW_BIN}/libexpat-[0-9]*.dll
     ${MINGW_BIN}/libexslt-[0-9]*.dll
     ${MINGW_BIN}/libffi-[0-9]*.dll
@@ -40,12 +41,11 @@ if(WIN32)
     ${MINGW_BIN}/libfontconfig-[0-9]*.dll
     ${MINGW_BIN}/libfreetype-[0-9]*.dll
     ${MINGW_BIN}/libfribidi-[0-9]*.dll
+    ${MINGW_BIN}/libgailutil-[0-9][0-9].dll
     ${MINGW_BIN}/libgc-[0-9]*.dll
     ${MINGW_BIN}/libgdk-win32-2.0-[0-9]*.dll
     ${MINGW_BIN}/libgdk_pixbuf-2.0-[0-9]*.dll
-	${MINGW_BIN}/libgdkmm-2.4-[0-9]*.dll
-	${MINGW_BIN}/libgdl-3-[0-9]*.dll
-	${MINGW_BIN}/libgdl-1-[0-9]*.dll
+    ${MINGW_BIN}/libgdkmm-2.4-[0-9]*.dll
     ${MINGW_BIN}/libgfortran-[0-9]*.dll
     ${MINGW_BIN}/libgio-2.0-[0-9]*.dll
     ${MINGW_BIN}/libgiomm-2.4-[0-9]*.dll
@@ -57,7 +57,7 @@ if(WIN32)
     ${MINGW_BIN}/libgraphite[0-9]*.dll
     ${MINGW_BIN}/libgsl-[0-9]*.dll
     ${MINGW_BIN}/libgslcblas-[0-9]*.dll
-	${MINGW_BIN}/libgtk-win32-2.0-[0-9]*.dll
+    ${MINGW_BIN}/libgtk-win32-2.0-[0-9]*.dll
     ${MINGW_BIN}/libgtkmm-2.4-[0-9]*.dll
     ${MINGW_BIN}/libgtkspell-[0-9]*.dll
     ${MINGW_BIN}/libharfbuzz-[0-9]*.dll
@@ -129,7 +129,6 @@ if(WIN32)
       DESTINATION .)
   endif()
 
-  
   # Setup application data directories, poppler files, locales, icons and themes
   file(MAKE_DIRECTORY
     data
@@ -137,7 +136,6 @@ if(WIN32)
     modules
     plugins)
 
-  
   # Install hicolor/index.theme to avoid bug 1635207
   install(FILES
     ${MINGW_PATH}/share/icons/hicolor/index.theme
@@ -145,13 +143,6 @@ if(WIN32)
 
   install(DIRECTORY ${MINGW_PATH}/share/themes/MS-Windows
     DESTINATION share/themes)
-	
-	
-	
-  install(DIRECTORY ${MINGW_PATH}/share/icons/Adwaita
-    DESTINATION share/icons)
-  install(CODE "execute_process(COMMAND gtk-update-icon-cache \${CMAKE_INSTALL_PREFIX}/share/icons/Adwaita)")
-
 
   # translations for libraries (we usually shouldn't need many)
   file(GLOB inkscape_translations RELATIVE ${CMAKE_SOURCE_DIR}/po/ ${CMAKE_SOURCE_DIR}/po/*.po)
@@ -167,10 +158,6 @@ if(WIN32)
   install(DIRECTORY ${MINGW_PATH}/share/poppler
     DESTINATION share)
 
-	
-  install(DIRECTORY ${MINGW_PATH}/share/glib-2.0/schemas
-    DESTINATION share/glib-2.0)
-	
   # fontconfig
   install(DIRECTORY ${MINGW_PATH}/etc/fonts
     DESTINATION etc
@@ -189,15 +176,15 @@ if(WIN32)
   install(DIRECTORY ${CMAKE_BINARY_DIR}/etc/fonts
     DESTINATION etc)
 
+  install(DIRECTORY ${MINGW_PATH}/etc/gtk-2.0
+    DESTINATION etc)
+
   # GTK 2.0
   install(DIRECTORY ${MINGW_LIB}/gtk-2.0
     DESTINATION lib
     FILES_MATCHING
     PATTERN "*.dll"
     PATTERN "*.cache")
-
-  install(DIRECTORY ${MINGW_PATH}/etc/gtk-2.0
-    DESTINATION etc)
 
   install(DIRECTORY ${MINGW_LIB}/gdk-pixbuf-2.0
     DESTINATION lib

@@ -47,7 +47,6 @@
 #include "../helper/action-context.h"
 #include "icon.h"
 #include "ink-action.h"
-#include "ink-toggle-action.h"
 #include "ink-comboboxentry-action.h"
 #include "../inkscape.h"
 #include "ui/interface.h"
@@ -124,12 +123,12 @@ enum BarId {
 static GtkWidget *sp_empty_toolbox_new(SPDesktop *desktop);
 
 
-GtkIconSize ToolboxFactory::prefToSize( Glib::ustring const &path, int base ) {
-    static GtkIconSize sizeChoices[] = {
-        GTK_ICON_SIZE_LARGE_TOOLBAR,
-        GTK_ICON_SIZE_SMALL_TOOLBAR,
-        GTK_ICON_SIZE_MENU,
-        GTK_ICON_SIZE_DIALOG
+Inkscape::IconSize ToolboxFactory::prefToSize( Glib::ustring const &path, int base ) {
+    static Inkscape::IconSize sizeChoices[] = {
+        Inkscape::ICON_SIZE_LARGE_TOOLBAR,
+        Inkscape::ICON_SIZE_SMALL_TOOLBAR,
+        Inkscape::ICON_SIZE_MENU,
+        Inkscape::ICON_SIZE_DIALOG
     };
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
     int index = prefs->getIntLimited( path, base, 0, G_N_ELEMENTS(sizeChoices) );
@@ -303,7 +302,6 @@ static gchar const * ui_descr =
 
         "  <toolbar name='TweakToolbar'>"
         "    <toolitem action='TweakWidthAction' />"
-        "    <separator />"
         "    <toolitem action='TweakForceAction' />"
         "    <toolitem action='TweakPressureAction' />"
         "    <separator />"
@@ -365,17 +363,16 @@ static gchar const * ui_descr =
 
         "  <toolbar name='MeasureToolbar'>"
         "    <toolitem action='MeasureFontSizeAction' />"
-        "    <separator />"
         "    <toolitem action='MeasurePrecisionAction' />"
-        "    <separator />"
         "    <toolitem action='MeasureScaleAction' />"
-        "    <separator />"
         "    <toolitem action='measure_units_label' />"
         "    <toolitem action='MeasureUnitsAction' />"
+        "    <separator />"
         "    <toolitem action='MeasureIgnore1stAndLast' />"
         "    <toolitem action='MeasureInBettween' />"
         "    <toolitem action='MeasureShowHidden' />"
         "    <toolitem action='MeasureAllLayers' />"
+        "    <separator />"
         "    <toolitem action='MeasureReverse' />"
         "    <toolitem action='MeasureToPhantom' />"
         "    <toolitem action='MeasureToGuides' />"
@@ -385,9 +382,7 @@ static gchar const * ui_descr =
         "  </toolbar>" 
 
         "  <toolbar name='StarToolbar'>"
-        "    <separator />"
         "    <toolitem action='StarStateAction' />"
-        "    <separator />"
         "    <toolitem action='FlatAction' />"
         "    <separator />"
         "    <toolitem action='MagnitudeAction' />"
@@ -412,10 +407,8 @@ static gchar const * ui_descr =
         "  <toolbar name='3DBoxToolbar'>"
         "    <toolitem action='3DBoxAngleXAction' />"
         "    <toolitem action='3DBoxVPXStateAction' />"
-        "    <separator />"
         "    <toolitem action='3DBoxAngleYAction' />"
         "    <toolitem action='3DBoxVPYStateAction' />"
-        "    <separator />"
         "    <toolitem action='3DBoxAngleZAction' />"
         "    <toolitem action='3DBoxVPZStateAction' />"
         "  </toolbar>"
@@ -471,6 +464,9 @@ static gchar const * ui_descr =
 
         "  <toolbar name='ArcToolbar'>"
         "    <toolitem action='ArcStateAction' />"
+        "    <toolitem action='ArcRadiusXAction' />"
+        "    <toolitem action='ArcRadiusYAction' />"
+        "    <toolitem action='ArcUnitsAction' />"
         "    <separator />"
         "    <toolitem action='ArcStartAction' />"
         "    <toolitem action='ArcEndAction' />"
@@ -484,7 +480,6 @@ static gchar const * ui_descr =
 #if HAVE_POTRACE
         "  <toolbar name='PaintbucketToolbar'>"
         "    <toolitem action='ChannelsAction' />"
-        "    <separator />"
         "    <toolitem action='ThresholdAction' />"
         "    <separator />"
         "    <toolitem action='OffsetAction' />"
@@ -530,6 +525,8 @@ static gchar const * ui_descr =
         "    <toolitem action='TextWritingModeAction' />"
         "    <separator />"
         "    <toolitem action='TextOrientationAction' />"
+        "    <separator />"
+        "    <toolitem action='TextDirectionAction' />"
         "  </toolbar>"
 
         "  <toolbar name='LPEToolToolbar'>"
@@ -594,6 +591,7 @@ static gchar const * ui_descr =
         "    <toolitem action='ConnectorAvoidAction' />"
         "    <toolitem action='ConnectorIgnoreAction' />"
         "    <toolitem action='ConnectorOrthogonalAction' />"
+        "    <separator />"
         "    <toolitem action='ConnectorCurvatureAction' />"
         "    <toolitem action='ConnectorSpacingAction' />"
         "    <toolitem action='ConnectorGraphAction' />"
@@ -618,7 +616,7 @@ static void update_aux_toolbox(SPDesktop *desktop, ToolBase *eventcontext, GtkWi
 static void setup_commands_toolbox(GtkWidget *toolbox, SPDesktop *desktop);
 static void update_commands_toolbox(SPDesktop *desktop, ToolBase *eventcontext, GtkWidget *toolbox);
 
-static GtkToolItem * sp_toolbox_button_item_new_from_verb_with_doubleclick( GtkWidget *t, GtkIconSize size, SPButtonType type,
+static GtkToolItem * sp_toolbox_button_item_new_from_verb_with_doubleclick( GtkWidget *t, Inkscape::IconSize size, SPButtonType type,
                                                                      Inkscape::Verb *verb, Inkscape::Verb *doubleclick_verb,
                                                                      Inkscape::UI::View::View *view);
 
@@ -676,9 +674,9 @@ VerbAction::~VerbAction()
 Gtk::Widget* VerbAction::create_menu_item_vfunc()
 {
 // First call in to get the icon rendered if present in SVG
-    //Gtk::Widget *widget = sp_icon_get_icon( property_stock_id().get_value().get_string(), GTK_ICON_SIZE_MENU );
-    //delete widget;
-    //widget = 0;
+    Gtk::Widget *widget = sp_icon_get_icon( property_stock_id().get_value().get_string(), Inkscape::ICON_SIZE_MENU );
+    delete widget;
+    widget = 0;
 
     Gtk::Widget* widg = Gtk::Action::create_menu_item_vfunc();
 //     g_message("create_menu_item_vfunc() = %p  for '%s'", widg, verb->get_id());
@@ -688,7 +686,7 @@ Gtk::Widget* VerbAction::create_menu_item_vfunc()
 Gtk::Widget* VerbAction::create_tool_item_vfunc()
 {
 //     Gtk::Widget* widg = Gtk::Action::create_tool_item_vfunc();
-    GtkIconSize toolboxSize = ToolboxFactory::prefToSize("/toolbox/tools/small");
+    Inkscape::IconSize toolboxSize = ToolboxFactory::prefToSize("/toolbox/tools/small");
     GtkWidget* toolbox = 0;
     GtkToolItem *button_toolitem = sp_toolbox_button_item_new_from_verb_with_doubleclick( toolbox, toolboxSize,
                                                                                       SP_BUTTON_TYPE_TOGGLE,
@@ -826,7 +824,7 @@ void delete_prefspusher(GObject * /*obj*/, PrefPusher *watcher )
 // ------------------------------------------------------
 
 
-GtkToolItem * sp_toolbox_button_item_new_from_verb_with_doubleclick(GtkWidget *t, GtkIconSize size, SPButtonType type,
+GtkToolItem * sp_toolbox_button_item_new_from_verb_with_doubleclick(GtkWidget *t, Inkscape::IconSize size, SPButtonType type,
                                                              Inkscape::Verb *verb, Inkscape::Verb *doubleclick_verb,
                                                              Inkscape::UI::View::View *view)
 {
@@ -878,7 +876,7 @@ static void trigger_sp_action( GtkAction* /*act*/, gpointer user_data )
     }
 }
 
-static GtkAction* create_action_for_verb( Inkscape::Verb* verb, Inkscape::UI::View::View* view, GtkIconSize size )
+static GtkAction* create_action_for_verb( Inkscape::Verb* verb, Inkscape::UI::View::View* view, Inkscape::IconSize size )
 {
     GtkAction* act = 0;
 
@@ -920,7 +918,6 @@ static Glib::RefPtr<Gtk::ActionGroup> create_or_fetch_actions( SPDesktop* deskto
         //SP_VERB_EDIT_TILE,
         //SP_VERB_EDIT_UNTILE,
         SP_VERB_DIALOG_ALIGN_DISTRIBUTE,
-		SP_VERB_DIALOG_ANIMATION_DIALOG,
         SP_VERB_DIALOG_DISPLAY,
         SP_VERB_DIALOG_FILL_STROKE,
         SP_VERB_DIALOG_NAMEDVIEW,
@@ -959,7 +956,7 @@ static Glib::RefPtr<Gtk::ActionGroup> create_or_fetch_actions( SPDesktop* deskto
         SP_VERB_ZOOM_SELECTION
     };
 
-    GtkIconSize toolboxSize = ToolboxFactory::prefToSize("/toolbox/small");
+    Inkscape::IconSize toolboxSize = ToolboxFactory::prefToSize("/toolbox/small");
     Glib::RefPtr<Gtk::ActionGroup> mainActions;
     if (desktop == NULL)
     {
@@ -1235,7 +1232,7 @@ static void setupToolboxCommon( GtkWidget *toolbox,
         gtk_toolbar_set_style( GTK_TOOLBAR(toolBar), GTK_TOOLBAR_ICONS );
     }
 
-    GtkIconSize toolboxSize = ToolboxFactory::prefToSize(sizePref);
+    Inkscape::IconSize toolboxSize = ToolboxFactory::prefToSize(sizePref);
     gtk_toolbar_set_icon_size( GTK_TOOLBAR(toolBar), static_cast<GtkIconSize>(toolboxSize) );
 
     GtkPositionType pos = static_cast<GtkPositionType>(GPOINTER_TO_INT(g_object_get_data( G_OBJECT(toolbox), HANDLE_POS_MARK )));
@@ -1469,7 +1466,7 @@ void setup_aux_toolbox(GtkWidget *toolbox, SPDesktop *desktop)
                 gtk_toolbar_set_style( GTK_TOOLBAR(toolBar), GTK_TOOLBAR_ICONS );
             }
 
-            GtkIconSize toolboxSize = ToolboxFactory::prefToSize("/toolbox/small");
+            Inkscape::IconSize toolboxSize = ToolboxFactory::prefToSize("/toolbox/small");
             gtk_toolbar_set_icon_size( GTK_TOOLBAR(toolBar), static_cast<GtkIconSize>(toolboxSize) );
 
 #if GTK_CHECK_VERSION(3,0,0)
@@ -1739,7 +1736,7 @@ void setup_snap_toolbox(GtkWidget *toolbox, SPDesktop *desktop)
         "  </toolbar>"
         "</ui>";
 
-    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
 
     {
         // TODO: This is a cludge. On the one hand we have verbs+actions,

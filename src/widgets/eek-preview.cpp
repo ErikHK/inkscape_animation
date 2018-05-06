@@ -76,7 +76,7 @@ typedef struct
     guint        border;
     GdkPixbuf   *previewPixbuf;
     GdkPixbuf   *scaled;
-} EekPreviewPrivate; 
+} EekPreviewPrivate;
 
 #define EEK_PREVIEW_GET_PRIVATE(preview) \
   G_TYPE_INSTANCE_GET_PRIVATE(preview, EEK_PREVIEW_TYPE, EekPreviewPrivate)

@@ -63,7 +63,7 @@ void sp_selection_clone(SPDesktop *desktop);
 void sp_selection_unlink(SPDesktop *desktop);
 void sp_selection_relink(SPDesktop *desktop);
 void sp_select_clone_original(SPDesktop *desktop);
-void sp_selection_clone_original_path_lpe(SPDesktop *desktop);
+void sp_selection_clone_original_path_lpe(SPDesktop *desktop, bool allow_transforms = false );
 
 void sp_selection_to_marker(SPDesktop *desktop, bool apply = true);
 void sp_selection_to_guides(SPDesktop *desktop);
@@ -79,8 +79,10 @@ void sp_selection_ungroup(Inkscape::Selection *selection, SPDesktop *desktop);
 void sp_selection_ungroup_pop_selection(Inkscape::Selection *selection, SPDesktop *desktop);
 
 void sp_selection_raise(Inkscape::Selection *selection, SPDesktop *desktop);
+void sp_selection_stack_up(Inkscape::Selection *selection, SPDesktop *desktop);
 void sp_selection_raise_to_top(Inkscape::Selection *selection, SPDesktop *desktop);
 void sp_selection_lower(Inkscape::Selection *selection, SPDesktop *desktop);
+void sp_selection_stack_down(Inkscape::Selection *selection, SPDesktop *desktop);
 void sp_selection_lower_to_bottom(Inkscape::Selection *selection, SPDesktop *desktop);
 
 SPCSSAttr *take_style_from_item (SPObject *object);

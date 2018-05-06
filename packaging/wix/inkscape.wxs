@@ -3,9 +3,9 @@
 	<?include version.wxi?>
 
 	<!-- change Product Id for every new version and subversion, do not change UpgradeCode -->
-	<Product Name="$(var.FullProductName)" Id='81922150-317e-4bb0-a31d-ff1c14f707c5' UpgradeCode='4d5fedaa-84a0-48be-bd2a-08246398361a' Language='1033' Codepage='1252' Version='$(var.ProductVersion)' Manufacturer='inkscape.org'>
+	<Product Name="$(var.FullProductName)" Id='81922150-317e-4bb0-a31d-ff1c14f707c5' UpgradeCode='4d5fedaa-84a0-48be-bd2a-08246398361a' Language='1033' Codepage='1252' Version='$(var.ProductVersion)' Manufacturer='Inkscape project'>
 
-		<Package Id='*' Keywords='Installer' Description="Inkscape Installer" Comments='inkscape is registered trademark of inkscape.org' Manufacturer='inkscape.org' InstallerVersion='$(var.InstallerVersion)' Platform='$(var.Platform)' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
+		<Package Id='*' Keywords='SVG, vector graphics' Description="Installer for Inkscape vector graphics editor" Comments='Licensed under the GNU GPL' Manufacturer='Inkscape project' InstallerVersion='$(var.InstallerVersion)' Platform='$(var.Platform)' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
 
 		<Media Id='1' Cabinet='Sample.cab' EmbedCab='yes' DiskPrompt="CD-ROM #1" CompressionLevel="high"/>
 		<Property Id='DiskPrompt' Value="inkscape Installation [1]" />
@@ -121,7 +121,7 @@
 		<UIRef Id="WixUI_Mondo" />
 		<UIRef Id="WixUI_ErrorProgressText" />
 
-		<Icon Id="inkscape.ico" SourceFile="..\..\inkscape.ico" />
+		<Icon Id="inkscape.ico" SourceFile="..\..\share\branding\inkscape.ico" />
 		<Property Id="ARPPRODUCTICON" Value="inkscape.ico" />
 	</Product>
 </Wix>

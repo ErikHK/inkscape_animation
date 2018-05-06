@@ -44,6 +44,9 @@ def draw_SVG_rect(x,y,w,h, width, fill, name, parent):
 class Grid_Polar(inkex.Effect):
     def __init__(self):
         inkex.Effect.__init__(self)
+        self.OptionParser.add_option("--tab",
+                        action="store", type="string", 
+                        dest="tab", default="x_tab") 
         self.OptionParser.add_option("--x_divs",
                         action="store", type="int", 
                         dest="x_divs", default=5,

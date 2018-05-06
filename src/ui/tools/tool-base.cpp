@@ -23,7 +23,6 @@
 #include "shortcuts.h"
 #include "file.h"
 #include "ui/tools/tool-base.h"
-#include "inkscape.h" // for SP_ACTIVE_DESKTOP
 
 #include <string.h>
 #include <gdk/gdkkeysyms.h>
@@ -36,7 +35,6 @@
 #include "xml/node-event-vector.h"
 #include "sp-cursor.h"
 #include "desktop.h"
-#include "layer-manager.h"
 
 #include "desktop-events.h"
 #include "desktop-style.h"
@@ -59,8 +57,6 @@
 #include "knot.h"
 #include "knot-ptr.h"
 
-#include "layer-fns.h" //next_layer etc
-
 // globals for temporary switching to selector by space
 static bool selector_toggled = FALSE;
 static int switch_selector_to = 0;
@@ -74,13 +70,15 @@ static guint32 scroll_event_time = 0;
 static gdouble scroll_multiply = 1;
 static guint scroll_keyval = 0;
 
+// globals for key processing
+static bool latin_keys_group_valid = FALSE;
+static gint latin_keys_group;
 
 namespace Inkscape {
 namespace UI {
 namespace Tools {
 
 static void set_event_location(SPDesktop * desktop, GdkEvent * event);
-static gint playLoop();
 
 
 void ToolBase::set(const Inkscape::Preferences::Entry& /*val*/) {
@@ -353,61 +351,6 @@ static gdouble accelerate_scroll(GdkEvent *event, gdouble acceleration,
     return scroll_multiply;
 }
 
-static gint playLoop()
-{
-	//SPDesktop * desktop = tb->desktop;
-	static int i = 2;
-	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
-	if(desktop)
-	{
-		if(!desktop->is_playing)
-			return false;
-		
-		//SPObject *next=Inkscape::next_layer(desktop->currentRoot(), desktop->currentLayer());
-		//SPObject * next = desktop->currentLayer()->getNext();
-		SPObject * next = desktop->getDocument()->getObjectById(
-				std::string(Glib::ustring::format("animationlayer", 1, "keyframe", i)));
-		//SPObject * next2 = desktop->getDocument()->getObjectById(
-		//				std::string(Glib::ustring::format("animationlayer", 2, "keyframe", i)));
-		SPObject * thisl = desktop->getDocument()->getObjectById(
-				std::string(Glib::ustring::format("animationlayer", 1, "keyframe", i-1)));  //desktop->currentLayer();
-		//SPObject * thisl2 = desktop->getDocument()->getObjectById(
-		//				std::string(Glib::ustring::format("animationlayer", 2, "keyframe", i-1)));  //desktop->currentLayer();
-		//SPObject * prev = desktop->currentLayer()->getPrev();
-		
-		SP_ITEM(thisl)->setHidden(true);
-		//SP_ITEM(thisl2)->setHidden(true);
-		SP_ITEM(next)->setHidden(false);
-		//SP_ITEM(next2)->setHidden(false);
-
-		i++;
-
-		//if(next->getRepr()->childCount() == 0)
-		if(i == 22)
-		{
-			next = desktop->getDocument()->getObjectById(
-					std::string(Glib::ustring::format("animationlayer", 1, "keyframe", 1)));
-			//next2 = desktop->getDocument()->getObjectById(
-					//std::string(Glib::ustring::format("animationlayer", 2, "keyframe", 1)));
-			SP_ITEM(next)->setHidden(false);
-			//SP_ITEM(next2)->setHidden(false);
-			i = 2;
-		}
-
-		
-		if(!next)
-			return false;
-		//desktop->layer_manager->setCurrentLayer(next);
-		//desktop->toggleLayerSolo(next);
-		
-		//desktop->setCurrentLayer(next);
-		
-	}
-	
-	
-	return true;
-}
-
 bool ToolBase::root_handler(GdkEvent* event) {
     static Geom::Point button_w;
     static unsigned int panning = 0;
@@ -645,7 +588,7 @@ bool ToolBase::root_handler(GdkEvent* event) {
         int const key_scroll = prefs->getIntLimited("/options/keyscroll/value",
                 10, 0, 1000);
 
-        switch (get_group0_keyval(&event->key)) {
+        switch (get_latin_keyval(&event->key)) {
         // GDK insists on stealing these keys (F1 for no idea what, tab for cycling widgets
         // in the editing window). So we resteal them back and run our regular shortcut
         // invoker on them.
@@ -653,7 +596,7 @@ bool ToolBase::root_handler(GdkEvent* event) {
         case GDK_KEY_Tab:
         case GDK_KEY_ISO_Left_Tab:
         case GDK_KEY_F1:
-            shortcut = get_group0_keyval(&event->key);
+            shortcut = get_latin_keyval(&event->key);
 
             if (event->key.state & GDK_SHIFT_MASK) {
                 shortcut |= SP_SHORTCUT_SHIFT_MASK;
@@ -698,7 +641,7 @@ bool ToolBase::root_handler(GdkEvent* event) {
                 int i = (int) floor(key_scroll * accelerate_scroll(event,
                         acceleration, desktop->getCanvas()));
 
-                gobble_key_events(get_group0_keyval(&event->key), GDK_CONTROL_MASK);
+                gobble_key_events(get_latin_keyval(&event->key), GDK_CONTROL_MASK);
                 this->desktop->scroll_world(i, 0);
                 ret = TRUE;
             }
@@ -711,7 +654,7 @@ bool ToolBase::root_handler(GdkEvent* event) {
                 int i = (int) floor(key_scroll * accelerate_scroll(event,
                         acceleration, desktop->getCanvas()));
 
-                gobble_key_events(get_group0_keyval(&event->key), GDK_CONTROL_MASK);
+                gobble_key_events(get_latin_keyval(&event->key), GDK_CONTROL_MASK);
                 this->desktop->scroll_world(0, i);
                 ret = TRUE;
             }
@@ -724,7 +667,7 @@ bool ToolBase::root_handler(GdkEvent* event) {
                 int i = (int) floor(key_scroll * accelerate_scroll(event,
                         acceleration, desktop->getCanvas()));
 
-                gobble_key_events(get_group0_keyval(&event->key), GDK_CONTROL_MASK);
+                gobble_key_events(get_latin_keyval(&event->key), GDK_CONTROL_MASK);
                 this->desktop->scroll_world(-i, 0);
                 ret = TRUE;
             }
@@ -737,7 +680,7 @@ bool ToolBase::root_handler(GdkEvent* event) {
                 int i = (int) floor(key_scroll * accelerate_scroll(event,
                         acceleration, desktop->getCanvas()));
 
-                gobble_key_events(get_group0_keyval(&event->key), GDK_CONTROL_MASK);
+                gobble_key_events(get_latin_keyval(&event->key), GDK_CONTROL_MASK);
                 this->desktop->scroll_world(0, -i);
                 ret = TRUE;
             }
@@ -756,7 +699,6 @@ bool ToolBase::root_handler(GdkEvent* event) {
             break;
 
         case GDK_KEY_space:
-
             within_tolerance = true;
             xp = yp = 0;
             if (!allow_panning) break;
@@ -766,24 +708,8 @@ bool ToolBase::root_handler(GdkEvent* event) {
                     _("<b>Space+mouse move</b> to pan canvas"));
 
             ret = TRUE;
-
-        	/*
-			{
-				int delay = (guint)(1000/desktop->fps);
-				
-				if(!desktop->is_playing)
-				{
-					gint func_ref = g_timeout_add(delay, (GSourceFunc)playLoop, this);
-					desktop->is_playing = true;
-				}
-				else
-				{
-					desktop->is_playing = false;
-				}
-				
-			}
-			*/
             break;
+
         case GDK_KEY_z:
         case GDK_KEY_Z:
             if (MOD__ALT_ONLY(event)) {
@@ -791,6 +717,7 @@ bool ToolBase::root_handler(GdkEvent* event) {
                 ret = TRUE;
             }
             break;
+
         default:
             break;
             }
@@ -820,9 +747,8 @@ bool ToolBase::root_handler(GdkEvent* event) {
             gdk_window_set_cursor(gtk_widget_get_window (w), this->cursor);
         }
 
-        switch (get_group0_keyval(&event->key)) {
+        switch (get_latin_keyval(&event->key)) {
         case GDK_KEY_space:
-			/*
             if (within_tolerance) {
                 // Space was pressed, but not panned
                 sp_toggle_selector(desktop);
@@ -831,7 +757,6 @@ bool ToolBase::root_handler(GdkEvent* event) {
                 // Thus, make sure we return immediately.
                 return true;
             }
-			*/
 
             break;
 
@@ -1185,7 +1110,7 @@ void sp_event_root_menu_popup(SPDesktop *desktop, SPItem *item, GdkEvent *event)
 void sp_event_show_modifier_tip(Inkscape::MessageContext *message_context,
         GdkEvent *event, gchar const *ctrl_tip, gchar const *shift_tip,
         gchar const *alt_tip) {
-    guint keyval = get_group0_keyval(&event->key);
+    guint keyval = get_latin_keyval(&event->key);
 
     bool ctrl = ctrl_tip && (MOD__CTRL(event) || (keyval == GDK_KEY_Control_L) || (keyval
             == GDK_KEY_Control_R));
@@ -1206,19 +1131,48 @@ void sp_event_show_modifier_tip(Inkscape::MessageContext *message_context,
 }
 
 /**
- * Return the keyval corresponding to the key event in group 0, i.e.,
- * in the main (English) layout.
+ * Try to determine the keys group of Latin layout.
+ * Check available keymap entries for Latin 'a' key and find the minimal integer value.
+ */
+static void update_latin_keys_group() {
+    GdkKeymapKey* keys;
+    gint n_keys;
+
+    latin_keys_group_valid = FALSE;
+    if (gdk_keymap_get_entries_for_keyval(gdk_keymap_get_default(), GDK_KEY_a, &keys, &n_keys)) {
+        for (gint i = 0; i < n_keys; i++) {
+            if (!latin_keys_group_valid || keys[i].group < latin_keys_group) {
+                latin_keys_group = keys[i].group;
+                latin_keys_group_valid = TRUE;
+            }
+        }
+        g_free(keys);
+    }
+}
+
+/**
+ * Initialize Latin keys group handling.
+ */
+void init_latin_keys_group() {
+    g_signal_connect(G_OBJECT(gdk_keymap_get_default()),
+            "keys-changed", G_CALLBACK(update_latin_keys_group), NULL);
+    update_latin_keys_group();
+}
+
+/**
+ * Return the keyval corresponding to the key event in Latin group.
  *
  * Use this instead of simply event->keyval, so that your keyboard shortcuts
  * work regardless of layouts (e.g., in Cyrillic).
  */
-guint get_group0_keyval(GdkEventKey const *event) {
+guint get_latin_keyval(GdkEventKey const *event) {
     guint keyval = 0;
+    gint group = latin_keys_group_valid ? latin_keys_group : event->group;
 
-    gdk_keymap_translate_keyboard_state(gdk_keymap_get_for_display(
-            gdk_display_get_default()), event->hardware_keycode,
-            (GdkModifierType) event->state, 0 /*event->key.group*/, &keyval,
-            NULL, NULL, NULL);
+    gdk_keymap_translate_keyboard_state(
+            gdk_keymap_get_for_display(gdk_display_get_default()),
+            event->hardware_keycode, (GdkModifierType) event->state, group,
+            &keyval, NULL, NULL, NULL);
 
     return keyval;
 }
@@ -1294,10 +1248,10 @@ void event_context_print_event_info(GdkEvent *event, bool print_return) {
         break;
 
     case GDK_KEY_PRESS:
-        g_print("GDK_KEY_PRESS: %d", get_group0_keyval(&event->key));
+        g_print("GDK_KEY_PRESS: %d", get_latin_keyval(&event->key));
         break;
     case GDK_KEY_RELEASE:
-        g_print("GDK_KEY_RELEASE: %d", get_group0_keyval(&event->key));
+        g_print("GDK_KEY_RELEASE: %d", get_latin_keyval(&event->key));
         break;
     default:
         //g_print ("even type not recognized");

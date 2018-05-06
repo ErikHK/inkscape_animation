@@ -44,7 +44,6 @@ private:
     gchar * _value;
     AppearanceMode _mode;
     int _indent;
-    const gchar* _context;
 };
 
 }  /* namespace Extension */

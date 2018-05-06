@@ -226,11 +226,8 @@ endif
 # someone updates the BZR working directory.
 inkscape-version.cpp: $(inkscape_version_deps)
 	VER_PREFIX="$(VERSION)";\
-	VER_BZRREV=" r`bzr revno --tree $(top_srcdir)`"; \
-	if test ! -z "`bzr status -S -V $(srcdir)`"; then \
-	    VER_CUSTOM=" custom"; \
-	fi; \
-	VERSION="$$VER_PREFIX$$VER_BZRREV$$VER_CUSTOM"; \
+	VER_GITREV="unknown"
+	VERSION="$$VER_PREFIX$$VER_GITREV"; \
 	echo "namespace Inkscape { " \
 	     "char const *version_string = \"$$VERSION\"; " \
 	     "}" > inkscape-version.new.cpp; \

@@ -6,12 +6,12 @@ PortGroup python 1.0
 
 name            py-uniconvertor
 version         1.1.5
-revision        100
+revision        101
 license         LGPL-2 GPL-2
 maintainers     nomaintainer
 categories      python graphics 
 platforms       darwin
-homepage        http://sk1project.org/modules.php?name=Products&product=uniconvertor
+homepage        http://sk1project.net/modules.php?name=Products&product=uniconvertor
 
 description     universal vector graphics translator.
 
@@ -26,7 +26,7 @@ long_description \
 distname        uniconvertor-${version}
 # MacPorts does not properly support URLs with a get parameter.
 # Workaround for this bug: https://trac.macports.org/wiki/PortfileRecipes#fetchwithgetparams
-master_sites    http://sk1project.org/dc.php?target=${distfiles}&dummy=
+master_sites    http://sk1project.net/dc.php?target=${distfiles}&dummy=
 
 checksums       md5     d1272315a58304ece2ff588834e23f72 \
                 sha1    51ec7c4487048c3357ed95cdb4ab3524018a2c9e \
@@ -42,5 +42,5 @@ if {$subport != $name} {
 } 
 
 livecheck.type          regex
-livecheck.url           http://sk1project.org/modules.php?name=Products&product=uniconvertor&op=download
+livecheck.url           http://sk1project.net/modules.php?name=Products&product=uniconvertor&op=download
 livecheck.regex         "uniconvertor-(\\d+(?:\\.\\d+)*)${extract.suffix}"

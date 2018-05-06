@@ -19,6 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 # local library
 import inkex
 import simplepath
+import simplestyle
 import simpletransform
 import cubicsuperpath
 
@@ -68,10 +69,23 @@ class Extrude(inkex.Effect):
                     ele = inkex.etree.Element('{http://www.w3.org/2000/svg}path')
                     paths[0].xpath('..')[0].append(ele)
                     ele.set('d', simplepath.formatPath(line))
-                    ele.set('style', 'fill:none;stroke:#000000;stroke-opacity:1;stroke-width:1;')
+                    style = {
+                        'fill': 'none',
+                        'stroke': '#000000',
+                        'stroke-opacity': 1,
+                        'stroke-width': self.unittouu('1px'),
+                    }
+                    ele.set('style', simplestyle.formatStyle(style))
                 elif self.options.mode.lower() == 'polygons':
                     g = inkex.etree.Element('{http://www.w3.org/2000/svg}g')
-                    g.set('style', 'fill:#000000;stroke:#000000;fill-opacity:0.3;stroke-width:2;stroke-opacity:0.6;')   
+                    style = {
+                        'fill': '#000000',
+                        'fill-opacity': 0.3,
+                        'stroke': '#000000',
+                        'stroke-opacity': 0.6,
+                        'stroke-width': self.unittouu('2px'),
+                    }
+                    g.set('style', simplestyle.formatStyle(style))
                     paths[0].xpath('..')[0].append(g)
                     for comp in verts:
                         for n,v in enumerate(comp):

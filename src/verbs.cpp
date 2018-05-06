@@ -1144,6 +1144,12 @@ void SelectionVerb::perform(SPAction *action, void *data)
         case SP_VERB_SELECTION_LOWER:
             sp_selection_lower(selection, dt);
             break;
+        case SP_VERB_SELECTION_STACK_UP:
+            sp_selection_stack_up(selection, dt);
+            break;
+        case SP_VERB_SELECTION_STACK_DOWN:
+            sp_selection_stack_down(selection, dt);
+            break;
         case SP_VERB_SELECTION_GROUP:
             sp_selection_group(selection, dt);
             break;
@@ -1268,48 +1274,26 @@ void LayerVerb::perform(SPAction *action, void *data)
             break;
         }
         case SP_VERB_LAYER_NEXT: {
-			
-			SPObject *prev=Inkscape::previous_layer(dt->currentRoot(), dt->currentLayer());
-			SPObject *prevprev=Inkscape::previous_layer(dt->currentRoot(), prev);
             SPObject *next=Inkscape::next_layer(dt->currentRoot(), dt->currentLayer());
-			
             if (next) {
-				if(prev)
-					prev->getRepr()->setAttribute("style", "opacity:0.25;");
-				if(prevprev)
-					prevprev->getRepr()->setAttribute("style", "display:none;");
-				
-				dt->currentLayer()->getRepr()->setAttribute("style", "opacity:0.5;");
                 dt->setCurrentLayer(next);
-				next->getRepr()->setAttribute("style", "opacity:1.0");
-				
-				//dt->layer_manager->setCurrentLayer(next);
                 DocumentUndo::done(dt->getDocument(), SP_VERB_LAYER_NEXT,
                                    _("Switch to next layer"));
-                dt->messageStack()->flash(Inkscape::NORMAL_MESSAGE, _("Switched to next keyframe."));
+                dt->messageStack()->flash(Inkscape::NORMAL_MESSAGE, _("Switched to next layer."));
             } else {
-                dt->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Cannot go past last keyframe."));
+                dt->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Cannot go past last layer."));
             }
             break;
         }
         case SP_VERB_LAYER_PREV: {
             SPObject *prev=Inkscape::previous_layer(dt->currentRoot(), dt->currentLayer());
-			SPObject *prevprev=Inkscape::previous_layer(dt->currentRoot(), prev);
-			SPObject *prevprevprev=Inkscape::previous_layer(dt->currentRoot(), prevprev);
             if (prev) {
-				dt->currentLayer()->getRepr()->setAttribute("style", "opacity:0;");
-				if(prevprev)
-					prevprev->getRepr()->setAttribute("style", "opacity:0.5;");
-				if(prevprevprev)
-					prevprevprev->getRepr()->setAttribute("style", "opacity:0.25;");
                 dt->setCurrentLayer(prev);
-				dt->currentLayer()->getRepr()->setAttribute("style", "opacity:1;");
-				//dt->layer_manager->setCurrentLayer(prev);
                 DocumentUndo::done(dt->getDocument(), SP_VERB_LAYER_PREV,
                                    _("Switch to previous layer"));
-                dt->messageStack()->flash(Inkscape::NORMAL_MESSAGE, _("Switched to previous keyframe."));
+                dt->messageStack()->flash(Inkscape::NORMAL_MESSAGE, _("Switched to previous layer."));
             } else {
-                dt->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Cannot go before first keyframe."));
+                dt->messageStack()->flash(Inkscape::WARNING_MESSAGE, _("Cannot go before first layer."));
             }
             break;
         }
@@ -2583,6 +2567,14 @@ Verb *Verb::_base_verbs[] = {
                       N_("Raise selection one step"), INKSCAPE_ICON("selection-raise")),
     new SelectionVerb(SP_VERB_SELECTION_LOWER, "SelectionLower", N_("_Lower"),
                       N_("Lower selection one step"), INKSCAPE_ICON("selection-lower")),
+
+
+    new SelectionVerb(SP_VERB_SELECTION_STACK_UP, "SelectionStackUp", N_("_Stack up"),
+                      N_("Stack selection one step up"), INKSCAPE_ICON("layer-lower")),
+    new SelectionVerb(SP_VERB_SELECTION_STACK_DOWN, "SelectionStackDown", N_("_Stack down"),
+                      N_("Stack selection one step down"), INKSCAPE_ICON("layer-raise")),
+
+
     new SelectionVerb(SP_VERB_SELECTION_GROUP, "SelectionGroup", N_("_Group"),
                       N_("Group selected objects"), INKSCAPE_ICON("object-group")),
     new SelectionVerb(SP_VERB_SELECTION_UNGROUP, "SelectionUnGroup", N_("_Ungroup"),
@@ -2940,8 +2932,6 @@ Verb *Verb::_base_verbs[] = {
                    N_("Precisely control objects' transformations"), INKSCAPE_ICON("dialog-transform")),
     new DialogVerb(SP_VERB_DIALOG_ALIGN_DISTRIBUTE, "DialogAlignDistribute", N_("_Align and Distribute..."),
                    N_("Align and distribute objects"), INKSCAPE_ICON("dialog-align-and-distribute")),
-	new DialogVerb(SP_VERB_DIALOG_ANIMATION_DIALOG, "DialogAnimationDialog", N_("_Animation Dialog..."),
-				   N_("Animation dialog"), NULL),
     new DialogVerb(SP_VERB_DIALOG_SPRAY_OPTION, "DialogSprayOption", N_("_Spray options..."),
                    N_("Some options for the spray"), INKSCAPE_ICON("dialog-spray-options")),
     new DialogVerb(SP_VERB_DIALOG_UNDO_HISTORY, "DialogUndoHistory", N_("Undo _History..."),

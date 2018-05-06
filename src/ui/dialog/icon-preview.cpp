@@ -31,23 +31,17 @@
 #include "ui/widget/frame.h"
 
 #include "desktop.h"
-#include "document.h"
-#include "inkscape.h"
-#include "verbs.h"
 
 #include "display/drawing.h"
-#include "display/drawing-context.h"
-
-#include "sp-namedview.h"
-#include "display/cairo-utils.h"
-
+#include "document.h"
+#include "inkscape.h"
 #include "preferences.h"
 #include "selection.h"
 #include "sp-root.h"
 #include "xml/repr.h"
+#include "verbs.h"
 
 #include "icon-preview.h"
-#include "ui/widget/frame.h"
 
 extern "C" {
 // takes doc, drawing, icon, and icon name to produce pixels
@@ -438,64 +432,6 @@ void IconPreviewPanel::modeToggled()
     refreshPreview();
 }
 
-void overlayPixels(guchar *px, int width, int height, int stride,
-                            unsigned r, unsigned g, unsigned b)
-{
-    int bytesPerPixel = 4;
-    int spacing = 4;
-    for ( int y = 0; y < height; y += spacing ) {
-        guchar *ptr = px + y * stride;
-        for ( int x = 0; x < width; x += spacing ) {
-            *(ptr++) = r;
-            *(ptr++) = g;
-            *(ptr++) = b;
-            *(ptr++) = 0xff;
-
-            ptr += bytesPerPixel * (spacing - 1);
-        }
-    }
-
-    if ( width > 1 && height > 1 ) {
-        // point at the last pixel
-        guchar *ptr = px + ((height-1) * stride) + ((width - 1) * bytesPerPixel);
-
-        if ( width > 2 ) {
-            px[4] = r;
-            px[5] = g;
-            px[6] = b;
-            px[7] = 0xff;
-
-            ptr[-12] = r;
-            ptr[-11] = g;
-            ptr[-10] = b;
-            ptr[-9] = 0xff;
-        }
-
-        ptr[-4] = r;
-        ptr[-3] = g;
-        ptr[-2] = b;
-        ptr[-1] = 0xff;
-
-        px[0 + stride] = r;
-        px[1 + stride] = g;
-        px[2 + stride] = b;
-        px[3 + stride] = 0xff;
-
-        ptr[0 - stride] = r;
-        ptr[1 - stride] = g;
-        ptr[2 - stride] = b;
-        ptr[3 - stride] = 0xff;
-
-        if ( height > 2 ) {
-            ptr[0 - stride * 3] = r;
-            ptr[1 - stride * 3] = g;
-            ptr[2 - stride * 3] = b;
-            ptr[3 - stride * 3] = 0xff;
-        }
-    }
-}
-
-
 void IconPreviewPanel::renderPreview( SPObject* obj )
 {
     SPDocument * doc = obj->document;
@@ -538,134 +474,6 @@ void IconPreviewPanel::renderPreview( SPObject* obj )
     g_message("  render took %f seconds.", renderTimer->elapsed());
 #endif // ICON_VERBOSE
 }
-
-// takes doc, drawing, icon, and icon name to produce pixels
-extern "C" guchar *
-sp_icon_doc_icon( SPDocument *doc, Inkscape::Drawing &drawing,
-                  gchar const *name, unsigned psize,
-                  unsigned &stride)
-{
-    bool const dump = Inkscape::Preferences::get()->getBool("/debug/icons/dumpSvg");
-    guchar *px = NULL;
-
-    if (doc) {
-        SPObject *object = doc->getObjectById(name);
-        if (object && SP_IS_ITEM(object)) {
-            SPItem *item = SP_ITEM(object);
-            // Find bbox in document
-            Geom::OptRect dbox = item->documentVisualBounds();
-
-            if ( object->parent == NULL )
-            {
-                dbox = Geom::Rect(Geom::Point(0, 0),
-                                Geom::Point(doc->getWidth().value("px"), doc->getHeight().value("px")));
-            }
-
-            /* This is in document coordinates, i.e. pixels */
-            if ( dbox ) {
-                /* Update to renderable state */
-                double sf = 1.0;
-                drawing.root()->setTransform(Geom::Scale(sf));
-                drawing.update();
-                /* Item integer bbox in points */
-                // NOTE: previously, each rect coordinate was rounded using floor(c + 0.5)
-                Geom::IntRect ibox = dbox->roundOutwards();
-
-                if ( dump ) {
-                    g_message( "   box    --'%s'  (%f,%f)-(%f,%f)", name, (double)ibox.left(), (double)ibox.top(), (double)ibox.right(), (double)ibox.bottom() );
-                }
-
-                /* Find button visible area */
-                int width = ibox.width();
-                int height = ibox.height();
-
-                if ( dump ) {
-                    g_message( "   vis    --'%s'  (%d,%d)", name, width, height );
-                }
-
-                {
-                    int block = std::max(width, height);
-                    if (block != static_cast<int>(psize) ) {
-                        if ( dump ) {
-                            g_message("      resizing" );
-                        }
-                        sf = (double)psize / (double)block;
-
-                        drawing.root()->setTransform(Geom::Scale(sf));
-                        drawing.update();
-
-                        auto scaled_box = *dbox * Geom::Scale(sf);
-                        ibox = scaled_box.roundOutwards();
-                        if ( dump ) {
-                            g_message( "   box2   --'%s'  (%f,%f)-(%f,%f)", name, (double)ibox.left(), (double)ibox.top(), (double)ibox.right(), (double)ibox.bottom() );
-                        }
-
-                        /* Find button visible area */
-                        width = ibox.width();
-                        height = ibox.height();
-                        if ( dump ) {
-                            g_message( "   vis2   --'%s'  (%d,%d)", name, width, height );
-                        }
-                    }
-                }
-
-                Geom::IntPoint pdim(psize, psize);
-                int dx, dy;
-                //dx = (psize - width) / 2;
-                //dy = (psize - height) / 2;
-                dx=dy=psize;
-                dx=(dx-width)/2; // watch out for psize, since 'unsigned'-'signed' can cause problems if the result is negative
-                dy=(dy-height)/2;
-                Geom::IntRect area = Geom::IntRect::from_xywh(ibox.min() - Geom::IntPoint(dx,dy), pdim);
-                /* Actual renderable area */
-                Geom::IntRect ua = *Geom::intersect(ibox, area);
-
-                if ( dump ) {
-                    g_message( "   area   --'%s'  (%f,%f)-(%f,%f)", name, (double)area.left(), (double)area.top(), (double)area.right(), (double)area.bottom() );
-                    g_message( "   ua     --'%s'  (%f,%f)-(%f,%f)", name, (double)ua.left(), (double)ua.top(), (double)ua.right(), (double)ua.bottom() );
-                }
-
-                stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, psize);
-
-                /* Set up pixblock */
-                px = g_new(guchar, stride * psize);
-                memset(px, 0x00, stride * psize);
-
-                /* Render */
-                cairo_surface_t *s = cairo_image_surface_create_for_data(px,
-                    CAIRO_FORMAT_ARGB32, psize, psize, stride);
-                Inkscape::DrawingContext dc(s, ua.min());
-
-                SPNamedView *nv = sp_document_namedview(doc, NULL);
-                float bg_r = SP_RGBA32_R_F(nv->pagecolor);
-                float bg_g = SP_RGBA32_G_F(nv->pagecolor);
-                float bg_b = SP_RGBA32_B_F(nv->pagecolor);
-                float bg_a = SP_RGBA32_A_F(nv->pagecolor);
-
-                cairo_t *cr = cairo_create(s);
-                cairo_set_source_rgba(cr, bg_r, bg_g, bg_b, bg_a);
-                cairo_rectangle(cr, 0, 0, psize, psize);
-                cairo_fill(cr);
-                cairo_save(cr);
-                cairo_destroy(cr);
-
-                drawing.render(dc, ua);
-                cairo_surface_destroy(s);
-
-                // convert to GdkPixbuf format
-                convert_pixels_argb32_to_pixbuf(px, psize, psize, stride);
-
-                if ( Inkscape::Preferences::get()->getBool("/debug/icons/overlaySvg") ) {
-                    overlayPixels( px, psize, psize, stride, 0x00, 0x00, 0xff );
-                }
-            }
-        }
-    }
-
-    return px;
-} // end of sp_icon_doc_icon()
-
-
 
 void IconPreviewPanel::updateMagnify()
 {

@@ -187,6 +187,11 @@ void TransformHandle::ungrabbed(GdkEventButton *)
     _setState(_state);
     endTransform();
     _th.signal_commit.emit(getCommitEvent());
+
+    //updates the positions of the nodes
+    Inkscape::UI::Tools::NodeTool *nt = INK_NODE_TOOL(_th._desktop->event_context);
+    ControlPointSelection* selection = nt->_selected_nodes;
+    selection->setOriginalPoints();
 }
 
 

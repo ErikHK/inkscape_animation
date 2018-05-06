@@ -19,7 +19,7 @@
 				<param name="path-to-gcode-depth-function" type="string" _gui-text="Depth function:">d</param>			
 				<param name="path-to-gcode-sort-paths" type="boolean" _gui-text="Sort paths to reduse rapid distance">True</param>			
 				
-				<_param name="help" type="description">
+				<_param name="help" type="description" xml:space="preserve">
 Biarc interpolation tolerance is the maximum distance between path and its approximation.
 The segment will be split into two segments if the distance between path's segment and its approximation exceeds biarc interpolation tolerance.
 For depth function c=color intensity from 0.0 (white) to 1.0 (black), d is the depth defined by orientation points, s - surface defined by orientation points. 
@@ -63,7 +63,7 @@ For depth function c=color intensity from 0.0 (white) to 1.0 (black), d is the d
 		</page>
 
 		<page name='help' _gui-text='Help'>
-			<_param name="fullhelp" type="description">
+			<_param name="fullhelp" type="description" xml:space="preserve">
 Gcodetools plug-in: converts paths to Gcode (using circular interpolation), makes offset paths and engraves sharp corners using cone cutters. 
 This plug-in calculates Gcode for paths using circular interpolation or linear motion when needed.
 

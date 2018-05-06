@@ -37,7 +37,7 @@ public:
      *
      * @param preformed Properly quoted C-style string to be represented.
      */
-    explicit URI(char const *preformed) throw(BadURIException);
+    explicit URI(char const *preformed);
 
     /**
      * Destructor.
@@ -98,15 +98,15 @@ public:
 
     const char *getOpaque() const { return _impl->getOpaque(); }
 
-    static URI fromUtf8( char const* path ) throw (BadURIException);
+    static URI fromUtf8( char const* path );
 
-    static URI from_native_filename(char const *path) throw(BadURIException);
+    static URI from_native_filename(char const *path);
 
-    static char *to_native_filename(char const* uri) throw(BadURIException);
+    static char *to_native_filename(char const* uri);
 
     const std::string getFullPath(std::string const &base) const;
 
-    char *toNativeFilename() const throw(BadURIException);
+    char *toNativeFilename() const;
 
     /**
      * Returns a glib string version of this URI.

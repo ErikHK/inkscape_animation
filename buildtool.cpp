@@ -9708,6 +9708,7 @@ bool Make::parsePropertyFile(const String &fileName,
             {
             error("property file %s, line %d: expected '='",
                     fileName.c_str(), linenr);
+            fclose(f);
             return false;
             }
         p++;
@@ -9731,6 +9732,7 @@ bool Make::parsePropertyFile(const String &fileName,
             {
             error("property file %s, line %d: expected value",
                     fileName.c_str(), linenr);
+            fclose(f);
             return false;
             }
         val = s.substr(p);

@@ -143,7 +143,7 @@ then
 	export LANG="en_US.UTF-8"
 else
 	tmpLANG="`grep \"\`echo $LANGSTR\`_\" /usr/share/locale/locale.alias | \
-		tail -n1 | sed 's/\./ /' | awk '{print $2}'`"
+		tail -n1 | awk '{print $2}' | sed 's/\./ /' | awk '{print $1}'`"
 	if [ "x$tmpLANG" == "x" ]
 	then
 		# override broken script

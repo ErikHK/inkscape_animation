@@ -4,7 +4,7 @@
 if(WIN32)
   message("-- Windows build detected, setting default features")
 
-  include(CMakeScripts/ConfigEnvMinGW.cmake)
+  include(mingwenv.cmake)
   
   if(NOT HAVE_MSYS2)
     list(INSERT CMAKE_SYSTEM_INCLUDE_PATH 0 ${DEVLIBS_PATH})
@@ -47,8 +47,8 @@ if(APPLE)
   if(DEFINED ENV{GTKMM_BASEPATH})
     message("GTKMM_BASEPATH: $ENV{GTKMM_BASEPATH}")
   endif()
-  
-    # detect current GTK+ backend
+
+  # detect current GTK+ backend
   pkg_check_variable(gtk+-2.0 target)
   message("GTK2 backend: ${GTK+_2.0_TARGET}")
 endif()

@@ -14,9 +14,9 @@ architecture = ''
 def is64bitArchitecture(filename):
 	''' test if a executable is of x64 format @see http://stackoverflow.com/questions/1001404/check-if-unmanaged-dll-is-32-bit-or-64-bit/1002672#1002672
 	@see http://www.microsoft.com/whdc/system/platform/firmware/PECOFF.mspx
-      //offset to PE header is always at 0x3C
-      //PE header starts with "PE\0\0" =  0x50 0x45 0x00 0x00
-      //followed by 2-byte machine type field (see document above for enum)
+	  //offset to PE header is always at 0x3C
+	  //PE header starts with "PE\0\0" =  0x50 0x45 0x00 0x00
+	  //followed by 2-byte machine type field (see document above for enum)
 	'''
 	with open(filename, 'rb') as cofffile:
 		cofffile.seek(0x3c)
@@ -37,31 +37,35 @@ inkscape_dist_dir = get_inkscape_dist_dir()
 if is64bitArchitecture(inkscape_dist_dir + '\\inkscape.exe'):
 	architecture = '-x64'
 else:
-	architecture = ''
+	architecture = '-x86'
 
-# retrieve the version information from the inkscape.rc file
-#             VALUE "ProductVersion", "0.48+devel"
-with open('..\..\src\inkscape.rc', 'r') as rc:
+# retrieve the version information from CMakeLists.txt
+with open('..\..\CMakeLists.txt', 'r') as rc:
 	isversioninfo = False
-	
+
 	for line in rc.readlines():
-		if 'productversion' in line.lower() and 'value' in line.lower():
-			items = line.split()
-			versionstr = items[2]
-			versionstr = versionstr.replace('"', '')
-			versionstr = versionstr.replace("'", "")
-			# version = version.replace("+", "_")
-			print(versionstr + architecture)
-		if 'versioninfo' in line.lower():
-			isversioninfo = True
-		if 'begin' in line.lower():
-			isversioninfo = False
-		if isversioninfo and 'productversion' in line.lower():
-			items = line.split()
-			''' the second element contains now version info in the form major,minor,fix,build'''
-			veritems = items[1].split(',')
-			version = veritems[0] + '.' + veritems[1]
-			
+		if 'set(INKSCAPE_VERSION_MAJOR' in line:
+			version_major = line.split()[-1][0:-1]
+		if 'set(INKSCAPE_VERSION_MINOR' in line:
+			version_minor = line.split()[-1][0:-1]
+		if 'set(INKSCAPE_VERSION_PATCH' in line:
+			version_patch = line.split()[-1][0:-1]
+			if version_patch == '':
+				version_patch = '0'
+		if 'set(INKSCAPE_VERSION_SUFFIX' in line:
+			version_suffix = line.split()[-1][0:-1]
+			version_suffix = version_suffix.replace('"', '')
+
+	version_list = [version_major, version_minor, version_patch, '0']
+	version = '.'.join(version_list)
+
+	versionstr = '.'.join(version_list[0:2])
+	if version_patch != '0':
+		versionstr += '.' + version_patch
+	versionstr += version_suffix
+
+	# required by install.bat
+	print(versionstr + architecture)
 
 with open('version.wxi', 'w') as wxi:
 	wxi.write("<?xml version='1.0' encoding='utf-8'?>\n")

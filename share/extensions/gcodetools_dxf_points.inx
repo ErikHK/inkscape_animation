@@ -8,7 +8,7 @@
 	<param name='active-tab' type="notebook">
 
 		<page name='dxfpoints' _gui-text='DXF points'>
-			<_param name="help" type="description">
+			<_param name="help" type="description" xml:space="preserve">
 
 Convert selected objects to drill points (as dxf_import plugin does). Also you can save original shape. Only the start point of each curve will be used.
 
@@ -49,7 +49,7 @@ Also you can manually select object, open XML editor (Shift+Ctrl+X) and add or r
 		</page>
 
 		<page name='help' _gui-text='Help'>
-			<_param name="fullhelp" type="description">
+			<_param name="fullhelp" type="description" xml:space="preserve">
 Gcodetools plug-in: converts paths to Gcode (using circular interpolation), makes offset paths and engraves sharp corners using cone cutters. 
 This plug-in calculates Gcode for paths using circular interpolation or linear motion when needed.
 

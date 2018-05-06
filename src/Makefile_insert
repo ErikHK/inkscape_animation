@@ -208,7 +208,6 @@ ink_common_sources +=	\
 	text-editing.cpp text-editing.h		\
 	text-tag-attributes.h			\
 	transf_mat_3x4.cpp transf_mat_3x4.h	\
-	tween.cpp tween.h				\
 	unclump.cpp unclump.h			\
 	undo-stack-observer.h			\
 	unicoderange.cpp unicoderange.h		\

@@ -1480,7 +1480,7 @@ public:
     static void init (void) {
         Inkscape::Extension::build_from_mem(
             "<inkscape-extension xmlns=\"" INKSCAPE_EXTENSION_URI "\">\n"
-              "<name>" N_("Quadritone fantasy") "</name>\n"
+              "<name>" N_("Quadritone Fantasy") "</name>\n"
               "<id>org.inkscape.effect.filter.Quadritone</id>\n"
                 "<param name=\"dist\" _gui-text=\"" N_("Hue distribution (°)") "\" type=\"int\" appearance=\"full\" min=\"0\" max=\"360\">280</param>\n"
                 "<param name=\"colors\" _gui-text=\"" N_("Colors") "\" type=\"int\" appearance=\"full\" min=\"0\" max=\"360\">100</param>\n"

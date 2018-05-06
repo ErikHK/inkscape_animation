@@ -32,7 +32,6 @@ enum selection_type {
     SELECTION_DRAWING,   /**< Export everything drawn on the page */
     SELECTION_SELECTION, /**< Export everything that is selected */
     SELECTION_CUSTOM,    /**< Allows the user to set the region exported */
-	SELECTION_ANIMATION,
     SELECTION_NUMBER_OF  /**< A counter for the number of these guys */
 };
 
@@ -270,8 +269,7 @@ private:
      */
     void set_default_filename ();
     Glib::ustring create_filepath_from_id (Glib::ustring id, const Glib::ustring &file_entry_text);
-	Glib::ustring filename_add_extension (Glib::ustring filename, Glib::ustring extension);
-    Glib::ustring filename_add_extension (Glib::ustring filename, Glib::ustring extension, Glib::ustring extra);
+    Glib::ustring filename_add_extension (Glib::ustring filename, Glib::ustring extension);
     Glib::ustring absolutize_path_from_document_location (SPDocument *doc, const Glib::ustring &filename);
 
     /*

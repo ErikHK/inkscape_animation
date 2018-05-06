@@ -33,7 +33,7 @@ endfunction()
 
 
 
-# Checks if the last call to execute_process() was successful and throws an error otherwise.
+# Checks if the last call to execute_process() was sucessful and throws an error otherwise.
 # ${result} and ${stderr} should hold the value of RESULT_VARIABLE and ERROR_VARIABLE respectively
 # ${command} can be empty or the command that was executed during the last call of execute_process()
 function(check_error result stderr command)
@@ -49,7 +49,7 @@ function(check_error result stderr command)
 
     if("${result}" STREQUAL 0)
         if(NOT "${stderr}" STREQUAL "")
-            MESSAGE(WARNING "${command} returned successfully but the following was output to stderr: ${stderr}")
+            MESSAGE(WARNING "${command} returned sucessfully but the following was output to stderr: ${stderr}")
         endif()
     else()
         if("${stderr}" STREQUAL "")
@@ -133,7 +133,7 @@ endfunction(list_files_pip)
 #   ROOT        - the root to search the files in (if file paths are relative)
 #   DESTINATION - the destination where to install files to
 #   INCLUDE     - a (list of) regular expression(s) specifying which files to include
-#                 (omit or leave empty to include all files)
+#                 (omit or leave empty to inlcude all files)
 #   EXCLUDE     - a (list of) regular expression(s) specifying which files to exclude
 #                 (takes precedence over include rules)
 function(install_list)

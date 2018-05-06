@@ -143,7 +143,7 @@ public:
 
 void TagsPanel::_styleButton(Gtk::Button& btn, char const* iconName, char const* tooltip)
 {
-    GtkWidget *child = gtk_image_new_from_icon_name(iconName, GTK_ICON_SIZE_SMALL_TOOLBAR);
+    GtkWidget *child = sp_icon_new(Inkscape::ICON_SIZE_SMALL_TOOLBAR, iconName);
     gtk_widget_show(child);
     btn.add(*manage(Glib::wrap(child)));
     btn.set_relief(Gtk::RELIEF_NONE);
@@ -157,7 +157,7 @@ Gtk::MenuItem& TagsPanel::_addPopupItem( SPDesktop *desktop, unsigned int code, 
     const char* label = 0;
 
     if ( iconName ) {
-        iconWidget = gtk_image_new_from_icon_name( iconName, GTK_ICON_SIZE_MENU );
+        iconWidget = sp_icon_new( Inkscape::ICON_SIZE_MENU, iconName );
     }
 
     if ( desktop ) {
@@ -165,7 +165,7 @@ Gtk::MenuItem& TagsPanel::_addPopupItem( SPDesktop *desktop, unsigned int code, 
         if ( verb ) {
             SPAction *action = verb->get_action(desktop);
             if ( !iconWidget && action && action->image ) {
-                iconWidget = gtk_image_new_from_icon_name( action->image, GTK_ICON_SIZE_MENU );
+                iconWidget = sp_icon_new( Inkscape::ICON_SIZE_MENU, action->image );
             }
 
             if ( action ) {
@@ -537,7 +537,7 @@ void TagsPanel::_checkTreeSelection()
 bool TagsPanel::_handleKeyEvent(GdkEventKey *event)
 {
 
-    switch (Inkscape::UI::Tools::get_group0_keyval(event)) {
+    switch (Inkscape::UI::Tools::get_latin_keyval(event)) {
         case GDK_KEY_Return:
         case GDK_KEY_KP_Enter:
         case GDK_KEY_F2: {

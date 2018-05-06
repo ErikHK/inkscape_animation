@@ -27,42 +27,39 @@ namespace Widget {
 ClipMaskIcon::ClipMaskIcon() :
     Glib::ObjectBase(typeid(ClipMaskIcon)),
     Gtk::CellRendererPixbuf(),
-    _pixClipName(INKSCAPE_ICON("path-intersection")),
-    _pixInverseName(INKSCAPE_ICON("path-difference")),
-    _pixMaskName(INKSCAPE_ICON("mask-intersection")),
+    _pixClipName(INKSCAPE_ICON("object-clipped")),
+    _pixMaskName(INKSCAPE_ICON("object-masked")),
+    _pixBothName(INKSCAPE_ICON("object-clip-mask")),
     _property_active(*this, "active", 0),
     _property_pixbuf_clip(*this, "pixbuf_on", Glib::RefPtr<Gdk::Pixbuf>(0)),
-    _property_pixbuf_inverse(*this, "pixbuf_on", Glib::RefPtr<Gdk::Pixbuf>(0)),
-    _property_pixbuf_mask(*this, "pixbuf_off", Glib::RefPtr<Gdk::Pixbuf>(0))
+    _property_pixbuf_mask(*this, "pixbuf_off", Glib::RefPtr<Gdk::Pixbuf>(0)),
+    _property_pixbuf_both(*this, "pixbuf_on", Glib::RefPtr<Gdk::Pixbuf>(0))
 {
     
     property_mode() = Gtk::CELL_RENDERER_MODE_ACTIVATABLE;
-    gint width, height;
-    gtk_icon_size_lookup(GTK_ICON_SIZE_MENU, &width, &height);
-    phys = width;
+    phys = sp_icon_get_phys_size((int)Inkscape::ICON_SIZE_DECORATION);
     Glib::RefPtr<Gtk::IconTheme> icon_theme = Gtk::IconTheme::get_default();
 
-	/*
     if (!icon_theme->has_icon(_pixClipName)) {
-        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixClipName.data()), GTK_ICON_SIZE_MENU );
-    }
-    if (!icon_theme->has_icon(_pixInverseName)) {
-        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixInverseName.data()), GTK_ICON_SIZE_MENU );
+        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixClipName.data()), Inkscape::ICON_SIZE_DECORATION );
     }
     if (!icon_theme->has_icon(_pixMaskName)) {
-        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixMaskName.data()), GTK_ICON_SIZE_MENU );
+        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixMaskName.data()), Inkscape::ICON_SIZE_DECORATION );
+    }
+    if (!icon_theme->has_icon(_pixBothName)) {
+        Inkscape::queueIconPrerender( INKSCAPE_ICON(_pixBothName.data()), Inkscape::ICON_SIZE_DECORATION );
     }
 
     if (icon_theme->has_icon(_pixClipName)) {
         _property_pixbuf_clip = icon_theme->load_icon(_pixClipName, phys, (Gtk::IconLookupFlags)0);
     }
-    if (icon_theme->has_icon(_pixInverseName)) {
-        _property_pixbuf_inverse = icon_theme->load_icon(_pixInverseName, phys, (Gtk::IconLookupFlags)0);
-    }
     if (icon_theme->has_icon(_pixMaskName)) {
         _property_pixbuf_mask = icon_theme->load_icon(_pixMaskName, phys, (Gtk::IconLookupFlags)0);
     }
-*/
+    if (icon_theme->has_icon(_pixBothName)) {
+        _property_pixbuf_both = icon_theme->load_icon(_pixBothName, phys, (Gtk::IconLookupFlags)0);
+    }
+
     property_pixbuf() = Glib::RefPtr<Gdk::Pixbuf>(0);
 }
 
@@ -140,7 +137,7 @@ void ClipMaskIcon::render_vfunc( const Glib::RefPtr<Gdk::Drawable>& window,
             property_pixbuf() = _property_pixbuf_mask;
             break;
         case 3:
-            property_pixbuf() = _property_pixbuf_inverse;
+            property_pixbuf() = _property_pixbuf_both;
             break;
         default:
             property_pixbuf() = Glib::RefPtr<Gdk::Pixbuf>(0);

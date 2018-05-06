@@ -55,9 +55,7 @@ depends_build-append        port:popt \
                             port:potrace
 
 # ports for Inkscape.app
-depends_build-append        port:gnome-icon-theme \
-                            port:gnome-icon-theme-symbolic \
-                            port:icon-naming-utils \
+depends_build-append        port:icon-naming-utils \
                             port:gnome-themes-standard \
                             port:gtk-engines2 \
                             port:gtk2-murrine
@@ -65,6 +63,7 @@ depends_build-append        port:gnome-icon-theme \
 # ports for python extensions
 depends_build-append        port:py27-lxml \
                             port:py27-numpy \
+                            port:py27-scour \
                             port:py27-Pillow \
                             port:py27-uniconvertor \
                             port:py27-serial \
@@ -74,6 +73,7 @@ if {${os.major} <= 10} {
     # ports for python extensions on Snow Leopard and Leopard
     depends_build-append    port:py26-lxml \
                             port:py26-numpy \
+                            port:py26-scour \
                             port:py26-Pillow \
                             port:py26-uniconvertor
 }

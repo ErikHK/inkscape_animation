@@ -374,8 +374,9 @@ void SPPattern::transform_multiply(Geom::Affine postmul, bool set)
     }
     _pattern_transform_set = true;
 
-    Glib::ustring c = sp_svg_transform_write(_pattern_transform);
+    gchar *c = sp_svg_transform_write(_pattern_transform);
     getRepr()->setAttribute("patternTransform", c);
+    g_free(c);
 }
 
 const gchar *SPPattern::produce(const std::vector<Inkscape::XML::Node *> &reprs, Geom::Rect bounds,
@@ -392,8 +393,9 @@ const gchar *SPPattern::produce(const std::vector<Inkscape::XML::Node *> &reprs,
     sp_repr_set_svg_double(repr, "height", bounds.dimensions()[Geom::Y]);
     //TODO: Maybe is better handle it in sp_svg_transform_write
     if(transform != Geom::Affine()){ 
-        Glib::ustring t = sp_svg_transform_write(transform);
+        gchar *t = sp_svg_transform_write(transform);
         repr->setAttribute("patternTransform", t);
+        g_free(t);
     }
     defsrepr->appendChild(repr);
     const gchar *pat_id = repr->attribute("id");

@@ -38,8 +38,6 @@
 #include "widgets/ege-adjustment-action.h"
 #include "widgets/ege-select-one-action.h"
 #include "widgets/ink-action.h"
-#include "widgets/ink-radio-action.h"
-#include "widgets/ink-toggle-action.h"
 #include "preferences.h"
 #include "toolbox.h"
 #include "ui/icon-names.h"
@@ -111,7 +109,7 @@ static void sp_toogle_break_apart( GtkToggleAction* act, gpointer data )
 
 void sp_eraser_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObject* holder)
 {
-    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
     gint eraserMode = FALSE;
     {

@@ -71,13 +71,13 @@ private:
     int phys;
     
     Glib::ustring _pixClipName;
-    Glib::ustring _pixInverseName;
     Glib::ustring _pixMaskName;
+    Glib::ustring _pixBothName;
     
     Glib::Property<int> _property_active;
     Glib::Property< Glib::RefPtr<Gdk::Pixbuf> > _property_pixbuf_clip;
-    Glib::Property< Glib::RefPtr<Gdk::Pixbuf> > _property_pixbuf_inverse;
     Glib::Property< Glib::RefPtr<Gdk::Pixbuf> > _property_pixbuf_mask;
+    Glib::Property< Glib::RefPtr<Gdk::Pixbuf> > _property_pixbuf_both;
     
 };
 

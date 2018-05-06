@@ -25,7 +25,7 @@ ToggleButtonParam::ToggleButtonParam( const Glib::ustring& label, const Glib::us
                       const Glib::ustring& key, Inkscape::UI::Widget::Registry* wr,
                       Effect* effect, bool default_value, const Glib::ustring& inactive_label,
                       char const * _icon_active, char const * _icon_inactive, 
-                      GtkIconSize _icon_size)
+                      Inkscape::IconSize _icon_size)
     : Parameter(label, tip, key, wr, effect), value(default_value), defvalue(default_value),
       inactive_label(inactive_label), _icon_active(_icon_active), _icon_inactive(_icon_inactive), _icon_size(_icon_size)
 {
@@ -96,9 +96,9 @@ ToggleButtonParam::param_newWidget()
         gtk_widget_show(box_button);
         GtkWidget *icon_button = NULL;
         if(!value){ 
-            icon_button = gtk_image_new_from_icon_name(_icon_inactive, _icon_size);
+            icon_button = sp_icon_new(_icon_size, _icon_inactive);
         } else {
-            icon_button = gtk_image_new_from_icon_name(_icon_active, _icon_size);
+            icon_button = sp_icon_new(_icon_size, _icon_active);
         }
         gtk_widget_show(icon_button);
         gtk_box_pack_start (GTK_BOX(box_button), icon_button, false, false, 1);
@@ -132,26 +132,23 @@ ToggleButtonParam::refresh_button()
     if(!box_button){
         return;
     }
-    std::vector<Gtk::Widget*> children = Glib::wrap(GTK_CONTAINER(box_button))->get_children();
+    GList * childs = gtk_container_get_children(GTK_CONTAINER(box_button->gobj()));
+    guint total_widgets = g_list_length (childs);
     if (!param_label.empty()) {
-        Gtk::Label *lab = dynamic_cast<Gtk::Label*>(children[children.size()-1]);
-        if (!lab) return;
         if(value || inactive_label.empty()){
-            lab->set_text(param_label.c_str());
+            gtk_label_set_text(GTK_LABEL(g_list_nth_data(childs, total_widgets-1)), param_label.c_str());
         }else{
-            lab->set_text(inactive_label.c_str());
+            gtk_label_set_text(GTK_LABEL(g_list_nth_data(childs, total_widgets-1)), inactive_label.c_str());
         }
     }
     if ( _icon_active ) {
         GdkPixbuf * icon_pixbuf = NULL;
-        Gtk::Image *im = dynamic_cast<Gtk::Image*>(children[0]);
-        Gtk::IconSize is(_icon_size);
-        if (!im) return;
         if(!value){ 
-            im->set_from_icon_name(_icon_inactive, is);
+            icon_pixbuf = sp_pixbuf_new( _icon_size, _icon_inactive );
         } else {
-            im->set_from_icon_name(_icon_active, is);
+            icon_pixbuf = sp_pixbuf_new( _icon_size, _icon_active );
         }
+        gtk_image_set_from_pixbuf (GTK_IMAGE(g_list_nth_data(childs, 0)), icon_pixbuf);
     }
 }
 

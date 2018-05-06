@@ -14,7 +14,6 @@
 #include "widgets/icon.h"
 #include <glibmm/i18n.h>
 #include <gtkmm/button.h>
-#include <gtkmm/image.h>
 #include <gtkmm/label.h>
 
 #include "uri.h"
@@ -38,6 +37,7 @@ OriginalPathParam::OriginalPathParam( const Glib::ustring& label, const Glib::us
     : PathParam(label, tip, key, wr, effect, "")
 {
     oncanvas_editable = false;
+    _from_original_d = false;
 }
 
 OriginalPathParam::~OriginalPathParam()
@@ -57,8 +57,7 @@ OriginalPathParam::param_newWidget()
     }
 
     { // Paste path to link button
-        Gtk::Image *pIcon = Gtk::manage(new Gtk::Image());
-        pIcon->set_from_icon_name("edit-clone", Gtk::ICON_SIZE_BUTTON);
+        Gtk::Widget *pIcon = Gtk::manage( sp_icon_get_icon( INKSCAPE_ICON("edit-clone"), Inkscape::ICON_SIZE_BUTTON) );
         Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
         pButton->set_relief(Gtk::RELIEF_NONE);
         pIcon->show();
@@ -70,8 +69,7 @@ OriginalPathParam::param_newWidget()
     }
 
     { // Select original button
-        Gtk::Image *pIcon = Gtk::manage(new Gtk::Image());
-        pIcon->set_from_icon_name("edit-select-original", Gtk::ICON_SIZE_BUTTON);
+        Gtk::Widget *pIcon = Gtk::manage( sp_icon_get_icon("edit-select-original", Inkscape::ICON_SIZE_BUTTON) );
         Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
         pButton->set_relief(Gtk::RELIEF_NONE);
         pIcon->show();
@@ -92,7 +90,7 @@ OriginalPathParam::linked_modified_callback(SPObject *linked_obj, guint /*flags*
 {
     SPCurve *curve = NULL;
     if (SP_IS_SHAPE(linked_obj)) {
-        curve = SP_SHAPE(linked_obj)->getCurveBeforeLPE();
+        curve = SP_SHAPE(linked_obj)->getCurve();
     }
     if (SP_IS_TEXT(linked_obj)) {
         curve = SP_TEXT(linked_obj)->getNormalizedBpath();

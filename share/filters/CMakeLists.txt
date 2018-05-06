@@ -6,4 +6,4 @@ add_custom_command(
 )
 add_custom_target(filters_svg_h ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/filters.svg.h)
 
-install(FILES "filters.svg" "filters.svg.h" "README" DESTINATION ${INKSCAPE_SHARE_INSTALL}/filters)
+install(FILES "filters.svg" "README" DESTINATION ${INKSCAPE_SHARE_INSTALL}/filters)

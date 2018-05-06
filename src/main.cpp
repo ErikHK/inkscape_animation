@@ -15,6 +15,7 @@
  * ... and various people who have worked with various projects
  *   Jon A. Cruz <jon@oncruz.org>
  *   Abhishek Sharma
+ +   Marc Jeanmougin
  *
  * Copyright (C) 1999-2004 authors
  * Copyright (C) 2001-2002 Ximian, Inc.
@@ -68,6 +69,7 @@
 #include "document.h"
 #include "layer-model.h"
 #include "selection.h"
+#include "selection-chemistry.h"
 #include "sp-object.h"
 #include "ui/interface.h"
 #include "print.h"
@@ -178,6 +180,7 @@ enum {
     SP_ARG_VERSION,
     SP_ARG_VACUUM_DEFS,
     SP_ARG_NO_CONVERT_TEXT_BASELINE_SPACING,
+    SP_ARG_CONVERT_DPI_METHOD,
 #ifdef WITH_DBUS
     SP_ARG_DBUS_LISTEN,
     SP_ARG_DBUS_NAME,
@@ -281,6 +284,7 @@ static void resetCommandlineGlobals() {
         sp_query_id = NULL;
         sp_vacuum_defs = FALSE;
         sp_no_convert_text_baseline_spacing = FALSE;
+        sp_file_convert_dpi_method_commandline = -1;
 #ifdef WITH_DBUS
         sp_dbus_listen = FALSE;
         sp_dbus_name = NULL;
@@ -348,7 +352,7 @@ struct poptOption options[] = {
 
     {"export-margin", 0,
      POPT_ARG_STRING, &sp_export_margin, SP_ARG_EXPORT_MARGIN,
-     N_("Only for PS/EPS/PDF, sets margin in mm around exported area (default 0)"),
+     N_("Sets margin around exported area (default 0) in units of page size for SVG and mm for PS/EPS/PDF"),
      N_("VALUE")},
 
     {"export-area-snap", 0,
@@ -528,9 +532,14 @@ struct poptOption options[] = {
      NULL},
 
     {"no-convert-text-baseline-spacing", 0,
-    POPT_ARG_NONE, &sp_no_convert_text_baseline_spacing, SP_ARG_NO_CONVERT_TEXT_BASELINE_SPACING,
-    N_("Do not fix legacy (pre-0.92) files' text baseline spacing on opening."),
-    NULL},
+     POPT_ARG_NONE, &sp_no_convert_text_baseline_spacing, SP_ARG_NO_CONVERT_TEXT_BASELINE_SPACING,
+     N_("Do not fix legacy (pre-0.92) files' text baseline spacing on opening."),
+     NULL},
+
+    {"convert-dpi-method", 0,
+     POPT_ARG_STRING, NULL, SP_ARG_CONVERT_DPI_METHOD,
+     N_("Method used to convert pre-.92 document dpi, if needed. ([none|scale-viewbox|scale-document])"),
+     "[...]"},
 
     POPT_AUTOHELP POPT_TABLEEND
 };
@@ -549,6 +558,11 @@ gchar * blankParam = g_strdup("");
  */
 static void _win32_set_inkscape_env(gchar const *exe)
 {
+    // add inkscape directory to DLL search path so dynamically linked extension modules find their libraries
+    wchar_t *exe_w = (wchar_t *)g_utf8_to_utf16(exe, -1, NULL, NULL, NULL);
+    SetDllDirectoryW(exe_w);
+    g_free(exe_w);
+
     gchar const *path = g_getenv("PATH");
     gchar const *pythonpath = g_getenv("PYTHONPATH");
 
@@ -936,7 +950,7 @@ namespace Inkscape {
 namespace UI {
 namespace Tools {
 
-guint get_group0_keyval(GdkEventKey const* event);
+guint get_latin_keyval(GdkEventKey const* event);
 
 }
 }
@@ -994,7 +1008,7 @@ snooper(GdkEvent *event, gpointer /*data*/) {
             alt_pressed = TRUE && (event->button.state & GDK_MOD1_MASK);
             break;
         case GDK_KEY_PRESS:
-            keyval = Inkscape::UI::Tools::get_group0_keyval(&event->key);
+            keyval = Inkscape::UI::Tools::get_latin_keyval(&event->key);
             if (keyval == GDK_KEY_Alt_L) altL_pressed = TRUE;
             if (keyval == GDK_KEY_Alt_R) altR_pressed = TRUE;
             alt_pressed = alt_pressed || altL_pressed || altR_pressed;
@@ -1005,7 +1019,7 @@ snooper(GdkEvent *event, gpointer /*data*/) {
                 event->key.state &= ~GDK_MOD1_MASK;
             break;
         case GDK_KEY_RELEASE:
-            keyval = Inkscape::UI::Tools::get_group0_keyval(&event->key);
+            keyval = Inkscape::UI::Tools::get_latin_keyval(&event->key);
             if (keyval == GDK_KEY_Alt_L) altL_pressed = FALSE;
             if (keyval == GDK_KEY_Alt_R) altR_pressed = FALSE;
             if (!altL_pressed && !altR_pressed)
@@ -1128,7 +1142,7 @@ sp_main_gui(int argc, char const **argv)
     // Set default window icon. Obeys the theme.
     gtk_window_set_default_icon_name("inkscape");
     // Do things that were previously in inkscape_gtk_stock_init().
-    //sp_icon_get_phys_size(GTK_ICON_SIZE_MENU);
+    sp_icon_get_phys_size(GTK_ICON_SIZE_MENU);
     Inkscape::UI::Widget::Panel::prep();
 
     gboolean create_new = TRUE;
@@ -1250,15 +1264,30 @@ static int sp_process_file_list(GSList *fl)
                     sp_item_list_to_curves(items, selected, to_select);
 
                 }
+                if (sp_export_margin) {
+                    gdouble margin = g_ascii_strtod(sp_export_margin, NULL);
+                    doc->ensureUpToDate();
+                    SPNamedView *nv;
+                    Inkscape::XML::Node *nv_repr;
+                    if ((nv = sp_document_namedview(doc, 0)) && (nv_repr = nv->getRepr())) {
+                        sp_repr_set_svg_double(nv_repr, "fit-margin-top", margin);
+                        sp_repr_set_svg_double(nv_repr, "fit-margin-left", margin);
+                        sp_repr_set_svg_double(nv_repr, "fit-margin-right", margin);
+                        sp_repr_set_svg_double(nv_repr, "fit-margin-bottom", margin);
+                    }
+                }
+                if(sp_export_area_drawing) {
+                    fit_canvas_to_drawing(doc, sp_export_margin ? true : false);
+                }
                 if(sp_export_id) {
                     doc->ensureUpToDate();
 
                     // "crop" the document to the specified object, cleaning as we go.
                     SPObject *obj = doc->getObjectById(sp_export_id);
-                    Geom::OptRect const bbox(SP_ITEM(obj)->visualBounds());
+                    Geom::OptRect const bbox(SP_ITEM(obj)->desktopVisualBounds());
 
-                    if (bbox) {
-                        doc->fitToRect(*bbox, false);
+                    if (!sp_export_area_page && bbox) {
+                        doc->fitToRect(*bbox, sp_export_margin ? true : false);
                     }
 
                     if (sp_export_id_only) {
@@ -2272,6 +2301,21 @@ sp_process_args(poptContext ctx)
                 if (arg != NULL) {
                     // printf("Adding in: %s\n", arg);
                     new Inkscape::CmdLineAction((a == SP_ARG_VERB), arg);
+                }
+                break;
+            }
+            case SP_ARG_CONVERT_DPI_METHOD: {
+                gchar const *arg = poptGetOptArg(ctx);
+                if (arg != NULL) {
+                    if (!strcmp(arg,"none")) {
+                        sp_file_convert_dpi_method_commandline = FILE_DPI_UNCHANGED;
+                    } else if (!strcmp(arg,"scale-viewbox")) {
+                        sp_file_convert_dpi_method_commandline = FILE_DPI_VIEWBOX_SCALED;
+                    } else if (!strcmp(arg,"scale-document")) {
+                        sp_file_convert_dpi_method_commandline = FILE_DPI_DOCUMENT_SCALED;
+                    } else {
+                        g_warning("Invalid update option");
+                    }
                 }
                 break;
             }

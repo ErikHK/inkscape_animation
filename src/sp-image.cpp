@@ -796,7 +796,7 @@ void sp_image_refresh_if_outdated( SPImage* image )
     if ( image->href && image->pixbuf && image->pixbuf->modificationTime()) {
         // It *might* change
 
-        struct stat st;
+        GStatBuf st;
         memset(&st, 0, sizeof(st));
         int val = 0;
         if (g_file_test (image->pixbuf->originalPath().c_str(), G_FILE_TEST_EXISTS)){ 

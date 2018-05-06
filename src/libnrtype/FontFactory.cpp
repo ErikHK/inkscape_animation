@@ -196,7 +196,7 @@ const char *sp_font_description_get_family(PangoFontDescription const *fontDescr
     const char *pangoFamily = pango_font_description_get_family(fontDescr);
 
     if (pangoFamily && ((it = fontNameMap.find(pangoFamily)) != fontNameMap.end())) {
-        return ((Glib::ustring)it->second).c_str();
+        return (it->second).c_str();
     }
 
     return pangoFamily;
@@ -294,6 +294,12 @@ void font_factory::GetUIFamilies(std::vector<PangoFontFamily *>& out)
         
         if (displayName == 0 || *displayName == '\0') {
             std::cerr << "font_factory::GetUIFamilies: Missing displayName! " << std::endl;
+            continue;
+        }
+        if (!g_utf8_validate(displayName, -1, 0)) {
+            // TODO: can can do anything about this or does it always indicate broken fonts that should not be used?
+            std::cerr << "font_factory::GetUIFamilies: Illegal characters in displayName. ";
+            std::cerr << "Ignoring font '" << displayName << "'" << std::endl;
             continue;
         }
         sorted.push_back(std::make_pair(families[currentFamily], displayName));
@@ -675,13 +681,16 @@ font_instance *font_factory::Face(PangoFontDescription *descr, bool canFail)
             // no match
             if ( canFail ) {
                 PANGO_DEBUG("falling back to 'sans-serif'\n");
-                descr = pango_font_description_new();
-                pango_font_description_set_family(descr,"sans-serif");
-                res = Face(descr,false);
-                pango_font_description_free(descr);
+                PangoFontDescription *new_descr = pango_font_description_new();
+                pango_font_description_set_family(new_descr, "sans-serif");
+                res = Face(new_descr, false);
+                pango_font_description_free(new_descr);
+            } else {
+                g_critical("Could not load any face for font '%s'.", pango_font_description_to_string(descr));
             }
         }
 
+        if (res) {
         // Extract which OpenType tables are in the font. We'll make a list of all tables
         // regardless of which script and langauge they are in.  These functions are deprecated but
         // will eventually be replaced by newer functions (according to Behdad).
@@ -750,7 +759,7 @@ font_instance *font_factory::Face(PangoFontDescription *descr, bool canFail)
         //     std::cout << "Table: " << it->first << "  Occurances: " << it->second << std::endl;
         // }
         g_free( features );
-
+        }
     } else {
         // already here
         res = loadedFaces[descr];

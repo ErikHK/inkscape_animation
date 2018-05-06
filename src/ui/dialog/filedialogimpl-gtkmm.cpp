@@ -555,7 +555,7 @@ bool SVGPreview::set(Glib::ustring &fileName, int dialogType)
         Glib::ustring fileNameUtf8 = Glib::filename_to_utf8(fileName);
         gchar *fName = const_cast<gchar *>(
             fileNameUtf8.c_str()); // const-cast probably not necessary? (not necessary on Windows version of stat())
-        struct stat info;
+        GStatBuf info;
         if (g_stat(fName, &info)) // stat returns 0 upon success
         {
             g_warning("SVGPreview::set() : %s : %s", fName, strerror(errno));

@@ -111,7 +111,7 @@ static void try_shortcuts_file(char const *filename) {
 /*
  *  Inkscape expects to add the Shift modifier to any accel_keys create with Shift
  *  For exmaple on en_US keyboard <Shift>+6 = "&" - in this case return <Shift>+&
- *  See get_group0_keyval() for explanation on why
+ *  See get_latin_keyval() for explanation on why
  */
 unsigned int sp_gdkmodifier_to_shortcut(guint accel_key, Gdk::ModifierType gdkmodifier, guint hardware_keycode) {
 
@@ -121,15 +121,21 @@ unsigned int sp_gdkmodifier_to_shortcut(guint accel_key, Gdk::ModifierType gdkmo
     event.state = gdkmodifier;
     event.keyval = accel_key;
     event.hardware_keycode = hardware_keycode;
-    guint keyval = Inkscape::UI::Tools::get_group0_keyval (&event);
+    guint keyval = Inkscape::UI::Tools::get_latin_keyval (&event);
 
     shortcut = accel_key |
-               ( (gdkmodifier & GDK_SHIFT_MASK) || ( accel_key != keyval) ?
+               ( (gdkmodifier & GDK_SHIFT_MASK) ?
                  SP_SHORTCUT_SHIFT_MASK : 0 ) |
                ( gdkmodifier & GDK_CONTROL_MASK ?
                  SP_SHORTCUT_CONTROL_MASK : 0 ) |
                ( gdkmodifier & GDK_MOD1_MASK ?
                  SP_SHORTCUT_ALT_MASK : 0 );
+
+    // enforce the Shift modifier for uppercase letters (otherwise plain A and Shift+A are equivalent)
+    // for characters that are not letters both (is_upper and is_lower) return TRUE, so the condition is false
+    if (gdk_keyval_is_upper(keyval) && !gdk_keyval_is_lower(keyval)) {
+        shortcut |= SP_SHORTCUT_SHIFT_MASK;
+    }
 
     return shortcut;
 }
@@ -333,13 +339,14 @@ void sp_shortcut_file_export()
        Inkscape::UI::Dialog::FileSaveDialog::create(
             *(desktop->getToplevel()),
             open_path,
-        Inkscape::UI::Dialog::CUSTOM_TYPE,
-        _("Select a filename for exporting"),
-        "",
-        "",
-        Inkscape::Extension::FILE_SAVE_METHOD_SAVE_AS
+            Inkscape::UI::Dialog::CUSTOM_TYPE,
+            _("Select a filename for exporting"),
+            "",
+            "",
+            Inkscape::Extension::FILE_SAVE_METHOD_SAVE_AS
         );
-    saveDialog->addFileType("All Files", "*");
+    saveDialog->addFileType(_("Inkscape shortcuts (*.xml)"), ".xml");
+    
 
     bool success = saveDialog->show();
     if (!success) {
@@ -424,7 +431,7 @@ void sp_shortcut_file_export_do(char const *exportname) {
  * Shortcut file consists of pairs of bind elements :
  * Element (a) is used for shortcut display in menus (display="True") and contains the gdk_keyval_name of the shortcut key
  * Element (b) is used in shortcut lookup and contains an uppercase version of the gdk_keyval_name,
- *   or a gdk_keyval_name name and the "Shift" modifier for Shift altered hardware code keys (see get_group0_keyval() for explanation)
+ *   or a gdk_keyval_name name and the "Shift" modifier for Shift altered hardware code keys (see get_latin_keyval() for explanation)
  */
 void sp_shortcut_delete_from_file(char const * /*action*/, unsigned int const shortcut) {
 

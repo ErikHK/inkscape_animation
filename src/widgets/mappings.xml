@@ -52,7 +52,7 @@
   
   <!-- layers menu -->
   <remap id='new_layer' newid='layer-new'/>
-  <!--<remap id='rename_layer' newid='layer-rename'/>-->
+  <remap id='rename_layer' newid='layer-rename'/>
   <remap id='switch_to_layer_above' newid='layer-previous'/>
   <remap id='switch_to_layer_below' newid='layer-next'/>
   <remap id='move_selection_above' newid='selection-move-to-layer-above'/>

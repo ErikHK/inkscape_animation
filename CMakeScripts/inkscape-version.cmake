@@ -1,4 +1,4 @@
-# This is called by cmake as an extermal process from
+# This is called by cmake as an external process from
 # ./src/CMakeLists.txt and creates inkscape-version.cpp
 #
 # It's also included directly in ./CMakeScripts/Dist.cmake to

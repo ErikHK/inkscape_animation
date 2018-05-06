@@ -161,7 +161,15 @@ Wmf::save(Inkscape::Extension::Output *mod, SPDocument *doc, gchar const *filena
     ext->set_param_bool("FixPPTPatternAsHatch",new_FixPPTPatternAsHatch);
     ext->set_param_bool("textToPath", new_val);
 
+    // ensure usage of dot as decimal separator in scanf/printf functions (indepentendly of current locale)
+    char *oldlocale = g_strdup(setlocale(LC_NUMERIC, NULL));
+    setlocale(LC_NUMERIC, "C");
+
     print_document_to_file(doc, filename);
+
+    // restore decimal separator used in scanf/printf functions to initial value
+    setlocale(LC_NUMERIC, oldlocale);
+    g_free(oldlocale);
 
     return;
 }
@@ -1762,11 +1770,20 @@ std::cout << "BEFORE DRAW"
  << " test0 " << ( d->mask & U_DRAW_VISIBLE)
  << " test1 " << ( d->mask & U_DRAW_FORCE)
  << " test2 " << (wmr_mask & U_DRAW_ALTERS)
+ << " test2.5 " << ((d->mask & U_DRAW_NOFILL) != (wmr_mask & U_DRAW_NOFILL)  )
  << " test3 " << (wmr_mask & U_DRAW_VISIBLE)
  << " test4 " << !(d->mask & U_DRAW_ONLYTO)
  << " test5 " << ((d->mask & U_DRAW_ONLYTO) && !(wmr_mask & U_DRAW_ONLYTO)  )
  << std::endl;
 */
+    /* spurious moveto records should not affect the drawing.  However, they set the NOFILL
+       bit and that messes up the logic about when to emit a path.  So prune out any
+       stray moveto records.  That is those which were never followed by a lineto.
+    */
+    if((d->mask & U_DRAW_NOFILL) && !(d->mask & U_DRAW_VISIBLE) &&
+       !(wmr_mask & U_DRAW_ONLYTO) && (wmr_mask & U_DRAW_VISIBLE)){
+       d->mask ^= U_DRAW_NOFILL;
+    }
 
     if(
         (wmr_mask != U_WMR_INVALID)                             &&              // next record is valid type
@@ -1774,6 +1791,7 @@ std::cout << "BEFORE DRAW"
         (
             (d->mask & U_DRAW_FORCE)                            ||              // This draw is forced by STROKE/FILL/STROKEANDFILL PATH
             (wmr_mask & U_DRAW_ALTERS)                          ||              // Next record would alter the drawing environment in some way
+            ((d->mask & U_DRAW_NOFILL) != (wmr_mask & U_DRAW_NOFILL)) ||        // Fill<->!Fill requires a draw between
             (  (wmr_mask & U_DRAW_VISIBLE)                      &&              // Next record is visible...
                 (
                     ( !(d->mask & U_DRAW_ONLYTO) )              ||              //   Non *TO records cannot be followed by any Visible
@@ -3087,6 +3105,10 @@ Wmf::open( Inkscape::Extension::Input * /*mod*/, const gchar *uri )
         return NULL;
     }
 
+    // ensure usage of dot as decimal separator in scanf/printf functions (indepentendly of current locale)
+    char *oldlocale = g_strdup(setlocale(LC_NUMERIC, NULL));
+    setlocale(LC_NUMERIC, "C");
+
     WMF_CALLBACK_DATA d;
     
     d.n_obj = 0;     //these might not be set otherwise if the input file is corrupt
@@ -3166,6 +3188,10 @@ Wmf::open( Inkscape::Extension::Input * /*mod*/, const gchar *uri )
     d.tri = trinfo_release_except_FC(d.tri);
 
     // in earlier versions no viewbox was generated and a call to setViewBoxIfMissing() was needed here.
+
+    // restore decimal separator used in scanf/printf functions to initial value
+    setlocale(LC_NUMERIC, oldlocale);
+    g_free(oldlocale);
 
     return doc;
 }

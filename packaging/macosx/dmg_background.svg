@@ -994,7 +994,7 @@
              sodipodi:role="line"
              id="tspan4806"
              x="459"
-             y="141.78999">Inkscape 0.91+devel</tspan></text>
+             y="141.78999">Inkscape 0.92.2</tspan></text>
         <path
            sodipodi:nodetypes="cccccccc"
            style="color:#000000;display:inline;overflow:visible;visibility:visible;opacity:0.8258427;fill:url(#linearGradient3762);fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2;marker:none"
@@ -1223,7 +1223,7 @@
          id="text4431"
          y="56.595001"
          x="113.27875"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:33.75px;line-height:125%;font-family:Calluna;-inkscape-font-specification:Calluna;text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:34px;line-height:125%;font-family:Calluna;-inkscape-font-specification:Calluna;text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          xml:space="preserve"><tspan
            y="56.595001"
            x="113.27875"
@@ -1233,8 +1233,8 @@
          sodipodi:linespacing="125%"
          id="text4443"
          y="84.804001"
-         x="144.53799"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17px;line-height:125%;font-family:Ubuntu;-inkscape-font-specification:Ubuntu;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         x="134.53799"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:28px;line-height:125%;font-family:EuphoriaScript;-inkscape-font-specification:EuphoriaScript;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          xml:space="preserve"><tspan
            y="84.804001"
            x="144.53799"

@@ -1,6 +1,0 @@
-ui/widget/registry.o: ui/widget/registry.cpp ../config.h \
- ui/widget/registry.h
-
-../config.h:
-
-ui/widget/registry.h:

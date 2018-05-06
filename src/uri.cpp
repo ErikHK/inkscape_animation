@@ -26,7 +26,7 @@ URI::URI(const URI &uri) {
     _impl = uri._impl;
 }
 
-URI::URI(gchar const *preformed) throw(BadURIException) {
+URI::URI(gchar const *preformed) {
     xmlURIPtr uri;
     if (!preformed) {
         throw MalformedURIException();
@@ -133,7 +133,7 @@ const gchar *URI::Impl::getOpaque() const {
     return (gchar *)_uri->opaque;
 }
 
-gchar *URI::to_native_filename(gchar const* uri) throw(BadURIException)
+gchar *URI::to_native_filename(gchar const* uri)
 {
     gchar *filename = NULL;
     URI tmp(uri);
@@ -167,7 +167,7 @@ const std::string URI::getFullPath(std::string const &base) const {
 
 
 /* TODO !!! proper error handling */
-gchar *URI::toNativeFilename() const throw(BadURIException) {
+gchar *URI::toNativeFilename() const {
     gchar *uriString = toString();
     if (isRelativePath()) {
         return uriString;
@@ -182,7 +182,7 @@ gchar *URI::toNativeFilename() const throw(BadURIException) {
     }
 }
 
-URI URI::fromUtf8( gchar const* path ) throw (BadURIException) {
+URI URI::fromUtf8( gchar const* path ) {
     if ( !path ) {
         throw MalformedURIException();
     }
@@ -216,7 +216,7 @@ URI URI::fromUtf8( gchar const* path ) throw (BadURIException) {
 }
 
 /* TODO !!! proper error handling */
-URI URI::from_native_filename(gchar const *path) throw(BadURIException) {
+URI URI::from_native_filename(gchar const *path) {
     gchar *uri = g_filename_to_uri(path, NULL, NULL);
     URI result(uri);
     g_free( uri );

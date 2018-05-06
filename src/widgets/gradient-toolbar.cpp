@@ -28,8 +28,6 @@
 #include "gradient-drag.h"
 #include "gradient-toolbar.h"
 #include "widgets/ink-action.h"
-#include "widgets/ink-radio-action.h"
-#include "widgets/ink-toggle-action.h"
 #include "macros.h"
 #include "preferences.h"
 #include "selection.h"
@@ -1027,7 +1025,7 @@ static void gradient_toolbox_check_ec(SPDesktop* dt, Inkscape::UI::Tools::ToolBa
  */
 void sp_gradient_toolbox_prep(SPDesktop * desktop, GtkActionGroup* mainActions, GObject* holder)
 {
-    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
 
     /* New gradient linear or radial */
     {
@@ -1222,7 +1220,7 @@ void sp_gradient_toolbox_prep(SPDesktop * desktop, GtkActionGroup* mainActions, 
                                                         _("Link gradients"),
                                                         _("Link gradients to change all related gradients"),
                                                         INKSCAPE_ICON("object-unlocked"),
-                                                        GTK_ICON_SIZE_MENU );
+                                                        Inkscape::ICON_SIZE_DECORATION );
         g_object_set( itact, "short_label", "Lock", NULL );
         g_signal_connect_after( G_OBJECT(itact), "toggled", G_CALLBACK(gr_linked_changed), desktop) ;
         gtk_action_group_add_action( mainActions, GTK_ACTION(itact) );

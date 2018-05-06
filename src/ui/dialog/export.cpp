@@ -102,9 +102,6 @@
 #include "verbs.h"
 #include "export.h"
 
-#include "layer-fns.h"
-#include "layer-manager.h"
-
 using Inkscape::Util::unit_table;
 
 namespace {
@@ -142,12 +139,12 @@ namespace Dialog {
 /** A list of strings that is used both in the preferences, and in the
     data fields to describe the various values of \c selection_type. */
 static const char * selection_names[SELECTION_NUMBER_OF] = {
-    "page", "drawing", "selection", "custom", "animation"
+    "page", "drawing", "selection", "custom"
 };
 
 /** The names on the buttons for the various selection types. */
 static const char * selection_labels[SELECTION_NUMBER_OF] = {
-    N_("_Page"), N_("_Drawing"), N_("_Selection"), N_("_Custom"), N_("_Animation")
+    N_("_Page"), N_("_Drawing"), N_("_Selection"), N_("_Custom")
 };
 
 Export::Export (void) :
@@ -777,12 +774,6 @@ void Export::onAreaToggled ()
             // std::cout << "Using selection: PAGE" << std::endl;
             key = SELECTION_PAGE;
             break;
-		case SELECTION_ANIMATION:
-			bbox = Geom::Rect(Geom::Point(0.0, 0.0),
-                              Geom::Point(doc->getWidth().value("px"), doc->getHeight().value("px")));
-
-            key = SELECTION_ANIMATION;
-			break;
         case SELECTION_CUSTOM:
         default:
             break;
@@ -887,10 +878,11 @@ void Export::onProgressCancel ()
 unsigned int Export::onProgressCallback(float value, void *dlg)
 {
     Gtk::Dialog *dlg2 = reinterpret_cast<Gtk::Dialog*>(dlg);
-    if (dlg2->get_data("cancel")) {
-        return FALSE;
-    }
 
+    Export *self = reinterpret_cast<Export *>(dlg2->get_data("exportPanel"));
+    if (self->interrupted)
+        return FALSE;
+    
     gint current = GPOINTER_TO_INT(dlg2->get_data("current"));
     gint total = GPOINTER_TO_INT(dlg2->get_data("total"));
     if (total > 0) {
@@ -903,7 +895,6 @@ unsigned int Export::onProgressCallback(float value, void *dlg)
     Gtk::ProgressBar *prg = reinterpret_cast<Gtk::ProgressBar *>(dlg2->get_data("progress"));
     prg->set_fraction(value);
 
-    Export *self = reinterpret_cast<Export *>(dlg2->get_data("exportPanel"));
     if (self) {
         self->_prog.set_fraction(value);
     }
@@ -937,6 +928,7 @@ void Export::setExporting(bool exporting, Glib::ustring const &text)
 
 Gtk::Dialog * Export::create_progress_dialog (Glib::ustring progress_text) {
     Gtk::Dialog *dlg = new Gtk::Dialog(_("Export in progress"), TRUE);
+    dlg->set_transient_for( *(INKSCAPE.active_desktop()->getToplevel()) );
 
     Gtk::ProgressBar *prg = new Gtk::ProgressBar ();
     prg->set_text(progress_text);
@@ -981,33 +973,6 @@ Glib::ustring Export::filename_add_extension (Glib::ustring filename, Glib::ustr
         }
     }
 }
-
-
-Glib::ustring Export::filename_add_extension (Glib::ustring filename, Glib::ustring extension, Glib::ustring extra)
-{
-    Glib::ustring::size_type dot;
-    Glib::ustring::size_type dot_ext;
-
-    dot = filename.find_last_of(".");
-    dot_ext = filename.lowercase().rfind("." + extension.lowercase());
-    if ( dot == std::string::npos )
-    {
-        return filename = filename + extra + "." + extension;
-    }
-    else
-    {
-        if (dot == dot_ext)
-        {
-            return filename = filename.substr(0, filename.size()-4) + extra + "." + extension;
-        }
-        else
-        {
-            return filename = filename + extra + "." + extension;
-        }
-    }
-}
-
-
 
 Glib::ustring Export::absolutize_path_from_document_location (SPDocument *doc, const Glib::ustring &filename)
 {
@@ -1138,141 +1103,7 @@ void Export::onExport ()
         prog_dlg = NULL;
         interrupted = false;
         exportSuccessful = (export_count > 0);
-    }
-	else if(current_key == SELECTION_ANIMATION)
-	{
-		float const x0 = getValuePx(x0_adj);
-        float const y0 = getValuePx(y0_adj);
-        float const x1 = getValuePx(x1_adj);
-        float const y1 = getValuePx(y1_adj);
-        float const xdpi = getValue(xdpi_adj);
-        float const ydpi = getValue(ydpi_adj);
-        unsigned long int const width = int(getValue(bmwidth_adj) + 0.5);
-        unsigned long int const height = int(getValue(bmheight_adj) + 0.5);
-		
-		const gint num = desktop->animation_stop-desktop->animation_start+1;
-		gint num_animation_layers = 0;
-		
-		//first hide all layers
-		desktop->toggleHideAllLayers(true);
-		
-		//show layer1
-		SPObject * layer1 = desktop->getDocument()->getObjectById("layer1");
-	
-		if(layer1)
-			SP_ITEM(layer1)->setHidden(false);
-
-		//SPObject * tweenpath = NULL;
-		std::vector<SPObject *> tweenpaths;
-
-		SPObject * layers[num];
-
-		for(int i=0;i < 10; i++)
-		{
-			layers[i] = doc->getObjectById(std::string(Glib::ustring::format("animationlayer", i+1, "keyframe", desktop->animation_start))); //start with keyframe at start of animation
-			if(layers[i])
-				num_animation_layers++;
-		}
-		
-		int i=0;
-		prog_dlg = create_progress_dialog(Glib::ustring::compose(_("Exporting %1 files"), num));
-		prog_dlg->set_data("exportPanel", this);
-		setExporting(true, Glib::ustring::compose(_("Exporting %1 files"), num));
-
-		gint export_count = 0;
-		for(int j=0;j < num; j++)
-		{
-			for(int ii = 0; ii < num_animation_layers; ii++)
-			{
-				if(layers[ii])
-				{
-					SP_ITEM(layers[ii])->setHidden(false);
-					if(layers[ii]->parent)
-						SP_ITEM(layers[ii]->parent)->setHidden(false);
-
-					if(layers[ii]->getRepr()->attribute("inkscape:tween"))
-					{
-						const char * tweenpathid = layers[ii]->getRepr()->attribute("inkscape:tweenpathid");
-						SPObject * tweenpath = doc->getObjectById(tweenpathid);
-						if(tweenpath && SP_IS_PATH(tweenpath))
-						{
-							SP_ITEM(tweenpath)->setHidden(true);
-							tweenpaths.push_back(tweenpath);
-						}
-
-					}
-
-				}
-			}
-			Glib::ustring filename = filename_entry.get_text();
-			Glib::ustring path;
-			if (filename.empty()) {
-				desktop->messageStack()->flash(Inkscape::ERROR_MESSAGE, _("You have to enter a filename."));
-				sp_ui_error_dialog(_("You have to enter a filename"));
-				return;
-			} else {
-				Glib::ustring const filename_ext = filename_add_extension(filename, "png", Glib::ustring::format(j+1));
-				path = absolutize_path_from_document_location(doc, filename_ext);
-				
-			}
-
-            prog_dlg->set_data("current", GINT_TO_POINTER(i));
-            prog_dlg->set_data("total", GINT_TO_POINTER(num));
-            onProgressCallback(0.0, prog_dlg);
-
-			std::vector<SPItem*> x;
-			
-			gchar * safeFile = Inkscape::IO::sanitizeString(path.c_str());
-			
-			if(!sp_export_png_file(desktop->getDocument(), path.c_str(),
-                              Geom::Rect(Geom::Point(x0, y0), Geom::Point(x1, y1)), width, height, xdpi, ydpi,
-                              nv->pagecolor,
-                              onProgressCallback, (void*)prog_dlg,
-                              FALSE,
-                              x))
-			{
-				gchar * error = g_strdup_printf(_("Could not export to filename %s.\n"), safeFile);
-
-				desktop->messageStack()->flashF(Inkscape::ERROR_MESSAGE,
-                                                _("Could not export to filename <b>%s</b>."), safeFile);
-
-                sp_ui_error_dialog(error);
-                g_free(error);
-			}else{
-				++export_count;
-			}
-			
-			for(int ii = 0; ii < num_animation_layers; ii++)
-			{
-				if(layers[ii])
-					SP_ITEM(layers[ii])->setHidden(true);
-			}
-			
-			for(int ii = 0; ii < num_animation_layers; ii++)
-			{
-				if(layers[ii])
-					layers[ii] = Inkscape::next_layer(desktop->currentRoot(), layers[ii]);
-
-			}
-			
-			i++;
-		}
-		
-		desktop->messageStack()->flashF(Inkscape::INFORMATION_MESSAGE,
-                                        _("Successfully exported <b>%d</b> files from <b>%d</b> selected items."), export_count, num);
-
-		setExporting(false);
-		delete prog_dlg;
-		prog_dlg = NULL;
-		interrupted = false;
-        exportSuccessful = (export_count > 0);
-
-        //if(tweenpath && SP_IS_PATH(tweenpath))
-        //	SP_ITEM(tweenpath)->setHidden(false);
-        for(i=0; i < tweenpaths.size(); i++)
-        	SP_ITEM(tweenpaths[i])->setHidden(false);
-	}
-	else {
+    } else {
         Glib::ustring filename = filename_entry.get_text();
 
         if (filename.empty()) {
@@ -1617,7 +1448,7 @@ bool Export::bbox_equal(Geom::Rect const &one, Geom::Rect const &two)
  * @todo finish writing this up.
  */
 void Export::detectSize() {
-    static const selection_type test_order[SELECTION_NUMBER_OF] = {SELECTION_SELECTION, SELECTION_DRAWING, SELECTION_PAGE, SELECTION_CUSTOM, SELECTION_ANIMATION};
+    static const selection_type test_order[SELECTION_NUMBER_OF] = {SELECTION_SELECTION, SELECTION_DRAWING, SELECTION_PAGE, SELECTION_CUSTOM};
     selection_type this_test[SELECTION_NUMBER_OF + 1];
     selection_type key = SELECTION_NUMBER_OF;
 
@@ -1674,9 +1505,6 @@ void Export::detectSize() {
 
             break;
         }
-		case SELECTION_ANIMATION:
-			key = SELECTION_ANIMATION;
-			break;
         default:
             break;
         }
@@ -1684,7 +1512,7 @@ void Export::detectSize() {
     // std::cout << std::endl;
 
     if (key == SELECTION_NUMBER_OF) {
-        key = SELECTION_ANIMATION;
+        key = SELECTION_CUSTOM;
     }
 
     current_key = key;

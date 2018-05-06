@@ -39,8 +39,6 @@
 #include "widgets/ege-adjustment-action.h"
 #include "widgets/ege-select-one-action.h"
 #include "widgets/ink-action.h"
-#include "widgets/ink-radio-action.h"
-#include "widgets/ink-toggle-action.h"
 #include "widgets/ink-comboboxentry-action.h"
 #include "inkscape.h"
 #include "preferences.h"
@@ -210,6 +208,7 @@ static void sp_text_fontsize_value_changed( Ink_ComboBoxEntry_Action *act, GObje
     if (endptr == text) {  // Conversion failed, non-numeric input.
         g_warning( "Conversion of size text to double failed, input: %s\n", text );
         g_free( text );
+        g_object_set_data( tbl, "freeze", GINT_TO_POINTER(FALSE) );
         return;
     }
     g_free( text );
@@ -306,10 +305,23 @@ static void sp_text_fontstyle_value_changed( Ink_ComboBoxEntry_Action *act, GObj
 
         SPDesktop   *desktop    = SP_ACTIVE_DESKTOP;
         sp_desktop_set_style (desktop, css, true, true);
+
+
+        // If no selected objects, set default.
+        SPStyle query(SP_ACTIVE_DOCUMENT);
+        int result_style =
+            sp_desktop_query_style (SP_ACTIVE_DESKTOP, &query, QUERY_STYLE_PROPERTY_FONTSTYLE);
+        if (result_style == QUERY_STYLE_NOTHING) {
+            Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+            prefs->mergeStyle("/tools/text/style", css);
+        } else {
+            // Save for undo
+            DocumentUndo::done(desktop->getDocument(), SP_VERB_CONTEXT_TEXT,
+                               _("Text: Change font style"));
+        }
+
         sp_repr_css_attr_unref (css);
 
-        DocumentUndo::done(desktop->getDocument(), SP_VERB_CONTEXT_TEXT,
-                           _("Text: Change font style"));
     }
 
     g_object_set_data( tbl, "freeze", GINT_TO_POINTER(FALSE) );
@@ -1059,7 +1071,7 @@ static void sp_writing_mode_changed( EgeSelectOneAction *act, GObject *tbl )
 
     SPStyle query(SP_ACTIVE_DOCUMENT);
     int result_numbers =
-        sp_desktop_query_style (SP_ACTIVE_DESKTOP, &query, QUERY_STYLE_PROPERTY_FONTNUMBERS);
+        sp_desktop_query_style (SP_ACTIVE_DESKTOP, &query, QUERY_STYLE_PROPERTY_WRITINGMODES);
 
     // If querying returned nothing, update default style.
     if (result_numbers == QUERY_STYLE_NOTHING)
@@ -1113,7 +1125,7 @@ static void sp_text_orientation_changed( EgeSelectOneAction *act, GObject *tbl )
 
     SPStyle query(SP_ACTIVE_DOCUMENT);
     int result_numbers =
-        sp_desktop_query_style (SP_ACTIVE_DESKTOP, &query, QUERY_STYLE_PROPERTY_FONTNUMBERS);
+        sp_desktop_query_style (SP_ACTIVE_DESKTOP, &query, QUERY_STYLE_PROPERTY_WRITINGMODES);
 
     // If querying returned nothing, update default style.
     if (result_numbers == QUERY_STYLE_NOTHING)
@@ -1127,6 +1139,53 @@ static void sp_text_orientation_changed( EgeSelectOneAction *act, GObject *tbl )
     {
         DocumentUndo::done(SP_ACTIVE_DESKTOP->getDocument(), SP_VERB_CONTEXT_TEXT,
                        _("Text: Change orientation"));
+    }
+    sp_repr_css_attr_unref (css);
+
+    g_object_set_data( tbl, "freeze", GINT_TO_POINTER(FALSE) );
+}
+
+static void sp_text_direction_changed( EgeSelectOneAction *act, GObject *tbl )
+{
+    // quit if run by the _changed callbacks
+    if (g_object_get_data(G_OBJECT(tbl), "freeze")) {
+        return;
+    }
+    g_object_set_data( tbl, "freeze", GINT_TO_POINTER(TRUE) );
+
+    int mode = ege_select_one_action_get_active( act );
+    SPCSSAttr   *css        = sp_repr_css_attr_new ();
+    switch (mode)
+    {
+        case 0:
+        {
+            sp_repr_css_set_property (css, "direction", "ltr");
+            break;
+        }
+
+        case 1:
+        {
+            sp_repr_css_set_property (css, "direction", "rtl");
+            break;
+        }
+    }
+
+    SPStyle query(SP_ACTIVE_DOCUMENT);
+    int result_numbers =
+        sp_desktop_query_style (SP_ACTIVE_DESKTOP, &query, QUERY_STYLE_PROPERTY_WRITINGMODES);
+
+    // If querying returned nothing, update default style.
+    if (result_numbers == QUERY_STYLE_NOTHING)
+    {
+        Inkscape::Preferences *prefs = Inkscape::Preferences::get();
+        prefs->mergeStyle("/tools/text/style", css);
+    }
+
+    sp_desktop_set_style (SP_ACTIVE_DESKTOP, css, true, true);
+    if(result_numbers != QUERY_STYLE_NOTHING)
+    {
+        DocumentUndo::done(SP_ACTIVE_DESKTOP->getDocument(), SP_VERB_CONTEXT_TEXT,
+                       _("Text: Change direction"));
     }
     sp_repr_css_attr_unref (css);
 
@@ -1173,8 +1232,7 @@ static void sp_text_toolbox_selection_changed(Inkscape::Selection */*selection*/
     std::cout << "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&" << std::endl;
     std::cout << "sp_text_toolbox_selection_changed: start " << count << std::endl;
 
-    SPDesktop *desktop = SP_ACTIVE_DESKTOP;
-    Inkscape::Selection *selection = desktop->getSelection();
+    Inkscape::Selection *selection = (SP_ACTIVE_DESKTOP)->getSelection();
     std::vector<SPItem*> itemlist=selection->itemList();
     for(std::vector<SPItem*>::const_iterator i=itemlist.begin();i!=itemlist.end(); ++i){
         const gchar* id = (*i)->getId();
@@ -1498,6 +1556,15 @@ static void sp_text_toolbox_selection_changed(Inkscape::Selection */*selection*/
 
         ege_select_one_action_update_sensitive( textOrientationAction );
 
+        // Direction
+        int activeButton4 = 0;
+        if (query.direction.computed == SP_CSS_DIRECTION_LTR ) activeButton4 = 0;
+        if (query.direction.computed == SP_CSS_DIRECTION_RTL ) activeButton4 = 1;
+
+        EgeSelectOneAction* textDirectionAction =
+            EGE_SELECT_ONE_ACTION( g_object_get_data( tbl, "TextDirectionAction" ) );
+        ege_select_one_action_set_active( textDirectionAction, activeButton4 );
+
     }
 
 #ifdef DEBUG_TEXT
@@ -1643,7 +1710,7 @@ static void text_toolbox_watch_ec(SPDesktop* dt, Inkscape::UI::Tools::ToolBase* 
 void sp_text_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObject* holder)
 {
     Inkscape::Preferences *prefs = Inkscape::Preferences::get();
-    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
 
     /* Font family */
     {
@@ -1947,6 +2014,52 @@ void sp_text_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GObje
         gint mode = prefs->getInt("/tools/text/text_orientation", 0);
         ege_select_one_action_set_active( act, mode );
         g_signal_connect_after( G_OBJECT(act), "changed", G_CALLBACK(sp_text_orientation_changed), holder );
+    }
+
+
+    // Text direction (predominant direction of horizontal text).
+    {
+        GtkListStore* model = gtk_list_store_new( 4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN );
+
+        GtkTreeIter iter;
+
+        gtk_list_store_append( model, &iter );
+        gtk_list_store_set( model, &iter,
+                            0, _("LTR"),
+                            1, _("Left to right text"),
+                            2, INKSCAPE_ICON("format-text-direction-horizontal"),
+                            3, true,
+                            -1 );
+
+        gtk_list_store_append( model, &iter );
+        gtk_list_store_set( model, &iter,
+                            0, _("RTL"),
+                            1, _("Right to left text"),
+                            2, INKSCAPE_ICON("format-text-direction-r2l"),
+                            3, true,
+                            -1 );
+
+        EgeSelectOneAction* act = ege_select_one_action_new( "TextDirectionAction", // Name
+                                                             _("Text direction"),        // Label
+                                                             _("Text direction for normally horizontal text."),   // Tooltip
+                                                             NULL,                    // Icon name
+                                                             GTK_TREE_MODEL(model) ); // Model
+
+        g_object_set( act, "short_label", "NotUsed", NULL );
+        gtk_action_group_add_action( mainActions, GTK_ACTION(act) );
+        g_object_set_data( holder, "TextDirectionAction", act );
+
+        ege_select_one_action_set_appearance( act, "full" );
+        ege_select_one_action_set_radio_action_type( act, INK_RADIO_ACTION_TYPE );
+        g_object_set( G_OBJECT(act), "icon-property", "iconId", NULL );
+        ege_select_one_action_set_icon_column( act, 2 );
+        ege_select_one_action_set_icon_size( act, secondarySize );
+        ege_select_one_action_set_tooltip_column( act, 1  );
+        ege_select_one_action_set_sensitive_column( act, 3 );
+
+        gint mode = prefs->getInt("/tools/text/text_direction", 0);
+        ege_select_one_action_set_active( act, mode );
+        g_signal_connect_after( G_OBJECT(act), "changed", G_CALLBACK(sp_text_direction_changed), holder );
     }
 
     /* Line height unit tracker */

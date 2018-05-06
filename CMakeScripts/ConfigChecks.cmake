@@ -12,6 +12,7 @@ include(CheckStructHasMember)
 
 set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${INKSCAPE_LIBS})
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${INKSCAPE_INCS_SYS})
+
 CHECK_INCLUDE_FILE_CXX(boost/concept_check.hpp HAVE_BOOST_CONCEPT_CHECK_HPP)
 CHECK_INCLUDE_FILES(cairo-pdf.h HAVE_CAIRO_PDF)
 CHECK_FUNCTION_EXISTS(floor HAVE_FLOOR)
@@ -59,16 +60,12 @@ CHECK_INCLUDE_FILES(unistd.h HAVE_UNISTD_H)
 CHECK_INCLUDE_FILES(zlib.h HAVE_ZLIB_H)
 
 CHECK_INCLUDE_FILE_CXX(unordered_set HAVE_NATIVE_UNORDERED_SET)
+
 # Enable pango defines, necessary for compilation on Win32, how about Linux?
 # yes but needs to be done a better way
 if(HAVE_CAIRO_PDF)
     set(PANGO_ENABLE_ENGINE TRUE)
     set(RENDER_WITH_PANGO_CAIRO TRUE)
-endif()
-
-# Relocatable Binary
-if (ENABLE_BINRELOC)
-	add_definitions(-DENABLE_BINRELOC)
 endif()
 
 # Create the configuration files config.h in the binary root dir

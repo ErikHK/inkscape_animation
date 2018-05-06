@@ -37,7 +37,7 @@ public:
     static const gchar *SUBMODE_NAMES[];
 
     static gfloat getScaled(const GtkAdjustment *a);
-    static void setScaled(GtkAdjustment *a, gfloat v);
+    static void setScaled(GtkAdjustment *a, gfloat v, bool constrained = false);
 
     ColorScales(SelectedColor &color, SPColorScalesMode mode);
     virtual ~ColorScales();

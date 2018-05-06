@@ -45,7 +45,7 @@ public:
 	static void init (void) {
 		Inkscape::Extension::build_from_mem(
 			"<inkscape-extension xmlns=\"" INKSCAPE_EXTENSION_URI "\">\n"
-				"<name>" N_("Snow crest") "</name>\n"
+				"<name>" N_("Snow Crest") "</name>\n"
 				"<id>org.inkscape.effect.filter.snow</id>\n"
 				"<param name=\"drift\" _gui-text=\"" N_("Drift Size") "\" type=\"float\" appearance=\"full\" min=\"0.0\" max=\"20.0\">3.5</param>\n"
 				"<effect>\n"

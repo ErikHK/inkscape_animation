@@ -2,7 +2,7 @@ if(UNIX)
     #The install directive for the binaries and libraries are found in src/CMakeList.txt
     install(FILES
       ${CMAKE_BINARY_DIR}/inkscape.desktop
-      DESTINATION ${SHARE_INSTALL}/applications)
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/${SHARE_INSTALL}/applications)
 endif()
 
 if(WIN32)
@@ -10,11 +10,14 @@ if(WIN32)
     AUTHORS
     COPYING
     NEWS
-    README.md
+    README
     TRANSLATORS
-	GPL2.txt
-	GPL3.txt
-	LGPL2.1.txt
+    DESTINATION .)
+
+  install(FILES
+    GPL2.txt
+    GPL3.txt
+    LGPL2.1.txt
     DESTINATION .)
 
   install(DIRECTORY doc
@@ -36,11 +39,9 @@ if(WIN32)
       ${DEVLIBS_BIN}/libatk-1.0-0.dll
       ${DEVLIBS_BIN}/libatkmm-1.6-1.dll
       ${DEVLIBS_BIN}/libcairo-2.dll
-      ${DEVLIBS_BIN}/libcairo-gobject-2.dll
       ${DEVLIBS_BIN}/libcairomm-1.0-1.dll
       ${DEVLIBS_BIN}/libcdr-0.1.dll
       ${DEVLIBS_BIN}/libcurl-4.dll
-      ${DEVLIBS_BIN}/libepoxy-0.dll
       ${DEVLIBS_BIN}/libexif-12.dll
       ${DEVLIBS_BIN}/libexpat-1.dll
       ${DEVLIBS_BIN}/libexslt-0.dll
@@ -51,7 +52,6 @@ if(WIN32)
       ${DEVLIBS_BIN}/libgdk-win32-2.0-0.dll
       ${DEVLIBS_BIN}/libgdk_pixbuf-2.0-0.dll
       ${DEVLIBS_BIN}/libgdkmm-2.4-1.dll
-      ${DEVLIBS_BIN}/libgdl-3-5.dll
       ${DEVLIBS_BIN}/libgio-2.0-0.dll
       ${DEVLIBS_BIN}/libgiomm-2.4-1.dll
       ${DEVLIBS_BIN}/libglib-2.0-0.dll
@@ -61,8 +61,8 @@ if(WIN32)
       ${DEVLIBS_BIN}/libgsl-19.dll
       ${DEVLIBS_BIN}/libgslcblas-0.dll
       ${DEVLIBS_BIN}/libgthread-2.0-0.dll
-	  ${DEVLIBS_BIN}/libgtk-win32-2.0-0.dll
-	  ${DEVLIBS_BIN}/libgtkmm-2.4-1.dll
+      ${DEVLIBS_BIN}/libgtk-win32-2.0-0.dll
+      ${DEVLIBS_BIN}/libgtkmm-2.4-1.dll
       ${DEVLIBS_BIN}/libharfbuzz-0.dll
       ${DEVLIBS_BIN}/libiconv-2.dll
       ${DEVLIBS_BIN}/libintl-8.dll
@@ -168,18 +168,19 @@ if(WIN32)
   file(GENERATE OUTPUT share/icons/hicolor/index.theme
     CONTENT "[Icon Theme]\nName=hicolor\nDirectories=")
 
-  install(DIRECTORY ${DEVLIBS_PATH}/share/icons/Adwaita
-    DESTINATION share/icons)
+  install(DIRECTORY ${DEVLIBS_PATH}/share/themes
+    DESTINATION share)
+
+  install(DIRECTORY ${DEVLIBS_PATH}/share/locale
+    DESTINATION share
+    PATTERN "*gtk30.mo" EXCLUDE)
 
   install(DIRECTORY ${DEVLIBS_PATH}/share/poppler
     DESTINATION share)
 
-  install(DIRECTORY ${DEVLIBS_PATH}/share/glib-2.0/schemas
-    DESTINATION share/glib-2.0)
-
   install(DIRECTORY ${DEVLIBS_PATH}/etc/fonts
     DESTINATION etc)
-	
+
   install(DIRECTORY ${DEVLIBS_PATH}/etc/gtk-2.0
     DESTINATION etc)
 
@@ -189,8 +190,6 @@ if(WIN32)
     FILES_MATCHING
     PATTERN "*.dll"
     PATTERN "*.cache")
-
-
 
   install(DIRECTORY ${DEVLIBS_LIB}/gdk-pixbuf-2.0
     DESTINATION lib

@@ -318,17 +318,19 @@ void SPItem::raiseToTop() {
     }
 }
 
-void SPItem::raiseOne() {
+bool SPItem::raiseOne() {
     SPObject *next_higher=std::find_if<SPObject::SiblingIterator>(
         next, NULL, &is_item
     );
     if (next_higher) {
         Inkscape::XML::Node *ref = next_higher->getRepr();
         getRepr()->parent()->changeOrder(getRepr(), ref);
+        return true;
     }
+    return false;
 }
 
-void SPItem::lowerOne() {
+bool SPItem::lowerOne() {
     using Inkscape::Util::MutableList;
     using Inkscape::Util::reverse_list;
 
@@ -343,7 +345,9 @@ void SPItem::lowerOne() {
         ++next_lower;
         Inkscape::XML::Node *ref = ( next_lower ? next_lower->getRepr() : NULL );
         getRepr()->parent()->changeOrder(getRepr(), ref);
+        return true;
     }
+    return false;
 }
 
 void SPItem::lowerToBottom() {

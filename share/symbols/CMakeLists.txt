@@ -8,4 +8,4 @@ add_custom_command(
 )
 add_custom_target(symbols_h ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/symbols.h)
 
-install(FILES ${_FILES} "symbols.h" "README" DESTINATION ${INKSCAPE_SHARE_INSTALL}/symbols)
+install(FILES ${_FILES} "README" DESTINATION ${INKSCAPE_SHARE_INSTALL}/symbols)

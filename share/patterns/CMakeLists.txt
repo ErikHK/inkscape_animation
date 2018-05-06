@@ -6,4 +6,4 @@ add_custom_command(
 )
 add_custom_target(patterns_svg_h ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/patterns.svg.h)
 
-install(FILES "patterns.svg" "patterns.svg.h" "README" DESTINATION ${INKSCAPE_SHARE_INSTALL}/patterns)
+install(FILES "patterns.svg" "README" DESTINATION ${INKSCAPE_SHARE_INSTALL}/patterns)

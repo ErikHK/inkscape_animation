@@ -318,7 +318,7 @@ SPObject* LayerPropertiesDialog::_selectedLayer()
 bool LayerPropertiesDialog::_handleKeyEvent(GdkEventKey *event)
 {
 
-    switch (Inkscape::UI::Tools::get_group0_keyval(event)) {
+    switch (Inkscape::UI::Tools::get_latin_keyval(event)) {
         case GDK_KEY_Return:
         case GDK_KEY_KP_Enter: {
             _strategy->perform(*this);
@@ -383,9 +383,9 @@ void LayerPropertiesDialog::Create::setup(LayerPropertiesDialog &dialog) {
 
 void LayerPropertiesDialog::Create::perform(LayerPropertiesDialog &dialog) {
     SPDesktop *desktop=dialog._desktop;
-	
+
     LayerRelativePosition position = LPOS_ABOVE;
-	
+    
     if (dialog._position_visible) {
         Gtk::ListStore::iterator activeRow(dialog._layer_position_combo.get_active());
         position = activeRow->get_value(dialog._dropdown_columns.position);
@@ -400,16 +400,7 @@ void LayerPropertiesDialog::Create::perform(LayerPropertiesDialog &dialog) {
         desktop->layer_manager->renameLayer( new_layer, (gchar *)name.c_str(), TRUE );
     }
     desktop->getSelection()->clear();
-    
-	//desktop->setCurrentLayer(new_layer);
-	//new_layer=Inkscape::create_layer(desktop->currentRoot(), new_layer, position);
-	
-	//desktop->setCurrentLayer(new_layer);
-	//new_layer=Inkscape::create_layer(desktop->currentRoot(), new_layer, position);
-	
-	//desktop->setCurrentLayer(new_layer);
-	//new_layer=Inkscape::create_layer(desktop->currentRoot(), new_layer, position);
-	
+    desktop->setCurrentLayer(new_layer);
     desktop->messageStack()->flash(Inkscape::NORMAL_MESSAGE, _("New layer created."));
 }
 

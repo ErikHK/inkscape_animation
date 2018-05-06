@@ -71,7 +71,7 @@ N_("Sharpen More"),
 N_("Image Effects"),
 N_("Sharpen edges and boundaries within the object, force=0.3"),
 
-N_("Oil painting"),
+N_("Oil Painting"),
 N_("Image Paint and Draw"),
 N_("Simulate oil painting style"),
 
@@ -424,14 +424,14 @@ N_("Bumps"),
 N_("Gives Smooth Bumps velvet like"),
 
 N_("Comics Cream"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Comics shader with creamy waves transparency"),
 
 N_("Chewing Gum"),
 N_("Protrusions"),
 N_("Creates colorizable blotches which smoothly flow over the edges of the lines at their crossings"),
 
-N_("Dark And Glow"),
+N_("Dark and Glow"),
 N_("Shadows and Glows"),
 N_("Darkens the edge with an inner blur and adds a flexible glow"),
 
@@ -588,7 +588,7 @@ N_("Color"),
 N_("Oversaturate colors which can be fluorescent in real world"),
 
 N_("Pixellize"),
-N_("Pixel tools"),
+N_("Pixel Tools"),
 N_("Reduce or remove antialiasing around shapes"),
 
 N_("Basic Diffuse Bump"),
@@ -724,75 +724,75 @@ N_("Overlays"),
 N_("Colorizable filling with liquid transparency"),
 
 N_("Aluminium"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Aluminium effect with sharp brushed reflections"),
 
 N_("Comics"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Comics cartoon drawing effect"),
 
 N_("Comics Draft"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Draft painted cartoon shading with a glassy look"),
 
 N_("Comics Fading"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Cartoon paint style with some fading at the edges"),
 
 N_("Brushed Metal"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Satiny metal surface effect"),
 
 N_("Opaline"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Contouring version of smooth shader"),
 
 N_("Chrome"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Bright chrome effect"),
 
 N_("Deep Chrome"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Dark chrome effect"),
 
 N_("Emboss Shader"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Combination of satiny and emboss effect"),
 
 N_("Sharp Metal"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Chrome effect with darkened edges"),
 
 N_("Brush Draw"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Draft painted cartoon shading with a glassy look"),
 
 N_("Chrome Emboss"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Embossed chrome effect"),
 
 N_("Contour Emboss"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Satiny and embossed contour effect"),
 
 N_("Sharp Deco"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Unrealistic reflections with sharp edges"),
 
 N_("Deep Metal"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Deep and dark metal shading"),
 
 N_("Aluminium Emboss"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Satiny aluminium effect with embossing"),
 
 N_("Refractive Glass"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Double reflection through glass with some refraction"),
 
 N_("Frosted Glass"),
-N_("Non realistic 3D shaders"),
+N_("Non-realistic 3D Shaders"),
 N_("Satiny glass effect"),
 
 N_("Bump Engraving"),
@@ -831,7 +831,7 @@ N_("Simulate CMY"),
 N_("Color"),
 N_("Render Cyan, Magenta and Yellow channels with a colorizable background"),
 
-N_("Contouring table"),
+N_("Contouring Table"),
 N_("Morphology"),
 N_("Blurred multiple contours for objects"),
 
@@ -839,7 +839,7 @@ N_("Posterized Blur"),
 N_("Morphology"),
 N_("Converts blurred contour to posterized steps"),
 
-N_("Contouring discrete"),
+N_("Contouring Discrete"),
 N_("Morphology"),
 N_("Sharp multiple contour for objects"),
 ];

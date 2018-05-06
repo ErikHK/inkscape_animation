@@ -75,7 +75,7 @@ ColorPreview::on_expose_event (GdkEventExpose *event)
     {
         Cairo::RefPtr<Cairo::Context> cr = get_window()->create_cairo_context();
     cr->rectangle(event->area.x, event->area.y,
-                      event->area.width-event->area.height, event->area.height);
+                      event->area.width, event->area.height);
     cr->clip();
         result = on_draw(cr);
     }

@@ -116,16 +116,22 @@ unsigned DrawingImage::_renderItem(DrawingContext &dc, Geom::IntRect const &/*ar
         if (_style) {
             // See: http://www.w3.org/TR/SVG/painting.html#ImageRenderingProperty
             //      http://www.w3.org/TR/css4-images/#the-image-rendering
+            //      It's back in CSS Images 3 now. 
             //      style.h/style.cpp
             switch (_style->image_rendering.computed) {
                 case SP_CSS_IMAGE_RENDERING_AUTO:
-                    // Do nothing
-                    break;
                 case SP_CSS_IMAGE_RENDERING_OPTIMIZEQUALITY:
+                case SP_CSS_IMAGE_RENDERING_CRISPEDGES:
+                    // CSS 3 defines:
+                    //   'auto' to use smoothing
+                    //   'optimize-quality' as alias for auto
+                    //   We don't have special rendering for 'crisp-edges' yet
+                    //   so follow what browsers do.
                     // In recent Cairo, BEST used Lanczos3, which is prohibitively slow
                     dc.patternSetFilter( CAIRO_FILTER_GOOD );
                     break;
                 case SP_CSS_IMAGE_RENDERING_OPTIMIZESPEED:
+                case SP_CSS_IMAGE_RENDERING_PIXELATED:
                 default:
                     dc.patternSetFilter( CAIRO_FILTER_NEAREST );
                     break;

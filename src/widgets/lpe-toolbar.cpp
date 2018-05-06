@@ -37,8 +37,6 @@
 #include "helper/action-context.h"
 #include "helper/action.h"
 #include "widgets/ink-action.h"
-#include "widgets/ink-radio-action.h"
-#include "widgets/ink-toggle-action.h"
 #include "live_effects/effect.h"
 #include "preferences.h"
 #include "selection.h"
@@ -337,7 +335,7 @@ void sp_lpetool_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GO
                                                       _("Show limiting bounding box"),
                                                       _("Show bounding box (used to cut infinite lines)"),
                                                       "show-bounding-box",
-                                                      GTK_ICON_SIZE_MENU );
+                                                      Inkscape::ICON_SIZE_DECORATION );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
         g_signal_connect_after( G_OBJECT(act), "toggled", G_CALLBACK(lpetool_toggle_show_bbox), desktop );
         gtk_toggle_action_set_active( GTK_TOGGLE_ACTION(act), prefs->getBool( "/tools/lpetool/show_bbox", true ) );
@@ -349,7 +347,7 @@ void sp_lpetool_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GO
                                                       _("Get limiting bounding box from selection"),
                                                       _("Set limiting bounding box (used to cut infinite lines) to the bounding box of current selection"),
                                                       "draw-geometry-set-bounding-box",
-                                                      GTK_ICON_SIZE_MENU );
+                                                      Inkscape::ICON_SIZE_DECORATION );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
         g_signal_connect_after( G_OBJECT(act), "toggled", G_CALLBACK(lpetool_toggle_set_bbox), desktop );
         gtk_toggle_action_set_active( GTK_TOGGLE_ACTION(act), FALSE );
@@ -378,7 +376,7 @@ void sp_lpetool_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GO
                                                       _("Display measuring info"),
                                                       _("Display measuring info for selected items"),
                                                       "draw-geometry-show-measuring-info",
-                                                      GTK_ICON_SIZE_MENU );
+                                                      Inkscape::ICON_SIZE_DECORATION );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
         g_signal_connect_after( G_OBJECT(act), "toggled", G_CALLBACK(lpetool_toggle_show_measuring_info), holder );
         gtk_toggle_action_set_active( GTK_TOGGLE_ACTION(act), prefs->getBool( "/tools/lpetool/show_measuring_info", true ) );
@@ -399,7 +397,7 @@ void sp_lpetool_toolbox_prep(SPDesktop *desktop, GtkActionGroup* mainActions, GO
                                                       _("Open LPE dialog"),
                                                       _("Open LPE dialog (to adapt parameters numerically)"),
                                                       "dialog-geometry",
-                                                      GTK_ICON_SIZE_MENU );
+                                                      Inkscape::ICON_SIZE_DECORATION );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
         g_signal_connect_after( G_OBJECT(act), "toggled", G_CALLBACK(lpetool_open_lpe_dialog), desktop );
         gtk_toggle_action_set_active( GTK_TOGGLE_ACTION(act), FALSE );

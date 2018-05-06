@@ -130,7 +130,7 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
 #endif
       _fill_label (_("Fill:")),
       _stroke_label (_("Stroke:")),
-      _opacity_label (_("FPS:")),
+      _opacity_label (_("O:")),
 
       _fill_place(this, SS_FILL),
       _stroke_place(this, SS_STROKE),
@@ -377,7 +377,7 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
     _opacity_sb.set_adjustment(_opacity_adjustment);
     sp_set_font_size_smaller (GTK_WIDGET(_opacity_sb.gobj()));
     _opacity_sb.set_size_request (SELECTED_STYLE_SB_WIDTH, -1);
-    //_opacity_sb.set_sensitive (false);
+    _opacity_sb.set_sensitive (false);
 
 #if WITH_GTKMM_3_0
     _table.attach(_fill_label, 0, 0, 1, 1);
@@ -440,7 +440,6 @@ SelectedStyle::SelectedStyle(bool /*layout*/)
                      "drag_data_received",
                      G_CALLBACK(dragDataReceived),
                      _drop[SS_FILL]);
-
 
     _fill_place.signal_button_release_event().connect(sigc::mem_fun(*this, &SelectedStyle::on_fill_click));
     _stroke_place.signal_button_release_event().connect(sigc::mem_fun(*this, &SelectedStyle::on_stroke_click));
@@ -1117,7 +1116,7 @@ SelectedStyle::update()
     case QUERY_STYLE_NOTHING:
         _opacity_place.set_tooltip_text(_("Nothing selected"));
         _opacity_sb.set_tooltip_text(_("Nothing selected"));
-        //_opacity_sb.set_sensitive(false);
+        _opacity_sb.set_sensitive(false);
         break;
     case QUERY_STYLE_SINGLE:
     case QUERY_STYLE_MULTIPLE_AVERAGED:
@@ -1225,9 +1224,6 @@ void SelectedStyle::on_opacity_menu (Gtk::Menu *menu) {
 
 void SelectedStyle::on_opacity_changed ()
 {
-	_desktop->fps = _opacity_adjustment.get_value();
-	
-	/*
     g_return_if_fail(_desktop); // TODO this shouldn't happen!
     if (_opacity_blocked)
         return;
@@ -1256,8 +1252,6 @@ void SelectedStyle::on_opacity_changed ()
     _desktop->getCanvas()->endForcedFullRedraws();
     spinbutton_defocus(GTK_WIDGET(_opacity_sb.gobj()));
     _opacity_blocked = false;
-	
-	*/
 }
 
 /* =============================================  RotateableSwatch  */

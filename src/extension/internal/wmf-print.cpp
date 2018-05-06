@@ -312,7 +312,7 @@ unsigned int PrintWmf::finish(Inkscape::Extension::Print * /*mod*/)
         g_error("Fatal programming error in PrintWmf::finish");
     }
     (void) wmf_finish(wt); // Finalize and write out the WMF
-    wmf_free(&wt);              // clean up
+    uwmf_free(&wt);              // clean up
     wmf_htable_free(&wht);          // clean up
 
     return 0;

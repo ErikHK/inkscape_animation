@@ -1020,7 +1020,7 @@ void SvgBuilder::updateFont(GfxState *state) {
     GfxFont *font = state->getFont();
     // Store original name
     if (font->getName()) {
-        _font_specification = font->getName()->getCString();
+        _font_specification = g_strdup(font->getName()->getCString());
     } else {
         _font_specification = (char*) "Arial";
     }
@@ -1361,7 +1361,7 @@ void SvgBuilder::_flushText() {
     _glyphs.clear();
 }
 
-void SvgBuilder::beginString(GfxState *state, GooString * /*s*/) {
+void SvgBuilder::beginString(GfxState *state) {
     if (_need_font_update) {
         updateFont(state);
     }

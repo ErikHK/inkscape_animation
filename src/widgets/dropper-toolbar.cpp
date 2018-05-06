@@ -34,8 +34,6 @@
 #include "document-undo.h"
 #include "widgets/ege-output-action.h"
 #include "widgets/ink-action.h"
-#include "widgets/ink-radio-action.h"
-#include "widgets/ink-toggle-action.h"
 #include "preferences.h"
 #include "widgets/spinbutton-events.h"
 
@@ -92,7 +90,7 @@ void sp_dropper_toolbox_prep(SPDesktop * /*desktop*/, GtkActionGroup* mainAction
                                                       _("Pick opacity"),
                                                       _("Pick both the color and the alpha (transparency) under cursor; otherwise, pick only the visible color premultiplied by alpha"),
                                                       NULL,
-                                                      GTK_ICON_SIZE_MENU );
+                                                      Inkscape::ICON_SIZE_DECORATION );
         g_object_set( act, "short_label", _("Pick"), NULL );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
         g_object_set_data( holder, "pick_action", act );
@@ -105,7 +103,7 @@ void sp_dropper_toolbox_prep(SPDesktop * /*desktop*/, GtkActionGroup* mainAction
                                                       _("Assign opacity"),
                                                       _("If alpha was picked, assign it to selection as fill or stroke transparency"),
                                                       NULL,
-                                                      GTK_ICON_SIZE_MENU );
+                                                      Inkscape::ICON_SIZE_DECORATION );
         g_object_set( act, "short_label", _("Assign"), NULL );
         gtk_action_group_add_action( mainActions, GTK_ACTION( act ) );
         g_object_set_data( holder, "set_action", act );

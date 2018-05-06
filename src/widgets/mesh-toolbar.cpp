@@ -58,8 +58,6 @@
 #include "widgets/ege-select-one-action.h"
 #include "widgets/ink-action.h"
 #include "widgets/ink-comboboxentry-action.h"
-#include "widgets/ink-toggle-action.h"
-#include "widgets/ink-radio-action.h"
 
 #include "sp-stop.h"
 #include "svg/css-ostringstream.h"
@@ -386,7 +384,7 @@ static void mesh_toolbox_watch_ec(SPDesktop* dt, Inkscape::UI::Tools::ToolBase* 
  */
 void sp_mesh_toolbox_prep(SPDesktop * desktop, GtkActionGroup* mainActions, GObject* holder)
 {
-    GtkIconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
+    Inkscape::IconSize secondarySize = ToolboxFactory::prefToSize("/toolbox/secondary", 1);
 
     EgeAdjustmentAction* eact = 0;
 

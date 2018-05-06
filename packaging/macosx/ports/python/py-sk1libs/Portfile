@@ -6,12 +6,12 @@ PortGroup python 1.0
 
 name            py-sk1libs
 version         0.9.1
-revision        101
+revision        102
 license         LGPL-2
 maintainers     nomaintainer
 categories      python graphics
 platforms       darwin
-homepage        http://sk1project.org/
+homepage        http://sk1project.net/
 
 description     Set of python non-GUI extensions for sK1 Project
 
@@ -23,7 +23,7 @@ long_description \
 distname        sk1libs-${version}
 # MacPorts does not properly support URLs with a get parameter.
 # Workaround for this bug: https://trac.macports.org/wiki/PortfileRecipes#fetchwithgetparams
-master_sites    http://sk1project.org/dc.php?target=${distfiles}&dummy=
+master_sites    http://sk1project.net/dc.php?target=${distfiles}&dummy=
 
 checksums       md5     e18088bbc8a105e7535a96f40b80f284 \
                 sha1    dd948558128bb6547b1f277087bf3066104912da \

@@ -66,7 +66,7 @@ public:
      * @param rel_document document for relative URIs
      * @param uri the URI to watch
      */
-    void attach(URI const& uri) throw(BadURIException);
+    void attach(URI const& uri);
 
     /**
      * Detaches from the currently attached URI target, if any;

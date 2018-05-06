@@ -29,7 +29,6 @@ namespace Inkscape {
 #include <glibmm/ustring.h>
 
 #include "CharTypes.h"
-class GooString;
 class Function;
 class GfxState;
 struct GfxColor;
@@ -136,7 +135,7 @@ public:
     void clearSoftMask(GfxState *state);
 
     // Text handling
-    void beginString(GfxState *state, GooString *s);
+    void beginString(GfxState *state);
     void endString(GfxState *state);
     void addChar(GfxState *state, double x, double y,
                  double dx, double dy,

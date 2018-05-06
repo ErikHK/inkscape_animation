@@ -54,6 +54,9 @@ def draw_SVG_label_centred(x, y, string, font_size, name, parent):
 class Grid_Polar(inkex.Effect):
     def __init__(self):
         inkex.Effect.__init__(self)
+        self.OptionParser.add_option("--tab",
+                        action="store", type="string", 
+                        dest="tab", default="circular_div") 
         self.OptionParser.add_option("--r_divs",
                         action="store", type="int", 
                         dest="r_divs", default=5,

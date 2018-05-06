@@ -1968,7 +1968,7 @@ sp_css_attr_scale(SPCSSAttr *css, double ex)
     sp_css_attr_scale_property_single(css, "stroke-width", ex);
     sp_css_attr_scale_property_list  (css, "stroke-dasharray", ex);
     sp_css_attr_scale_property_single(css, "stroke-dashoffset", ex);
-    sp_css_attr_scale_property_single(css, "font-size", ex);
+    sp_css_attr_scale_property_single(css, "font-size", ex, true);
     sp_css_attr_scale_property_single(css, "kerning", ex);
     sp_css_attr_scale_property_single(css, "letter-spacing", ex);
     sp_css_attr_scale_property_single(css, "word-spacing", ex);

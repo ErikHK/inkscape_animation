@@ -214,6 +214,19 @@ void CdrImportDialog::_setPreviewPage()
      }
 
      SPDocument *doc = SPDocument::createNewDocFromMem(_vec[_current_page-1].cstr(), strlen(_vec[_current_page-1].cstr()), 0);
+     if(!doc) {
+           g_warning("CDR import: Could not create preview for page %d", _current_page);
+           gchar const *no_preview_template =
+                "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>"
+                "  <path style='fill:none;stroke:#ff0000;stroke-width:2px;' d='M 82,10 18,74 m 0,-64 64,64' />"
+                "  <rect style='fill:none;stroke:#000000;stroke-width:1.5px;' width='64' height='64' x='18' y='10' />"
+                "  <text x='50' y='92' style='font-size:10px;text-anchor:middle;font-family:sans-serif;'>%s</text>"
+                "</svg>";
+           gchar * no_preview = g_strdup_printf(no_preview_template, _("No preview"));
+           doc = SPDocument::createNewDocFromMem(no_preview, strlen(no_preview), 0);
+           g_free(no_preview);
+     }
+
      Gtk::Widget * tmpPreviewArea = Glib::wrap(sp_svg_view_widget_new(doc));
      std::swap(_previewArea, tmpPreviewArea);
      delete tmpPreviewArea;
@@ -227,10 +240,12 @@ SPDocument *CdrInput::open(Inkscape::Extension::Input * /*mod*/, const gchar * u
           // RVNGFileStream uses fopen() internally which unfortunately only uses ANSI encoding on Windows
           // therefore attempt to convert uri to the system codepage
           // even if this is not possible the alternate short (8.3) file name will be used if available
-          uri = g_win32_locale_filename_from_utf8(uri);
+          gchar * converted_uri = g_win32_locale_filename_from_utf8(uri);
+          RVNGFileStream input(converted_uri);
+          g_free(converted_uri);
+     #else
+          RVNGFileStream input(uri);
      #endif
-
-     RVNGFileStream input(uri);
 
      if (!libcdr::CDRDocument::isSupported(&input)) {
           return NULL;

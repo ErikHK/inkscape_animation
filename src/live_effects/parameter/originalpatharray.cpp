@@ -9,6 +9,11 @@
 #endif
 
 #include "live_effects/parameter/originalpatharray.h"
+#include "live_effects/lpe-spiro.h"
+#include "live_effects/lpe-bspline.h"
+#include "live_effects/lpeobject.h"
+#include "live_effects/lpeobject-reference.h"
+#include "live_effects/effect.h"
 
 #include <gtkmm/widget.h>
 #include <gtkmm/icontheme.h>
@@ -32,7 +37,7 @@
 #include <2geom/point.h>
 #include "sp-shape.h"
 #include "sp-text.h"
-#include "live_effects/effect.h"
+
 
 #include "verbs.h"
 #include "document-undo.h"
@@ -101,6 +106,8 @@ OriginalPathArrayParam::OriginalPathArrayParam( const Glib::ustring& label,
     //_scroller.set_shadow_type(Gtk::SHADOW_IN);
     
     oncanvas_editable = true;
+    _from_original_d = false;
+    _allow_only_bspline_spiro = false;
     
 }
 
@@ -144,8 +151,7 @@ Gtk::Widget* OriginalPathArrayParam::param_newWidget()
     
     
     { // Paste path to link button
-        Gtk::Image *pIcon = Gtk::manage(new Gtk::Image());
-        pIcon->set_from_icon_name("edit-clone", Gtk::ICON_SIZE_BUTTON);
+        Gtk::Widget *pIcon = Gtk::manage( sp_icon_get_icon("edit-clone", Inkscape::ICON_SIZE_BUTTON) );
         Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
         pButton->set_relief(Gtk::RELIEF_NONE);
         pIcon->show();
@@ -157,8 +163,7 @@ Gtk::Widget* OriginalPathArrayParam::param_newWidget()
     }
     
     { // Remove linked path
-        Gtk::Image *pIcon = Gtk::manage(new Gtk::Image());
-        pIcon->set_from_icon_name("gtk-remove", Gtk::ICON_SIZE_BUTTON);
+        Gtk::Widget *pIcon = Gtk::manage( sp_icon_get_icon("gtk-remove", Inkscape::ICON_SIZE_BUTTON) );
         Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
         pButton->set_relief(Gtk::RELIEF_NONE);
         pIcon->show();
@@ -170,8 +175,7 @@ Gtk::Widget* OriginalPathArrayParam::param_newWidget()
     }
     
     { // Move Down
-        Gtk::Image *pIcon = Gtk::manage(new Gtk::Image());
-        pIcon->set_from_icon_name( "gtk-go-down", Gtk::ICON_SIZE_BUTTON);
+        Gtk::Widget *pIcon = Gtk::manage( sp_icon_get_icon( "gtk-go-down", Inkscape::ICON_SIZE_BUTTON) );
         Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
         pButton->set_relief(Gtk::RELIEF_NONE);
         pIcon->show();
@@ -183,8 +187,7 @@ Gtk::Widget* OriginalPathArrayParam::param_newWidget()
     }
     
     { // Move Down
-        Gtk::Image *pIcon = Gtk::manage(new Gtk::Image());
-        pIcon->set_from_icon_name( "gtk-go-up", Gtk::ICON_SIZE_BUTTON);
+        Gtk::Widget *pIcon = Gtk::manage( sp_icon_get_icon( "gtk-go-up", Inkscape::ICON_SIZE_BUTTON) );
         Gtk::Button *pButton = Gtk::manage(new Gtk::Button());
         pButton->set_relief(Gtk::RELIEF_NONE);
         pIcon->show();
@@ -390,7 +393,27 @@ void OriginalPathArrayParam::setPathVector(SPObject *linked_obj, guint /*flags*/
     }
     SPCurve *curve = NULL;
     if (SP_IS_SHAPE(linked_obj)) {
-        curve = SP_SHAPE(linked_obj)->getCurveBeforeLPE();
+        SPLPEItem * lpe_item = SP_LPE_ITEM(linked_obj);
+        if (_from_original_d) {
+            curve = SP_SHAPE(linked_obj)->getCurveBeforeLPE();
+        } else if (_allow_only_bspline_spiro && lpe_item && lpe_item->hasPathEffect()){
+            curve = SP_SHAPE(linked_obj)->getCurveBeforeLPE();
+            PathEffectList lpelist = lpe_item->getEffectList();
+            PathEffectList::iterator i;
+            for (i = lpelist.begin(); i != lpelist.end(); ++i) {
+                LivePathEffectObject *lpeobj = (*i)->lpeobject;
+                if (lpeobj) {
+                    Inkscape::LivePathEffect::Effect *lpe = lpeobj->get_lpe();
+                    if (dynamic_cast<Inkscape::LivePathEffect::LPEBSpline *>(lpe)) {
+                        LivePathEffect::sp_bspline_do_effect(curve, 0);
+                    } else if (dynamic_cast<Inkscape::LivePathEffect::LPESpiro *>(lpe)) {
+                        LivePathEffect::sp_spiro_do_effect(curve);
+                    }
+                }
+            }
+        } else {
+            curve = SP_SHAPE(linked_obj)->getCurve();
+        }
     }
     if (SP_IS_TEXT(linked_obj)) {
         curve = SP_TEXT(linked_obj)->getNormalizedBpath();
