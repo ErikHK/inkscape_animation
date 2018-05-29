@@ -301,15 +301,16 @@ void KeyframeBar::rebuildUi()
 	
 	//std::vector<Gtk::Widget*> wlist;
 	
-	KeyframeWidget* kw;
+	SPObject * assoc_layer = NULL;
+	KeyframeWidget* kw = new KeyframeWidget(1, this, assoc_layer, false);
+	//attach(*kw, 1, 1+1, 0, 1, Gtk::SHRINK, Gtk::SHRINK);
 	
 	for(int i=1;i <= num_keyframes;i++)
 	{
+	
 		
-		SPObject * assoc_layer = NULL;
-
 		if(i==1)
-			desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
+			assoc_layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
 
 		//keyframe has objects
 		if(animation_layer->getRepr()->nthChild(i-1) && animation_layer->getRepr()->nthChild(i-1)->childCount() > 0)
@@ -318,6 +319,7 @@ void KeyframeBar::rebuildUi()
 			kw = new KeyframeWidget(i, this, assoc_layer, true);
 		
 		attach(*kw, i, i+1, 0, 1, Gtk::SHRINK, Gtk::SHRINK);
+		
 		
 		//wlist.push_back(kw);
 		widgets.push_back(kw);
@@ -328,7 +330,7 @@ void KeyframeBar::rebuildUi()
 		//kw->signal_button_press_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_my_button_press_event));
 		//kw->signal_motion_notify_event().connect(sigc::mem_fun(*this, &KeyframeBar::on_mouse_));
 		
-		kw->set_can_focus(true);
+		///////////////////////kw->set_can_focus(true);
 	}
 
 	
@@ -346,9 +348,9 @@ void KeyframeBar::rebuildUi()
 	}
 	
 
-	set_focus_chain(widgets);
-	show_all_children();
-	set_focus_chain(widgets);
+	/////////set_focus_chain(widgets);
+	/////////show_all_children();
+	////////set_focus_chain(widgets);
 	
 	
 }

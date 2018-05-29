@@ -690,6 +690,7 @@ static void setPosition(SPObject * child, Geom::Point p)
 
 static void updateTween(KeyframeWidget * kww, gpointer user_data)
 {
+	/*
 	KeyframeWidget * kw = reinterpret_cast<KeyframeWidget*>(user_data);
 
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
@@ -864,7 +865,7 @@ static void updateTween(KeyframeWidget * kww, gpointer user_data)
 		layer = nextLayer;
 		i++;
 	}
-
+	*/
 }
 
 static void shapeTween(KeyframeWidget * kw, SPObject * startLayer, SPObject * endLayer)
