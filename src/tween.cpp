@@ -78,7 +78,7 @@ void Tween::createGuide(float start_x, float start_y, float end_x, float end_y)
 		gchar *str = sp_svg_write_path( c->get_pathvector() );
 		////////g_assert( str != NULL );
 
-		//repr->setAttribute("inkscape:tweenpath", "true");
+		repr->setAttribute("inkscape:tweenpath", "true");
 		//repr->setAttribute("inkscape:tweenid", start->layer->getRepr()->attribute("id"));
 		////////g_free(str);
 		
@@ -97,7 +97,6 @@ void Tween::createGuide(float start_x, float start_y, float end_x, float end_y)
 		if(SP_IS_PATH(tweenp))
 			tweenPath = SP_PATH(tweenp);
 			
-		
 		if(start->layer)
 		{
 			//SPItem *item = SP_ITEM(start->layer->appendChildRepr(repr));
@@ -146,7 +145,10 @@ void Tween::linearTween(SPObject * startLayer, SPObject * endLayer, float start_
 			return;
 
 		if(tweenPath)
+		{
 			layer->getRepr()->setAttribute("inkscape:tweenpathid", tweenPath->getId());
+			tweenPath->tweenId = startLayer->getId();
+		}
 
 		layer->getRepr()->setAttribute("inkscape:tweenstartid", startLayer->getId());
 		
@@ -160,7 +162,6 @@ void Tween::linearTween(SPObject * startLayer, SPObject * endLayer, float start_
 		j++;
 	}
 }
-
 
 void Tween::copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
 {
@@ -344,6 +345,8 @@ void Tween::update()
 
 	if(!desktop)
 		return;
+	
+	std::cout << "hej update!";
 
 	SPObject * selected = desktop->getSelection()->single();
 
@@ -353,8 +356,8 @@ void Tween::update()
 	if(SP_IS_TWEENPATH(selected))
 	{
 		path = SP_PATH(selected);
-		//layerid = path->tweenId;
-		layerid = tweenId;
+		layerid = path->tweenId;
+		//layerid = tweenId;
 		std::cout << layerid;
 	}
 	else
@@ -367,6 +370,9 @@ void Tween::update()
 
 	//if there is no tween associated with this path or layer, return
 	if(!layerid)
+		return;
+	
+	if(tweenId != path->tweenId)
 		return;
 
 	SPObject * layer = desktop->getDocument()->getObjectById(layerid);
@@ -412,6 +418,8 @@ void Tween::update()
 		p = pathv.pointAt(tot);
 		
 		setPosition(objects[i], p);
+		
+		std::cout << p;
 	}
 
 	//set child to last
@@ -441,7 +449,16 @@ Tween::Tween(KeyframeWidget * start) {
 	SPObject * nextLayer = NULL;
 	float start_x=0, start_y=0, end_x=0, end_y=0, inc_x=0, inc_y=0, start_opacity=1, end_opacity=1, inc_opacity=0, inc_r=0, inc_g=0, inc_b=0;
 	float scale_x=1, scale_y=1, inc_scale_x=0, inc_scale_y=0;
+	
+	float stroke_scale=1, inc_stroke_scale=0;
 	float start_scale_x = 1, end_scale_x = 1, start_scale_y=1, end_scale_y=1;
+	
+	float start_stroke_scale = 1, end_stroke_scale = 1;
+	
+	float start_stroke_dasharray_scale[4] = {1,1,1,1};
+	float end_stroke_dasharray_scale[4] = {1,1,1,1};
+	float inc_stroke_dasharray_scale[4] = {0,0,0,0};
+	
 	gfloat start_rgb[3];
 	gfloat end_rgb[3];
 	std::string xs = "x";
@@ -465,8 +482,8 @@ Tween::Tween(KeyframeWidget * start) {
 		_sel_changed_connection = selection->connectChangedFirst(
 				sigc::hide(sigc::mem_fun(*this, &Tween::update)));
 
-		sigc::connection connect_tween_expansion = desktop->connectTweenExpansion(
-				sigc::mem_fun(*this, &Tween::addToTween));
+		//sigc::connection connect_tween_expansion = desktop->connectTweenExpansion(
+		//		sigc::mem_fun(*this, &Tween::addToTween));
 	}
 	
 	if(!desktop)
@@ -489,15 +506,17 @@ Tween::Tween(KeyframeWidget * start) {
 										Glib::ustring::format("animationlayer", start->parent_id, "keyframe", i));
 		}
 		
-		layer->getRepr()->setAttribute("inkscape:tween", "true");
+		if(layer && layer->getRepr())
+			layer->getRepr()->setAttribute("inkscape:tween", "true");
 		
 		//as soon as a layer has a child, break and set endLayer to this!
-		if (layer->getRepr()->childCount() > 0)
+		if (layer && layer->getRepr() && layer->getRepr()->childCount() > 0)
 			break;
 
 		num_layers++;
 		i++;
 	}
+	
 	
 	if(!layer)
 		return;
@@ -531,6 +550,11 @@ Tween::Tween(KeyframeWidget * start) {
 		
 		//get opacity
 		end_opacity = SP_ITEM(child)->style->opacity.value;
+		
+		end_stroke_scale = SP_ITEM(child)->style->stroke_width.value;
+		
+		for(int j=0; j < SP_ITEM(child)->style->stroke_dasharray.values.size(); j++)
+			end_stroke_dasharray_scale[j] = SP_ITEM(child)->style->stroke_dasharray.values[j];
 
 		//if ellipse
 		if(SP_IS_GENERICELLIPSE(child))
@@ -586,6 +610,11 @@ Tween::Tween(KeyframeWidget * start) {
 		//get opacity
 		start_opacity = SP_ITEM(child)->style->opacity.value;
 		
+		start_stroke_scale = SP_ITEM(child)->style->stroke_width.value;
+		
+		for(int j=0; j < SP_ITEM(child)->style->stroke_dasharray.values.size(); j++)
+			start_stroke_dasharray_scale[j] = SP_ITEM(child)->style->stroke_dasharray.values[j];
+		
 		if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
 		{
 			start_x = SP_GROUP(child)->transform.translation()[0];
@@ -619,6 +648,11 @@ Tween::Tween(KeyframeWidget * start) {
 	
 	inc_scale_x = (end_scale_x - start_scale_x)/num_layers;
 	inc_scale_y = (end_scale_y - start_scale_y)/num_layers;
+	
+	inc_stroke_scale = (end_stroke_scale - start_stroke_scale)/num_layers;
+	
+	for(int j=0; j < 4; j++)
+		inc_stroke_dasharray_scale[j] = (end_stroke_dasharray_scale[j] - start_stroke_dasharray_scale[j])/num_layers;
 
 	inc_x = (end_x - start_x)/(num_layers);
 	inc_y = (end_y - start_y)/(num_layers);
@@ -673,7 +707,19 @@ Tween::Tween(KeyframeWidget * start) {
 			SPRect * rect = SP_RECT(child);
 		}
 
+		
+		for(int j=0; j < SP_ITEM(child)->style->stroke_dasharray.values.size(); j++)
+		{
+			SP_ITEM(child)->style->stroke_dasharray.values[j] = start_stroke_dasharray_scale[j] + (i-1)*inc_stroke_dasharray_scale[j];
+			SP_ITEM(child)->style->stroke_dasharray.set = true;
+		}
+		
 		setScale(child, start_scale_x + (i-1)*inc_scale_x, start_scale_y + (i-1)*inc_scale_y);
+		
+		SP_ITEM(child)->style->stroke_width.value = start_stroke_scale + (i-1)*inc_stroke_scale;
+		SP_ITEM(child)->style->stroke_width.computed = start_stroke_scale + (i-1)*inc_stroke_scale;
+		SP_ITEM(child)->style->stroke_width.set = true;
+		
 
 		Inkscape::XML::Node * childn = child->getRepr();
 		Inkscape::XML::Node * childn_copy = childn->duplicate(desktop->getDocument()->getReprDoc());
@@ -686,6 +732,8 @@ Tween::Tween(KeyframeWidget * start) {
 		layer = nextLayer;
 		i++;
 	}
+	
+	objects.push_back(endLayer->firstChild());
 
 	//is group, ellipse, rect etc etc
 	if(startLayer->getRepr()->childCount() == 1)

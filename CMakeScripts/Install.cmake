@@ -35,7 +35,7 @@ if(WIN32)
       ${DEVLIBS_BIN}/libMagick++-6.Q16-6.dll
       ${DEVLIBS_BIN}/libMagickCore-6.Q16-2.dll
       ${DEVLIBS_BIN}/libMagickWand-6.Q16-2.dll
-      ${DEVLIBS_BIN}/libaspell-15.dll
+      #${DEVLIBS_BIN}/libaspell-15.dll
       ${DEVLIBS_BIN}/libatk-1.0-0.dll
       ${DEVLIBS_BIN}/libatkmm-1.6-1.dll
       ${DEVLIBS_BIN}/libcairo-2.dll

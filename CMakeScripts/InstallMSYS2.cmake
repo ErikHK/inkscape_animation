@@ -22,7 +22,7 @@ if(WIN32)
     ${MINGW_BIN}/LIBEAY32.dll
     ${MINGW_BIN}/SSLEAY32.dll
     ${MINGW_BIN}/libMagick*.dll
-    ${MINGW_BIN}/libaspell-[0-9]*.dll
+    #${MINGW_BIN}/libaspell-[0-9]*.dll
     ${MINGW_BIN}/libatk-1.0-[0-9]*.dll
     ${MINGW_BIN}/libatkmm-1.6-[0-9]*.dll
     ${MINGW_BIN}/libbrotlicommon.dll
@@ -193,8 +193,8 @@ if(WIN32)
     PATTERN "*.cache")
 
   # Aspell dictionaries
-  install(DIRECTORY ${MINGW_LIB}/aspell-0.60
-    DESTINATION lib)
+  #install(DIRECTORY ${MINGW_LIB}/aspell-0.60
+  #  DESTINATION lib)
 
   # Aspell backend for Enchant (gtkspell uses Enchant to access Aspell dictionaries)
   install(FILES

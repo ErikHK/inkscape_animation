@@ -1294,7 +1294,7 @@ static void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
 				layer->getRepr()->appendChild(obj_to_copy->duplicate(SP_ACTIVE_DESKTOP->getDocument()->getReprDoc()));
 				layer->getRepr()->setAttribute("inkscape:tween", "true");
 
-				SP_ACTIVE_DESKTOP->emitTweenExpansion(layer->firstChild());
+				//SP_ACTIVE_DESKTOP->emitTweenExpansion(layer->firstChild());
 			}
 			//layer = layer->next;
 			
@@ -1313,8 +1313,8 @@ static void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
 		}
 		
 		
-		if(end_layer && end_layer->firstChild())
-			SP_ACTIVE_DESKTOP->emitTweenExpansion(end_layer->firstChild());
+		//if(end_layer && end_layer->firstChild())
+		//	SP_ACTIVE_DESKTOP->emitTweenExpansion(end_layer->firstChild());
 
 
 		//this works:
