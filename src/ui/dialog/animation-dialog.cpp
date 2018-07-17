@@ -343,37 +343,41 @@ void AnimationDialog::updateEaseValue()
 {
 	std::cout << "AnimationDialog::updateEaseValue()" << std::endl;
 	SPDesktop * desktop = getDesktop();
-		if(!desktop)
-			return;
+	if(!desktop)
+		return;
 
-		//desktop->getDocument()->
-		SPObject * obj = desktop->currentLayer();
+	//desktop->getDocument()->
+	SPObject * obj = desktop->currentLayer();
+	
+	//if the tween path is selected
+	if(desktop->getSelection() &&  SP_IS_TWEENPATH(desktop->getSelection()->single()) )
+		obj = desktop->getDocument()->getObjectById(  SP_PATH(desktop->getSelection()->single())->tweenId  );
 
-		if(obj && obj->getRepr() && obj->getRepr()->attribute("inkscape:tween"))
+	if(obj && obj->getRepr() && obj->getRepr()->attribute("inkscape:tween"))
+	{
+		//while(!obj->getRepr()->attribute("inkscape:tweenstart"))
+		SPObject * tween_start = NULL;
+		const char * id = obj->getRepr()->attribute("inkscape:tweenstartid");
+
+		if(id)
+			tween_start = desktop->getDocument()->getObjectById(id);
+
+		scale->set_sensitive(true);
+
+		if(tween_start && tween_start->getRepr())
 		{
-			//while(!obj->getRepr()->attribute("inkscape:tweenstart"))
-			SPObject * tween_start = NULL;
-			const char * id = obj->getRepr()->attribute("inkscape:tweenstartid");
-
-			if(id)
-				tween_start = desktop->getDocument()->getObjectById(id);
-
-			scale->set_sensitive(true);
-
-			if(tween_start && tween_start->getRepr())
-			{
-				
-				if(in->get_active())
-					tween_start->getRepr()->setAttribute("inkscape:easein", Glib::ustring::format(scale->get_value()));
-				if(out->get_active())
-					tween_start->getRepr()->setAttribute("inkscape:easeout", Glib::ustring::format(scale->get_value()));
-				
-			}
+			
+			if(in->get_active())
+				tween_start->getRepr()->setAttribute("inkscape:easein", Glib::ustring::format(scale->get_value()));
+			if(out->get_active())
+				tween_start->getRepr()->setAttribute("inkscape:easeout", Glib::ustring::format(scale->get_value()));
+			
 		}
-		else
-		{
-			scale->set_sensitive(false);
-		}
+	}
+	else
+	{
+		scale->set_sensitive(false);
+	}
 }
 
 //bool AnimationDialog::handleEaseChanged() {
