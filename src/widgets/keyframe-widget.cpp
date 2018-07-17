@@ -2044,8 +2044,8 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 		//		sigc::ptr_fun(&KeyframeWidget::on_selection_changed),
 		//		desktop));
 		
-		_sel_changed_connection = selection->connectChangedFirst(
-		sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_selection_changed)));
+		/////////////////_sel_changed_connection = selection->connectChangedFirst(
+		/////////////////sigc::hide(sigc::mem_fun(*this, &KeyframeWidget::on_selection_changed)));
 
 
 		//_sel_changed_connection2 = desktop->connectToolSubselectionChanged(
@@ -2129,6 +2129,7 @@ void KeyframeWidget::on_update_tween()
 
 void KeyframeWidget::on_selection_changed()
 {
+	std::cout << "KeyframeWidget::on_selection_changed()" << std::endl;
 	if(layer)
 	{
 		if(layer->getRepr()->childCount() > 0)

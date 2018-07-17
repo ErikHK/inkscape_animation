@@ -94,8 +94,8 @@ KeyframeBar::KeyframeBar(int _id, SPObject * _layer)
 		//sigc::bind(sigc::mem_fun(*this, &KeyframeBar::on_selection_changed), false)
 		//);
 		
-		_sel_changed_connection = selection->connectChanged(
-		sigc::hide(sigc::mem_fun(*this, &KeyframeBar::on_selection_changed)));
+		//////////////_sel_changed_connection = selection->connectChanged(
+		//////////////sigc::hide(sigc::mem_fun(*this, &KeyframeBar::on_selection_changed)));
 	}
 	
 	add_events(Gdk::ALL_EVENTS_MASK);

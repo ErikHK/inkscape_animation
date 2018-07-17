@@ -340,29 +340,38 @@ void Tween::setPosition(SPObject * child, Geom::Point p)
 
 void Tween::update()
 {
+	
+	//std::cout << "Tween::update()" << std::endl;
+	
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	SPPath * path = NULL;
 
 	if(!desktop)
 		return;
 	
-	std::cout << "hej update!";
-	
 	if(desktop->getSelection()->isEmpty())
 		return;
 
 	SPObject * selected = desktop->getSelection()->single();
+	
+	if(!selected)
+		return;
+	
+	if(!SP_IS_PATH(selected))
+		return;
 
 	const char * layerid = NULL;
 
+	
 	//check if it's a tween path
 	if(SP_IS_TWEENPATH(selected))
 	{
 		path = SP_PATH(selected);
 		layerid = path->tweenId;
 		//layerid = tweenId;
-		std::cout << layerid;
+		//std::cout << layerid;
 	}
+	
 	else
 	{
 		SPObject * obj = desktop->currentLayer();
@@ -371,6 +380,8 @@ void Tween::update()
 			layerid = obj->getRepr()->attribute("inkscape:tweenstartid");
 	}
 
+	//std::cout << "tweenId: " << std::endl;
+	
 	//if there is no tween associated with this path or layer, return
 	if(!layerid)
 		return;
@@ -378,22 +389,42 @@ void Tween::update()
 	if(tweenId != path->tweenId)
 		return;
 
-	SPObject * layer = desktop->getDocument()->getObjectById(layerid);
+	
+	//SPObject * layer = desktop->getDocument()->getObjectById(layerid);
+	//SPObject * layer = NULL;
 
-	if(!layer)
-		return;
+	
+	//if(!layer)
+	//	return;
 
 	if(!path)
 		return;
 
+	
+	//std::cout << "tweenid: " << tweenId << std::endl;
+	
+	
+	//std::cout << "layer: " << std::endl;
 	//int num_frames = numFrames;
+	if(objects.empty())
+		return;
+	
 	numFrames = objects.size();
+	//numFrames = 10;
+	//numFrames = 0;
+	int testarrr = 0;
 
 	SPObject * nextLayer = NULL;
 	
 	SPCurve * curve = path->_curve;
+	
+	if(!curve)
+		return;
+	
+	
+	
 	Geom::PathVector pathv = curve->get_pathvector();
-
+	
 	SPObject * child = NULL;
 
 	float rotation = 0;
@@ -405,16 +436,16 @@ void Tween::update()
 		return;
 
 	//child = startLayer->firstChild();
-	/*
-	child = objects[0];
+	
+	//child = objects[0];
 
-	if(child)
-	{
-		Geom::Point p = pathv.initialPoint();
-		setPosition(child, p);
-	}
-	 */
-
+	//if(child)
+	//{
+	//	Geom::Point p = pathv.initialPoint();
+	//	setPosition(child, p);
+	//}
+	 
+	
 	for(int i=0; i < numFrames-1; i++){
 		auto test = pathv.timeRange().max();
 		auto tot = i*test/(numFrames-1);
