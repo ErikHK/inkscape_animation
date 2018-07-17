@@ -20,6 +20,7 @@
 #include "ui/dialog/dialog-manager.h"
 
 #include "ui/dialog/align-and-distribute.h"
+#include "ui/dialog/animation-dialog.h"
 #include "ui/dialog/document-metadata.h"
 #include "ui/dialog/document-properties.h"
 #include "ui/dialog/extension-editor.h"
@@ -60,6 +61,7 @@
 #include "ui/dialog/svg-fonts-dialog.h"
 #include "ui/dialog/objects.h"
 #include "ui/dialog/tags.h"
+
 
 namespace Inkscape {
 namespace UI {
@@ -107,6 +109,7 @@ DialogManager::DialogManager() {
 
     if (dialogs_type == FLOATING) {
         registerFactory("AlignAndDistribute",  &create<AlignAndDistribute,   FloatingBehavior>);
+		registerFactory("AnimationDialog",     &create<AnimationDialog,      FloatingBehavior>);
         registerFactory("DocumentMetadata",    &create<DocumentMetadata,     FloatingBehavior>);
         registerFactory("DocumentProperties",  &create<DocumentProperties,   FloatingBehavior>);
         registerFactory("ExtensionEditor",     &create<ExtensionEditor,      FloatingBehavior>);
@@ -146,6 +149,7 @@ DialogManager::DialogManager() {
     } else {
 
         registerFactory("AlignAndDistribute",  &create<AlignAndDistribute,   DockBehavior>);
+		registerFactory("AnimationDialog",     &create<AnimationDialog,      DockBehavior>);
         registerFactory("DocumentMetadata",    &create<DocumentMetadata,     DockBehavior>);
         registerFactory("DocumentProperties",  &create<DocumentProperties,   DockBehavior>);
         registerFactory("ExtensionEditor",     &create<ExtensionEditor,      DockBehavior>);
