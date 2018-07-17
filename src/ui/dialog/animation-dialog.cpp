@@ -37,6 +37,7 @@
 //#include "selection.h"
 #include "shortcuts.h"
 #include "sp-root.h"
+#include "sp-path.h"
 //#include "sp-string.h"
 //#include "sp-tspan.h"
 //#include "ui/icon-names.h"
@@ -55,7 +56,7 @@ static void handleEaseChanged(AnimationDialog * add, gpointer user_data)
 	SPDesktop * desktop = ad->getDesktop();
 
 	ad->updateEaseValue();
-	desktop->emitToolSubselectionChanged(NULL);
+	//desktop->emitToolSubselectionChanged(NULL);
 
 
 }
@@ -305,10 +306,42 @@ AnimationDialog::handleSelectionChanged() {
 
     // Update demonstration widget.
     label.set_label("Selection Changed!");
+	
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	if(!desktop)
+		return;
+	
+	if(desktop->getSelection()->isEmpty())
+		return;
+	
+	SPObject * selected = desktop->getSelection()->single();
+	
+	if(!selected)
+		return;
+	
+	std::cout << "SINGLE" << std::endl;
+	
+	//check if it's a tween path
+	if(SP_IS_TWEENPATH(selected))
+	{
+		scale->set_sensitive(true);
+		spin_degrees->set_sensitive(true);
+		spin_revolutions->set_sensitive(true);
+		in->set_sensitive(true);
+		out->set_sensitive(true);
+	}else
+	{
+		scale->set_sensitive(false);
+		spin_degrees->set_sensitive(false);
+		spin_revolutions->set_sensitive(false);
+		in->set_sensitive(false);
+		out->set_sensitive(false);
+	}
 }
 
 void AnimationDialog::updateEaseValue()
 {
+	std::cout << "AnimationDialog::updateEaseValue()" << std::endl;
 	SPDesktop * desktop = getDesktop();
 		if(!desktop)
 			return;
@@ -316,7 +349,7 @@ void AnimationDialog::updateEaseValue()
 		//desktop->getDocument()->
 		SPObject * obj = desktop->currentLayer();
 
-		if(obj->getRepr() && obj->getRepr()->attribute("inkscape:tween"))
+		if(obj && obj->getRepr() && obj->getRepr()->attribute("inkscape:tween"))
 		{
 			//while(!obj->getRepr()->attribute("inkscape:tweenstart"))
 			SPObject * tween_start = NULL;
@@ -329,10 +362,12 @@ void AnimationDialog::updateEaseValue()
 
 			if(tween_start && tween_start->getRepr())
 			{
+				
 				if(in->get_active())
 					tween_start->getRepr()->setAttribute("inkscape:easein", Glib::ustring::format(scale->get_value()));
 				if(out->get_active())
 					tween_start->getRepr()->setAttribute("inkscape:easeout", Glib::ustring::format(scale->get_value()));
+				
 			}
 		}
 		else

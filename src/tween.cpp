@@ -347,6 +347,9 @@ void Tween::update()
 		return;
 	
 	std::cout << "hej update!";
+	
+	if(desktop->getSelection()->isEmpty())
+		return;
 
 	SPObject * selected = desktop->getSelection()->single();
 

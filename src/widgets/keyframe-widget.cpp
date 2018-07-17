@@ -1938,8 +1938,6 @@ KeyframeWidget::KeyframeWidget(int _id, KeyframeBar * _parent, SPObject * _layer
 	is_animation_start = false;
 	animation_start = 1;
 	animation_stop = 10;
-	//using namespace Inkscape::UI::Dialog;
-	//AnimationDialog * ad = new AnimationDialog();
 	
 	is_dragging_over = false;
 
