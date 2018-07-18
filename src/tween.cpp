@@ -534,7 +534,7 @@ void Tween::update()
 		//if(easev != 0 && easev != 0)
 		//	p = pathv.pointAt(easeInOut(tot, easev));
 		if(easev < 0)
-			p = pathv.pointAt(easeOut(tot, -easev));
+			p = pathv.pointAt(easeOut(tot, -easev)); 
 		else if(easev > 0)
 			p = pathv.pointAt(easeIn(tot, easev));
 		else
