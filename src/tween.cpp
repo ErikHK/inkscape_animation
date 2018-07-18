@@ -61,8 +61,20 @@ using Inkscape::DocumentUndo;
 void Tween::createGuide(float start_x, float start_y, float end_x, float end_y)
 {
 	SPCurve * c = new SPCurve();
+	
+	
+	
+	
+	
 	c->moveto(Geom::Point(start_x, start_y));
 	c->lineto(Geom::Point(end_x, end_y));
+	//c->curveto(Geom::Point(start_x, start_y), Geom::Point(start_x, end_y), Geom::Point(end_x, end_y));
+	
+	//c->moveto(Geom::Point(0,0));
+	//c->curveto(Geom::Point(0, 0), Geom::Point(.1*100, 0), Geom::Point(100, 100));
+	
+	
+	
 	
 	if(!SP_ACTIVE_DOCUMENT)
 		return;
@@ -260,6 +272,7 @@ void Tween::showAllKeyframes()
 
 float Tween::easeInOut(float t, float a)
 {
+	a = 1/a;
 	float ret = pow(t,a)/(pow(t,a) + pow(1-t, a));
 	if (ret >= 1)
 		return .99;
@@ -268,18 +281,73 @@ float Tween::easeInOut(float t, float a)
 
 float Tween::easeIn(float t, float a)
 {
-	float ret = pow(t, a);
+	/*
+	float ret = pow(t, 1-a);
 	if(ret >= 1)
 		return .99;
 	return ret;
+	*/
+	
+	SPCurve * c = new SPCurve();
+	c->moveto(Geom::Point(0, 0));
+	c->curveto(Geom::Point(0, 0), Geom::Point(a, 0), Geom::Point(1, 1));
+	
+	
+	Geom::PathVector pathv = c->get_pathvector();
+	auto maxt = pathv.timeRange().max();
+	//auto length = c->length();
+	
+	//std::cout << length << std::endl;
+	
+	//Geom::Point testp(a, 0);
+	float tt = 0;
+	while( t - abs(pathv.valueAt(tt, Geom::Dim2(0))) > .005 )
+	{
+		tt += .001;
+	}
+	//now the time is right!
+	
+	
+	float valueat = pathv.valueAt(tt, Geom::Dim2(1));
+	delete c;
+	return valueat;
+	
+	
+	
 }
 
 float Tween::easeOut(float t, float a)
 {
+	/*
 	float ret = pow(t, 1/a);
 	if(ret >= 1)
 		return .99;
 	return ret;
+	*/
+	
+	SPCurve * c = new SPCurve();
+	c->moveto(Geom::Point(0, 0));
+	c->curveto(Geom::Point(0, 0), Geom::Point(0, a), Geom::Point(1, 1));
+	
+	
+	Geom::PathVector pathv = c->get_pathvector();
+	auto maxt = pathv.timeRange().max();
+	//auto length = c->length();
+	
+	//std::cout << length << std::endl;
+	
+	//Geom::Point testp(a, 0);
+	float tt = 0;
+	while( t - abs(pathv.valueAt(tt, Geom::Dim2(0))) > .005 )
+	{
+		tt += .001;
+	}
+	//now the time is right!
+	
+	
+	float valueat = pathv.valueAt(tt, Geom::Dim2(1));
+	delete c;
+	return valueat;
 }
 
 void Tween::setScale(SPObject * child, double width, double height)
@@ -449,7 +517,28 @@ void Tween::update()
 	for(int i=0; i < numFrames-1; i++){
 		auto test = pathv.timeRange().max();
 		auto tot = i*test/(numFrames-1);
-		p = pathv.pointAt(tot);
+		
+		char const * easeval = NULL;
+		float easev = 0;
+		
+		if(startLayer)
+		{
+			easeval = startLayer->getRepr()->attribute("inkscape:ease");
+			
+			if(easeval)
+				easev = atof(easeval);
+			
+		}
+		
+		
+		//if(easev != 0 && easev != 0)
+		//	p = pathv.pointAt(easeInOut(tot, easev));
+		if(easev < 0)
+			p = pathv.pointAt(easeOut(tot, -easev));
+		else if(easev > 0)
+			p = pathv.pointAt(easeIn(tot, easev));
+		else
+			p = pathv.pointAt(tot);
 		
 		setPosition(objects[i], p);
 		

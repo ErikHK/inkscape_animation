@@ -139,9 +139,10 @@ AnimationDialog::AnimationDialog() :
 
     updateLabel();
     Gtk::Label * ease = new Gtk::Label("Ease:");
-    scale = new Gtk::HScale(0, 5, .1);
+    scale = new Gtk::HScale(-1, 1, .05);
     scale->set_size_request(100, -1);
     scale->set_sensitive(false);
+	scale->set_value(0);
     in = new Gtk::CheckButton("In");
     out = new Gtk::CheckButton("Out");
     in->set_sensitive(false);
@@ -160,8 +161,8 @@ AnimationDialog::AnimationDialog() :
 
 
     ease->set_size_request(50, -1);
-    ease->set_property("valign", Gtk::ALIGN_END);
-    _easeBox.set_property("valign", Gtk::ALIGN_END);
+    //ease->set_property("valign", Gtk::ALIGN_END);
+    //_easeBox.set_property("valign", Gtk::ALIGN_END);
 
     Gtk::Label * rotate = new Gtk::Label("Rotate:");
     Gtk::Label * rotate2 = new Gtk::Label("revs +");
@@ -206,10 +207,12 @@ AnimationDialog::AnimationDialog() :
 	_rotateBox.add(*rotate3);
 	*/
 
-	_easeRotateBox.attach(*ease, 0, 2, 0, 1);
-	_easeRotateBox.attach(*in, 2, 3, 0, 1);
-	_easeRotateBox.attach(*out, 3, 4, 0, 1);
-	_easeRotateBox.attach(*scale, 0, 5, 1, 2);
+	_easeRotateBox.attach(*ease, 0, 1, 0, 1);
+	//_easeRotateBox.attach(*in, 2, 3, 0, 1);
+	//_easeRotateBox.attach(*out, 3, 4, 0, 1);
+	//_easeRotateBox.attach(*scale, 0, 5, 1, 2);
+	
+	_easeRotateBox.attach(*scale, 1, 5, 0, 1);
 
 	_easeRotateBox.attach(*rotate, 0, 1, 2, 3);
 	_easeRotateBox.attach(*spin_revolutions, 1, 2, 2, 3);
@@ -367,10 +370,10 @@ void AnimationDialog::updateEaseValue()
 		if(tween_start && tween_start->getRepr())
 		{
 			
-			if(in->get_active())
-				tween_start->getRepr()->setAttribute("inkscape:easein", Glib::ustring::format(scale->get_value()));
-			if(out->get_active())
-				tween_start->getRepr()->setAttribute("inkscape:easeout", Glib::ustring::format(scale->get_value()));
+			//if(in->get_active())
+				tween_start->getRepr()->setAttribute("inkscape:ease", Glib::ustring::format(scale->get_value()));
+			//if(out->get_active())
+				//tween_start->getRepr()->setAttribute("inkscape:easeout", Glib::ustring::format(scale->get_value()));
 			
 		}
 	}
