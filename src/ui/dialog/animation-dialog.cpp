@@ -63,19 +63,28 @@ static void handleEaseChanged(AnimationDialog * add, gpointer user_data)
 
 SPObject * AnimationDialog::getTweenStart()
 {
-	if(!SP_ACTIVE_DESKTOP)
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	
+	if(!desktop)
 		return NULL;
 	
 	SPObject * obj = SP_ACTIVE_DESKTOP->currentLayer();
 	SPObject * tween_start = NULL;
-
-	if(obj->getRepr() && obj->getRepr()->attribute("inkscape:tween"))
+	
+	if(desktop->getSelection() &&  SP_IS_TWEENPATH(desktop->getSelection()->single()) )
+		obj = desktop->getDocument()->getObjectById(SP_PATH(desktop->getSelection()->single())->tweenId);
+	
+	if(obj && obj->getRepr() && obj->getRepr()->attribute("inkscape:tween"))
 	{
 		//while(!obj->getRepr()->attribute("inkscape:tweenstart"))
 		const char * id = obj->getRepr()->attribute("inkscape:tweenstartid");
 
 		if(id)
 			tween_start = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(id);
+	}
+	else if(obj && SP_IS_TWEENPATH(obj))
+	{
+		
 	}
 	
 	return tween_start;
@@ -92,9 +101,17 @@ static void handleRotationChanged(AnimationDialog * add, gpointer user_data)
 
 	//if(deg != 0)
 
+	//SPObject * obj = desktop->currentLayer();
+	
+	SPObject * tweenstart = ad->getTweenStart();
+	
+	if(tweenstart && tweenstart->getRepr())
+	{
+		if(deg != 0)
+			tweenstart->getRepr()->setAttribute("inkscape:rotation", Glib::ustring::format(deg));
+	}
 
-	SPObject * obj = desktop->currentLayer();
-
+	/*
 	if(obj->getRepr() && obj->getRepr()->attribute("inkscape:tween"))
 	{
 		//while(!obj->getRepr()->attribute("inkscape:tweenstart"))
@@ -109,7 +126,9 @@ static void handleRotationChanged(AnimationDialog * add, gpointer user_data)
 			if(deg != 0)
 				tween_start->getRepr()->setAttribute("inkscape:rotation", Glib::ustring::format(deg));
 		}
-	}
+	}*/
+	
+	
 
 	desktop->emitToolSubselectionChanged(NULL);
 

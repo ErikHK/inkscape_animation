@@ -411,29 +411,28 @@ void Tween::update()
 {
 	
 	//std::cout << "Tween::update()" << std::endl;
-	
 	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
 	SPPath * path = NULL;
 
 	if(!desktop)
 		return;
 	
-	if(desktop->getSelection()->isEmpty())
-		return;
+	//if(desktop->getSelection()->isEmpty())
+	//	return;
 
 	SPObject * selected = desktop->getSelection()->single();
 	
-	if(!selected)
-		return;
+	//if(!selected)
+	//	return;
 	
-	if(!SP_IS_PATH(selected))
-		return;
+	//if(!SP_IS_PATH(selected))
+	//	return;
 
 	const char * layerid = NULL;
 
 	
 	//check if it's a tween path
-	if(SP_IS_TWEENPATH(selected))
+	if(selected && SP_IS_TWEENPATH(selected))
 	{
 		path = SP_PATH(selected);
 		layerid = path->tweenId;
@@ -443,20 +442,22 @@ void Tween::update()
 	
 	else
 	{
-		SPObject * obj = desktop->currentLayer();
+		path = tweenPath;
+		
+		//SPObject * obj = desktop->currentLayer();
 
-		if(obj && obj->getRepr())
-			layerid = obj->getRepr()->attribute("inkscape:tweenstartid");
+		//if(obj && obj->getRepr())
+		//	layerid = obj->getRepr()->attribute("inkscape:tweenstartid");
 	}
 
 	//std::cout << "tweenId: " << std::endl;
 	
 	//if there is no tween associated with this path or layer, return
-	if(!layerid)
-		return;
+	//if(!layerid)
+	//	return;
 	
-	if(tweenId != path->tweenId)
-		return;
+	//if(tweenId != path->tweenId)
+	//	return;
 
 	
 	//SPObject * layer = desktop->getDocument()->getObjectById(layerid);
@@ -466,8 +467,8 @@ void Tween::update()
 	//if(!layer)
 	//	return;
 
-	if(!path)
-		return;
+	//if(!path)
+	//	return;
 
 	
 	//std::cout << "tweenid: " << tweenId << std::endl;
@@ -491,12 +492,14 @@ void Tween::update()
 		return;
 	
 	
-	
 	Geom::PathVector pathv = curve->get_pathvector();
 	
 	SPObject * child = NULL;
 
-	float rotation = 360;
+	float rotation = 0;
+	
+	if(startLayer && startLayer->getRepr()->attribute("inkscape:rotation"))
+		rotation = atoi(startLayer->getRepr()->attribute("inkscape:rotation"));
 
 	Geom::Point p(0,0);
 
@@ -577,9 +580,13 @@ void Tween::update()
 	if(child)
 	{
 		Geom::Point p = pathv.finalPoint();
-		setPosition(child, p);
+		Geom::OptRect test2 = SP_ITEM(child)->visualBounds();
+		
+		Geom::Affine testtt = Geom::Rotate::around(p, rotation*M_PI/180);
+		SP_ITEM(child)->transform = testtt;
+		
+		setPosition(child, p - Geom::Point(test2->width()/2, test2->height()/2));
 	}
-
 }
 
 void Tween::addToTween(SPObject * obj)
@@ -887,6 +894,8 @@ Tween::Tween(KeyframeWidget * start) {
 	//is group, ellipse, rect etc etc
 	if(startLayer->getRepr()->childCount() == 1)
 		linearTween(startLayer, endLayer, start_x, start_y, end_x, end_y, inc_x, inc_y);
+	
+	update();
 	/*
 	//check if a color/opacity tween is in order
 	//if()
