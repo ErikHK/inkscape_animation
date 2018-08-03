@@ -550,8 +550,8 @@ void Tween::update()
 		//SP_ITEM(child)->transform.setTranslation(p);
 
 		
-		p = pathv.pointAt(.1);
-		//Geom::Affine testtt = Geom::Rotate::around(p, i*rotation*M_PI/180/numFrames);
+		//p = pathv.pointAt(.1);
+		Geom::Affine testtt = Geom::Rotate::around(p, i*rotation*M_PI/180/numFrames);
 		//Geom::Affine testtt = Geom::Rotate::around(p + Geom::Point(10, 10), i*rotation*M_PI/180/numFrames);
 		//Geom::Affine testtt = Geom::Rotate::around(p + Geom::Point(test2->width()/2, test2->height()/2), i*rotation*M_PI/180/(numFrames));
 		//Geom::Affine testtt = Geom::Rotate::around(p + Geom::Point(test2->width()/2, 0), i*rotation*M_PI/180/(numFrames));
@@ -559,14 +559,14 @@ void Tween::update()
 		//Geom::Affine testtt = Geom::Rotate::around(p + Geom::Point(SP_RECT(objects[i])->width.value/2, SP_RECT(objects[i])->height.value/2), i*rotation*M_PI/180/(numFrames));
 		//Geom::Affine testtt = Geom::Rotate::around(p + Geom::Point(SP_RECT(objects[i])->width.computed/2, SP_RECT(objects[i])->height.computed/2), i*rotation*M_PI/180/(numFrames));
 		
-		Geom::Affine const testtt = Geom::Rotate::around(p + Geom::Point(test2->width()/2, test2->height()/2), i*rotation*M_PI/180/(numFrames));
+		//Geom::Affine const testtt = Geom::Rotate::around(p + Geom::Point(test2->width()/2, test2->height()/2), i*rotation*M_PI/180/(numFrames));
 		
 		//Geom::Rotate const testtt = Geom::Rotate(i*rotation*M_PI/180/(numFrames));
 		
 		SP_ITEM(objects[i])->transform = testtt;
 		//sp_item_rotate_rel(SP_ITEM(objects[i]), testtt);
 		
-		setPosition(objects[i], p);
+		setPosition(objects[i], p - Geom::Point(test2->width()/2, test2->height()/2));
 		
 		std::cout << test2->width();
 	}
