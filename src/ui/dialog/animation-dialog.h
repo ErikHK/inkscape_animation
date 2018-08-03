@@ -15,7 +15,7 @@
 #include <gtkmm/table.h>
 #include <gtkmm/spinbutton.h>
 #include <gtkmm/checkbutton.h>
-
+#include "sp-object.h"
 
 #include "ui/dialog/desktop-tracker.h"
 
@@ -49,6 +49,7 @@ public:
 
     virtual void present();
     void updateEaseValue();
+	SPObject * getTweenStart();
 
 private:
 

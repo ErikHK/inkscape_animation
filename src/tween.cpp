@@ -31,6 +31,7 @@
 #include "sp-ellipse.h"
 #include "sp-star.h"
 #include "sp-item-group.h"
+#include "sp-item-transform.h"
 
 #include "tween.h"
 #include "widgets/keyframe-widget.h"
@@ -495,7 +496,7 @@ void Tween::update()
 	
 	SPObject * child = NULL;
 
-	float rotation = 0;
+	float rotation = 360;
 
 	Geom::Point p(0,0);
 
@@ -540,9 +541,34 @@ void Tween::update()
 		else
 			p = pathv.pointAt(tot);
 		
+		
+		Geom::OptRect test2(0,0);
+		//test2 = SP_ITEM(objects[i])->documentVisualBounds();
+		test2 = SP_ITEM(objects[i])->visualBounds();
+		Geom::Affine aff = Geom::Translate(p);
+		
+		//SP_ITEM(child)->transform.setTranslation(p);
+
+		
+		p = pathv.pointAt(.1);
+		//Geom::Affine testtt = Geom::Rotate::around(p, i*rotation*M_PI/180/numFrames);
+		//Geom::Affine testtt = Geom::Rotate::around(p + Geom::Point(10, 10), i*rotation*M_PI/180/numFrames);
+		//Geom::Affine testtt = Geom::Rotate::around(p + Geom::Point(test2->width()/2, test2->height()/2), i*rotation*M_PI/180/(numFrames));
+		//Geom::Affine testtt = Geom::Rotate::around(p + Geom::Point(test2->width()/2, 0), i*rotation*M_PI/180/(numFrames));
+		//Geom::Affine testtt = Geom::Rotate::around(p + test2->midpoint(), i*rotation*M_PI/180/(numFrames));
+		//Geom::Affine testtt = Geom::Rotate::around(p + Geom::Point(SP_RECT(objects[i])->width.value/2, SP_RECT(objects[i])->height.value/2), i*rotation*M_PI/180/(numFrames));
+		//Geom::Affine testtt = Geom::Rotate::around(p + Geom::Point(SP_RECT(objects[i])->width.computed/2, SP_RECT(objects[i])->height.computed/2), i*rotation*M_PI/180/(numFrames));
+		
+		Geom::Affine const testtt = Geom::Rotate::around(p + Geom::Point(test2->width()/2, test2->height()/2), i*rotation*M_PI/180/(numFrames));
+		
+		//Geom::Rotate const testtt = Geom::Rotate(i*rotation*M_PI/180/(numFrames));
+		
+		SP_ITEM(objects[i])->transform = testtt;
+		//sp_item_rotate_rel(SP_ITEM(objects[i]), testtt);
+		
 		setPosition(objects[i], p);
 		
-		std::cout << p;
+		std::cout << test2->width();
 	}
 
 	//set child to last

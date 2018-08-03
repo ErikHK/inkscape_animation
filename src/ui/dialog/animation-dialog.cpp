@@ -61,6 +61,26 @@ static void handleEaseChanged(AnimationDialog * add, gpointer user_data)
 
 }
 
+SPObject * AnimationDialog::getTweenStart()
+{
+	if(!SP_ACTIVE_DESKTOP)
+		return NULL;
+	
+	SPObject * obj = SP_ACTIVE_DESKTOP->currentLayer();
+	SPObject * tween_start = NULL;
+
+	if(obj->getRepr() && obj->getRepr()->attribute("inkscape:tween"))
+	{
+		//while(!obj->getRepr()->attribute("inkscape:tweenstart"))
+		const char * id = obj->getRepr()->attribute("inkscape:tweenstartid");
+
+		if(id)
+			tween_start = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(id);
+	}
+	
+	return tween_start;
+}
+
 static void handleRotationChanged(AnimationDialog * add, gpointer user_data)
 {
 	AnimationDialog* ad = reinterpret_cast<AnimationDialog*>(user_data);
@@ -332,6 +352,24 @@ AnimationDialog::handleSelectionChanged() {
 		spin_revolutions->set_sensitive(true);
 		in->set_sensitive(true);
 		out->set_sensitive(true);
+		
+		//also set the value for the scale if there is one stored
+		//SPObject * tweenstart = getTweenStart();
+		char const * easeval = NULL;
+		float easev = 0;
+		
+		//if(tweenstart)
+		//{
+		
+		easeval = selected->getRepr()->attribute("inkscape:ease");
+		
+		if(easeval)
+		{
+			easev = atof(easeval);
+			scale->set_value(easev);
+		}
+		//}
+		
 	}else
 	{
 		scale->set_sensitive(false);
@@ -366,12 +404,24 @@ void AnimationDialog::updateEaseValue()
 			tween_start = desktop->getDocument()->getObjectById(id);
 
 		scale->set_sensitive(true);
+		
 
 		if(tween_start && tween_start->getRepr())
 		{
 			
 			//if(in->get_active())
-				tween_start->getRepr()->setAttribute("inkscape:ease", Glib::ustring::format(scale->get_value()));
+			tween_start->getRepr()->setAttribute("inkscape:ease", Glib::ustring::format(scale->get_value()));
+			
+			const char * id = tween_start->getRepr()->attribute("inkscape:tweenpathid");
+			if(id)
+			{
+				SPObject * tweenpath = SP_ACTIVE_DESKTOP->getDocument()->getObjectById(id);
+				if(tweenpath)
+					tweenpath->getRepr()->setAttribute("inkscape:ease", Glib::ustring::format(scale->get_value()));
+			}
+			
+			
+			
 			//if(out->get_active())
 				//tween_start->getRepr()->setAttribute("inkscape:easeout", Glib::ustring::format(scale->get_value()));
 			
@@ -404,6 +454,25 @@ AnimationDialog::handleCurrentLayerChanged() {
 		spin_revolutions->set_sensitive(true);
 		in->set_sensitive(true);
 		out->set_sensitive(true);
+			
+		
+		//also set the value for the scale if there is one stored
+		SPObject * tweenstart = getTweenStart();
+		char const * easeval = NULL;
+		float easev = 0;
+		
+		if(tweenstart)
+		{
+			
+			easeval = tweenstart->getRepr()->attribute("inkscape:ease");
+			
+			if(easeval)
+			{
+				easev = atof(easeval);
+				scale->set_value(easev);
+			}
+		}
+		
 	}
 	else
 	{
