@@ -565,7 +565,10 @@ void Tween::update()
 		SP_ITEM(objects[i])->transform = testtt;
 		//sp_item_rotate_rel(SP_ITEM(objects[i]), testtt);
 		
-		setPosition(objects[i], p - Geom::Point(test2->width()/2, test2->height()/2));
+		if(SP_IS_GROUP(objects[i]))
+			setPosition(objects[i], p);
+		else
+			setPosition(objects[i], p - Geom::Point(test2->width()/2, test2->height()/2));
 		
 		std::cout << test2->width();
 	}
@@ -592,6 +595,17 @@ void Tween::addToTween(SPObject * obj)
 	
 	//update??
 	//update();
+}
+
+void Tween::moveGroupToCenter(SPGroup * g)
+{
+	Geom::OptRect rect = g->desktopVisualBounds();
+	//Geom::OptRect bbbox = g->bbox;
+	g->translateChildItems(Geom::Translate(-rect->midpoint() + Geom::Point(0, SP_ACTIVE_DOCUMENT->getHeight().value("px") )));
+	//g->translateChildItems(Geom::Translate(Geom::Point(-1000, -1000)));
+	
+	//g->translateChildItems(Geom::Translate(g->bbox(Geom::identity(), SPItem::GEOMETRIC_BBOX)->min()));
+	
 }
 
 Tween::Tween(KeyframeWidget * start) {
@@ -742,6 +756,8 @@ Tween::Tween(KeyframeWidget * start) {
 		//else if a group, take special care later!
 		if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
 		{
+			//moveGroupToCenter(SP_GROUP(child));
+			
 			end_x = SP_GROUP(child)->transform.translation()[0];
 			end_y = SP_GROUP(child)->transform.translation()[1];
 
@@ -772,6 +788,8 @@ Tween::Tween(KeyframeWidget * start) {
 		
 		if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
 		{
+			moveGroupToCenter(SP_GROUP(child));
+			
 			start_x = SP_GROUP(child)->transform.translation()[0];
 			start_y = SP_GROUP(child)->transform.translation()[1];
 			start_scale_x = SP_GROUP(child)->transform.expansionX();
@@ -895,6 +913,7 @@ Tween::Tween(KeyframeWidget * start) {
 	//is group, ellipse, rect etc etc
 	if(startLayer->getRepr()->childCount() == 1)
 		linearTween(startLayer, endLayer, start_x + rectt->width()/2, start_y + rectt->height()/2, end_x + rectt->width()/2, end_y + rectt->height()/2, inc_x, inc_y);
+		//linearTween(startLayer, endLayer, start_x, start_y, end_x, end_y, inc_x, inc_y);
 	
 	update();
 	/*
