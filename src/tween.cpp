@@ -63,10 +63,6 @@ void Tween::createGuide(float start_x, float start_y, float end_x, float end_y)
 {
 	SPCurve * c = new SPCurve();
 	
-	
-	
-	
-	
 	c->moveto(Geom::Point(start_x, start_y));
 	c->lineto(Geom::Point(end_x, end_y));
 	//c->curveto(Geom::Point(start_x, start_y), Geom::Point(start_x, end_y), Geom::Point(end_x, end_y));
@@ -593,6 +589,9 @@ void Tween::addToTween(SPObject * obj)
 {
 	if(obj)
 		objects.push_back(obj);
+	
+	//update??
+	//update();
 }
 
 Tween::Tween(KeyframeWidget * start) {
@@ -890,10 +889,12 @@ Tween::Tween(KeyframeWidget * start) {
 	}
 	
 	objects.push_back(endLayer->firstChild());
+	
+	Geom::OptRect rectt = SP_ITEM(endLayer->firstChild())->visualBounds();
 
 	//is group, ellipse, rect etc etc
 	if(startLayer->getRepr()->childCount() == 1)
-		linearTween(startLayer, endLayer, start_x, start_y, end_x, end_y, inc_x, inc_y);
+		linearTween(startLayer, endLayer, start_x + rectt->width()/2, start_y + rectt->height()/2, end_x + rectt->width()/2, end_y + rectt->height()/2, inc_x, inc_y);
 	
 	update();
 	/*
