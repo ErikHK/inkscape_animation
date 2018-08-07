@@ -608,6 +608,7 @@ Geom::Point Tween::moveGroupToCenter(SPGroup * g)
 	
 	g->translateChildItems(Geom::Translate(-rect->midpoint() + Geom::Point(0, SP_ACTIVE_DOCUMENT->getHeight().value("px")) ));
 	
+	//g->transform.setTranslation( pp -  Geom::Point(0, SP_ACTIVE_DOCUMENT->getHeight().value("px")));
 	
 	return pp;
 	//g->translateChildItems(Geom::Translate(Geom::Point(-1000, -1000)));
@@ -937,7 +938,12 @@ Tween::Tween(KeyframeWidget * start) {
 
 	//is group, ellipse, rect etc etc
 	if(startLayer->getRepr()->childCount() == 1)
-		linearTween(startLayer, endLayer, start_x + rectt->width()/2, start_y + rectt->height()/2, end_x + rectt->width()/2, end_y + rectt->height()/2, inc_x, inc_y);
+		linearTween(startLayer, endLayer, 
+			start_x + rectt->width()/2 - offss[Geom::X]/3.78,
+			start_y + rectt->height()/2 - offss[Geom::Y]/3.78 + SP_ACTIVE_DOCUMENT->getHeight().value("px")/3.78,
+			end_x + rectt->width()/2 - offss[Geom::X]/3.78,
+			end_y + rectt->height()/2 - offss[Geom::Y]/3.78 + SP_ACTIVE_DOCUMENT->getHeight().value("px")/3.78,
+			inc_x, inc_y);
 		//linearTween(startLayer, endLayer, start_x, start_y, end_x, end_y, inc_x, inc_y);
 	
 	update();
