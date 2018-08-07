@@ -584,7 +584,10 @@ void Tween::update()
 		Geom::Affine testtt = Geom::Rotate::around(p, rotation*M_PI/180);
 		SP_ITEM(child)->transform = testtt;
 		
-		setPosition(child, p - Geom::Point(test2->width()/2, test2->height()/2));
+		if(SP_IS_GROUP(child))
+			setPosition(child, p);
+		else
+			setPosition(child, p - Geom::Point(test2->width()/2, test2->height()/2));
 	}
 }
 
@@ -597,11 +600,16 @@ void Tween::addToTween(SPObject * obj)
 	//update();
 }
 
-void Tween::moveGroupToCenter(SPGroup * g)
+Geom::Point Tween::moveGroupToCenter(SPGroup * g)
 {
 	Geom::OptRect rect = g->desktopVisualBounds();
 	//Geom::OptRect bbbox = g->bbox;
-	g->translateChildItems(Geom::Translate(-rect->midpoint() + Geom::Point(0, SP_ACTIVE_DOCUMENT->getHeight().value("px") )));
+	Geom::Point pp = -rect->midpoint() + Geom::Point(0, SP_ACTIVE_DOCUMENT->getHeight().value("px"));
+	
+	g->translateChildItems(Geom::Translate(-rect->midpoint() + Geom::Point(0, SP_ACTIVE_DOCUMENT->getHeight().value("px")) ));
+	
+	
+	return pp;
 	//g->translateChildItems(Geom::Translate(Geom::Point(-1000, -1000)));
 	
 	//g->translateChildItems(Geom::Translate(g->bbox(Geom::identity(), SPItem::GEOMETRIC_BBOX)->min()));
@@ -637,6 +645,8 @@ Tween::Tween(KeyframeWidget * start) {
 	int i = start->id+1;
 	int num_layers = 1;
 	int num_nodes = 0;
+	
+	Geom::Point offss(0,0);
 	
 	sigc::connection _sel_changed_connection;
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
@@ -699,6 +709,63 @@ Tween::Tween(KeyframeWidget * start) {
 	startLayer->getRepr()->setAttribute("inkscape:tweenlayers", Glib::ustring::format(num_layers));
 	numFrames = num_layers;
 	
+	
+	if(startLayer)
+	{
+		SPObject * child = startLayer->firstChild();
+		Inkscape::XML::Node * childn = startLayer->getRepr()->firstChild();
+		if(!childn)
+			return;
+		
+		if(!child)
+			return;
+
+		sp_color_get_rgb_floatv (&SP_ITEM(child)->style->fill.value.color, start_rgb);
+
+		//get opacity
+		start_opacity = SP_ITEM(child)->style->opacity.value;
+		
+		start_stroke_scale = SP_ITEM(child)->style->stroke_width.value;
+		
+		for(int j=0; j < SP_ITEM(child)->style->stroke_dasharray.values.size(); j++)
+			start_stroke_dasharray_scale[j] = SP_ITEM(child)->style->stroke_dasharray.values[j];
+		
+		if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
+		{
+			offss = moveGroupToCenter(SP_GROUP(child));
+			
+			start_x = SP_GROUP(child)->transform.translation()[0];
+			start_y = SP_GROUP(child)->transform.translation()[1];
+			start_scale_x = SP_GROUP(child)->transform.expansionX();
+			start_scale_y = SP_GROUP(child)->transform.expansionY();
+			
+			SP_GROUP(child)->transform.setTranslation(Geom::Point(0,0));
+		}
+		
+		//if ellipse
+		if(SP_IS_GENERICELLIPSE(child))
+		{
+			SPGenericEllipse * ellipse = SP_GENERICELLIPSE(child);
+			
+			start_scale_x = ellipse->rx.value;
+			start_scale_y = ellipse->ry.value;
+			start_x = ellipse->cx.value;
+			start_y = ellipse->cy.value;
+		}
+
+		//if rect
+		if(SP_IS_RECT(child))
+		{
+			SPRect * rect = SP_RECT(child);
+			
+			start_scale_x = rect->width.value;
+			start_scale_y = rect->height.value;
+			start_x = rect->x.value;
+			start_y = rect->y.value;
+		}
+	}
+	
+	
 	if(endLayer)
 	{
 		//SP_ITEM(startLayer)->setHidden(false);
@@ -753,71 +820,29 @@ Tween::Tween(KeyframeWidget * start) {
 			is_path = true;
 		}
 		
-		//else if a group, take special care later!
+		//else if a group, take special care!
 		if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
 		{
-			//moveGroupToCenter(SP_GROUP(child));
+			
 			
 			end_x = SP_GROUP(child)->transform.translation()[0];
 			end_y = SP_GROUP(child)->transform.translation()[1];
-
+			
+			
+			SP_GROUP(child)->translateChildItems(Geom::Translate(offss) );
+			
+			//SP_GROUP(child)->transform.setTranslation(Geom::Point(0,0));
+			//SP_GROUP(child)->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+			//moveGroupToCenter(SP_GROUP(child));
+			
 			end_scale_x = SP_GROUP(child)->transform.expansionX();
 			end_scale_y = SP_GROUP(child)->transform.expansionY();
+			
+			
 		}
 	}
 	
-	if(startLayer)
-	{
-		SPObject * child = startLayer->firstChild();
-		Inkscape::XML::Node * childn = startLayer->getRepr()->firstChild();
-		if(!childn)
-			return;
-		
-		if(!child)
-			return;
-
-		sp_color_get_rgb_floatv (&SP_ITEM(child)->style->fill.value.color, start_rgb);
-
-		//get opacity
-		start_opacity = SP_ITEM(child)->style->opacity.value;
-		
-		start_stroke_scale = SP_ITEM(child)->style->stroke_width.value;
-		
-		for(int j=0; j < SP_ITEM(child)->style->stroke_dasharray.values.size(); j++)
-			start_stroke_dasharray_scale[j] = SP_ITEM(child)->style->stroke_dasharray.values[j];
-		
-		if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
-		{
-			moveGroupToCenter(SP_GROUP(child));
-			
-			start_x = SP_GROUP(child)->transform.translation()[0];
-			start_y = SP_GROUP(child)->transform.translation()[1];
-			start_scale_x = SP_GROUP(child)->transform.expansionX();
-			start_scale_y = SP_GROUP(child)->transform.expansionY();
-		}
-		
-		//if ellipse
-		if(SP_IS_GENERICELLIPSE(child))
-		{
-			SPGenericEllipse * ellipse = SP_GENERICELLIPSE(child);
-			
-			start_scale_x = ellipse->rx.value;
-			start_scale_y = ellipse->ry.value;
-			start_x = ellipse->cx.value;
-			start_y = ellipse->cy.value;
-		}
-
-		//if rect
-		if(SP_IS_RECT(child))
-		{
-			SPRect * rect = SP_RECT(child);
-			
-			start_scale_x = rect->width.value;
-			start_scale_y = rect->height.value;
-			start_x = rect->x.value;
-			start_y = rect->y.value;
-		}
-	}
+	
 	
 	inc_scale_x = (end_scale_x - start_scale_x)/num_layers;
 	inc_scale_y = (end_scale_y - start_scale_y)/num_layers;

@@ -46,7 +46,7 @@ public:
 	float easeOut(float t, float a);
 	void setScale(SPObject * child, double width, double height);
 	void setPosition(SPObject * child, Geom::Point p);
-	void moveGroupToCenter(SPGroup * g);
+	Geom::Point moveGroupToCenter(SPGroup * g);
 	
 };
 
