@@ -403,6 +403,39 @@ void Tween::setPosition(SPObject * child, Geom::Point p)
 	}
 }
 
+float Tween::getEaseValue()
+{
+	char const * easeval = NULL;
+	float easev = 0;
+		
+		if(startLayer)
+		{
+			easeval = startLayer->getRepr()->attribute("inkscape:ease");
+			
+			if(easeval)
+				easev = atof(easeval);
+			
+		}
+		
+	return easev;
+}
+
+Geom::Point Tween::getPoint(Geom::PathVector pathv, float t)
+{
+	float easev = getEaseValue();
+	Geom::Point p;
+	
+	if(easev < 0)
+		p = pathv.pointAt(easeOut(t, -easev)); 
+	else if(easev > 0)
+		p = pathv.pointAt(easeIn(t, easev));
+	else
+		p = pathv.pointAt(t);
+	
+	return p;
+		
+}
+
 void Tween::update()
 {
 	
@@ -516,30 +549,13 @@ void Tween::update()
 	
 	for(int i=0; i < numFrames-1; i++){
 		auto test = pathv.timeRange().max();
+		
 		auto tot = i*test/(numFrames-1);
 		
-		char const * easeval = NULL;
-		float easev = 0;
+		if(curve->is_closed())
+			tot = i*test/(numFrames);
 		
-		if(startLayer)
-		{
-			easeval = startLayer->getRepr()->attribute("inkscape:ease");
-			
-			if(easeval)
-				easev = atof(easeval);
-			
-		}
-		
-		
-		//if(easev != 0 && easev != 0)
-		//	p = pathv.pointAt(easeInOut(tot, easev));
-		if(easev < 0)
-			p = pathv.pointAt(easeOut(tot, -easev)); 
-		else if(easev > 0)
-			p = pathv.pointAt(easeIn(tot, easev));
-		else
-			p = pathv.pointAt(tot);
-		
+		p = getPoint(pathv, tot);
 		
 		Geom::OptRect test2(0,0);
 		//test2 = SP_ITEM(objects[i])->documentVisualBounds();
@@ -578,7 +594,17 @@ void Tween::update()
 
 	if(child)
 	{
+		
 		Geom::Point p = pathv.finalPoint();
+		
+		
+		
+		if(curve->is_closed())
+		{
+			auto t = (numFrames-2)*pathv.timeRange().max()/(numFrames-1);
+			p = getPoint(pathv, t);
+		}
+		
 		Geom::OptRect test2 = SP_ITEM(child)->visualBounds();
 		
 		Geom::Affine testtt = Geom::Rotate::around(p, rotation*M_PI/180);
