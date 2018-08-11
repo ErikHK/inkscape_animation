@@ -19,6 +19,8 @@
 #include "sp-rect.h"
 #include "sp-ellipse.h"
 #include "sp-star.h"
+#include "sp-item-group.h"
+#include "sp-item-transform.h"
 #include "tween.h"
 
 #include "display/curve.h"
@@ -440,6 +442,11 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 	if(!p)
 		return;
 	
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	
+	if(!desktop)
+		return;
+	
 	if(p && p->layer && p->layer->getRepr()->childCount() > 0)
 	{
 		Inkscape::XML::Node * childn_copy = NULL;
@@ -449,9 +456,35 @@ static void insertKeyframe(KeyframeWidget * kww, gpointer user_data)
 
 		if(childn_copy && kw->layer->getRepr()->childCount() == 0)
 			kw->layer->getRepr()->appendChild(childn_copy);
+		
+		//fetch the SPItem that was just created
+		SPObject * item = kw->layer->firstChild(); 
+		
+		//if it's a group, move the children to the place and restore the translation transform
+		if(SP_IS_GROUP(item))
+		{
+			//Geom::OptRect rect = SP_GROUP(item)->desktopVisualBounds();
+			Geom::OptRect rect = SP_GROUP(item)->geometricBounds();
+			//Geom::OptRect bbbox = g->bbox;
+			//Geom::Point pp = -rect->midpoint() + Geom::Point(0, SP_ACTIVE_DOCUMENT->getHeight().value("px"));
+			//Geom::Point pp = -rect->midpoint();
+			
+			//SP_GROUP(item)->translateChildItems( -rect->midpoint() );
+			
+			//auto listt = sp_item_group_item_list(SP_GROUP(item));
+			//sp_item_group_ungroup(SP_GROUP(item), listt, true);
+			
+			//sp_item_group_ungroup(SP_GROUP(item), listt, false);
+			
+			//SP_GROUP(item)->commitTransform();
+			
+			//sp_item_move_rel(SP_ITEM(item), Geom::Translate(- rect->midpoint()));
+			
+			//SP_GROUP(item)->doWriteTransform(SP_GROUP(item)->getRepr(), SP_GROUP(item)->transform);
+		}
 	}
 
-	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	
 		//emit change
 		if(desktop)
 		{

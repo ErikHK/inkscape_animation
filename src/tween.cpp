@@ -399,6 +399,8 @@ void Tween::setPosition(SPObject * child, Geom::Point p)
 	{
 		SPGroup * group = SP_GROUP(child);
 		group->transform.setTranslation(p);
+		//group->commitTransform();
+		//group->transform.setTranslation(Geom::Point(0,0));
 		group->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
 	}
 }
@@ -433,7 +435,6 @@ Geom::Point Tween::getPoint(Geom::PathVector pathv, float t)
 		p = pathv.pointAt(t);
 	
 	return p;
-		
 }
 
 void Tween::update()
@@ -482,11 +483,11 @@ void Tween::update()
 	//std::cout << "tweenId: " << std::endl;
 	
 	//if there is no tween associated with this path or layer, return
-	//if(!layerid)
-	//	return;
+	if(!layerid)
+		return;
 	
-	//if(tweenId != path->tweenId)
-	//	return;
+	if(tweenId != path->tweenId)
+		return;
 
 	
 	//SPObject * layer = desktop->getDocument()->getObjectById(layerid);
@@ -578,6 +579,7 @@ void Tween::update()
 		
 		//Geom::Rotate const testtt = Geom::Rotate(i*rotation*M_PI/180/(numFrames));
 		
+		
 		SP_ITEM(objects[i])->transform = testtt;
 		//sp_item_rotate_rel(SP_ITEM(objects[i]), testtt);
 		
@@ -636,12 +638,21 @@ Geom::Point Tween::moveGroupToCenter(SPGroup * g)
 	
 	//g->transform.setTranslation( pp -  Geom::Point(0, SP_ACTIVE_DOCUMENT->getHeight().value("px")));
 	
+	//g->transform.setTranslation(Geom::Point(0,0));
+	
 	return pp;
 	//g->translateChildItems(Geom::Translate(Geom::Point(-1000, -1000)));
 	
 	//g->translateChildItems(Geom::Translate(g->bbox(Geom::identity(), SPItem::GEOMETRIC_BBOX)->min()));
 	
 }
+
+/*
+void Tween::setProperties(SPItem * item)
+{
+	
+}
+*/
 
 Tween::Tween(KeyframeWidget * start) {
 	
@@ -674,6 +685,7 @@ Tween::Tween(KeyframeWidget * start) {
 	int num_nodes = 0;
 	
 	Geom::Point offss(0,0);
+	Geom::Point offss2(0,0);
 	
 	sigc::connection _sel_changed_connection;
 	SPDesktop *desktop = SP_ACTIVE_DESKTOP;
@@ -761,12 +773,26 @@ Tween::Tween(KeyframeWidget * start) {
 		{
 			offss = moveGroupToCenter(SP_GROUP(child));
 			
-			start_x = SP_GROUP(child)->transform.translation()[0];
-			start_y = SP_GROUP(child)->transform.translation()[1];
+			offss2 = SP_GROUP(child)->transform.translation();
+			
+			SP_GROUP(child)->commitTransform();
+			
+			Geom::Point px = SP_GROUP(child)->geometricBounds()->midpoint();
+			
+			//start_x = SP_GROUP(child)->transform.translation()[0];
+			//start_y = SP_GROUP(child)->transform.translation()[1];
+			
+			start_x = px[Geom::X];
+			start_y = px[Geom::Y];
+			
+			
+			
+			SP_GROUP(child)->transform.setTranslation(Geom::Point(0,0));
+			SP_GROUP(child)->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+			
 			start_scale_x = SP_GROUP(child)->transform.expansionX();
 			start_scale_y = SP_GROUP(child)->transform.expansionY();
 			
-			SP_GROUP(child)->transform.setTranslation(Geom::Point(0,0));
 		}
 		
 		//if ellipse
@@ -851,16 +877,29 @@ Tween::Tween(KeyframeWidget * start) {
 		if(SP_IS_GROUP(child) && !SP_IS_LAYER(child))
 		{
 			
+			//SP_GROUP(child)->commitTransform();
 			
-			end_x = SP_GROUP(child)->transform.translation()[0];
-			end_y = SP_GROUP(child)->transform.translation()[1];
+			//Geom::Point px = SP_GROUP(child)->geometricBounds()->midpoint();
 			
+			//start_x = SP_GROUP(child)->transform.translation()[0];
+			//start_y = SP_GROUP(child)->transform.translation()[1];
 			
-			SP_GROUP(child)->translateChildItems(Geom::Translate(offss) );
+			//end_x = px[Geom::X];
+			//end_y = px[Geom::Y];
 			
 			//SP_GROUP(child)->transform.setTranslation(Geom::Point(0,0));
-			//SP_GROUP(child)->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
+			
+			end_x = SP_GROUP(child)->transform.translation()[0] - offss2[Geom::X];
+			end_y = SP_GROUP(child)->transform.translation()[1] - offss2[Geom::Y];
+			
+			Geom::Point newp = Geom::Point(offss2[Geom::X], - offss2[Geom::Y]);
+			
+			SP_GROUP(child)->translateChildItems(Geom::Translate(offss + 3.78*newp) );
+			
+			
+			
 			//moveGroupToCenter(SP_GROUP(child));
+			SP_GROUP(child)->requestDisplayUpdate(SP_OBJECT_MODIFIED_FLAG);
 			
 			end_scale_x = SP_GROUP(child)->transform.expansionX();
 			end_scale_y = SP_GROUP(child)->transform.expansionY();
@@ -958,6 +997,11 @@ Tween::Tween(KeyframeWidget * start) {
 		i++;
 	}
 	
+	//copy to the end as well...
+	
+	
+	
+	
 	objects.push_back(endLayer->firstChild());
 	
 	Geom::OptRect rectt = SP_ITEM(endLayer->firstChild())->visualBounds();
@@ -980,7 +1024,7 @@ Tween::Tween(KeyframeWidget * start) {
 		
 		//linearTween(startLayer, endLayer, start_x, start_y, end_x, end_y, inc_x, inc_y);
 	
-	update();
+	/////////////////////update();
 	/*
 	//check if a color/opacity tween is in order
 	//if()

@@ -482,6 +482,183 @@ sp_recursive_scale_text_size(Inkscape::XML::Node *repr, double scale){
     }
 }
 
+
+
+void SPGroup::commitTransform()
+{
+	
+	//auto children = sp_item_group_item_list(this);
+
+    SPDocument *doc = document;
+    SPRoot *root = doc->getRoot();
+    SPObject *defs = root->defs;
+
+    Inkscape::XML::Node *grepr = getRepr();
+
+    g_return_if_fail (!strcmp (grepr->name(), "svg:g")
+                   || !strcmp (grepr->name(), "svg:a")
+                   || !strcmp (grepr->name(), "svg:switch")
+                   || !strcmp (grepr->name(), "svg:svg"));
+
+    // this converts the gradient/pattern fill/stroke on the group, if any, to userSpaceOnUse
+    adjust_paint_recursive (Geom::identity(), Geom::identity(), false);
+
+    SPItem *pitem = dynamic_cast<SPItem *>(parent);
+    g_assert(pitem);
+    Inkscape::XML::Node *prepr = pitem->getRepr();
+
+
+    removeAllPathEffects(false);
+
+    /* Step 1 - generate lists of children objects */
+    GSList *items = NULL;
+    GSList *objects = NULL;
+    Geom::Affine const g(transform);
+
+    for (SPObject *child = firstChild() ; child; child = child->getNext() )
+        if (SPItem *citem = dynamic_cast<SPItem *>(child))
+            sp_item_group_ungroup_handle_clones(citem,g);
+
+
+    for (SPObject *child = firstChild() ; child; child = child->getNext() ) {
+        SPItem *citem = dynamic_cast<SPItem *>(child);
+        if (citem) {
+            /* Merging of style */
+            // this converts the gradient/pattern fill/stroke, if any, to userSpaceOnUse; we need to do
+            // it here _before_ the new transform is set, so as to use the pre-transform bbox
+            citem->adjust_paint_recursive (Geom::identity(), Geom::identity(), false);
+
+            child->style->merge( style );
+            /*
+             * fixme: We currently make no allowance for the case where child is cloned
+             * and the group has any style settings.
+             *
+             * (This should never occur with documents created solely with the current
+             * version of inkscape without using the XML editor: we usually apply group
+             * style changes to children rather than to the group itself.)
+             *
+             * If the group has no style settings, then style->merge() should be a no-op. Otherwise
+             * (i.e. if we change the child's style to compensate for its parent going away)
+             * then those changes will typically be reflected in any clones of child,
+             * whereas we'd prefer for Ungroup not to affect the visual appearance.
+             *
+             * The only way of preserving styling appearance in general is for child to
+             * be put into a new group -- a somewhat surprising response to an Ungroup
+             * command.  We could add a new groupmode:transparent that would mostly
+             * hide the existence of such groups from the user (i.e. editing behaves as
+             * if the transparent group's children weren't in a group), though that's
+             * extra complication & maintenance burden and this case is rare.
+             */
+
+            child->updateRepr();
+
+            //Inkscape::XML::Node *nrepr = child->getRepr()->duplicate(prepr->document());
+			Inkscape::XML::Node *nrepr = child->getRepr();
+
+            // Merging transform
+            Geom::Affine ctrans = citem->transform * g;
+                // We should not apply the group's transformation to both a linked offset AND to its source
+                if (dynamic_cast<SPOffset *>(citem)) { // Do we have an offset at hand (whether it's dynamic or linked)?
+                    SPItem *source = sp_offset_get_source(dynamic_cast<SPOffset *>(citem));
+                    // When dealing with a chain of linked offsets, the transformation of an offset will be
+                    // tied to the transformation of the top-most source, not to any of the intermediate
+                    // offsets. So let's find the top-most source
+                    while (source != NULL && dynamic_cast<SPOffset *>(source)) {
+                        source = sp_offset_get_source(dynamic_cast<SPOffset *>(source));
+                    }
+                    if (source != NULL && // If true then we must be dealing with a linked offset ...
+                        isAncestorOf(source) ) { // ... of which the source is in the same group
+                        ctrans = citem->transform; // then we should apply the transformation of the group to the offset
+                    }
+                }
+
+            // FIXME: constructing a transform that would fully preserve the appearance of a
+            // textpath if it is ungrouped with its path seems to be impossible in general
+            // case. E.g. if the group was squeezed, to keep the ungrouped textpath squeezed
+            // as well, we'll need to relink it to some "virtual" path which is inversely
+            // stretched relative to the actual path, and then squeeze the textpath back so it
+            // would both fit the actual path _and_ be squeezed as before. It's a bummer.
+
+            // This is just a way to temporarily remember the transform in repr. When repr is
+            // reattached outside of the group, the transform will be written more properly
+            // (i.e. optimized into the object if the corresponding preference is set)
+            gchar *affinestr=sp_svg_transform_write(ctrans);
+            SPText * text = dynamic_cast<SPText *>(citem);
+            if (text) {
+                //this causes a change in text-on-path appearance when there is a non-conformal transform, see bug #1594565
+                double scale = (ctrans.expansionX() + ctrans.expansionY()) / 2.0;
+                SPTextPath * text_path = dynamic_cast<SPTextPath *>(text->children);
+                if (!text_path) {
+                    nrepr->setAttribute("transform", affinestr);
+                } else {
+                    sp_recursive_scale_text_size(nrepr, scale);
+                    Geom::Affine ttrans = ctrans.inverse() * SP_ITEM(text)->transform * ctrans;
+                    gchar *affinestr = sp_svg_transform_write(ttrans);
+                    nrepr->setAttribute("transform", affinestr);
+                    g_free(affinestr);
+                }
+            } else {
+                nrepr->setAttribute("transform", affinestr);
+            }
+            g_free(affinestr);
+
+            items = g_slist_prepend (items, nrepr);
+
+        } else {
+            Inkscape::XML::Node *nrepr = child->getRepr()->duplicate(prepr->document());
+            objects = g_slist_prepend (objects, nrepr);
+        }
+    }
+
+    /* Step 2 - clear group */
+    // remember the position of the group
+    gint pos = getRepr()->position();
+
+    // the group is leaving forever, no heir, clones should take note; its children however are going to reemerge
+    //group->deleteObject(true, false);
+	transform = Geom::identity();
+
+    /* Step 3 - add nonitems */
+    if (objects) {
+        Inkscape::XML::Node *last_def = defs->getRepr()->lastChild();
+        while (objects) {
+            Inkscape::XML::Node *repr = (Inkscape::XML::Node *) objects->data;
+            if (!sp_repr_is_meta_element(repr)) {
+                defs->getRepr()->addChild(repr, last_def);
+            }
+            Inkscape::GC::release(repr);
+            objects = g_slist_remove (objects, objects->data);
+        }
+    }
+
+    /* Step 4 - add items */
+	/*
+    while (items) {
+        Inkscape::XML::Node *repr = (Inkscape::XML::Node *) items->data;
+        // add item
+        prepr->appendChild(repr);
+        // restore position; since the items list was prepended (i.e. reverse), we now add
+        // all children at the same pos, which inverts the order once again
+        repr->setPosition(pos > 0 ? pos : 0);
+
+        // fill in the children list if non-null
+        SPItem *item = static_cast<SPItem *>(doc->getObjectByRepr(repr));
+
+        if (item) {
+            item->doWriteTransform(repr, item->transform, NULL, false);
+            children.insert(children.begin(),item);
+        } else {
+            g_assert_not_reached();
+        }
+
+        Inkscape::GC::release(repr);
+        items = g_slist_remove (items, items->data);
+    }
+	*/
+}
+
+
+
 void
 sp_item_group_ungroup (SPGroup *group, std::vector<SPItem*> &children, bool do_done)
 {
