@@ -59,7 +59,7 @@
 
 using Inkscape::DocumentUndo;
 
-void Tween::createGuide(float start_x, float start_y, float end_x, float end_y)
+SPCurve * Tween::createGuide(float start_x, float start_y, float end_x, float end_y)
 {
 	SPCurve * c = new SPCurve();
 	
@@ -74,7 +74,7 @@ void Tween::createGuide(float start_x, float start_y, float end_x, float end_y)
 	
 	
 	if(!SP_ACTIVE_DOCUMENT)
-		return;
+		return NULL;
 
     //Inkscape::XML::Document *xml_doc = SP_ACTIVE_DOCUMENT->getReprDoc();
 	Inkscape::XML::Document *xml_doc = SP_ACTIVE_DESKTOP->doc()->getReprDoc();
@@ -128,6 +128,7 @@ void Tween::createGuide(float start_x, float start_y, float end_x, float end_y)
 
     }
 
+	return c;
 	//return NULL;
 }
 
@@ -139,11 +140,28 @@ void Tween::linearTween(SPObject * startLayer, SPObject * endLayer, float start_
 
 	int j = 0;
 
-	createGuide(start_x, start_y, end_x, end_y);
+	SPCurve *c = createGuide(start_x, start_y, end_x, end_y);
+	
+	
+	Geom::PathVector pathv = c->get_pathvector();
+	
+	auto test = pathv.timeRange().max();
+	Geom::Point p(0,0);
 
 	while(layer->next)
 	{
 		//layer = desktop->getDocument()->getObjectById(std::string(Glib::ustring::format("animationlayer", kw->parent_id, "keyframe", i)));
+		
+		
+		auto tot = j*test/(numFrames-1);
+	
+		if(c->is_closed())
+			tot = j*test/(numFrames);
+		
+		p = getPoint(pathv, tot);
+		
+		
+		
 
 		if(!layer)
 			return;
@@ -163,13 +181,20 @@ void Tween::linearTween(SPObject * startLayer, SPObject * endLayer, float start_
 		
 		tweenId = startLayer->getId();
 
-		Geom::Point p(start_x + j*inc_x, start_y + j*inc_y);
+		//Geom::Point p(start_x + j*inc_x, start_y + j*inc_y);
 		
 		setPosition(child, p);
 		
 		layer = layer->next;
 		j++;
 	}
+	
+	//now layer == endLayer?
+	SPObject * child = layer->firstChild();
+	//Geom::Point p(start_x + end_x, start_y + end_y);	
+	p = pathv.finalPoint();
+	setPosition(child, p);
+	
 }
 
 void Tween::copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
@@ -510,6 +535,7 @@ void Tween::update()
 		return;
 	
 	numFrames = objects.size();
+	
 	//numFrames = 10;
 	//numFrames = 0;
 	int testarrr = 0;
@@ -527,10 +553,22 @@ void Tween::update()
 	SPObject * child = NULL;
 
 	float rotation = 0;
+	float end_scale_x = 1;
+	float end_scale_y = 1;
 	
 	if(startLayer && startLayer->getRepr()->attribute("inkscape:rotation"))
 		rotation = atoi(startLayer->getRepr()->attribute("inkscape:rotation"));
+	
+	if(startLayer && startLayer->getRepr()->attribute("inkscape:end_scale_x"))
+		end_scale_x = atof(startLayer->getRepr()->attribute("inkscape:end_scale_x"));
+	
+	if(startLayer && startLayer->getRepr()->attribute("inkscape:end_scale_y"))
+		end_scale_y = atof(startLayer->getRepr()->attribute("inkscape:end_scale_y"));
 
+	
+	float inc_scale_x = (end_scale_x - 1)/numFrames;
+	float inc_scale_y = (end_scale_y - 1)/numFrames;
+	
 	Geom::Point p(0,0);
 
 	//if there are no objects, return
@@ -580,13 +618,14 @@ void Tween::update()
 		//Geom::Rotate const testtt = Geom::Rotate(i*rotation*M_PI/180/(numFrames));
 		
 		
-		SP_ITEM(objects[i])->transform = testtt;
+		SP_ITEM(objects[i])->transform = Geom::Scale(1 + i*inc_scale_x, 1 + i*inc_scale_y) * testtt;
 		//sp_item_rotate_rel(SP_ITEM(objects[i]), testtt);
 		
 		if(SP_IS_GROUP(objects[i]))
 			setPosition(objects[i], p);
 		else
 			setPosition(objects[i], p - Geom::Point(test2->width()/2, test2->height()/2));
+		
 		
 		std::cout << test2->width();
 	}
@@ -610,7 +649,7 @@ void Tween::update()
 		Geom::OptRect test2 = SP_ITEM(child)->visualBounds();
 		
 		Geom::Affine testtt = Geom::Rotate::around(p, rotation*M_PI/180);
-		SP_ITEM(child)->transform = testtt;
+		SP_ITEM(child)->transform = Geom::Scale(end_scale_x, end_scale_y) * testtt;
 		
 		if(SP_IS_GROUP(child))
 			setPosition(child, p);
@@ -666,7 +705,6 @@ Tween::Tween(KeyframeWidget * start) {
 	float scale_x=1, scale_y=1, inc_scale_x=0, inc_scale_y=0;
 	
 	float stroke_scale=1, inc_stroke_scale=0;
-	float start_scale_x = 1, end_scale_x = 1, start_scale_y=1, end_scale_y=1;
 	
 	float start_stroke_scale = 1, end_stroke_scale = 1;
 	
@@ -692,6 +730,13 @@ Tween::Tween(KeyframeWidget * start) {
 	
 	tweenId = NULL;
 	numFrames = 0;
+	
+	float start_scale_x, end_scale_x, start_scale_y, end_scale_y;
+	
+	start_scale_x = 1;
+	end_scale_x = 1;
+	start_scale_y = 1;
+	end_scale_y = 1;
 
 	if(desktop)
 	{
@@ -894,8 +939,8 @@ Tween::Tween(KeyframeWidget * start) {
 			
 			Geom::Point newp = Geom::Point(offss2[Geom::X], - offss2[Geom::Y]);
 			
-			SP_GROUP(child)->translateChildItems(Geom::Translate(offss + 3.78*newp) );
 			
+			SP_GROUP(child)->translateChildItems(Geom::Translate(offss + 3.78*newp) );
 			
 			
 			//moveGroupToCenter(SP_GROUP(child));
@@ -905,8 +950,15 @@ Tween::Tween(KeyframeWidget * start) {
 			end_scale_y = SP_GROUP(child)->transform.expansionY();
 			
 			
+			
+			
 		}
 	}
+	
+	
+	//set attribute end_scale_x etc
+	startLayer->getRepr()->setAttribute("inkscape:end_scale_x", Glib::ustring::format(end_scale_x));
+	startLayer->getRepr()->setAttribute("inkscape:end_scale_y", Glib::ustring::format(end_scale_y));
 	
 	
 	
@@ -998,9 +1050,20 @@ Tween::Tween(KeyframeWidget * start) {
 	}
 	
 	//copy to the end as well...
+	SPObject * child = startLayer->firstChild();
 	
 	
+	Inkscape::XML::Node * childn = child->getRepr();
+	Inkscape::XML::Node * childn_copy = childn->duplicate(desktop->getDocument()->getReprDoc());
 	
+	if(childn && childn_copy)
+	{
+		endLayer->getRepr()->removeChild(endLayer->firstChild()->getRepr());
+		endLayer->getRepr()->appendChild(childn_copy);
+	}
+	
+	child = endLayer->firstChild();
+	setScale(child, end_scale_x, end_scale_y);
 	
 	objects.push_back(endLayer->firstChild());
 	
@@ -1017,14 +1080,14 @@ Tween::Tween(KeyframeWidget * start) {
 		linearTween(startLayer, endLayer, 
 			start_x - offss[Geom::X]/3.78,
 			start_y + offss[Geom::Y]/3.78,
-			end_x - offss[Geom::X]/3.78,
-			end_y + offss[Geom::Y]/3.78,
+			(end_x - end_scale_x*offss[Geom::X]/3.78),
+			(end_y + end_scale_y*offss[Geom::Y]/3.78),
 			inc_x, inc_y);
 		
 		
 		//linearTween(startLayer, endLayer, start_x, start_y, end_x, end_y, inc_x, inc_y);
 	
-	/////////////////////update();
+	/////////////update();
 	/*
 	//check if a color/opacity tween is in order
 	//if()

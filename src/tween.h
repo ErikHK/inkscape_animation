@@ -35,7 +35,7 @@ public:
 
 	int numFrames;
 	
-	void createGuide(float start_x, float start_y, float end_x, float end_y);
+	SPCurve * createGuide(float start_x, float start_y, float end_x, float end_y);
 	void linearTween(SPObject * startLayer, SPObject * endLayer, float start_x, float start_y, float end_x, float end_y, float inc_x, float inc_y);
 	void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer);
 	void showAllKeyframes();
