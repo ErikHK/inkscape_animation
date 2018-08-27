@@ -143,6 +143,28 @@ void Tween::linearTween(SPObject * startLayer, SPObject * endLayer, float start_
 	SPCurve *c = createGuide(start_x, start_y, end_x, end_y);
 	
 	
+	if(tweenPath)
+	{
+		layer->getRepr()->setAttribute("inkscape:tweenpathid", tweenPath->getId());
+		tweenPath->tweenId = startLayer->getId();
+	}
+	tweenId = startLayer->getId();
+	
+	doUpdate(tweenId, c);
+	
+	while(layer->next)
+	{
+		if(tweenPath)
+		{
+			layer->getRepr()->setAttribute("inkscape:tweenpathid", tweenPath->getId());
+			tweenPath->tweenId = startLayer->getId();
+		}
+
+		layer->getRepr()->setAttribute("inkscape:tweenstartid", startLayer->getId());
+		layer = layer->next;
+	}
+	
+	/*
 	Geom::PathVector pathv = c->get_pathvector();
 	
 	auto test = pathv.timeRange().max();
@@ -195,6 +217,8 @@ void Tween::linearTween(SPObject * startLayer, SPObject * endLayer, float start_
 	p = pathv.finalPoint();
 	setPosition(child, p);
 	
+	doUpdate(tweenId, c);
+	*/
 }
 
 void Tween::copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer)
@@ -462,59 +486,11 @@ Geom::Point Tween::getPoint(Geom::PathVector pathv, float t)
 	return p;
 }
 
-void Tween::update()
+void Tween::doUpdate(const char * tweenId, SPCurve * curve)
 {
 	
-	//std::cout << "Tween::update()" << std::endl;
-	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
-	SPPath * path = NULL;
-
-	if(!desktop)
-		return;
-	
-	//if(desktop->getSelection()->isEmpty())
-	//	return;
-
-	SPObject * selected = desktop->getSelection()->single();
-	
-	//if(!selected)
-	//	return;
-	
-	//if(!SP_IS_PATH(selected))
-	//	return;
-
-	const char * layerid = NULL;
-
-	
-	//check if it's a tween path
-	if(selected && SP_IS_TWEENPATH(selected))
-	{
-		path = SP_PATH(selected);
-		layerid = path->tweenId;
-		//layerid = tweenId;
-		//std::cout << layerid;
-	}
-	
-	else
-	{
-		path = tweenPath;
-		
-		//SPObject * obj = desktop->currentLayer();
-
-		//if(obj && obj->getRepr())
-		//	layerid = obj->getRepr()->attribute("inkscape:tweenstartid");
-	}
-
-	//std::cout << "tweenId: " << std::endl;
-	
-	//if there is no tween associated with this path or layer, return
-	if(!layerid)
-		return;
-	
-	if(tweenId != path->tweenId)
-		return;
-
-	
+	numFrames = objects.size();
+	Geom::PathVector pathv = curve->get_pathvector();
 	//SPObject * layer = desktop->getDocument()->getObjectById(layerid);
 	//SPObject * layer = NULL;
 
@@ -525,30 +501,12 @@ void Tween::update()
 	//if(!path)
 	//	return;
 
-	
 	//std::cout << "tweenid: " << tweenId << std::endl;
 	
 	
 	//std::cout << "layer: " << std::endl;
 	//int num_frames = numFrames;
-	if(objects.empty())
-		return;
 	
-	numFrames = objects.size();
-	
-	//numFrames = 10;
-	//numFrames = 0;
-	int testarrr = 0;
-
-	SPObject * nextLayer = NULL;
-	
-	SPCurve * curve = path->_curve;
-	
-	if(!curve)
-		return;
-	
-	
-	Geom::PathVector pathv = curve->get_pathvector();
 	
 	SPObject * child = NULL;
 
@@ -656,6 +614,84 @@ void Tween::update()
 		else
 			setPosition(child, p - Geom::Point(test2->width()/2, test2->height()/2));
 	}
+}
+
+void Tween::update()
+{
+	
+	//std::cout << "Tween::update()" << std::endl;
+	SPDesktop * desktop = SP_ACTIVE_DESKTOP;
+	SPPath * path = NULL;
+
+	if(!desktop)
+		return;
+	
+	//if(desktop->getSelection()->isEmpty())
+	//	return;
+
+	SPObject * selected = desktop->getSelection()->single();
+	
+	//if(!selected)
+	//	return;
+	
+	//if(!SP_IS_PATH(selected))
+	//	return;
+
+	const char * layerid = NULL;
+
+	
+	//check if it's a tween path
+	if(selected && SP_IS_TWEENPATH(selected))
+	{
+		path = SP_PATH(selected);
+		layerid = path->tweenId;
+		//layerid = tweenId;
+		//std::cout << layerid;
+	}
+	
+	else
+	{
+		path = tweenPath;
+		
+		//SPObject * obj = desktop->currentLayer();
+
+		//if(obj && obj->getRepr())
+		//	layerid = obj->getRepr()->attribute("inkscape:tweenstartid");
+	}
+
+	//std::cout << "tweenId: " << std::endl;
+	
+	//if there is no tween associated with this path or layer, return
+	if(!layerid)
+		return;
+	
+	if(tweenId != path->tweenId)
+		return;
+	
+	
+	if(objects.empty())
+		return;
+	
+	numFrames = objects.size();
+	
+	//numFrames = 10;
+	//numFrames = 0;
+	int testarrr = 0;
+
+	SPObject * nextLayer = NULL;
+	
+	SPCurve * curve = path->_curve;
+	
+	if(!curve)
+		return;
+	
+	
+	//Geom::PathVector pathv = curve->get_pathvector();
+
+	
+	doUpdate(tweenId, curve);
+	
+	
 }
 
 void Tween::addToTween(SPObject * obj)
@@ -1087,7 +1123,9 @@ Tween::Tween(KeyframeWidget * start) {
 		
 		//linearTween(startLayer, endLayer, start_x, start_y, end_x, end_y, inc_x, inc_y);
 	
+	
 	/////////////update();
+	
 	/*
 	//check if a color/opacity tween is in order
 	//if()

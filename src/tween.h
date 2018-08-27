@@ -40,6 +40,7 @@ public:
 	void copyObjectToKeyframes(SPObject * start_layer, SPObject * end_layer);
 	void showAllKeyframes();
 	void update();
+	void doUpdate(const char * tweenId, SPCurve * curve);
 	void addToTween(SPObject * obj);
 	float easeInOut(float t, float a);
 	float easeIn(float t, float a);
